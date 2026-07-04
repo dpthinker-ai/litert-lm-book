@@ -1,6 +1,7 @@
 # 《端侧大模型推理：原理与 LiteRT-LM 实现》规划书
 
-> 状态：**v3.1**（2026-07-05）：D1-D4 与书名全部拍板；11 章 + 尾声全数通过"一句话使命"测试，目录冻结；进入 P1 立骨
+> 状态：**v3.2**（2026-07-05）：D1-D4 与书名拍板、目录冻结、P1 脚手架就位；**第一部（第 1-2 章）+ 第二部（第 3-5 章）初稿完成**——约 4.1 万字、6 张 SVG 图、5 份 review.md，lint 0 命中，代码引用均对 v0.13.1 核验。
+> 初稿的两项系统性待办：① 实测数字待基准数据集采集后回填「〔基准 D〕」；② 除 AI 味 Pass 2 第 14 条（独立审校）待非撰写会话执行。
 > 书名（已定）：《端侧大模型推理：原理与 LiteRT-LM 实现》
 > *On-Device LLM Inference: Principles and Practice with LiteRT-LM*
 > 素材基础：`/Users/dpthinker/workspace/litert-lm-guide/data.json`（12 模块深度分析，约 20 万字）

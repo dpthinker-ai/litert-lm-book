@@ -1,0 +1,50 @@
+<svg viewBox="0 0 720 360" width="720" height="360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="端侧 LLM 的三堵墙">
+  <style>
+    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .wall { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+    .brick { stroke: var(--fig-border, #d0d7de); stroke-width: 1; fill: none; }
+    .t   { fill: var(--fig-text, #1f2328); }
+    .ts  { fill: var(--fig-text-soft, #57606a); }
+    .accent { fill: var(--fig-accent, #0b57d0); }
+    .keybox { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; }
+  </style>
+
+  <text class="t" x="360" y="28" text-anchor="middle" style="font-size:16px;font-weight:700">把 LLM 搬上端侧，撞上的三堵墙</text>
+
+  <!-- 三堵墙 -->
+  <g>
+    <rect class="wall" x="40"  y="70" width="190" height="210" rx="4"/>
+    <rect class="wall" x="265" y="70" width="190" height="210" rx="4"/>
+    <rect class="wall" x="490" y="70" width="190" height="210" rx="4"/>
+    <!-- 砖缝 -->
+    <g class="brick">
+      <line x1="40" y1="120" x2="230" y2="120"/><line x1="40" y1="170" x2="230" y2="170"/><line x1="40" y1="220" x2="230" y2="220"/>
+      <line x1="265" y1="120" x2="455" y2="120"/><line x1="265" y1="170" x2="455" y2="170"/><line x1="265" y1="220" x2="455" y2="220"/>
+      <line x1="490" y1="120" x2="680" y2="120"/><line x1="490" y1="170" x2="680" y2="170"/><line x1="490" y1="220" x2="680" y2="220"/>
+    </g>
+  </g>
+
+  <!-- 墙名与关键指标 -->
+  <text class="t"  x="135" y="100" text-anchor="middle" style="font-size:15px;font-weight:700">① 内存墙</text>
+  <text class="ts" x="135" y="150" text-anchor="middle" style="font-size:12px">权重 + KV cache</text>
+  <text class="ts" x="135" y="168" text-anchor="middle" style="font-size:12px">+ 激活 &lt; 物理内存</text>
+  <text class="ts" x="135" y="205" text-anchor="middle" style="font-size:12px">决定「能跑多大」</text>
+  <text class="accent" x="135" y="255" text-anchor="middle" style="font-size:12px;font-weight:700">2B–4B 量级</text>
+
+  <text class="t"  x="360" y="100" text-anchor="middle" style="font-size:15px;font-weight:700">② 带宽墙</text>
+  <text class="ts" x="360" y="150" text-anchor="middle" style="font-size:12px">decode 每 token</text>
+  <text class="ts" x="360" y="168" text-anchor="middle" style="font-size:12px">读一遍全部权重</text>
+  <text class="ts" x="360" y="205" text-anchor="middle" style="font-size:12px">决定「逐字多快」</text>
+  <text class="accent" x="360" y="255" text-anchor="middle" style="font-size:12px;font-weight:700">与算力无关</text>
+
+  <text class="t"  x="585" y="100" text-anchor="middle" style="font-size:15px;font-weight:700">③ 功耗 / 异构墙</text>
+  <text class="ts" x="585" y="150" text-anchor="middle" style="font-size:12px">发热降频</text>
+  <text class="ts" x="585" y="168" text-anchor="middle" style="font-size:12px">CPU/GPU/NPU 各异</text>
+  <text class="ts" x="585" y="205" text-anchor="middle" style="font-size:12px">决定「能否持续」</text>
+  <text class="accent" x="585" y="255" text-anchor="middle" style="font-size:12px;font-weight:700">可插拔后端</text>
+
+  <!-- 带宽墙的核心公式 -->
+  <rect class="keybox" x="245" y="300" width="230" height="44" rx="6"/>
+  <text class="t" x="360" y="320" text-anchor="middle" style="font-size:12px;font-weight:700">decode 上限 = 带宽 ÷ 模型字节</text>
+  <text class="accent" x="360" y="338" text-anchor="middle" style="font-size:12px;font-weight:700">50 GB/s ÷ 1.86 GiB ≈ 25 tok/s</text>
+</svg>
