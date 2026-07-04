@@ -1,0 +1,20 @@
+[book]
+title = "端侧大模型推理：原理与 LiteRT-LM 实现"
+authors = ["dpthinker"]
+description = "On-Device LLM Inference: Principles and Practice with LiteRT-LM（内部打磨版，非官方）"
+language = "zh-CN"
+src = "."
+
+[build]
+build-dir = "book"
+create-missing = false
+
+[output.html]
+default-theme = "rust"
+preferred-dark-theme = "ayu"
+additional-css = ["assets/book.css"]
+git-repository-url = ""
+
+[output.html.fold]
+enable = true
+level = 1

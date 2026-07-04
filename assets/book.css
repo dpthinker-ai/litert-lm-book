@@ -1,0 +1,49 @@
+/* 本书 SVG 配图的 CSS 变量表（单一事实源）+ 书版排印微调。
+   由 litert-lm-guide/assets/site.css 的调色板精简而来。
+   规范要求：每张 SVG 仍须在 <defs><style> 内自带 fallback 实色，
+   例如 fill: var(--fig-accent, #0b57d0); 以保证脱离本样式表（PDF/印刷）时不失色。 */
+
+:root {
+  --fig-bg:        #ffffff;
+  --fig-surface:   #f6f8fa;   /* 普通节点填充 */
+  --fig-surface-2: #eef1f5;   /* 硬件/次级节点 */
+  --fig-accent:    #0b57d0;   /* 主强调（核心节点/主流程箭头） */
+  --fig-accent-2:  #6639ba;   /* 次强调（回流/对照） */
+  --fig-border:    #d0d7de;
+  --fig-border-2:  #e6eaef;
+  --fig-text:      #1f2328;
+  --fig-text-soft: #57606a;
+  --fig-text-dim:  #8b949e;
+  --fig-green:     #1a7f37;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fig-bg:        #0d1117;
+    --fig-surface:   #161b22;
+    --fig-surface-2: #1c2330;
+    --fig-accent:    #4f9cff;
+    --fig-accent-2:  #7c5cff;
+    --fig-border:    #2a3340;
+    --fig-border-2:  #21282f;
+    --fig-text:      #e6edf3;
+    --fig-text-soft: #b6c2cf;
+    --fig-text-dim:  #8b98a5;
+    --fig-green:     #3fb950;
+  }
+}
+
+/* 图注、图编号 */
+figure { margin: 1.2rem 0; text-align: center; }
+figure svg { max-width: 100%; height: auto; }
+figcaption { color: var(--fig-text-dim, #8b949e); font-size: 0.9em; margin-top: 0.4rem; }
+
+/* 「对照视野」与「版本注记」侧栏 */
+.aside-compare, .aside-version {
+  border-left: 3px solid var(--fig-accent, #0b57d0);
+  background: var(--fig-surface, #f6f8fa);
+  padding: 0.6rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0;
+}
+.aside-version { border-left-color: var(--fig-text-dim, #8b949e); }
+.aside-compare::before { content: "对照视野"; font-weight: 700; font-size: 0.85em; display: block; margin-bottom: 0.3rem; }
+.aside-version::before { content: "版本注记"; font-weight: 700; font-size: 0.85em; display: block; margin-bottom: 0.3rem; color: var(--fig-text-dim, #8b949e); }

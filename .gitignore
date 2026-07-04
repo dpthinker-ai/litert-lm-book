@@ -1,0 +1,10 @@
+# mdBook 构建产物
+book/
+# 模型与大文件（绝不入库）
+*.litertlm
+*.tflite
+*.task
+# 系统
+.DS_Store
+__pycache__/
+*.pyc
