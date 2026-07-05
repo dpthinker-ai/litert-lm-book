@@ -70,7 +70,7 @@ prefill 的激活峰值并非只能被动承受。LiteRT-LM 的 `CpuConfig::pref
 
 $$ \text{decode 吞吐上限 (tokens/s)} = \frac{\text{内存带宽 (字节/s)}}{\text{每 token 读取的字节 (字节)}} $$
 
-代入数字。手机常见的 LPDDR5 内存，带宽约 50 GB/s（这是随 SoC 变化的公开规格，按 10⁹ 字节/s 计；精确到芯片型号的数字本书未收录，可查各 SoC 官方数据表）。每 token 要读的就是权重那 1.86 GiB ≈ 2 × 10⁹ 字节。于是
+代入数字。手机内存带宽由两个公开参数决定：数据率乘以总线宽度（教科书级算法）。主流手机 SoC 的内存总线是 64 bit（4 通道 × 16 bit），即每次传输 8 字节，于是 LPDDR5-6400（6400 MT/s）配 64 bit 总线的峰值带宽是 6400 × 10⁶ × 8 ≈ 51.2 GB/s（按 10⁹ 字节/s 计）。本章取整用 50 GB/s，对应的正是这一档常见配置。旗舰机更高：联发科官方宣称 Dimensity 9400 支持 LPDDR5X-10667（官方博客，2024-10），同样 64 bit 总线折合约 85 GB/s；Snapdragon 8 Elite 一代的 LPDDR5X 配置同样落在 77-85 GB/s 区间（按公开数据率推导）。也就是说，端侧带宽的现实范围大致是 50-85 GB/s，最好与最差差不到一倍——这与云端加速卡数百 GB/s 起步、以 HBM 计的带宽是两个世界。每 token 要读的就是权重那 1.86 GiB ≈ 2 × 10⁹ 字节。于是
 
 $$ \frac{50 \times 10^{9}}{2 \times 10^{9}} = 25 \text{ tokens/s} $$
 
@@ -141,8 +141,8 @@ LiteRT-LM 的位置可以一句话概括：它把 LiteRT（原 TFLite）这套�
 - LiteRT-LM 投产于 Chrome / Chromebook Plus / Pixel Watch：Google 开发者博客 *On-device GenAI in Chrome, Chromebook Plus and Pixel Watch*，https://developers.googleblog.com/on-device-genai-in-chrome-chromebook-plus-and-pixel-watch-with-litert-lm/（经 LiteRT-LM 仓库 README 索引，访问 2026-07-05）。
 - 端侧运行时版图各项定位：各项目官方仓库 README——llama.cpp（github.com/ggml-org/llama.cpp）、MLC-LLM（github.com/mlc-ai/mlc-llm）、ExecuTorch（github.com/pytorch/executorch）（访问 2026-07-05）。
 - KV cache 分块扩容与双缓冲、prefill 分块、权重 mmap、CPU 亲和性、后端枚举等实现锚点：`runtime/executor/llm_executor_settings.h:110,117`、`runtime/executor/litert/kv_cache.h:70`、`runtime/util/memory_mapped_file.h`、`runtime/components/model_resources.h:164`、`runtime/engine/cpu_affinity_utils.cc`、`runtime/executor/executor_settings_base.h` @ v0.13.1。本章只引用其存在与语义以修正内存/带宽/功耗账，逐行走读分别见第 6、4、8 章。
-- 移动内存带宽与 SoC 算力规格：待按缺口补 2-3 款代表性 SoC 的官方数据表（LPDDR5/5X 通道配置、NPU TOPS）。
+- 移动内存带宽：带宽 = 数据率 × 总线宽度（体系结构常识）；Dimensity 9400 支持 LPDDR5X-10667 为联发科官方博客宣称（mediatek.com «Top 11 Features of the Dimensity 9400»，访问于 2026-07）；Snapdragon 8 Elite 的 LPDDR5X 档位见高通产品简介（qualcomm.com Product Brief）。各 SoC 峰值带宽按数据率 × 64 bit 推导，非厂商实测。NPU TOPS 数字本书仍未收录（口径混乱，待后续版本）。
 - KV cache 分走带宽的实测（decode 随上下文变慢）：附录 D 基准数据集，Gemma 4 E4B、上下文 256 → 4096、CPU decode 24.8 → 20.7 tok/s。本章正文的 KV cache 字节公式与"每 token 搬运量随 $T$ 线性增长"由此对照。
 - DRAM 每字节访存能耗约为片上乘加的一到两个数量级（【常识】级，计算机体系结构公认量级；本章只用其数量级方向，不引具体工艺数字）。
 
-<!-- 开放缺口：SoC 带宽/算力精确数字（需官方数据表，未补前正文只用示例量级）。参考链接已回填。KV cache 与能耗账已用附录 D + 常识级量级支撑。 -->
+<!-- SoC 带宽已按公开数据率推导回填（50 GB/s = LPDDR5-6400×64bit 取整；旗舰 85 GB/s = LPDDR5X-10667×64bit）。NPU TOPS 仍开放（口径混乱）。KV cache 与能耗账已用附录 D + 常识级量级支撑。 -->
