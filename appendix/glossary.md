@@ -46,7 +46,7 @@
 | 约束解码 | constrained decoding | 10 | 每步采样前把不合语法的 token 的 logit 设为 -inf，保证输出结构合法 |
 | Tool Use | 工具调用 | 10 | 让模型输出结构化函数调用，经 ANTLR 文法解析后执行、回填 |
 | Preface | 开场白 | 10 | 对话的初始背景：系统消息 + 可用工具声明，Tool Use 链路的第一步 |
-| llguidance | — | 10 | 约束解码的语法引擎（Rust 库，经 cxx bridge 接入），逐步给出合法 token 位图 |
+| llguidance | — | 10 | 约束解码的语法引擎（Rust 库，经 C bridge 即 llguidance.h 的纯 C 接口接入），逐步给出合法 token 位图 |
 | ANTLR | — | 10 | 文法解析器生成器；tool_use 用它的 .g4 文法把函数调用文本解析回结构 |
 | C ABI | — | 11 | 收敛成纯 C 的接口层，用不透明句柄 + C 函数当所有语言绑定的公约数 |
 | 不透明句柄 | opaque handle | 11 | 跨语言只传指针、不暴露 C++ 类型；create/delete 成对管理生命周期 |

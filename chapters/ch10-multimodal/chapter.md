@@ -32,7 +32,7 @@ int target_width =
 
 (1) 先算允许的总像素上限：`max_num_patches` 个 patch，每个 patch 占 `patch_width × patch_height` 像素。(2) 拿这个上限除以原图像素数、开方，得到一个各向同性的缩放系数 `factor`。这个系数乘在宽高上，缩放后的总面积恰好压到上限，同时不改变长宽比。(3)(4) 处理网格对齐：缩放后的宽高不能是任意整数，必须是 `side_mult` 的整数倍，`side_mult` 等于池化核尺寸乘 patch 边长。所以代码先除以 `side_mult`、向下取整、再乘回去，把宽高对齐到网格。为什么要对齐？因为下游要按 `patch_width` 均匀切块、再按 `pooling_kernel_size` 做池化，宽高不是这个乘积的整数倍就切不齐。函数开头还有一句硬性检查：`patch_width != patch_height` 直接返回错误，patch 必须是正方形。向下取整可能把某一边压成 0（细长图），代码专门兜了这个情况：把 0 的那边设成一个 `side_mult`、另一边按原始长宽比放大但不超过 `max_side_length`。这笔账读者可以自己验算：给定 `max_num_patches`、`patch_width`、原图尺寸，`target_height × target_width / (patch_width × patch_height)` 就是这张图最终占多少个 visual token——也就是要在序列里挖多少个坑。
 
-第二步，编码。切好的图交给视觉执行器编码成 embedding。执行器的 `Encode`（`runtime/executor/vision_litert_compiled_model_executor.h:57 @ v0.13.1`）返回一个装着 embedding 的 `ExecutorVisionData`，它的实现是两级串联：
+第二步，编码。切好的图交给视觉执行器编码成 embedding。执行器的 `Encode`（声明 `runtime/executor/vision_litert_compiled_model_executor.h:57`，实现 `vision_litert_compiled_model_executor.cc:454 @ v0.13.1`）返回一个装着 embedding 的 `ExecutorVisionData`，它的实现是两级串联：
 
 ```cpp
 absl::StatusOr<ExecutorVisionData> VisionLiteRtCompiledModelExecutor::Encode(
