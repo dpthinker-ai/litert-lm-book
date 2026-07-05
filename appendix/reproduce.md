@@ -9,12 +9,12 @@
 ```bash
 uv tool install litert-lm
 litert-lm run \
-  --from-huggingface-repo=google/gemma-3n-E2B-it-litert-lm \
-  gemma-3n-E2B-it-int4.litertlm \
+  --from-huggingface-repo=litert-community/gemma-4-E4B-it-litert-lm \
+  gemma-4-E4B-it.litertlm \
   --prompt="What is the capital of France?"
 ```
 
-> Gemma 是受限模型：首次下载前需在 Hugging Face 网页接受许可，并本机登录（`huggingface-cli login` 或 `python3 -m huggingface_hub.commands.huggingface_cli login`，粘贴一个 Read 权限的 token）。模型文件数 GiB，留足磁盘。
+> litert-community 的 Gemma 4 版是**公开**的，直接下载即可（本书基准就用它）。google/ 官方版为受限发布，需先在网页接受许可并本机登录（`huggingface-cli login`，粘贴 Read 权限 token）。模型文件数 GiB，留足磁盘。
 
 CLI 常用子命令：`run`（交互/单条）、`benchmark`（性能）、`import`（下载/导入）、`list`、`serve`（OpenAI 兼容服务）。
 
@@ -61,6 +61,6 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 
 - 芯片 / 内存：Apple M5 Pro / 24 GiB
 - 系统：macOS 26.5
-- 主基准模型：Gemma 3n E2B int4（`google/gemma-3n-E2B-it-litert-lm`）
+- 主基准模型：Gemma 4 E4B（`litert-community/gemma-4-E4B-it-litert-lm`，公开、支持 MTP）
 
 > 换机器、换模型、换后端都会得到不同的数字——这正是第 8 章的教训。复现时请对齐这三项，否则不能与书中数字直接比。

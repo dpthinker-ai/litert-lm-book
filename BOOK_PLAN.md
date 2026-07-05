@@ -314,11 +314,11 @@ NPU 独立展开（并入第 8 章一节）；框架层线程实现细节（保�
 
 **基准数据集规格 v1**（P1 采集；脚本入 `experiments/bench_baseline.sh`，原始数据入 `experiments/data/`，说明入附录 D）：
 - 主基准设备：作者的 Mac（Apple Silicon；具体型号/内存/系统版本随采集记录）
-- 主基准模型：Gemma 3n E2B int4（官方 .litertlm 发布物）；第 9 章补充支持 MTP 的 Gemma 4 发布物
+- 主基准模型：**Gemma 4 E4B**（`litert-community/gemma-4-E4B-it-litert-lm`，公开非受限、支持 MTP；主模型即覆盖第 9 章 MTP 实测，无需另找）
 - 条件矩阵：backend ∈ {cpu, gpu} × 上下文 ∈ {256, 1024, 4096} × MTP ∈ {关, 开（仅支持的模型）}；每条件跑 3 次取中位数
 - 指标：prefill tokens/s、decode tokens/s、TTFT (ms)、峰值内存（`--report_peak_memory_footprint`）、冷启动加载时间
 - 纪律：全书正文只引用本数据集与注明出处的官方数据（CLAUDE.md 第二节）；扩展基准（如 Android 真机）单独标注，不与主基准混算
-- 可得性注记：Gemma 系列在 HuggingFace 为受限发布（需先接受许可条款）；多模态模型体积数 GiB，下载与磁盘预算提前留出
+- 可得性：litert-community 的 Gemma 4 版**非受限**，直接可下（约 3.4 GB），无需 HF 登录；google/ 官方版才受限
 
 **样章（第 5 章）验收判据**（四条全过才算通过 P1 门）：
 1. `review.md` 中断言归级完成率 100%，代码引用逐条 Read 核验通过；
@@ -369,5 +369,5 @@ NPU 独立展开（并入第 8 章一节）；框架层线程实现细节（保�
 - [x] 建规范基建：`assets/book.css`、`scripts/lint_prose.sh`、`appendix/glossary.md`(种子)、`chapters/_shared/review-template.md`——2026-07-05
 - [x] 章节骨架 + data.json 素材迁移：`chapters/_shared/module-*.md`(12) + `synth-architecture.md` 为单一事实源，各章 `notes.md` 做策展层，`chapter.md` 骨架就位（`scripts/gen_scaffold.py` 可幂等重生成）——2026-07-05
 - [ ] 补读 6 个文件（tasks.cc、llm_litert_compiled_model_executor.cc、conversation.cc、litertlm_read.cc、llm_litert_mtp_drafter.cc、vision/audio executor 实现）
-- [ ] 基准数据集采集（规格 v1，需先在 Mac 下载 Gemma 3n E2B int4）
+- [进行中] 基准数据集采集（规格 v1，Gemma 4 E4B 已下载，矩阵采集中）
 - [ ] 第 5 章样章（过样章验收判据四条）

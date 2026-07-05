@@ -44,5 +44,5 @@
 - drafter 是**独立小模型**（`mtp_drafter_model_`）；verify 是 base 模型上的 `"verify"` signature（:63/:228）。
 
 ## 待核实清单 / 随手记
-- 「快 3 倍」是官方博客口径（Gemma 4），本章实验实测核对；实测数字待基准 D（需 Gemma 4 类支持 MTP 的模型，非 3n E2B）。
+- 「快 3 倍」是官方博客口径（Gemma 4），本章实验实测核对；实测数字待基准 D（主基准 E4B 支持 MTP）。
 - 图 9-1 时序 = drafter 逐个草拟 G 个 → base 一次 verify G+1 → 接受前缀+bonus。

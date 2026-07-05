@@ -11,12 +11,12 @@
 ```bash
 uv tool install litert-lm
 litert-lm run \
-  --from-huggingface-repo=google/gemma-3n-E2B-it-litert-lm \
-  gemma-3n-E2B-it-int4 \
+  --from-huggingface-repo=litert-community/gemma-4-E4B-it-litert-lm \
+  gemma-4-E4B-it.litertlm \
   --prompt="What is the capital of France?"
 ```
 
-第一次运行会从 Hugging Face 拉取模型（Gemma 系列是受限发布，需先在网页上接受许可条款；模型文件数 GiB，留足磁盘和耐心）。跑通之后，你会看到答案一个字一个字地刷出来——那种"挤牙膏"的手感，就是第 1 章带宽墙的现场。
+第一次运行会从 Hugging Face 拉取模型（litert-community 的 Gemma 4 版可直接下载；google/ 官方版则是受限发布，需先接受许可条款。模型文件数 GiB，留足磁盘和耐心）。跑通之后，你会看到答案一个字一个字地刷出来——那种"挤牙膏"的手感，就是第 1 章带宽墙的现场。
 
 如果你要读源码、改代码，就得从源码编译那个 C++ 的演示程序 `litert_lm_main`（第 11 章和附录 C 讲完整的构建；这里先只用它）。它最核心的两个开关：
 
@@ -44,7 +44,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 
 注意这张表最左和第三列的对应关系：**prefill 吞吐和 decode 吞吐不是一个东西，也不该被平均成"一个速度"。** 一个模型可以 prefill 每秒几千 token、decode 每秒几十——差两个数量级。原因第 1 章已经埋下：prefill 拼算力（可并行），decode 拼带宽（每步搬全部权重）。把它俩混在一起谈"这模型多少 tok/s"，是端侧性能讨论里一个常见的混淆。
 
-> 本书所有实测数字来自附录 D 的基准数据集（同一台 Mac、Gemma 3n E2B int4、公开可复现的采集脚本）。基准数据集尚在采集，具体数值将于 P1 完成后回填本章各处标注「〔基准 D〕」的位置。
+> 本书所有实测数字来自附录 D 的基准数据集（同一台 Mac、Gemma 4 E4B、公开可复现的采集脚本）。凡标注「〔基准 D〕」处，即由这套数据回填。
 
 ## 一副眼镜：Roofline
 

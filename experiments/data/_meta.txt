@@ -1,0 +1,8 @@
+# 基准数据集 v1
+date=2026-07-05 10:27:41 CST
+chip=Apple M5 Pro
+ram=24 GiB
+os=macOS 26.5 (25F71)
+litert_lm=litert-lm, version 0.13.1
+model=gemma-4-e4b (litert-community/gemma-4-E4B-it-litert-lm)
+decode_tokens=128 repeats=3 contexts=256 1024 4096 backends=cpu gpu
