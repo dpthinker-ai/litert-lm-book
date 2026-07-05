@@ -166,6 +166,8 @@ for (int i = 0; i < model.GetNumSignatures(); ++i) {
 
 单张量重载则是这套机制的退化情形：当 `GetNumSignatures() == 1` 时 `GetVitSignatureIndex` 直接返回 0（`:142 @ v0.13.1`），跳过全部选择逻辑。固定分辨率模型走这条快路径，变分辨率模型走上面那条。
 
+这套多签名机制在本书基准模型里就是现役的。实剖 Gemma 4 E4B 的模型文件（附录 D），视觉编码器段里恰好是三档签名 `vision_70`、`vision_140`、`vision_280`，配套的适配器段也是对应的三档 `vision_adapter_70/140/280`；编码器输入 `images` 的形状是 `[1, 1260, 768]`，其中 768 = 16 × 16 × 3，即 patch 是 16 像素见方的 RGB 块，1260 是输入槽位的 patch 容量上限。签名名末尾的 70/140/280 正是上文「按输出 token 数命名」的那串数字。
+
 ### 视觉 token 折算成的 prefill 与 KV cache 开销
 
 回到本节开头留下的账。patchify 公式算出的 visual token 数，不只决定序列里预留多少槽位，它直接放大 prefill 的计算量与 KV cache 的占用。视觉 token 一旦填进序列，对 prefill 而言与文本 token 无差别（第 4 章）：每个 token 都要过一遍完整的 Transformer 前向，都要在每一层写入一份 K/V 进 cache。
@@ -191,6 +193,8 @@ for (int i = 0; i < model.GetNumSignatures(); ++i) {
 (1) 每轮取至多 `sequence_length_` 帧（编码器 signature 的固定输入长度），编码器对每块 Run 一次，输出按 `encoder_shrinking_factor_` 缩减后的 token 数拼接进结果，`total_valid_tokens` 累计有效 token。这与第 4 章 prefill 的分块是同一个约束的两次出现：编译好的模型入口是定长的，任意长度的输入只能切块喂。一段几十秒的音频有几千帧频谱，分块让编码器的输入 buffer 尺寸有界，代价同样是块间串行。
 
 两层加起来，音频的成本结构与视觉不同：视觉的预处理大头在重采样（纯 CPU 浮点），音频的预处理是 FFT 加滤波器组（同样纯 CPU，但随音频时长线性增长），编码阶段则多了分块循环的串行段。落到序列里之后二者归一：音频 token 同样按第 4 章的规则参与 prefill、按第 6 章的规则占 KV cache，上一节的预算算式对它同样适用。
+
+实剖同样能看到这条链路的两级：基准模型文件里音频编码器与 `audio_adapter` 各占一段，适配器输入 `features` 形状 `[1, 204, 1536]`，即编码器输出的 1536 维特征、每块至多 204 帧，再由适配器投影到主干的 2560 维（附录 D）。
 
 ## 让输出守规矩：约束解码
 

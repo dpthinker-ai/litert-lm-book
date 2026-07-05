@@ -48,8 +48,8 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 |---|---|---|
 | 2 | 读 benchmark 数字 | `litert-lm benchmark <model> --backend cpu -p 256 -d 128` |
 | 2、7 | 解剖 .litertlm 分段 | `litertlm_print`（源码工具） |
-| 4 | prefill 耗时随长度 | benchmark 扫 `-p 100…4000`；异步开/关用 C++ 的 `litert_lm_main --async=true/false`（`litert-lm benchmark` 无此项） |
-| 5 | 采样对比 | `run` 时改温度 0 vs 1.0 |
+| 4 | prefill 耗时随长度 | benchmark 扫 `-p 100…4000`（已做，脚本 `experiments/prefill_sweep.sh`，结果见附录 D 第七节）；异步开/关用 C++ 的 `litert_lm_main --async=true/false`（`litert-lm benchmark` 无此项） |
+| 5 | 采样对比 | `run` 改 `--temperature 0/1.0` 加 `--seed`（已做，实录见附录 D 第八节与 `experiments/data/temperature_test.md`） |
 | 6 | KV cache 内存/速度 | benchmark 扫 `--max-num-tokens`；`get_token_count` 观察多轮 |
 | 7 | 冷启动 | `--cache disk/no` 对比；分段并行加载开关仅 C API 暴露（`…set_parallel_file_section_loading`），CLI 未暴露、本书未单测 |
 | 8 | 后端对比 | `--backend cpu` vs `gpu`；扫 CPU 线程数 |

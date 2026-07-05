@@ -102,11 +102,11 @@ RETURN_IF_ERROR(sampler_.value()->SampleToIdAndScoreBuffer(
 
 `TimeMarkDelta` 成对出现，用同一个标签划一段耗时：(1)(3) 把 `DecodeLogits` 前向框成 `executor_decode` 段，(4) 与其后配对的 `TimeMarkDelta("sampling")` 把 (5) 的采样框成 `sampling` 段。基准工具据此分别报告前向与采样各自的耗时（基准指标的采集见附录 D）。
 
-`DecodeLogits` 返回的 `output_logits` 形状是 `[batch, seq, vocab]`。decode 阶段 `seq` 为 1，若 `batch` 也为 1，单步返回的就是一个长度等于词表规模的向量。以 Gemma 系列常见的词表规模 256K（256000）为例，logits 以 float32 存储，单步回搬的字节量是：
+`DecodeLogits` 返回的 `output_logits` 形状是 `[batch, seq, vocab]`。decode 阶段 `seq` 为 1，若 `batch` 也为 1，单步返回的就是一个长度等于词表规模的向量。本书基准模型实剖出的词表规模是 262144（decode signature 的 logits 形状 `[1, 1, 262144]`，附录 D），logits 以 float32 存储，单步回搬的字节量是：
 
-256000 × 4 B ≈ 1.024 × 10^6 B ≈ 0.98 MiB
+262144 × 4 B = 1048576 B = 1 MiB
 
-这是外部采样相对内部采样多付的数据搬运量，每一步都要付一次。它是否显著，取决于它和前向本身的耗时之比。第 1 章给出的 memory-bound 前向要读一遍全部权重：以一个 4 bit 量化、约 30 亿参数的模型为例，单步前向至少要读约 30 亿 × 0.5 B ≈ 1.4 GiB 权重。把 0.98 MiB 的 logits 回搬放在 1.4 GiB 的权重读取旁边，前者约为后者的 0.7‰。据此推断，在此类模型上外部采样的 logits 回搬相对前向本身可以忽略；真正让外部路径变慢的，是采样在 CPU 上执行（下一节的排序与累积），而非数据搬运本身。词表规模越大、模型越小、后端显存带宽越低，这笔搬运占比越高，具体数值须以附录 D 在目标设备上的实测为准。
+这是外部采样相对内部采样多付的数据搬运量，每一步都要付一次。它是否显著，取决于它和前向本身的耗时之比。第 1 章给出的 memory-bound 前向要读一遍全部权重：以一个 4 bit 量化、约 30 亿参数的模型为例，单步前向至少要读约 30 亿 × 0.5 B ≈ 1.4 GiB 权重。把 1 MiB 的 logits 回搬放在 1.4 GiB 的权重读取旁边，前者约为后者的 0.7‰。据此推断，在此类模型上外部采样的 logits 回搬相对前向本身可以忽略；真正让外部路径变慢的，是采样在 CPU 上执行（下一节的排序与累积），而非数据搬运本身。词表规模越大、模型越小、后端显存带宽越低，这笔搬运占比越高，具体数值须以附录 D 在目标设备上的实测为准。
 
 ## 采样：从 logits 向量里选出一个 token
 
@@ -166,7 +166,7 @@ static absl::StatusOr<std::unique_ptr<TopPSampler>> Create(int k, float p,  // (
 - **top-k**：只在分数最高的 k 个 token 里采样，截去低概率长尾。
 - **top-p（核采样）**：只在累计概率达到 p 的最小候选集里采样，是 top-k 的自适应版本——概率集中时候选少，分散时候选多。
 
-这些是可复现、可观测的确定性行为。本章的第一个实验：同一个提示词，温度设 0 和设 1.0 各跑一次，观察输出从确定、平实变为每次不同、发散（实验命令见附录 C；本书不收录这组输出样本）。
+这些是可复现、可观测的行为，本书在基准机上实测过（附录 D 第八节）。同一个提示词，温度 0、同种子跑两次，输出逐字一致：贪心路径确定可复现。温度 1.0 时输出随种子可变：换一个种子得到了另一个句子。但实验里还出现了第三种情况：默认采样参数下，两个不同的种子产出了逐字相同的序列。这不是 bug。分布尖锐时（top-k/top-p 截断后高概率 token 一家独大），采样在多数步上都会命中同一个 token，**开采样不等于每次必不同**。判断「采样是否生效」要换种子多跑几次，而不是跑两次看见相同就下结论。
 
 | 策略 | 选取方式 | 特点 |
 |---|---|---|
@@ -360,4 +360,4 @@ for (int i = 0; i < num_output_candidates_; ++i) {
 - 采样器：`runtime/components/sampler.h @ v0.13.1`（`Sampler` 抽象:34，贴出核心方法 `SampleToIdAndScoreBuffer`:45）；`runtime/components/top_p_cpu_sampler.h @ v0.13.1`（`TopPSampler`:30，贴出 `Create` 签名:38，含 k/p/temperature/seed）。
 - 停止符检测：`runtime/components/stop_token_detector.h @ v0.13.1`（`StopTokenDetector`:45；`ProcessTokens`:67；贴出 `MaxPartialStopTokenLength`:93 含返回值语义注释；`GetStopTokensFound`:89；`AllDone`:85）。
 
-<!-- 实验数字（温度对比、停止词暂存用例）待基准数据集采集后回填。 -->
+<!-- 温度对比已实测回填（附录 D 第八节）。停止词暂存用例仍待构造专门 prompt 复现。 -->

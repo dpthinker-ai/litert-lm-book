@@ -50,7 +50,7 @@ for (int i = 0; i < num_draft_steps_; ++i) {                      // (1)
 }
 ```
 
-`(1)` 循环 G 次，每次生成一个 token，串行。`(3)` 每步跑的是 `mtp_drafter_model_`，一个独立装载的小模型，不是基础模型，这是运行时能低成本草拟的前提。`(2)` 是 MTP 这一类方案的特征：drafter 的输入不只是词嵌入，还拼上了上一步的隐藏态 activation（源码注释写明拼完是 `[B=1, T=1, D=3072]`，即 1536 维的词嵌入接 1536 维的 activation），使草稿头以基础模型的语义状态为条件继续预测。`(4)` 每步只产出一个 token（`RET_CHECK_EQ(..., 1)` 作断言兜底）。`(5)` 把这一步的输出喂回下一步的输入：drafter 是自回归的，只是它的自回归开销远低于基础模型一次前向。这几步再串行，总开销也远不及基础模型一次前向。
+`(1)` 循环 G 次，每次生成一个 token，串行。`(3)` 每步跑的是 `mtp_drafter_model_`，一个独立装载的小模型，不是基础模型，这是运行时能低成本草拟的前提。`(2)` 是 MTP 这一类方案的特征：drafter 的输入不只是词嵌入，还拼上了上一步的隐藏态 activation（源码注释以 `[B=1, T=1, D=3072]` 为例，即 1536 维词嵌入接 1536 维 activation；维度随模型而定，本书基准模型实剖出的 drafter 输入是 `[1, 1, 5120]`，即 2560 + 2560，与主干 `model_dimension = 2560` 一致，见附录 D），使草稿头以基础模型的语义状态为条件继续预测。`(4)` 每步只产出一个 token（`RET_CHECK_EQ(..., 1)` 作断言兜底）。`(5)` 把这一步的输出喂回下一步的输入：drafter 是自回归的，只是它的自回归开销远低于基础模型一次前向。这几步再串行，总开销也远不及基础模型一次前向。
 
 第二步，一次验一串。把「上一个真 token 加草拟的 G 个」拼起来，交给基础模型的 verify signature（`RunVerification`，`:437`）：
 
@@ -191,7 +191,7 @@ if (activations_ptr) {
 
 两条来源对应两种进入草拟的时机。首个 decode 之后，drafter 拿到的是基础模型 decode 输出的 activation（走 `(1)`）；进入稳态后，drafter 拿到的是上一轮 verify 缓冲里接受位置的 activation（走 `(2)`）。无论哪条，语义都一样：草稿头从基础模型算出的隐藏态接着往下预测，而不是从零起步。这解释了 MTP 草稿为何比一个完全独立、只看 token id 的小模型更容易命中——它拿到的不只是上一个 token，还有基础模型对上下文的内部表示。
 
-拼接本身是一次内存拷贝（`ConcatenateEmbeddingsAndActivations`，`:80` 起）：先把词嵌入 memcpy 进输出缓冲前半段，再把 activation memcpy 进后半段。两段各 1536 维 float，合计 3072 维，正是 drafter signature 的 `activations` 输入形状。这里没有额外计算，只有缓冲布局的拼装，开销可忽略；drafter 每步的主要成本仍是那一次 `RunAsync` 小模型前向。
+拼接本身是一次内存拷贝（`ConcatenateEmbeddingsAndActivations`，`:80` 起）：先把词嵌入 memcpy 进输出缓冲前半段，再把 activation memcpy 进后半段。两段各 `model_dimension` 维 float，拼成双倍宽度，正是 drafter signature 的 `activations` 输入形状（本书基准模型为 2560 + 2560 = 5120，实剖见附录 D）。这里没有额外计算，只有缓冲布局的拼装，开销可忽略；drafter 每步的主要成本仍是那一次 `RunAsync` 小模型前向。
 
 ## 集成：Draft 由谁调用，接受的 token 如何回写
 
