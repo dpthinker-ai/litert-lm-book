@@ -34,9 +34,29 @@ $$ 2 \times 30 \times 1024 \times 2 = 122880 \text{ 字节} \approx 120 \text{ K
 
 ## 双缓冲：一个朴素的工程手艺
 
-KV cache 要频繁读写，这在 GPU 上撞见一个具体麻烦：部分 GPU 后端不允许对同一块缓冲同时读和写（源码注释就是这么写的，`runtime/executor/llm_litert_compiled_model_executor.h:327 @ v0.13.1`）。
+KV cache 要频繁读写，这在 GPU 上撞见一个具体麻烦：部分 GPU 后端不允许对同一块缓冲同时读和写。这不是猜的，源码注释直接写在成员声明上方（`runtime/executor/llm_litert_compiled_model_executor.h:327-333 @ v0.13.1`）：
 
-LiteRT-LM 的解法不玄乎：**备两套缓冲**（`kv_cache_buffers_1_` 和 `kv_cache_buffers_2_`，`llm_litert_compiled_model_executor.h:329-330 @ v0.13.1`），再用两个指针分别指向"当前读的"和"当前写的"（`input_kv_cache_buffers_` / `output_kv_cache_buffers_`，`:331-333`）。每一步，从旧缓冲读、往新缓冲写，然后把两个指针一交换——下一步的"新"就成了"旧"。全程不需要把数据从一块缓冲拷到另一块，只是换个指针指向。
+```cpp
+// KV cache double buffers because some GPU backends can't allocate one buffer
+// for both read and write at the same time.
+absl::flat_hash_map<absl::string_view, TensorBuffer> kv_cache_buffers_1_;      // (1)
+absl::flat_hash_map<absl::string_view, TensorBuffer> kv_cache_buffers_2_;      // (2)
+absl::flat_hash_map<absl::string_view, TensorBuffer>* input_kv_cache_buffers_;  // (3)
+absl::flat_hash_map<absl::string_view, TensorBuffer>*
+    output_kv_cache_buffers_;
+```
+
+(1)(2) 是两套实打实的缓冲，各持一份 KV。(3) 起的两个指针才是关键：它们不拥有数据，只指向那两套缓冲之一——`input_kv_cache_buffers_` 指向"这一步读哪套"，`output_kv_cache_buffers_` 指向"这一步写哪套"。构造时（`:199-200`）两者分别指向 `kv_cache_buffers_1_` 和 `kv_cache_buffers_2_`，一读一写、错开。
+
+交换动作发生在每次跑完模型之后。prefill 的路径上（`llm_litert_compiled_model_executor.cc:738 @ v0.13.1`）：
+
+```cpp
+if (!gpu_optimized_single_buffer_cache_) {   // (1)
+  std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_);   // (2)
+}
+```
+
+(2) 只交换两个指针的指向，不动缓冲里的字节——这一步刚往 `output` 那套写了新 token 的 key/value，交换后它就变成下一步的 `input`，上一步读过的旧缓冲则腾出来当下一步的写入目标。几百 MiB 的 KV 数据一次也没搬。(1) 是个例外闸门：`gpu_optimized_single_buffer_cache_` 为真时（某些 GPU 后端反而支持同缓冲读写）跳过交换，两个指针始终指同一套缓冲（`:1960-1961` 就是这么初始化的），省掉第二套的内存。同一份 `std::swap` 在 decode 路径也各来一次（`:947`），逻辑一致。
 
 <figure>
 {{#include figs/fig-6-1.svg}}
@@ -47,31 +67,99 @@ LiteRT-LM 的解法不玄乎：**备两套缓冲**（`kv_cache_buffers_1_` 和 `
 
 ## 状态即对象
 
-到这里，一次会话的核心状态已经清楚了：一堆 KV cache，加上"当前到第几步"这样的元信息。LiteRT-LM 把它们打包成一个对象——`LlmContext`（`runtime/executor/llm_executor_io_types.h:92 @ v0.13.1`），里面装着已处理的 token（含 KV cache）、运行配置、以及记录 `current_step` 的运行状态（`RuntimeState`，`:78`）。
+到这里，一次会话的核心状态已经清楚了：一堆 KV cache，加上"当前到第几步"这样的元信息。LiteRT-LM 把它们打包成一个对象——`LlmContext`（`runtime/executor/llm_executor_io_types.h:92 @ v0.13.1`）：
+
+```cpp
+struct RuntimeState {
+  int current_step = 0;   // (1)
+  std::shared_ptr<std::default_random_engine> rand_gen;
+  bool ran_decode = false;
+};
+
+class LlmContext {
+ public:
+  // ...
+  ProcessedContext& processed_context() { return *processed_context_; };   // (2)
+  RuntimeConfig& runtime_config() { return *runtime_config_; };
+  RuntimeState& runtime_state() { return *runtime_state_; };
+ private:
+  std::unique_ptr<ProcessedContext> processed_context_;   // (3)
+  std::unique_ptr<RuntimeConfig> runtime_config_;
+  std::unique_ptr<RuntimeState> runtime_state_;
+};
+```
+
+三样东西各管一摊。(3) 的 `processed_context_` 装已处理的 token 和它们的 KV cache，KV 那几百 MiB 就在这下面。`runtime_config_` 是运行配置。(1) 的 `runtime_state_` 记运行状态，其中 `current_step` 就是"当前到第几步"这个游标；`RuntimeState` 上方那行源码注释特意声明它"不含直接与 KVCache 相关的状态"（`:75-76`），所以搬运时 KV cache 走 `processed_context_` 那一路，步数游标走 `runtime_state_` 这一路，两者分开。(2) 三个访问器返回引用，底下全用 `unique_ptr` 独占持有——想搬运整个上下文，只要把这三个 `unique_ptr` 一起打包。
 
 把状态做成一个能整体搬运的对象，是第 2 章那条"状态即对象"原则的兑现。它一旦成立，几件原本很难的事就顺理成章：
 
 - **克隆会话**（`Clone`，`runtime/engine/engine.h:245 @ v0.13.1`；还有异步版 `CloneAsync`，`:263`）：复制这个对象，就得到一个独立的会话分支。
 - **存检查点、回退**（`SaveCheckpoint`，`engine.h:270 @ v0.13.1`；配套的 `RewindToCheckpoint`）：给当前状态打个标记，之后能退回来。
 
-克隆的价值，头文件注释里有个现成的例子（`engine.h:238 @ v0.13.1`）：session1 先 prefill 一段公共前缀，Clone 出 session2，两个分支各接不同的后续，公共前缀只算一次。这就是第 14 问的答案：克隆分叉不必重算公共前缀，因为那段 KV cache 被整个复制了过去，而不是重新 prefill。
+克隆的价值，头文件注释里有个现成的例子（`engine.h:238 @ v0.13.1`）：session1 先 `Prefill("What is the tallest building ")`，`Clone` 出 session2，之后 session1 接 `"in the world?"`、session2 接 `"in France?"`，那段公共前缀的 prefill 只跑一次。这就是第 14 问的答案：克隆分叉不必重算公共前缀，因为那段 KV cache 被整个复制了过去，而不是重新 prefill。
+
+复制到底发生在哪一行？`Clone` 一路走到执行器的 `CloneContext`（`llm_litert_compiled_model_executor.cc:1288 @ v0.13.1`）：
+
+```cpp
+std::optional<uint32_t> lora_id;
+ASSIGN_OR_RETURN(auto kv_cache_buffers, CloneKVCacheBuffers());   // (1)
+ProcessedTokens new_processed_tokens =
+    llm_context_->processed_context().processed_tokens();
+auto new_processed_context = std::make_unique<LlmProcessedContext>(
+    std::move(lora_id), std::move(kv_cache_buffers),
+    std::move(new_processed_tokens));
+auto new_runtime_config =
+    std::make_unique<RuntimeConfig>(llm_context_->runtime_config());
+auto new_runtime_state =
+    std::make_unique<RuntimeState>(llm_context_->runtime_state());
+return std::make_unique<LlmContext>(std::move(new_processed_context),
+                                    std::move(new_runtime_config),
+                                    std::move(new_runtime_state));   // (2)
+```
+
+(2) 就是上一节那个 `LlmContext` 的新实例，克隆的产物正是一个装齐三样东西的新上下文对象，"状态即对象"在这里收口。真正搬字节的是 (1) 的 `CloneKVCacheBuffers`（`:1243`），它逐个遍历 `input_kv_cache_buffers_`，对每块调 `CopyTensorBuffer` 复制一份。这就是 `DeepCopy` 注释里那句"昂贵操作"的具体来源：4096 token 上下文下按第 1 节的账约 480 MiB，克隆一次就要原样拷这么多字节——克隆的代价，全在这个循环里。
 
 ## KV cache 的搬运接口
 
-克隆、回退这些能力，底层要求 KV cache 本身能被搬运。所以它有一个专门的接口 `KVCacheInterface`（`runtime/executor/kv_cache_interface.h:28 @ v0.13.1`），几个方法各有用途：
+克隆、回退这些能力，底层要求 KV cache 本身能被搬运。所以它有一个专门的接口 `KVCacheInterface`（`runtime/executor/kv_cache_interface.h:28 @ v0.13.1`），一组纯虚函数划定了"搬运工具箱"的边界：
 
-- `Serialize` / `Load`（`:39` / `:42`）：把 KV cache 存成字节串、再读回来——持久化的基础；
-- `DeepCopy`（`:61`）：深拷贝一份。注释直言这是"昂贵操作，慎用"——几百 MiB 的深拷贝不便宜，克隆的代价就在这里；
-- `SelectAndCopyFrom`（`:50`）：从一个多分支的 KV cache 里挑一条出来。这在需要从多个候选里收敛到一个时用得上；
-- `BroadcastAndCopyFrom`（`:58`）：反过来，把一条广播成多份。
+```cpp
+class KVCacheInterface {
+ public:
+  // ...
+  virtual absl::StatusOr<std::string> Serialize() const = 0;               // (1)
+  virtual absl::Status Load(absl::string_view serialized_kv_cache) = 0;    // (2)
+  virtual absl::Status SelectAndCopyFrom(KVCacheInterface& other,
+                                         int batch_index) = 0;             // (3)
+  virtual absl::Status BroadcastAndCopyFrom(KVCacheInterface& other) = 0;  // (4)
+  virtual absl::StatusOr<std::unique_ptr<KVCacheInterface>> DeepCopy()     // (5)
+      const = 0;
+};
+```
 
-这几个方法凑齐了 KV cache 的"搬运工具箱"。它们就是 Clone 和 SaveCheckpoint 底下真正在搬数据的那一层。
+(1)(2) 是持久化的一对：`Serialize` 把 KV cache 压成一个 `std::string` 字节串，`Load` 反向读回，存盘、跨进程传都靠这两个。(5) 的 `DeepCopy` 返回一个新的 `unique_ptr<KVCacheInterface>`，源码注释就写在这行上方：`This is an expensive operation. Use sparingly.`（`:60`）——上一节 `CloneKVCacheBuffers` 那个逐块拷贝的循环，正是这条注释在具体实现里的兑现。(3)(4) 是一对方向相反的批处理搬运，注释里各带一个 shape 例子：`SelectAndCopyFrom` 从 `[3, ...]` 的多分支缓存里挑第 `batch_index` 条拷到自己这个 `[1, ...]`；`BroadcastAndCopyFrom` 反过来，把 `[1, ...]` 的一条广播到 `[3, ...]` 的每一路。它们服务于并行采样这类"一进多出、多进一出"的场景。
+
+注意这五个方法全是 `= 0` 的纯虚声明——`KVCacheInterface` 只定契约，不含一行实现。真正的字节搬运落在具体后端里，比如 `LitertKVCache::DeepCopy`（`runtime/executor/litert/kv_cache.cc:380 @ v0.13.1`）。接口与实现分离，是 LiteRT-LM 支持多后端（cpu/gpu/npu）的一贯手法，后面几章还会反复见到。
 
 ## 顺带一手：把思考从缓存里择出去
 
-最后一个应用，把前面的机制串起来。有些模型会先"想"再答，把思考过程也吐出来（第 10 章的 channel 机制会细讲）。思考内容对用户不必展示，更重要的是——它不该占着 KV cache，否则接下来每一步 decode 都要连着这段思考一起读，白白付带宽（第 2 节的账）。
+最后一个应用，把前面的机制串起来。有些模型会先"想"再答，把思考过程也吐出来（第 10 章的 channel 机制会细讲）。思考内容对用户不必展示，也不该占着 KV cache，否则接下来每一步 decode 都要连着这段思考一起读，白白付带宽（第 2 节的账）。
 
-LiteRT-LM 的处理是：把思考这段 channel 内容从 KV cache 里"择"出去。做法正是回退——退到思考开始前的那个位置，丢掉这段的 KV cache。前面搭的 `RewindToCheckpoint` 到这里派上了用场：一个为"回退"造的机制，顺手也解决了"别让思考污染上下文"的问题。
+LiteRT-LM 的处理是：把思考这段 channel 内容从 KV cache 里"择"出去。做法正是回退——退到思考开始前的那个位置，丢掉这段的 KV cache。看 `RewindToCheckpoint` 是怎么退的（`runtime/core/session_advanced.cc:467 @ v0.13.1`）：
+
+```cpp
+int target_step = it->second.step;    // (1)
+session_state_ = it->second.state;
+absl::erase_if(checkpoint_map_, [target_step](const auto& pair) {   // (2)
+  return pair.second.step > target_step;
+});
+// ...
+return execution_manager_lock->SetCurrentStep(*session_info_, target_step);   // (3)
+```
+
+回退没有拷贝、没有删除任何 KV 字节。它做的是 (3)：把游标 `current_step` 调回 `target_step`，也就是上一节 `RuntimeState` 里那个整数。`SaveCheckpoint`（`:455`）存的也不过是 `{current_step, session_state_}` 这一对（`CheckpointInfo`，`session_advanced.h:257-260`），一个步数加一份会话状态引用，几十字节。之后继续 prefill 时，新 token 从 `target_step` 这个位置往后写，直接覆盖掉原来那段思考占的 KV 槽位——旧字节没被主动清除，而是被下一轮写入盖过。(2) 顺手把 `target_step` 之后的所有检查点从 map 里抹掉，让检查点集合始终是当前时间线的一条前缀，避免退回后残留一个指向"未来"的悬空标记。
+
+一个只在 `RuntimeState` 上加减整数、连内存都不释放的回退，就顺手解决了"别让思考污染上下文"的问题。代价与克隆恰成对照：`Clone` 要深拷几百 MiB（上一节那个循环），`RewindToCheckpoint` 只动一个 `int`。
 
 ## 小结
 
@@ -83,8 +171,10 @@ KV cache 是"用内存换计算"的经典权衡：它省掉了重复的注意力
 
 ## 参考
 
-- KV cache 接口：`runtime/executor/kv_cache_interface.h @ v0.13.1`（`KVCacheInterface`:28；`Serialize`:39；`Load`:42；`SelectAndCopyFrom`:50；`BroadcastAndCopyFrom`:58；`DeepCopy`:61）。
-- 双缓冲：`runtime/executor/llm_litert_compiled_model_executor.h @ v0.13.1`（注释:327；`kv_cache_buffers_1_/2_`:329-330；读写指针:331-333）。
-- 会话状态：`runtime/engine/engine.h @ v0.13.1`（`Clone`:245；`CloneAsync`:263；`SaveCheckpoint`:270）；`runtime/executor/llm_executor_io_types.h @ v0.13.1`（`RuntimeState`:78；`LlmContext`:92）。
+- KV cache 接口：`runtime/executor/kv_cache_interface.h @ v0.13.1`（`KVCacheInterface`:28；`Serialize`:39；`Load`:42；`SelectAndCopyFrom`:50；`BroadcastAndCopyFrom`:58；`DeepCopy`:61，"expensive operation"注释:60）；具体实现 `LitertKVCache::DeepCopy`:`runtime/executor/litert/kv_cache.cc:380 @ v0.13.1`。
+- 双缓冲：`runtime/executor/llm_litert_compiled_model_executor.h @ v0.13.1`（注释:327-328；`kv_cache_buffers_1_/2_`:329-330；读写指针:331-333；构造初始化:199-200）；指针交换 `runtime/executor/llm_litert_compiled_model_executor.cc @ v0.13.1`（prefill `std::swap`:738；decode `std::swap`:947；单缓冲初始化:1960-1961）。
+- 克隆：`runtime/core/session_advanced.cc @ v0.13.1`（`Clone`:389；`CloneAsyncLocked`:412）；执行器侧 `CloneContext`:`llm_litert_compiled_model_executor.cc:1288 @ v0.13.1`；`CloneKVCacheBuffers`:1243。
+- 检查点与回退：`runtime/core/session_advanced.cc @ v0.13.1`（`SaveCheckpoint`:455；`RewindToCheckpoint`:467）；`CheckpointInfo` 结构:`session_advanced.h:257-260 @ v0.13.1`。
+- 会话状态：`runtime/engine/engine.h @ v0.13.1`（`Clone`:245，用法示例注释:238；`CloneAsync`:263；`SaveCheckpoint`:270；`RewindToCheckpoint`:277）；`runtime/executor/llm_executor_io_types.h @ v0.13.1`（`RuntimeState`:78，"不含 KVCache 状态"注释:75-76；`LlmContext`:92）。
 
 <!-- 实验（--max-num-tokens 扫描解释 #2568、Clone 分叉、get_token_count 增长）数字待基准 D 回填〔基准 D〕。KV cache 公式为示例量级；具体模型 L/H_kv/D 待第 7 章 litertlm_print 读出后可补精确值。图 6-2(增长)、图 6-3(状态分叉) 与表 6-1(内存账) 规格见 notes.md，本轮先出签名图 6-1(双缓冲)。 -->

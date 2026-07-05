@@ -65,7 +65,11 @@ figcaption { color: var(--fig-text-dim, #8b949e); font-size: 0.9em; margin-top: 
     background: #fff !important;
     color: #1f2328 !important;
   }
-  @page { margin: 18mm 16mm; }
+  /* A4 纸张；底边距留 22mm 供后处理盖「章名 · 页码」页脚 */
+  @page { size: A4; margin: 16mm 17mm 22mm; }
+  /* 代码块防长行溢出被裁：略缩字号 + 允许长行回绕（保留缩进语义） */
+  pre, pre code { font-size: 12px; line-height: 1.5; }
+  pre code { white-space: pre-wrap; overflow-wrap: anywhere; }
   /* 配图在 PDF 里锁定浅色，不受系统深色模式影响 */
   :root {
     --fig-bg:#ffffff; --fig-surface:#f6f8fa; --fig-surface-2:#eef1f5;
