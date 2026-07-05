@@ -156,12 +156,12 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 「渲染」由谁执行值得专门交代，因为它跨了一次语言边界。`PromptTemplate::Apply` 底层调用的不是 C++ 实现的 Jinja，而是 Rust 库 MiniJinja，经生成的 FFI 头接入（`runtime/components/prompt_template.cc:26` 的 `#include "runtime/components/rust/minijinja_template.rs.h"`）。MiniJinja 是 Jinja2 的 Rust 重实现，但与 Python 版并非完全兼容：它不支持在模板里调用任意 Python 方法，而 HuggingFace 模型的 `tokenizer_config.json` 里的聊天模板恰恰常写 `s.startswith("foo")` 这类 Python 习语。LiteRT-LM 的办法是渲染前先用一组 RE2 正则把模板改写成 MiniJinja 认识的语法（`EditTemplateForMinijinja`，`prompt_template.cc:40`）：
 
 ```cpp
-  RE2::GlobalReplace(&modified_template, R"regex(\.startswith\((.*?)\))regex",
+  RE2::GlobalReplace(&modified_template, R"regex(\.startswith\\((.*?)\\))regex",
                      R"( is startingwith \1)");                        // (1)
-  RE2::GlobalReplace(&modified_template, R"regex(\.endswith\((.*?)\))regex",
+  RE2::GlobalReplace(&modified_template, R"regex(\.endswith\\((.*?)\\))regex",
                      R"( is endingwith \1)");
   // ...
-  RE2::GlobalReplace(&modified_template, R"regex(\.split\((.*?)\)\[0\])regex",
+  RE2::GlobalReplace(&modified_template, R"regex(\.split\\((.*?)\\)\[0\])regex",
                      R"( | split(\1) | first)");                       // (2)
   // ...
   RE2::GlobalReplace(&modified_template, R"regex({% generation %})regex", ""); // (3)
