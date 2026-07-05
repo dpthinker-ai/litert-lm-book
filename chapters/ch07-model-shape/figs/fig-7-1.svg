@@ -1,0 +1,49 @@
+<svg viewBox="0 0 640 340" width="640" height="340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label=".litertlm 文件结构">
+  <style>
+    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .hdr { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+    .sec { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+    .big { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+    .t  { fill: var(--fig-text, #1f2328); }
+    .ts { fill: var(--fig-text-soft, #57606a); }
+    .accent { fill: var(--fig-accent, #0b57d0); }
+    .edge { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.2; fill: none; stroke-dasharray: 3 3; }
+  </style>
+
+  <text class="t" x="320" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">一个 .litertlm 文件：头 + 分段</text>
+
+  <!-- 文件竖条 -->
+  <g>
+    <rect class="hdr" x="150" y="52" width="220" height="46" rx="5"/>
+    <text class="accent" x="260" y="72" text-anchor="middle" style="font-size:12px;font-weight:700">FlatBuffer 头</text>
+    <text class="ts" x="260" y="89" text-anchor="middle" style="font-size:10px">类型化键值对元数据 (KeyValuePair)</text>
+
+    <rect class="big" x="150" y="104" width="220" height="54" rx="5"/>
+    <text class="t" x="260" y="126" text-anchor="middle" style="font-size:12px;font-weight:700">段：权重</text>
+    <text class="ts" x="260" y="143" text-anchor="middle" style="font-size:10px">int4 量化 · 体积/带宽 ÷4</text>
+
+    <rect class="sec" x="150" y="164" width="220" height="34" rx="5"/>
+    <text class="t" x="260" y="185" text-anchor="middle" style="font-size:11px">段：tokenizer</text>
+
+    <rect class="sec" x="150" y="204" width="220" height="34" rx="5"/>
+    <text class="t" x="260" y="225" text-anchor="middle" style="font-size:11px">段：聊天模板</text>
+
+    <rect class="sec" x="150" y="244" width="220" height="34" rx="5"/>
+    <text class="t" x="260" y="265" text-anchor="middle" style="font-size:11px">段：能力声明（如推测解码，第 9 章）</text>
+  </g>
+
+  <!-- 段存储方式注解 -->
+  <text class="ts" x="392" y="176" style="font-size:10.5px;font-weight:700">段的存储方式：</text>
+  <text class="ts" x="392" y="194" style="font-size:10px">· FileBacked（文件字节）</text>
+  <text class="ts" x="392" y="210" style="font-size:10px">· ProtoBuf（protobuf）</text>
+  <text class="ts" x="392" y="226" style="font-size:10px">· Zlib（压缩流）</text>
+  <path class="edge" d="M388,200 H372"/>
+
+  <!-- mmap 注解 -->
+  <text class="accent" x="60" y="160" text-anchor="middle" style="font-size:11px;font-weight:700">mmap</text>
+  <text class="ts" x="60" y="176" text-anchor="middle" style="font-size:10px">按需分页</text>
+  <text class="ts" x="60" y="190" text-anchor="middle" style="font-size:10px">用哪段读哪段</text>
+  <path class="edge" d="M92,150 H148"/>
+
+  <text class="ts" x="320" y="308" text-anchor="middle" style="font-size:11px">单文件分发 · 可 mmap 按需加载 · 各段可并行读（parallel_file_section_loading，默认开）</text>
+</svg>
