@@ -358,7 +358,7 @@ for (int i = 0; i < num_output_candidates_; ++i) {
 
 一个 decode step：前向出 logits →（可选）处理 → 采样出 token → 转文本流式输出 → 判定停止。其中有三处设计：`DecodeAndSample` 里那个 `if (sampler_)` 分出内部/外部两条采样路径（快与灵活的取舍，出口统一成同一种 token 向量）、`ShouldStop` 用四个 `else if` 把停止逻辑单独收拢成纯函数、以及 `Run` 里 `bpe_partial_token_ids_` 和 `pending_stop_tokens_` 两个队列串联起来的缓冲——前者保证吐出的是完整字符，后者保证不含半截停止词，共同把"逐 token"翻译成"逐可显示单元"。
 
-第三部（第 6-9 章）转入性能优化：先算清楚 KV cache 到底占了多少，以及那条 25 tokens/s 的上限，实测为什么还够不着。
+第三篇（第 6-9 章）转入性能优化：先算清楚 KV cache 到底占了多少，以及那条 25 tokens/s 的上限，实测为什么还够不着。
 
 ---
 

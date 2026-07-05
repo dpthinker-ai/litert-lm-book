@@ -103,7 +103,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
   RETURN_IF_ERROR(engine->WaitUntilDone(absl::Minutes(10)));
 ```
 
-三步完成一次推理：(1) 把 `--backend` 字符串解析成 `Backend` 枚举，再交给工厂。CPU/GPU/NPU 的执行器实现从这里分岔，对应第二条设计原则「可插拔后端」（第 8 章）；本章末尾会走读这条分发路径的具体代码。(2) 这个演示程序默认打开 benchmark，因此每跑一次都会输出一份性能指标，附录 D 的数据即由此采集。(3) `SendMessageAsync` 是非阻塞调用，prefill 与 decode 在后台线程执行，主线程靠 `WaitUntilDone` 等待；文本通过 `CreateMessageCallback` 分段回调，`message->is_null()` 时输出一个换行表示结束。本书的主线是推理流水线——一段输入从 prefill 吞入、经 decode 逐 token 产出的完整链路，起点就是这一句 `SendMessageAsync`，第二部会顺着它往下钻。
+三步完成一次推理：(1) 把 `--backend` 字符串解析成 `Backend` 枚举，再交给工厂。CPU/GPU/NPU 的执行器实现从这里分岔，对应第二条设计原则「可插拔后端」（第 8 章）；本章末尾会走读这条分发路径的具体代码。(2) 这个演示程序默认打开 benchmark，因此每跑一次都会输出一份性能指标，附录 D 的数据即由此采集。(3) `SendMessageAsync` 是非阻塞调用，prefill 与 decode 在后台线程执行，主线程靠 `WaitUntilDone` 等待；文本通过 `CreateMessageCallback` 分段回调，`message->is_null()` 时输出一个换行表示结束。本书的主线是推理流水线——一段输入从 prefill 吞入、经 decode 逐 token 产出的完整链路，起点就是这一句 `SendMessageAsync`，第二篇会顺着它往下钻。
 
 ## 读懂第一批数字
 
@@ -386,7 +386,7 @@ Section 2:
 
 ## 小结
 
-你现在有了三样东西：一个能在本机跑起来的模型、一副读性能数字的 Roofline 眼镜、一张五层架构地图。接下来第二部，我们钻进地图的第二、三层，跟着一个 token 走完它从被打进去到被吐出来的一生。
+你现在有了三样东西：一个能在本机跑起来的模型、一副读性能数字的 Roofline 眼镜、一张五层架构地图。接下来第二篇，我们钻进地图的第二、三层，跟着一个 token 走完它从被打进去到被吐出来的一生。
 
 ---
 
