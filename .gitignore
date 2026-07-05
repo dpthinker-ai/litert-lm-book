@@ -1,5 +1,7 @@
 # mdBook 构建产物
 book/
+# PDF 导出产物（可由 book/print.html 再生）
+dist/
 # 模型与大文件（绝不入库）
 *.litertlm
 *.tflite
