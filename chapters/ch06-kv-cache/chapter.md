@@ -40,9 +40,9 @@ LiteRT-LM 的解法不玄乎：**备两套缓冲**（`kv_cache_buffers_1_` 和 `
 
 <figure>
 
-{{#include figs/fig-6-2.svg}}
+{{#include figs/fig-6-1.svg}}
 
-<figcaption>图 6-2　KV cache 双缓冲。每步读旧缓冲、写新缓冲，然后交换两个指针——用一次指针交换避开了"同缓冲读写"的限制，也避开了数据拷贝。</figcaption>
+<figcaption>图 6-1　KV cache 双缓冲。每步读旧缓冲、写新缓冲，然后交换两个指针——用一次指针交换避开了"同缓冲读写"的限制，也避开了数据拷贝。</figcaption>
 </figure>
 
 这个手艺没有高深算法，但它是端侧工程的典型样子：一个来自硬件的具体约束（GPU 不能同缓冲读写），一个来自成本的具体考量（不想拷贝几百 MiB），凑出一个朴素解法（两套缓冲 + 指针交换）。全书这类"约束逼出手艺"的例子会一再出现。
@@ -89,4 +89,4 @@ KV cache 是"用内存换计算"的经典权衡：它省掉了重复的注意力
 - 双缓冲：`runtime/executor/llm_litert_compiled_model_executor.h @ v0.13.1`（注释:327；`kv_cache_buffers_1_/2_`:329-330；读写指针:331-333）。
 - 会话状态：`runtime/engine/engine.h @ v0.13.1`（`Clone`:245；`CloneAsync`:263；`SaveCheckpoint`:270）；`runtime/executor/llm_executor_io_types.h @ v0.13.1`（`RuntimeState`:78；`LlmContext`:92）。
 
-<!-- 实验（--max-num-tokens 扫描解释 #2568、Clone 分叉、get_token_count 增长）数字待基准 D 回填〔基准 D〕。KV cache 公式为示例量级；具体模型 L/H_kv/D 待第 7 章 litertlm_print 读出后可补精确值。图 6-1(增长)、图 6-3(状态分叉) 与表 6-1(内存账) 规格见 notes.md，本轮先出签名图 6-2。 -->
+<!-- 实验（--max-num-tokens 扫描解释 #2568、Clone 分叉、get_token_count 增长）数字待基准 D 回填〔基准 D〕。KV cache 公式为示例量级；具体模型 L/H_kv/D 待第 7 章 litertlm_print 读出后可补精确值。图 6-2(增长)、图 6-3(状态分叉) 与表 6-1(内存账) 规格见 notes.md，本轮先出签名图 6-1(双缓冲)。 -->
