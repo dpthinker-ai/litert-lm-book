@@ -347,7 +347,7 @@ LoRA 的价值恰好呼应本章主题：它是"变体"的最省成本形态—�
 
 每个分支用 `value_as_<类型>()` 取出对应的 table 再读 `value()`。前文说 schema 把元数据的类型「钉死在编译期」，这个 switch 是它在读取侧的镜像：能打印的类型就是 union 里声明过的那几种，多一种都编译不出来。
 
-第二件事是段目录遍历（`litertlm_print.cc:155`）：对每个 `SectionObject` 打印它的键值项、`begin_offset` 与 `end_offset`（本章 16 KiB 对齐一节里那对偏移）、段类型名。其中有一个特判：段类型是 `LlmMetadataProto` 时，不满足于打印偏移，而是当场调 `ReadLlmMetadataFromSection` 把这段解析成 proto、以 `DebugString` 逐行打出（`:181`）。所以第 2 章看到的那份 dump 里，别的段只有一行类型加一对偏移，唯独元数据段展开成了几十行的 start_token、stop_tokens、聊天模板：不是格式对它特殊，是打印工具对它多走了一步解析。
+第二件事是段目录遍历（`litertlm_print.cc:156`）：对每个 `SectionObject` 打印它的键值项、`begin_offset` 与 `end_offset`（本章 16 KiB 对齐一节里那对偏移）、段类型名。其中有一个特判：段类型是 `LlmMetadataProto` 时，不满足于打印偏移，而是当场调 `ReadLlmMetadataFromSection` 把这段解析成 proto、以 `DebugString` 逐行打出（`:181`）。所以第 2 章看到的那份 dump 里，别的段只有一行类型加一对偏移，唯独元数据段展开成了几十行的 start_token、stop_tokens、聊天模板：不是格式对它特殊，是打印工具对它多走了一步解析。
 
 读懂这个工具的意义在于验证：拿到任何一个 `.litertlm` 文件，`litertlm_print` 的每一行输出现在都能对回本章的某一节——键值对回到 `VData` union，偏移回到 16 KiB 对齐，段类型回到 `AnySectionDataType` 枚举，元数据段回到 proto。格式的每一项知识由此都有了可动手核对的出口。
 

@@ -8,7 +8,7 @@
 | prefill | 预填充 | 1 | 把整段提示词一次性并行喂进模型、批量填 KV cache 的阶段；算力受限 |
 | decode | 解码 | 1 | 逐个 token 自回归生成的阶段，每步读一遍全部权重；带宽受限 |
 | token | — | 1 | 模型处理的基本单位；一段文本经 tokenizer 切成一串 token id |
-| 三类物理约束 | — | 1 | 端侧 LLM 的三重约束：内存容量、内存带宽、功耗与异构（本书早期版本曾称"三堵墙"） |
+| 三类物理约束 | — | 1 | 端侧 LLM 的三重约束：内存容量、内存带宽、功耗与异构（正文偶以"三堵墙"代称） |
 | 内存容量约束 | — | 1 | 权重 + KV cache + 激活 + 系统占用必须放得进物理内存 |
 | 内存带宽约束 | — | 1 | decode 每 token 要读取一遍全部权重，吞吐由内存带宽决定 |
 | quantization | 量化 | 1 | 把权重降到低比特（如 int4=0.5 字节/参数）以压体积、提带宽利用率 |
@@ -27,6 +27,7 @@
 | sampler | 采样器 | 5 | 从 logits 挑下一个 token 的策略：greedy / temperature / top-k / top-p |
 | ShouldStop | — | 5 | 集中判定 decode 何时停（停止 token、超长、取消）的纯函数 |
 | KV cache | 键值缓存 | 6 | 缓存历史 token 的注意力 Key/Value，用内存换掉重复计算 |
+| GQA | 分组查询注意力 | 6 | grouped-query attention，多个查询头共享少量 KV 头，成倍缩小 KV cache |
 | 双缓冲 | — | 6 | 备两套 KV 缓冲、读旧写新再交换指针，避开 GPU 同缓冲读写限制 |
 | 状态即对象 | — | 6 | 把 KV cache + step + 配置打包成可搬运对象，支撑克隆/检查点/回退 |
 | LlmContext | — | 6 | 承载会话可迁移状态（KV cache、current_step、配置）的容器 |

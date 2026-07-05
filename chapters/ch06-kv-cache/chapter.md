@@ -22,7 +22,7 @@ $$ \text{KV 字节} = 2 \times L \times H_{kv} \times D \times S \times b $$
 
 $$ 2 \times 30 \times 1024 \times 2 = 122880 \text{ 字节} \approx 120 \text{ KiB/token} $$
 
-到 4096 个 token 的上下文，就是约 480 MiB。这里的 L、H_kv、D 是便于复算的示例量级；真实数字可以从模型文件里读出。本书对基准模型 Gemma 4 E4B 做了实剖（方法与完整数据见附录 D）：decode signature 的 KV 输入共 48 个张量，即 24 层各一对 K/V；其中 20 层形状为 `[1, 2, 32003, 256]`（H_kv = 2、D = 256），4 层为 `[1, 2, 32003, 512]`；**数据类型全部是 INT8**，即 b = 1。代入公式：每 token 2 × 2 × (20 × 256 + 4 × 512) × 1 = 28672 字节 = 28 KiB，4096 上下文合计约 117 MB。比示例小一个量级的原因有两个都值得记住：真实模型的 KV 投影维度比示例小（GQA 只留 2 个 KV 头），以及 KV cache 被量化到了 int8。后者是量化的第三个独立维度——第 7 章讲了权重量化与激活精度，KV cache 的存储精度是又一个可以单独选择的旋钮，它直接把本节的内存账和下一节的带宽账都除以二。
+到 4096 个 token 的上下文，就是约 480 MiB。这里的 L、H_kv、D 是便于复算的示例量级；真实数字可以从模型文件里读出。本书对基准模型 Gemma 4 E4B 做了实剖（方法与完整数据见附录 D）：decode signature 的 KV 输入共 48 个张量，即 24 层各一对 K/V；其中 20 层形状为 `[1, 2, 32003, 256]`（H_kv = 2、D = 256），4 层为 `[1, 2, 32003, 512]`；**数据类型全部是 INT8**，即 b = 1。代入公式：每 token 2 × 2 × (20 × 256 + 4 × 512) × 1 = 28672 字节 = 28 KiB，4096 上下文合计约 117 MB。比示例小一个量级的原因有两个都值得记住：真实模型的 KV 投影维度比示例小（GQA，grouped-query attention，分组查询注意力：多个查询头共享少量 KV 头，此模型只留 2 个），以及 KV cache 被量化到了 int8。后者是量化的第三个独立维度——第 7 章讲了权重量化与激活精度，KV cache 的存储精度是又一个可以单独选择的旋钮，它直接把本节的内存账和下一节的带宽账都除以二。
 
 <div class="aside-compare">
 
@@ -86,7 +86,7 @@ context_size = is_dynamic_kv_cache ? 1 : dims[3];             // (2)
 
 (1) 用 key 张量有没有动态维度（`k_dynamic_dim.has_value()`）判定是不是动态 KV cache。(2) 是关键分叉：动态时 `context_size` 记为 1，固定时取 attention mask 的最后一维 `dims[3]`，也就是完整的 KV Length。注释里写明 mask 的形状是 `[1, 1, Sequence, KV Length]`；代码宁可从 mask 推断上下文宽度，因为 key、value 张量的内部布局各不相同、不能直接读出这个宽度。
 
-固定形状下 `context_size` 等于整个预留宽度，这一句就把上一段的带宽账坐实了：注意力算子看到的序列宽度是 S，不是当前已填的长度。屏蔽由 attention mask 完成——`FillAttentionMask` 每个 decode step 只把当前步之前的合法位置置为可见（`runtime/executor/litert_compiled_model_executor_utils.cc:362-366`）：
+固定形状下 `context_size` 等于整个预留宽度，这一句就把上一段的带宽账坐实了：注意力算子看到的序列宽度是 S，不是当前已填的长度。屏蔽由 attention mask 完成——`FillAttentionMask` 每个 decode step 只把当前步之前的合法位置置为可见（`runtime/executor/litert_compiled_model_executor_utils.cc:363-366`）：
 
 ```cpp
 for (int b = 0; b < batch_size; ++b) {

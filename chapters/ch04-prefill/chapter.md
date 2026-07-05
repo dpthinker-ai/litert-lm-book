@@ -10,7 +10,7 @@
 
 这一差距在本书基准上是实测可见的。附录 D 的主基准（Gemma 4 E4B，公开权重，`litert-lm benchmark` 中位数）里，gpu 后端上下文 1024 时 prefill 吞吐 999.1 tokens/s、decode 仅 50.6 tokens/s，相差约 20 倍；cpu 后端上下文 1024 时 prefill 259.2 tokens/s、decode 24.7 tokens/s，相差约 10 倍〔基准 D〕。同一模型、同一后端，两个数字差一到两个数量级，因为一个吃算力、一个吃带宽。本章从第 2 层的编排入口（`Tasks::Prefill`）下探到第 3 层的 executor，把这条路径上的每一处开销摊开。
 
-编排入口很短。它先取模型能接受的最大 token 数，做一次越界校验，再把整段 token 交给 executor（`runtime/core/tasks.cc:412`）：
+编排入口很短。它先取模型能接受的最大 token 数，做一次越界校验，再把整段 token 交给 executor（`runtime/core/tasks.cc:413`）：
 
 ```cpp
 absl::StatusOr<Responses> Prefill(

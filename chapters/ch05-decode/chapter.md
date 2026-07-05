@@ -348,15 +348,15 @@ for (int i = 0; i < num_output_candidates_; ++i) {
 
 顺序是关键。(1) 每一步先把上一步攒下的半截 token（`bpe_partial_token_ids_`）跟这一步的新 token 拼起来，再一起转文本：转文本用的从来不是孤立的一个 token，而是"可能补全了的一串"。(2) `IsIncompleteBpeSequence` 判断拼出来的这串是不是仍然凑不成一个完整字符（比如一个 UTF-8 多字节序列缺了尾巴）；(3) 如果还不完整，就把这串整个存回 `bpe_partial_token_ids_[i]`，这一步不输出任何文本，等下一步再拼。(4) 一旦凑成完整字符，先清空暂存，再进入前面那段停止词判定——两层缓冲是串联的：先过 BPE 补全这关，够成完整字符了，才轮到停止词那关判定要不要暂存。
 
-两个队列各管一件事：`bpe_partial_token_ids_` 保证吐出去的是完整字符，`pending_stop_tokens_` 保证吐出去的不含半截停止词。它们共用 `Run` 里那个 `for (int i ...)` 逐候选走一遍，互不干扰。
+两个队列各管一件事：`bpe_partial_token_ids_` 保证输出的是完整字符，`pending_stop_tokens_` 保证输出的不含半截停止词。它们共用 `Run` 里那个 `for (int i ...)` 逐候选走一遍，互不干扰。
 
 这两处边界（停止词暂存、BPE 半字暂存）共同的模式是：**decode 是逐 token 的，但用户要的是完整、正确的文本单元，中间需要一层缓冲把"逐 token"翻译成"逐可显示单元"。** 看懂这层缓冲，你就看懂了流式生成为什么不是"算一个吐一个"这么简单。
 
 ## 小结
 
-一次 decode 心跳：前向出 logits → （可选）加工 → 采样出 token → 转文本流式吐出 → 判断停止。其中有三处设计：`DecodeAndSample` 里那个 `if (sampler_)` 分出内部/外部两条采样路径（快与灵活的取舍，出口统一成同一种 token 向量）、`ShouldStop` 用四个 `else if` 把停止逻辑单独收拢成纯函数、以及 `Run` 里 `bpe_partial_token_ids_` 和 `pending_stop_tokens_` 两个队列串联起来的缓冲——前者保证吐出的是完整字符，后者保证不含半截停止词，共同把"逐 token"翻译成"逐可显示单元"。
+一个 decode step：前向出 logits →（可选）处理 → 采样出 token → 转文本流式输出 → 判定停止。其中有三处设计：`DecodeAndSample` 里那个 `if (sampler_)` 分出内部/外部两条采样路径（快与灵活的取舍，出口统一成同一种 token 向量）、`ShouldStop` 用四个 `else if` 把停止逻辑单独收拢成纯函数、以及 `Run` 里 `bpe_partial_token_ids_` 和 `pending_stop_tokens_` 两个队列串联起来的缓冲——前者保证吐出的是完整字符，后者保证不含半截停止词，共同把"逐 token"翻译成"逐可显示单元"。
 
-下一部（第 6-9 章），我们回头凿墙——先算清楚 KV cache 到底占了多少，以及那条 25 tokens/s 的上限，实测为什么还够不着。
+第三部（第 6-9 章）转入性能优化：先算清楚 KV cache 到底占了多少，以及那条 25 tokens/s 的上限，实测为什么还够不着。
 
 ---
 

@@ -137,7 +137,7 @@ public actor Engine {                         // (1)
 
 上一节把四种 FFI 机制并排讲，隐含一个整齐的叙述：各语言都经由 `c/engine.h` 那层 C ABI 抵达核心。图 11-1 也是这么画的。但 Kotlin 侧其实是个例外，它没走 C ABI。
 
-翻开 JNI 的原生实现，第一处线索是它 include 的头文件。`kotlin/.../jni/litertlm.cc:37`：
+翻开 JNI 的原生实现，第一处线索是它 include 的头文件。`kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:37`（下文简写 `litertlm.cc`）：
 
 ```cpp
 #include "runtime/engine/engine.h"          // (1)
@@ -146,7 +146,7 @@ public actor Engine {                         // (1)
 #include "runtime/engine/io_types.h"
 ```
 
-(1)、(2) 直接包含的是 `runtime/engine/` 下的 C++ 头，而不是 `c/engine.h`。也就是说，JNI 这层胶水看得见完整的 C++ 类型 `Engine`、`Engine::Session`、`EngineFactory`，它不需要经过不透明句柄的中转。再看句柄怎么造出来，`nativeCreateEngine` 的收尾一行，`kotlin/.../jni/litertlm.cc:542`：
+(1)、(2) 直接包含的是 `runtime/engine/` 下的 C++ 头，而不是 `c/engine.h`。也就是说，JNI 这层胶水看得见完整的 C++ 类型 `Engine`、`Engine::Session`、`EngineFactory`，它不需要经过不透明句柄的中转。再看句柄怎么造出来，`nativeCreateEngine` 的收尾一行，`litertlm.cc:542`：
 
 ```cpp
 auto engine = EngineFactory::CreateDefault(*settings);
@@ -159,7 +159,7 @@ if (!engine.ok()) {
 return reinterpret_cast<jlong>(engine->release());  // (1)
 ```
 
-(1) 是关键。`EngineFactory::CreateDefault` 返回 `absl::StatusOr<std::unique_ptr<Engine>>`，这里对成功值调 `engine->release()`：从 `unique_ptr` 手里夺走裸指针 `Engine*`、把所有权移出智能指针，再 `reinterpret_cast<jlong>` 把这个裸指针原样重解释成一个 64 位整数返回给 Kotlin。上一节说的「Kotlin 侧那个 `Long` 是一个 64 位整数」，到这里落到实处：它就是一个 `Engine*` 的位模式。释放侧对称，`kotlin/.../jni/litertlm.cc:615`：
+(1) 是关键。`EngineFactory::CreateDefault` 返回 `absl::StatusOr<std::unique_ptr<Engine>>`，这里对成功值调 `engine->release()`：从 `unique_ptr` 手里夺走裸指针 `Engine*`、把所有权移出智能指针，再 `reinterpret_cast<jlong>` 把这个裸指针原样重解释成一个 64 位整数返回给 Kotlin。上一节说的「Kotlin 侧那个 `Long` 是一个 64 位整数」，到这里落到实处：它就是一个 `Engine*` 的位模式。释放侧对称，`litertlm.cc:615`：
 
 ```cpp
 JNI_METHOD(nativeDeleteEngine)(JNIEnv* env, jclass thiz, jlong engine_pointer) {
@@ -343,7 +343,7 @@ struct LiteRtLmConversation {
 
 (1) 把渲染结果 move 进句柄的成员，(2) 返回该成员的 C 串指针。于是返回的 `const char*` 生命周期又一次绑在句柄上，绑定层无需 per-call free。注意 (1) 每次渲染都覆盖上一次的结果，成员名 `last_rendered_message` 也点明了这点：只保留最近一次。绑定层若要留住旧结果，得自己在下次渲染前拷走。这是一种「把无主返回值寄养到句柄上」的通用手法，避免了在 C ABI 里再引入一个专门的字符串释放函数。
 
-再看编码。前面 Python 侧的 `c_string_p` 自动 `encode("utf-8")` 只是入方向的一半，出方向、尤其在 JNI 里，藏着一个更隐蔽的坑。JNI 有个 `NewStringUTF` 函数能直接把 C 串变 Java `String`，但它只接受所谓 modified UTF-8：这套编码对 emoji、BMP 之外的字符、内嵌 null 的处理都与标准 UTF-8 不同，直接喂标准 UTF-8 串给它，遇到这些字符就会得到乱码或崩溃。LiteRT-LM 的模型输出显然可能带 emoji，所以 JNI 侧绕开了 `NewStringUTF`，`kotlin/.../jni/litertlm.cc:104`：
+再看编码。前面 Python 侧的 `c_string_p` 自动 `encode("utf-8")` 只是入方向的一半，出方向、尤其在 JNI 里，藏着一个更隐蔽的坑。JNI 有个 `NewStringUTF` 函数能直接把 C 串变 Java `String`，但它只接受所谓 modified UTF-8：这套编码对 emoji、BMP 之外的字符、内嵌 null 的处理都与标准 UTF-8 不同，直接喂标准 UTF-8 串给它，遇到这些字符就会得到乱码或崩溃。LiteRT-LM 的模型输出显然可能带 emoji，所以 JNI 侧绕开了 `NewStringUTF`，`litertlm.cc:104`：
 
 ```cpp
 jstring NewStringStandardUTF(JNIEnv* env, std::string standard_utf8_str) {

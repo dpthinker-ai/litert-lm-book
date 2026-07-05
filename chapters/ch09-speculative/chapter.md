@@ -10,7 +10,7 @@
 
 推测解码的回答是能，前提是先做一次预测。用一个又小又快的模型先草拟接下来的若干 token，再让基础模型（base 模型）一次前向把这几个 token 一并验证。预测正确的部分直接采用，预测错误的位置用基础模型算出的正确 token 回退兜底。关键在于验证那几个草稿 token 只花基础模型一次前向，而不是逐个前向。开销最高的那次前向，被摊到了多个 token 上。
 
-推测解码有几种形态。草稿模型可以是完全独立的另一个模型，也可以是和主模型共享主干的多头结构，即 MTP（Multi-Token Prediction，多 token 预测），Gemma 4 走的就是后者。在 LiteRT-LM 的运行时里，drafter 装载为一个独立的小模型（成员 `mtp_drafter_model_`），验证则复用基础模型上一个专门的 `"verify"` signature（常量定义 `runtime/executor/llm_litert_mtp_drafter.cc:62`，取用见 `base_model.FindSignature(kVerifySignatureRunner)` 于 `:227`）。所以无论训练时共不共享主干，运行时看到的都是同一套结构：小模型草拟、基础模型验证。
+推测解码有几种形态。草稿模型可以是完全独立的另一个模型，也可以是和主模型共享主干的多头结构，即 MTP（Multi-Token Prediction，多 token 预测），Gemma 4 走的就是后者。在 LiteRT-LM 的运行时里，drafter 装载为一个独立的小模型（成员 `mtp_drafter_model_`），验证则复用基础模型上一个专门的 `"verify"` signature（常量定义 `runtime/executor/llm_litert_mtp_drafter.cc:63`，取用见 `base_model.FindSignature(kVerifySignatureRunner)` 于 `:227`）。所以无论训练时共不共享主干，运行时看到的都是同一套结构：小模型草拟、基础模型验证。
 
 ## 机制：草拟，然后一次验一串
 

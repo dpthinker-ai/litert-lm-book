@@ -204,9 +204,9 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 3. **decode 吞吐低**：先用第 1 章的公式算纯权重上限（带宽 ÷ 权重字节），实测贴近上限说明已被内存带宽约束住，加算力无用；离上限还远则查采样、约束解码等每步的额外开销（第 5、10 章）。
 4. **decode 随上下文变长而变慢**：KV cache 的带宽占用在增长，见下一节的反解练习与第 6 章的正式对账。
 
-## 一副眼镜：Roofline
+## 一个分析框架：Roofline
 
-有了 prefill/decode 两类指标，就能戴上一副贯穿全书的"眼镜"——Roofline（屋顶线）模型。它一句话讲完：**一段计算的速度，要么被算力顶住，要么被带宽顶住，取决于它每读一字节数据能摊上多少次计算**（这个比值叫算术强度，是体系结构教科书的常识内容）。
+有了 prefill/decode 两类指标，就可以引入贯穿全书的分析框架：Roofline（屋顶线）模型。它一句话讲完：**一段计算的速度，要么被算力顶住，要么被带宽顶住，取决于它每读一字节数据能摊上多少次计算**（这个比值叫算术强度，是体系结构教科书的常识内容）。
 
 - **prefill** 一次处理许多 token，同一批权重被许多 token 共用，算术强度高，落在 Roofline 的"算力受限"区——所以它拼的是 TOPS。
 - **decode** 一次只处理一个 token，把全部权重读进来只为算这一个字，算术强度低到贴地，落在"带宽受限"区——所以它拼的是 GB/s，与算力无关。这正是第 1 章那条 25 tok/s 上限公式的来历。
@@ -245,7 +245,7 @@ Roofline 框架立刻能做一次有内容的练习。附录 D 里，cpu 后端 
 | 9 | 生成中途取消，为什么能立刻停下？ | 4、5 |
 | 10 | 温度、top-k、top-p 各自改变了什么？ | 5 |
 | 11 | 流式输出为什么偶尔"吐半个字"？ | 5 |
-| 12 | 停止词只出现了一半时，吐不吐字？ | 5 |
+| 12 | 停止词只出现了一半时，要不要输出？ | 5 |
 | 13 | KV cache 占多少内存？`--max-num-tokens` 为什么影响速度？ | 6（`LiteRT-LM#2568`） |
 | 14 | 克隆对话做分叉，需要重算公共前缀吗？ | 6 |
 | 15 | int4 量化省的是体积、带宽还是算力？ | 7 |
@@ -333,7 +333,7 @@ class LlmExecutorBase {
 
 ## 一个 .litertlm 里装了什么
 
-地图的最底层是模型文件本身。LiteRT-LM 用一个自定义的单文件格式 `.litertlm`，把权重、tokenizer、元数据、能力声明全打包进去。仓库自带一个解剖工具（`schema/core/litertlm_print.cc`），能把一个模型文件的分段结构打印出来。它的主循环很直白：先读文件头里的版本号和系统元数据，再遍历每个 section，把偏移和数据类型逐段打出来（`schema/core/litertlm_print.cc:155`）：
+地图的最底层是模型文件本身。LiteRT-LM 用一个自定义的单文件格式 `.litertlm`，把权重、tokenizer、元数据、能力声明全打包进去。仓库自带一个解剖工具（`schema/core/litertlm_print.cc`），能把一个模型文件的分段结构打印出来。它的主循环很直白：先读文件头里的版本号和系统元数据，再遍历每个 section，把偏移和数据类型逐段打出来（`schema/core/litertlm_print.cc:156`）：
 
 ```cpp
     for (size_t i = 0; i < section_objects->size(); ++i) {
@@ -415,6 +415,6 @@ Section 2:
 - benchmark 指标定义：`c/engine.h` 的 `litert_lm_benchmark_info_*` 系列（TTFT `:583`、Init `:591`、prefill/decode 吞吐 `:634`/`:643`）；文本输出格式见 `runtime/engine/io_types.cc:473`。
 - 测量语义：`BenchmarkInfo` 类声明 `runtime/engine/io_types.h:420`；turn 计时器 `io_types.cc:307`、吞吐算式 `:434`、TTFT 算式 `:455`；benchmark 强制同步 `runtime/core/tasks.cc:435`；`ShouldStop` 的 benchmark 分支 `:86`（全文见第 5 章）。KV cache 反解练习的数据：附录 D（cpu/gpu，256 与 4096 上下文档）。
 - 五层落到具体文件：接口层 `runtime/engine/engine.h:70`（`SessionInterface`）；编排层 `runtime/core/tasks.cc:413`（`Prefill`）、`:86`（`ShouldStop`）、`:571`（decode 循环）；执行层 `runtime/executor/llm_executor_base.h:40`（`LlmExecutorBase`）。架构分层与设计原则改编自本书伴生的代码地图（附录 B）。
-- `.litertlm` 分段结构与打印工具：`schema/core/litertlm_print.cc:155`；section 数据类型枚举 `schema/core/litertlm_utils.cc:31`；元数据字段 `runtime/proto/llm_metadata.proto`。
+- `.litertlm` 分段结构与打印工具：`schema/core/litertlm_print.cc:156`；section 数据类型枚举 `schema/core/litertlm_utils.cc:31`；元数据字段 `runtime/proto/llm_metadata.proto`。
 
 <!-- 基准数字已回填（附录 D）；表 2-2 已定稿为完整 20 问。 -->
