@@ -10,7 +10,7 @@ build-dir = "book"
 create-missing = false
 
 [output.html]
-default-theme = "rust"
+default-theme = "light"
 preferred-dark-theme = "ayu"
 additional-css = ["assets/book.css"]
 mathjax-support = true
