@@ -30,7 +30,7 @@ int target_width =
 
 (1) 先算允许的总像素上限：`max_num_patches` 个 patch，每个 patch 占 `patch_width × patch_height` 像素。(2) 拿这个上限除以原图像素数、开方，得到一个各向同性的缩放系数 `factor`。这个系数乘在宽高上，缩放后的总面积恰好压到上限，同时保持长宽比不变。(3)(4) 处理网格对齐：缩放后的宽高必须是 `side_mult` 的整数倍，`side_mult` 等于池化核尺寸乘 patch 边长。代码先除以 `side_mult`、向下取整、再乘回去，把宽高对齐到网格。对齐的原因在于下游要按 `patch_width` 均匀切块、再按 `pooling_kernel_size` 做池化，宽高不是这个乘积的整数倍就无法整除切分。函数开头有一句前置检查：`patch_width != patch_height` 直接返回错误，patch 必须为正方形。向下取整可能把某一边压成 0（极端细长的图），代码对此单列了一个分支：把为 0 的那一边设成一个 `side_mult`，另一边按原始长宽比放大且不超过 `max_side_length`。
 
-这里可以当面把 visual token 数算清。给定 `max_num_patches`、`patch_width`、原图尺寸，$\text{target\_height} \times \text{target\_width} / (\text{patch\_width} \times \text{patch\_height})$ 就是这张图切出的 patch 数，也就是它在序列里占用的 visual token 数——序列里要为此预留的 `kSpecialToken` 占位符槽位数量。这个数字并非无关紧要，本节末尾会把它连到 prefill 计算量与 KV cache 占用上，量化「看一张图」的真实代价。
+这里可以当面把 visual token 数算清。给定 `max_num_patches`、`patch_width`、原图尺寸，\(\text{target\_height} \times \text{target\_width} / (\text{patch\_width} \times \text{patch\_height})\) 就是这张图切出的 patch 数，也就是它在序列里占用的 visual token 数——序列里要为此预留的 `kSpecialToken` 占位符槽位数量。这个数字并非无关紧要，本节末尾会把它连到 prefill 计算量与 KV cache 占用上，量化「看一张图」的真实代价。
 
 上面这段只算目标尺寸，真正的重采样发生在另一处。`MaybeResizeImageWithSameAspectRatio`（`runtime/components/preprocessor/stb_image_preprocessor.cc:56`）拿到目标尺寸后，先判断是否需要缩放，再逐张调重采样：
 
@@ -172,7 +172,7 @@ for (int i = 0; i < model.GetNumSignatures(); ++i) {
 
 回到本节开头留下的账。patchify 公式算出的 visual token 数，不只决定序列里预留多少槽位，它直接放大 prefill 的计算量与 KV cache 的占用。视觉 token 一旦填进序列，对 prefill 而言与文本 token 无差别（第 4 章）：每个 token 都要过一遍完整的 Transformer 前向，都要在每一层写入一份 K/V 进 cache。
 
-把数字代进去。设某视觉编码器 `patch_width = patch_height = 14`，`max_num_patches = 256`，`pooling_kernel_size = 1`（不额外池化）。一张接近上限的图折算成约 256 个 visual token。这 256 个 token 等价于 256 个文本 token 的 prefill 成本：prefill 的计算量随 token 数近似线性（注意力那部分随序列长度平方增长，但在几百 token 尺度下线性项主导），KV cache 占用则严格线性：`num_layers × 2 × model_dimension × num_tokens × sizeof(dtype)`。以一个 26 层、`model_dimension = 2048`、fp16 KV 的配置粗算，256 个 token 的 KV cache 约为 $26 \times 2 \times 2048 \times 256 \times 2 \approx 54\,\text{MiB}$（按 $2^{20}$ 计）。也就是说，「看一张图」在上下文里的占位，相当于一次几百 token 的额外 prefill，外加数十 MiB 的 KV cache 常驻。多图对话会成倍放大这两项：三张图就是约 768 个 visual token、约 160 MiB KV cache。这解释了 `max_num_patches` 为何是端侧多模态的关键预算旋钮——它是「图像细节」与「prefill 时延／显存」之间的直接兑换比。〔本节字面值为按公式的量级估算，真机端到端时延与显存占用待附录 D 基准回填〕
+把数字代进去。设某视觉编码器 `patch_width = patch_height = 14`，`max_num_patches = 256`，`pooling_kernel_size = 1`（不额外池化）。一张接近上限的图折算成约 256 个 visual token。这 256 个 token 等价于 256 个文本 token 的 prefill 成本：prefill 的计算量随 token 数近似线性（注意力那部分随序列长度平方增长，但在几百 token 尺度下线性项主导），KV cache 占用则严格线性：`num_layers × 2 × model_dimension × num_tokens × sizeof(dtype)`。以一个 26 层、`model_dimension = 2048`、fp16 KV 的配置粗算，256 个 token 的 KV cache 约为 \(26 \times 2 \times 2048 \times 256 \times 2 \approx 54\,\text{MiB}\)（按 \(2^{20}\) 计）。也就是说，「看一张图」在上下文里的占位，相当于一次几百 token 的额外 prefill，外加数十 MiB 的 KV cache 常驻。多图对话会成倍放大这两项：三张图就是约 768 个 visual token、约 160 MiB KV cache。这解释了 `max_num_patches` 为何是端侧多模态的关键预算旋钮——它是「图像细节」与「prefill 时延／显存」之间的直接兑换比。〔本节字面值为按公式的量级估算，真机端到端时延与显存占用待附录 D 基准回填〕
 
 音频走同一条路，只是特殊 token 换成 -2（`ExecutorAudioData::kSpecialToken`，`llm_executor_io_types.h:281`；对齐约定在 `:263` 的注释里，与视觉逐字对应）。三个模态各用一个 `kSpecialToken` 值（文本无、视觉 -1、音频 -2）区分各自的占位符槽位，填充时各填各的。这就是多模态的统一之处：各模态各有编码器把输入编码成同一嵌入空间的向量，一旦成为 embedding，后续的 prefill、decode（第 4、5 章）无需任何改动——它们本就工作在 embedding 上，不关心这些向量原本来自文本、图像还是音频。第 2 章那套分层架构因此得以保持干净：多模态是在输入端多接一个编码器，而非改动整条流水线。
 
@@ -232,7 +232,7 @@ for (int b = 0; b < batch_size; ++b) {
 }
 ```
 
-(1) 对每条序列，问当前语法状态："此刻哪些 token 合法？"答案是一张按词表大小铺开的位图（`Bitmap`，`runtime/components/constrained_decoding/bitmap.h:21`）。(2)(3) 遍历整个词表，位图里为 0 的位置（不合法的 token）把它的 logit 直接压到 `float` 的最小值。这就是"负无穷"的工程写法：不是数学上的 $-\infty$，而是 `std::numeric_limits<float>::lowest()`。经过 softmax 后概率无限趋近 0，采样再也选不到它。这段前面还有一串 `RET_CHECK`：要求 logits 形状是 `[batch_size, 1, vocab_size]`（序列长度必须是 1，一次只掩一步），并且模型词表不能大于约束词表——约束词表可以更大，多出来的位当未用 token 处理。代价也在这段里明摆着：每步要对整个词表跑一遍，`vocab_size` 量级在几万到十几万，这是约束解码相比裸采样多付的每步开销。
+(1) 对每条序列，问当前语法状态："此刻哪些 token 合法？"答案是一张按词表大小铺开的位图（`Bitmap`，`runtime/components/constrained_decoding/bitmap.h:21`）。(2)(3) 遍历整个词表，位图里为 0 的位置（不合法的 token）把它的 logit 直接压到 `float` 的最小值。这就是"负无穷"的工程写法：不是数学上的 \(-\infty\)，而是 `std::numeric_limits<float>::lowest()`。经过 softmax 后概率无限趋近 0，采样再也选不到它。这段前面还有一串 `RET_CHECK`：要求 logits 形状是 `[batch_size, 1, vocab_size]`（序列长度必须是 1，一次只掩一步），并且模型词表不能大于约束词表——约束词表可以更大，多出来的位当未用 token 处理。代价也在这段里明摆着：每步要对整个词表跑一遍，`vocab_size` 量级在几万到十几万，这是约束解码相比裸采样多付的每步开销。
 
 "哪些合法"最终由谁算？底层的语法引擎是 llguidance，一个 Rust 库，通过 C bridge 接进来（见仓库的 `PATCH.llguidance*` 与 `docs/api/cpp/constrained-decoding.md`）。C++ 侧的 `LlgConstraint`（`runtime/components/constrained_decoding/llg_constraint.cc`）只是把三个动作转成三次 FFI 调用：`Start` 调 `llg_clone_constraint` 克隆一份初始状态，`ComputeNext` 调 `llg_commit_token` 推进，`ComputeBitmap` 调 `llg_compute_mask` 取掩码。取回的掩码是 llguidance 打包的 32 位字数组，C++ 侧再解包成布尔位图：
 
