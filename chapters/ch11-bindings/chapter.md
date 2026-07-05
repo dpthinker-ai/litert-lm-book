@@ -517,6 +517,16 @@ fake 还有一条容易被忽略的能力：它能模拟约束解码（第 9 章
 
 ---
 
+## 练习与自查
+
+1. **封装原理。** C 头文件里 `LiteRtLmEngine` 只有前向声明、没有成员。这带来什么好处，付出什么代价？
+2. **泄漏重演。** 描述 `#2589` 的故障链：从 Swift 侧一个未释放的引用，到「已有一个会话」报错，中间每一环是什么？
+3. **所有权辨析。** 跨 FFI 边界返回的字符串，内存归谁、谁负责释放？错误的释放方会导致什么？
+4. **测试设计。** `FakeLlmExecutor` 不含任何神经网络，为什么足以单测停止词、采样编排这类逻辑？它测不了什么？
+5. **设计题。** 为 Go 语言写一个最小绑定，至少要包装哪几个 C 函数？按「创建-使用-销毁」三段列出。
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - C ABI 声明：`c/engine.h @ v0.13.1`（不透明句柄 `LiteRtLmEngine`:41、`LiteRtLmSession`:44；`litert_lm_engine_create`:380、`_delete`:386；`create_session`:396、`session_delete`:403；`run_prefill`:421；`LiteRtLmInputDataType` 枚举与 `LiteRtLmInputData` 结构:243；`LiteRtLmStreamCallback`:652；`run_decode_async`:665）。

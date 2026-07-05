@@ -390,6 +390,16 @@ Section 2:
 
 ---
 
+## 练习与自查
+
+1. **TTFT 验算。** 用附录 D 的 gpu/1024 档数据（prefill 999.1 tok/s、decode 50.6 tok/s）按 `GetTimeToFirstToken` 的算式验算 TTFT，并与实测 1.04 s 对照。
+2. **反解练习重走。** 用 gpu 的 256 与 4096 两档 decode 实测（50.6 与 45.6 tok/s）、主干权重 2.26 GB，自己走一遍本章的反解，得出每 token 额外搬运量，并解释它为什么高于实剖真值 28 KiB。
+3. **判定流程应用。** 某设备实测：Init 1.8 s、TTFT 4.4 s、decode 45 tok/s、上下文加倍后 decode 降 8%。按本章四步判定流程，逐项判断各环节是否异常。
+4. **代码定位。** benchmark 模式为什么必须强制 prefill 同步完成？找出实现这一行为的那一行代码。
+5. **架构归位。** 约束解码的 `MaskLogits` 调用发生在五层架构的哪一层？它修改的 logits 来自哪一层？
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - `litert-lm` CLI 子命令注册：`python/litert_lm_cli/main.py:52 @ v0.13.1`；`run` 的 Engine/Session 创建与流式循环：`python/litert_lm_cli/commands/run.py:240,100 @ v0.13.1`；`benchmark` 输出：`python/litert_lm_cli/commands/benchmark.py:102 @ v0.13.1`。

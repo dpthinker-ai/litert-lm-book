@@ -296,6 +296,16 @@ struct NpuAuxiliaryContext {                         // (3)
 
 ---
 
+## 练习与自查
+
+1. **省了什么。** 片上采样每步省一次约 1 MiB 的 logits 回搬，按 50 tok/s 折合每秒约 50 MB。对照权重流每秒上百 GB，这不到 0.1%。那片上采样省下的主要是什么？
+2. **绑核逻辑。** CPU 亲和性为什么绑中大核而不是全部核？两个理由。
+3. **工厂价值。** `default` 分支返回 `InvalidArgumentError` 而非崩溃，这个设计防住了什么？
+4. **输出漂移。** 换一个后端，同一 prompt 的输出为什么可能不同？这算 bug 吗？
+5. **设计题。** 要给运行时接入一个新后端 XPU，从本章的分发路径出发，列出至少三处必须改动的位置。
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - 后端枚举与工厂：`runtime/executor/executor_settings_base.h:34 @ v0.13.1`（`Backend`，`CPU_ARTISAN`:39、CPU/GPU 于 `:45`/`:48`、`NPU`:54）；`runtime/executor/llm_litert_compiled_model_executor_factory.cc @ v0.13.1`（`CreateLlmLiteRtCompiledModelExecutor`:165；`GetBackend`:168；分派:170/174；default 拦截:177；CPU/GPU 内部动/静态分派:139；读取 prefill/decode 子图:135）。

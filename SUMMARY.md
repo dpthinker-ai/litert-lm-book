@@ -38,3 +38,4 @@
 - [附录 B 代码地图](appendix/code-map.md)
 - [附录 C 环境搭建与实验复现](appendix/reproduce.md)
 - [附录 D 基准数据集](appendix/benchmark-dataset.md)
+- [附录 E 练习提示与参考答案](appendix/exercises-answers.md)

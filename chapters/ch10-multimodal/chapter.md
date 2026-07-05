@@ -286,6 +286,16 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 
 ---
 
+## 练习与自查
+
+1. **patchify 计算。** 一张 768 × 512 的图，patch 16 × 16、`max_num_patches = 256`、池化核 1。算出缩放目标尺寸与最终 patch 数。
+2. **占位符体系。** 三个模态的「特殊 token」各是什么值？为什么必须是负数（联系第 3 章查表路径对负数 token 的处理）？
+3. **开销量级。** `MaskLogits` 每个 decode step 要对整个词表（262144）做一遍位图查询与条件写。估算这层循环的操作量级，并说明它为什么通常不构成瓶颈。
+4. **两级结构。** 音频链路中编码器与适配器的输入输出各是什么形状（用实剖数字）？为什么要拆成两级而不是一个模型？
+5. **路径约束。** 约束解码为什么只能工作在外部采样路径上？内部采样路径缺了哪一环？
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - 多模态：`runtime/components/preprocessor/image_preprocessor_utils.cc:26 @ v0.13.1`（`GetAspectRatioPreservingSize` 缩放/切块，头文件声明 `image_preprocessor_utils.h:28`）；`runtime/executor/vision_litert_compiled_model_executor.cc:454 @ v0.13.1`（`Encode` 两级串联，头文件声明 `.h:57`）；`runtime/executor/llm_executor_io_types.h @ v0.13.1`（`ExecutorVisionData`:216；`kSpecialToken`:220；对齐示例:202；`ExecutorAudioData`:277，注释:263，`kSpecialToken`:281）；`runtime/executor/llm_executor_base.h:178 @ v0.13.1`（`FillVisionEmbeddings`，带 `image_index`）；`runtime/executor/audio_litert_compiled_model_executor.cc:941 @ v0.13.1`（音频 `Encode`）。

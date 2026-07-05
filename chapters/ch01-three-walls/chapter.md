@@ -136,6 +136,16 @@ LiteRT-LM 的位置可以一句话概括：它把 LiteRT（原 TFLite）这套�
 
 ---
 
+## 练习与自查
+
+1. **内存预算复算。** 一台 12 GiB 手机，系统与其它 App 占 5 GiB。用本章的公式与示例参数（KV cache 每 token 128 KiB、decode 激活 0.1 GiB）核算：int4 量化的 7B 模型加 8K 上下文，装得下吗？上下文拉到 32K 呢？
+2. **decode 上限复算。** 一款 SoC 用 LPDDR5X-9600 配 64 bit 内存总线，跑一个 int8 量化的 4B 模型。按本章公式算 decode 吞吐上限。
+3. **能耗账变体。** 沿用本章约 20 pJ/byte 的量级：模型换成 int4 的 2B（每 token 读约 1 GB），每 token 能耗与 15 Wh 电池的可生成 token 数各变为多少？
+4. **一句话自查。** 用「算术强度」一个词解释：为什么同一个模型 prefill 快、decode 慢？
+5. **判断并说明。** 想把 decode 吞吐从 25 tok/s 提到 50 tok/s，换一颗算力翻倍、内存带宽不变的芯片，行不行？
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - LiteRT-LM 投产于 Chrome / Chromebook Plus / Pixel Watch：Google 开发者博客 *On-device GenAI in Chrome, Chromebook Plus and Pixel Watch*，https://developers.googleblog.com/on-device-genai-in-chrome-chromebook-plus-and-pixel-watch-with-litert-lm/（经 LiteRT-LM 仓库 README 索引，访问 2026-07-05）。

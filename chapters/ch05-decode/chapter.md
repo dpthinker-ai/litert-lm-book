@@ -360,6 +360,16 @@ for (int i = 0; i < num_output_candidates_; ++i) {
 
 ---
 
+## 练习与自查
+
+1. **回搬账变体。** 若 logits 以 fp16 回传（词表仍为 262144），单步回搬多少字节？占 1.4 GiB 权重读取的比例变为多少？
+2. **停止条件推理。** benchmark 模式指定 decode 128 步，第 20 步命中停止词，循环会停吗？依据 `ShouldStop` 的哪个分支？
+3. **暂存时序。** 停止序列最长 3 个 token。模型依次产出 A、B、C，其中 A、B 是某停止序列的前缀而 C 使匹配失败。写出每一步用户实际收到的文本。
+4. **半字机制。** 为什么流式解码转文本时用「暂存串 + 新 token」整体转换，而不是逐个 token 单独转换？
+5. **动手实验。** 用 5 个不同 seed 跑温度 1.0（命令见附录 D 第八节），统计得到几种不同输出，并解释「开采样不等于每次必不同」。
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - decode 循环与单步：`runtime/core/tasks.cc @ v0.13.1`。本章贴出：主循环骨架（`while (true)`:486，含取消探测与 `ShouldStop` 调用）；`ShouldStop` 纯函数全文（:86）；`DecodeAndSample` 内/外采样分岔（:319，外部路径 `DecodeLogits`:342、`MaskLogits`、`SampleToIdAndScoreBuffer`，内部路径 `executor_.Decode()`）；`Run` 里的 BPE 补全（`MergeTokenIds`:175、`IsIncompleteBpeSequence`:181）与停止词暂存/释放（:187）。相关：`DecodeOneStep` 类:111；`Decode` 入口:446；内/外采样注释:109。

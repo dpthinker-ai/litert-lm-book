@@ -359,6 +359,16 @@ LoRA 的价值恰好呼应本章主题：它是"变体"的最省成本形态—�
 
 ---
 
+## 练习与自查
+
+1. **对齐计算。** 某段 `begin_offset = 49152`。在偏移须为 64 KiB 整数倍的平台上，`MapSection` 的 `alignment_gap` 是多少？实际映射从哪里开始？
+2. **LoRA 账。** rank = 16、`d_in = d_out = 2560`，一个投影矩阵的 LoRA 增量参数是多少？fp16 存储占多少字节？
+3. **口径辨析。** mmap 加载后，进程的虚拟内存增加了 3.66 GB，但物理驻留远小于此。解释两者差异，以及内存紧张时这些页的去向。
+4. **工具理解。** `litertlm_print` 对 `LlmMetadataProto` 段比对其他段多做了什么？为什么只对它多做？
+5. **两拍装载。** `LoadLoRA` 与 `UseLoRA` 各占用什么资源？为什么切换任务时不必重新读盘？
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - loader 层：`runtime/util/litert_lm_loader.h:100 @ v0.13.1`（`LitertLmLoader`）；`GetSectionBuffer` 双检锁 `litert_lm_loader.cc:270`、`MapSection` 对齐补偿 `:141`；Windows 分配粒度 `runtime/util/memory_mapped_file_win.cc:95`。内存口径：`LogMemoryUsage`，`runtime/engine/litert_lm_lib.cc:427`。

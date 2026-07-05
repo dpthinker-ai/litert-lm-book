@@ -360,6 +360,16 @@ id 是名字，embedding 才是模型真正计算的对象。这半步平时不�
 
 ---
 
+## 练习与自查
+
+1. **构造反例。** 设计一个聊天模板，使「新渲染是旧渲染的前缀」这一 diff 前提被破坏，并指出代码中哪一道防线会拦住它。
+2. **对比题。** Clone 共享前缀与模板 diff 增量都避免了重复计算。两者各复用了什么、各付出什么代价？
+3. **代码验证。** 打开 `conversation.cc` 的相减三行，说明长度检查与前缀检查各拦截哪一类模板行为。
+4. **机制理解。** embedding 查表为什么实现为跑一个编译子模型，而不是对权重数组做内存索引？给出两个理由。
+5. **脆弱性演示。** 构造一个模板片段，使 `EditTemplateForMinijinja` 的某条正则产生误改写（提示：让 `.startswith(` 出现在不该被改写的位置）。
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - Engine / Session 接口：`runtime/engine/engine.h @ v0.13.1`（Example usage:44；SessionInterface:70；GenerateContent:112；GenerateContentStream:128；RunPrefill:174；RunDecode:188；Clone 共享前缀示例:231）。

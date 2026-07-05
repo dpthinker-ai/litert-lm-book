@@ -358,6 +358,16 @@ KV cache 是用内存换计算的经典权衡：它省掉重复的注意力计�
 
 ---
 
+## 练习与自查
+
+1. **真实参数复算。** 用实剖参数（每 token 28 KiB）算 8192 上下文的 KV cache 占用；再算静态槽位 32003 全预留是多少。
+2. **成本对比。** 4096 上下文时，Clone 一次要拷贝约多少字节？RewindToCheckpoint 一次要改动什么？为什么两者代价差这么多？
+3. **代码定位。** 双缓冲交换为什么不搬数据？找出 prefill 与 decode 路径上各自执行交换的那一行。
+4. **旋钮推演。** 把 `--max-num-tokens` 调大一倍，内存占用与 decode 速度各受什么影响？与 `LiteRT-LM#2568` 的现象对上。
+5. **三维度归纳。** 权重量化、激活精度、KV cache 精度是三个独立维度。为本书基准模型写出它的三元组，并再举一个合法但不同的组合。
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - KV cache 接口：`runtime/executor/kv_cache_interface.h @ v0.13.1`（`KVCacheInterface`:28；`Serialize`:39；`Load`:42；`SelectAndCopyFrom`:50；`BroadcastAndCopyFrom`:58；`DeepCopy`:61，"expensive operation" 注释:60）；LiteRT 后端桩实现 `Serialize`/`Load`:`runtime/executor/litert/kv_cache.h:45-51 @ v0.13.1`（返回 `UnimplementedError`，单测 `SerializeNotSupported`:`kv_cache_test.cc:117`）；具体实现 `LitertKVCache::DeepCopy`:`runtime/executor/litert/kv_cache.cc:380 @ v0.13.1`。

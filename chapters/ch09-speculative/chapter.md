@@ -354,6 +354,16 @@ num_draft_steps = input_pos_dims[0] - 1;                         // (1)
 
 ---
 
+## 练习与自查
+
+1. **盈亏平衡。** 设 drafter 单步成本是 base 前向的 0.1 倍，G = 3。若每个位置独立以概率 p 被接受（前缀截断），一轮期望产出约 1 + p + p² + p³ 个 token。推测解码不亏的最低 p 约是多少？
+2. **保底机制。** 为什么最坏情况下（首个草拟就错）推测解码的产出 token 数也不少于普通 decode？
+3. **形状约束。** 草拟步数 G 为什么在模型导出时就定死？从 verify signature 的哪一个维度读出？
+4. **现象解释。** 本书基准里 MTP 开关无显著差异。给出「推测」级的解释，并说明为什么无法实证归因。
+5. **实剖对照。** drafter 输入形状是 `[1, 1, 5120]`。这 5120 由哪两半拼成？各自从哪里来？
+
+> 提示与参考答案见附录 E。
+
 ## 参考
 
 - MTP drafter 实现：`runtime/executor/llm_litert_mtp_drafter.cc @ v0.13.1`（`Draft` 三步骨架 :453、463-469；`RunDraftingLoop` 循环体 :328、336-370，activation 两条来源分支 :346-353、回喂 :369；`ConcatenateEmbeddingsAndActivations` :80 起；`PrepareVerifierInputBuffers` :374-423，`input_pos`/mask/`LookupPrefill`/`Duplicate`/`param_tensor` 分支 :380-472 各字段；`PrepareVerifierOutputBuffers` :424；`RunVerification` :437、440-450；接受循环 :471-484；输出 :492-493；接受率统计 :494-495、析构打印 :164-172；`CreateGreedySampler` :65-79，两处采样器构造 :263-272；接受判定严格相等 :475；`num_draft_steps` 由 verify signature 形状定 :250-256；`"verify"` signature 常量 :62、取用 :227；drafter section 装载 `GetTFLiteModel(kTfLiteMtpDrafter)` :196；drafter 独立小模型成员 `mtp_drafter_model_`）。
