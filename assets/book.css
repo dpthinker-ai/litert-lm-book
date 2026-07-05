@@ -47,3 +47,37 @@ figcaption { color: var(--fig-text-dim, #8b949e); font-size: 0.9em; margin-top: 
 .aside-version { border-left-color: var(--fig-text-dim, #8b949e); }
 .aside-compare::before { content: "对照视野"; font-weight: 700; font-size: 0.85em; display: block; margin-bottom: 0.3rem; }
 .aside-version::before { content: "版本注记"; font-weight: 700; font-size: 0.85em; display: block; margin-bottom: 0.3rem; color: var(--fig-text-dim, #8b949e); }
+
+/* ── 封面页 ── */
+[id="封面"] { display: none !important; }   /* 隐藏 mdBook 为前置章自动注入的标题 */
+.book-cover { text-align: center; padding: 5rem 1rem 0; }
+.cover-title { font-size: 2.7rem; font-weight: 800; letter-spacing: 0.06em; color: var(--fig-accent, #0b57d0); margin-bottom: 0.7rem; }
+.cover-subtitle { font-size: 1.5rem; font-weight: 600; color: var(--fig-text, #1f2328); margin-bottom: 1.6rem; }
+.cover-rule { width: 72px; height: 3px; background: var(--fig-accent, #0b57d0); margin: 0 auto 1.6rem; border-radius: 2px; }
+.cover-en { font-size: 0.98rem; color: var(--fig-text-soft, #57606a); line-height: 1.7; margin-bottom: 4.5rem; }
+.cover-author { font-size: 1.15rem; font-weight: 600; color: var(--fig-text, #1f2328); margin-bottom: 3.5rem; }
+.cover-note { font-size: 0.85rem; color: var(--fig-text-dim, #8b949e); line-height: 1.7; }
+
+/* ── 打印 / PDF 专用 ── */
+@media print {
+  /* 去掉 mdBook 主题的灰色页面底，强制干净白底黑字 */
+  html, body, .page, .page-wrapper, .content, #content, main {
+    background: #fff !important;
+    color: #1f2328 !important;
+  }
+  @page { margin: 18mm 16mm; }
+  /* 配图在 PDF 里锁定浅色，不受系统深色模式影响 */
+  :root {
+    --fig-bg:#ffffff; --fig-surface:#f6f8fa; --fig-surface-2:#eef1f5;
+    --fig-accent:#0b57d0; --fig-accent-2:#6639ba;
+    --fig-border:#d0d7de; --fig-border-2:#e6eaef;
+    --fig-text:#1f2328; --fig-text-soft:#57606a; --fig-text-dim:#8b949e;
+    --fig-green:#1a7f37;
+  }
+  /* 图、代码块、表、侧栏尽量整块不跨页断裂 */
+  figure, pre, table, .aside-compare, .aside-version { break-inside: avoid; }
+  h2, h3, h4 { break-after: avoid; }
+  /* 章间分页由 mdBook 原生 page-break-before 负责，勿再叠加，否则每章前多一空白页 */
+  /* 封面下沉标题 */
+  .book-cover { padding-top: 9rem; }
+}

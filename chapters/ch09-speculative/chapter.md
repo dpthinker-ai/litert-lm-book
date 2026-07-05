@@ -16,9 +16,9 @@
 
 把一次 `Draft()`（`llm_litert_mtp_drafter.cc:453 @ v0.13.1`）拆开看，三步。
 
-**第一步，草拟。** drafter 小模型逐个吐出接下来的 $G$ 个候选 token（`RunDraftingLoop`，`:328`，循环在 `:336`）。$G$ 是草拟步数（代码里 `num_draft_steps`）。drafter 小，所以这几步便宜——就算它串行地一个个猜，也远不及大模型一次前向贵。
+**第一步，草拟。** drafter 小模型逐个吐出接下来的 G 个候选 token（`RunDraftingLoop`，`:328`，循环在 `:336`）。G 是草拟步数（代码里 `num_draft_steps`）。drafter 小，所以这几步便宜——就算它串行地一个个猜，也远不及大模型一次前向贵。
 
-**第二步，一次验一串。** 把"上一个真 token + 草拟的 $G$ 个"拼起来，交给 base 模型的 verify signature，**一次前向**跑完（`RunVerification`，`:437`，`base_model_.RunAsync(verify_signature)`）。它一口气对 $G+1$ 个位置各给出一个"正确答案"，返回一个长度 $G+1$ 的 id 序列（`:449` 有 `RET_CHECK_EQ(id_vector.size(), num_draft_steps_ + 1)` 兜底）。注意这里的要害：验证 $G$ 个草拟字，只用了 base 模型**一次**前向——这正是提速的来源。
+**第二步，一次验一串。** 把"上一个真 token + 草拟的 G 个"拼起来，交给 base 模型的 verify signature，**一次前向**跑完（`RunVerification`，`:437`，`base_model_.RunAsync(verify_signature)`）。它一口气对 G+1 个位置各给出一个"正确答案"，返回一个长度 G+1 的 id 序列（`:449` 有 `RET_CHECK_EQ(id_vector.size(), num_draft_steps_ + 1)` 兜底）。注意这里的要害：验证 G 个草拟字，只用了 base 模型**一次**前向——这正是提速的来源。
 
 **第三步，接受。** 逐位比对草拟和验证结果，接受最长的匹配前缀。
 
@@ -48,11 +48,11 @@ if (bonus_token == -1) {                     // 全猜对
 }
 ```
 
-逻辑是这样：从头逐位比，草拟和验证一致就接受、计数加一；一旦碰到第一个不一致，就停下，取 base 模型在这个位置的正确 token 当作 **bonus**。如果一路全对，那就白赚——verify 本就多算了一个位置（第 $G+1$ 个），直接把它当 bonus 收下。
+逻辑是这样：从头逐位比，草拟和验证一致就接受、计数加一；一旦碰到第一个不一致，就停下，取 base 模型在这个位置的正确 token 当作 **bonus**。如果一路全对，那就白赚——verify 本就多算了一个位置（第 G+1 个），直接把它当 bonus 收下。
 
 最后输出"接受的前缀 + 一个 bonus"（`:490`–`:492`，源码注释点明"第一个 token 来自 decode 输出，永远正确"）。
 
-这个 bonus 设计是保底：**哪怕第一个字就猜错，你也能拿到 base 给的 1 个正确 token。** 所以论产出的 token 数，推测解码永远不会比普通 decode 差——最坏也是一次前向出一个字，和普通 decode 打平。它赚的时候赚很多（一次前向出 $G+1$ 个字），亏的时候不亏 token（只是白做了 drafter 的功）。
+这个 bonus 设计是保底：**哪怕第一个字就猜错，你也能拿到 base 给的 1 个正确 token。** 所以论产出的 token 数，推测解码永远不会比普通 decode 差——最坏也是一次前向出一个字，和普通 decode 打平。它赚的时候赚很多（一次前向出 G+1 个字），亏的时候不亏 token（只是白做了 drafter 的功）。
 
 ## 接受率经济学：快多少，看你猜得准不准
 
@@ -60,7 +60,7 @@ if (bonus_token == -1) {                     // 全猜对
 
 关键指标是**接受率**——草拟的字里有多少被接受。代码在析构时就打印它（`num_verified_tokens_ / num_drafted_tokens_`，`:165`–`:171`），足见它是这套机制的命门。每一轮，代码累加两个数：草拟了多少（`num_drafted_tokens_ += num_draft_steps_`）、接受了多少（`num_verified_tokens_ += num_correct_tokens`，`:493`–`:494`）。
 
-算一笔经济账。一轮推测解码的成本 ≈ drafter 草拟 $G$ 步 + base 一次前向；产出是 1 到 $G+1$ 个 token。
+算一笔经济账。一轮推测解码的成本 ≈ drafter 草拟 G 步 + base 一次前向；产出是 1 到 G+1 个 token。
 
 - 接受率高时：一次 base 前向出好几个字，而 base 前向是最贵的那一项——于是每个字摊到的成本大降，明显更快。官方报告 Gemma 4 上可达约 3 倍（官方博客口径，【文档】级）。
 - 接受率低时：草拟大多被丢弃，drafter 那几步白做，还多搭了 verify 的开销。如果这些额外开销超过了省下的前向，净结果就是**更慢**。
@@ -77,7 +77,7 @@ if (bonus_token == -1) {                     // 全猜对
 
 其一，一个模型支不支持推测解码，是写在它的能力声明里的。运行时用 `HasSpeculativeDecodingSupport`（`schema/capabilities/speculative_decoding.h:33`、`:44 @ v0.13.1`）读模型元数据来判断——这正是第 7 章说的 `.litertlm` 里那段"能力声明"的用途之一。CLI 的 `--enable-speculative-decoding=auto` 就是让运行时照这个声明自动决定开不开。
 
-其二，草拟步数 $G$ 不是运行时随便调的旋钮。它由模型 verify signature 的形状固定（`num_draft_steps` = verify 的 `input_pos` 维度减一，`:256`）——也就是说，一个模型草拟几步，在它被做出来时就定死了。这是第 4 章"固定形状"约束在推测解码上的又一次体现。
+其二，草拟步数 G 不是运行时随便调的旋钮。它由模型 verify signature 的形状固定（`num_draft_steps` = verify 的 `input_pos` 维度减一，`:256`）——也就是说，一个模型草拟几步，在它被做出来时就定死了。这是第 4 章"固定形状"约束在推测解码上的又一次体现。
 
 ## 小结
 

@@ -14,13 +14,13 @@ KV cache 就是把这些 key/value 存下来，算过一次就不再重算。**�
 
 $$ \text{KV 字节} = 2 \times L \times H_{kv} \times D \times S \times b $$
 
-其中 $L$ 是层数，$H_{kv} \times D$ 是每层 KV 的投影维度，$S$ 是序列长度（缓存了多少个 token），$b$ 是每个元素的字节数，最前面的 2 是 key 和 value 各一份。
+其中 L 是层数，H_kv × D 是每层 KV 的投影维度，S 是序列长度（缓存了多少个 token），b 是每个元素的字节数，最前面的 2 是 key 和 value 各一份。
 
-代入一组示例量级（层数 30、KV 投影维度 1024、fp16 即 $b=2$）：每个 token 约
+代入一组示例量级（层数 30、KV 投影维度 1024、fp16 即每元素 2 字节）：每个 token 约
 
 $$ 2 \times 30 \times 1024 \times 2 = 122880 \text{ 字节} \approx 120 \text{ KiB/token} $$
 
-到 4096 个 token 的上下文，就是约 480 MiB。（这里的 $L$、$H_{kv}$、$D$ 是示例；某个具体模型的真实数字可以从它的元数据读出，第 7 章的 `litertlm_print` 会带你看。）
+到 4096 个 token 的上下文，就是约 480 MiB。（这里的 L、H_kv、D 都是示例；某个具体模型的真实数字可以从它的元数据读出，第 7 章的 `litertlm_print` 会带你看。）
 
 把这个数字接回第 1 章的内存墙：权重约 2 GiB，KV cache 又要几百 MiB，而且它随对话变长一直涨。这解释了第 2 问——为什么 8 GiB 的手机跑 4B 模型也紧张：吃内存的不止权重。
 
