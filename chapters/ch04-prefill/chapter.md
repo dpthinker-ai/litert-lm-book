@@ -6,9 +6,9 @@
 
 ## prefill 为什么是计算受限的一步
 
-沿用第 2 章的 Roofline 分析。prefill 一次前向处理整段提示词，几百上千个 token 复用同一批已读入的权重，算术强度（每字节权重承担的浮点运算数）高，落在 Roofline 的计算受限区。它与 decode 的差距不是实现优劣，是两类操作被不同资源顶住：prefill 受算力约束，decode 受内存带宽约束。
+沿用第 2 章的 Roofline 分析。prefill 一次前向处理整段提示词，几百上千个 token 复用同一批已读入的权重，算术强度（每字节权重承担的浮点运算数）高，落在 Roofline 的计算受限区。它与 decode 的速度差距不是实现层面的差异，是两类操作受不同资源约束：prefill 受算力约束，decode 受内存带宽约束。
 
-这一差距在本书基准上是实测可见的。附录 D 的主基准（Gemma 4 E4B，公开权重，`litert-lm benchmark` 中位数）里，gpu 后端上下文 1024 时 prefill 吞吐 999.1 tokens/s、decode 仅 50.6 tokens/s，相差约 20 倍；cpu 后端上下文 1024 时 prefill 259.2 tokens/s、decode 24.7 tokens/s，相差约 10 倍〔基准 D〕。同一模型、同一后端，两个数字差一到两个数量级，因为一个吃算力、一个吃带宽。本章从第 2 层的编排入口（`Tasks::Prefill`）下探到第 3 层的 executor，把这条路径上的每一处开销摊开。
+这一差距在本书基准上是实测可见的。附录 D 的主基准（Gemma 4 E4B，公开权重，`litert-lm benchmark` 中位数）里，gpu 后端上下文 1024 时 prefill 吞吐 999.1 tokens/s、decode 仅 50.6 tokens/s，相差约 20 倍；cpu 后端上下文 1024 时 prefill 259.2 tokens/s、decode 24.7 tokens/s，相差约 10 倍〔基准 D〕。同一模型、同一后端，两个数字差一到两个数量级，因为它们受制于不同的资源约束。本章从第 2 层的编排入口（`Tasks::Prefill`）下探到第 3 层的 executor，把这条路径上的每一处开销摊开。
 
 编排入口很短。它先取模型能接受的最大 token 数，做一次越界校验，再把整段 token 交给 executor（`runtime/core/tasks.cc:413`）：
 
@@ -45,11 +45,11 @@ absl::StatusOr<Responses> Prefill(
 
 这条曲线本书实际扫过一遍：`litert-lm benchmark` 从 100 到 4000 取七个点（cpu，完整表见附录 D 第七节）。曲线的形状直接印证「计算受限」这个判断。
 
-短提示词区间吞吐偏低：100 token 时只有 48.3 tokens/s，250 时 64.0，到 1000 才爬上 257〔基准 D〕。原因是几百个 token 还喂不满 CPU 的向量单元，算术强度不够高，一部分时间花在读权重而非做乘加，此时更接近带宽受限。随着长度增加，同一批权重被更多 token 复用，算术强度上升，吞吐爬向该后端的算力上限：1000 到 3000 token 之间是一段 257-261 tokens/s 的平台，这就是这颗 CPU 在此模型上的 prefill 算力顶〔基准 D〕。gpu 后端同样从 256 档的 259.8 tokens/s 升到 1024 档的 999.1 tokens/s〔基准 D〕。
+短提示词区间吞吐偏低：100 token 时只有 48.3 tokens/s，250 时 64.0，到 1000 才爬上 257〔基准 D〕。原因是几百个 token 还不足以充分利用 CPU 的向量单元，算术强度不够高，一部分时间消耗在读取权重而非乘加运算上，此时更接近带宽受限。随着长度增加，同一批权重被更多 token 复用，算术强度上升，吞吐爬向该后端的算力上限：1000 到 3000 token 之间是一段 257-261 tokens/s 的平台，这就是这颗 CPU 在此模型上的 prefill 吞吐上限〔基准 D〕。gpu 后端同样从 256 档的 259.8 tokens/s 升到 1024 档的 999.1 tokens/s〔基准 D〕。
 
-长提示词区间吞吐回落。cpu 在 4000 token 档从平台的 261 降到 229，gpu 从 999.1 降到 925.2〔基准 D〕。回落来自注意力本身：因果注意力的计算量随序列长度平方增长，长上下文里注意力占的比重变大，而下一节会看到，掩码填充也是 O(L²) 的 CPU 开销。这条「先升后回落」的曲线不是实现瑕疵，是算术强度上升与注意力二次项此消彼长的自然结果。
+长提示词区间吞吐回落。cpu 在 4000 token 档从平台的 261 降到 229，gpu 从 999.1 降到 925.2〔基准 D〕。回落来自注意力本身：因果注意力的计算量随序列长度平方增长，长上下文里注意力占的比重变大，而下一节会看到，掩码填充也是 O(L²) 的 CPU 开销。这条「先升后回落」的曲线不是实现缺陷，是算术强度上升与注意力二次项此消彼长的自然结果。
 
-TTFT 与吞吐互为倒数，可当面对账。cpu/4096 的 TTFT 实测 18.13 s，而 4096 ÷ 226.5 tokens/s ≈ 18.08 s，两者吻合到小数点后一位〔基准 D〕。这条对账说明 TTFT 在长上下文下几乎全部是 prefill 耗时，加载与采样的固定开销可忽略。工程含义直接：要压 TTFT，要么减少 prefill 的 token 数（模板 diff 增量渲染，见第 3 章），要么换到 prefill 吞吐更高的后端（gpu/4096 的 TTFT 只有 4.45 s）。
+TTFT 与吞吐互为倒数，可直接验算。cpu/4096 的 TTFT 实测 18.13 s，而 4096 ÷ 226.5 tokens/s ≈ 18.08 s，两者吻合到小数点后一位〔基准 D〕。这条对账说明 TTFT 在长上下文下几乎全部是 prefill 耗时，加载与采样的固定开销可忽略。工程含义直接：要压 TTFT，要么减少 prefill 的 token 数（模板 diff 增量渲染，见第 3 章），要么换到 prefill 吞吐更高的后端（gpu/4096 的 TTFT 只有 4.45 s）。
 
 ## 设计权衡：固定形状还是动态形状
 
@@ -135,7 +135,7 @@ while (!ids.empty()) {
 }
 ```
 
-(1) 若没配 chunk size，就一把梭：整段直接进内部实现，全靠动态形状消化任意长度。(2)(3) 否则按 `prefill_chunk_size_` 切块，每块单独一次 `PrefillInternal`。与静态路径的关键区别是：静态的段长必须命中预编译入口之一，动态的块长只受一个上限约束，最后一块由 `std::min` 自然取到不足一个 chunk 的余数——不需要填充。这更灵活，桌面和服务端常见，代价是失去了固定形状带来的一部分编译期优化。
+(1) 若未配置 chunk size，则不做分块：整段直接进入内部实现，全靠动态形状消化任意长度。(2)(3) 否则按 `prefill_chunk_size_` 切块，每块单独一次 `PrefillInternal`。与静态路径的关键区别是：静态的段长必须命中预编译入口之一，动态的块长只受一个上限约束，最后一块由 `std::min` 自然取到不足一个 chunk 的余数——不需要填充。这更灵活，桌面和服务端常见，代价是失去了固定形状带来的一部分编译期优化。
 
 两条路径都通过基类的同一个内部函数落地（`PrefillInternal`，`runtime/executor/llm_litert_compiled_model_executor.cc:543`）。它把 token 写进输入缓冲、推进 `current_step`、更新已处理 token 记录，再交给 LiteRT 跑 signature，注意力中间结果就此写进 KV cache，为 decode 铺好底：
 
@@ -150,14 +150,14 @@ std::transform(prefill_input_pos_ptr, prefill_input_pos_ptr + prefill_length,
                });
 ```
 
-(1) 这里把要处理的长度减一：每次 prefill 都刻意留一个 token 不处理，把它当作"pending token"挂到下一次 prefill 或 decode 的第一步。这解释了上一节 `>=` 的越界判断——那个被留下的位置，正是给这个 pending token 的。(2) `current_step` 是一个随每个 token 自增的计数器，它填进 position 张量、也标记 KV cache 里这段 token 的落位。这个 step 计数器会一直用到 decode（第 5 章），是 prefill 与 decode 之间的接力棒。
+(1) 这里把要处理的长度减一：每次 prefill 都刻意留一个 token 不处理，把它当作"pending token"挂到下一次 prefill 或 decode 的第一步。这解释了上一节 `>=` 的越界判断——那个被留下的位置，正是给这个 pending token 的。(2) `current_step` 是一个随每个 token 自增的计数器，它填进 position 张量、也标记 KV cache 里这段 token 的落位。这个 step 计数器会一直用到 decode（第 5 章），是 prefill 与 decode 之间的衔接点。
 
 > 对照视野
 > "预编译多个固定长度入口"这个取舍在端侧很典型：宁可多占一点编译产物和填充浪费，换取运行时的确定性与峰值性能。云端更倾向动态形状（灵活、省显存），因为它不缺重新编译的算力，也不在乎多留几个 kernel。同一个问题，两端因约束不同给出相反的默认答案——这类"因地制宜"贯穿全书。
 
 <figure>
 {{#include figs/fig-4-1.svg}}
-<figcaption>图 4-1　prefill 的两条路径与异步底座。静态路径按长度挑固定 signature，动态路径分块吞入；两者都经 PrefillInternal 落到 LiteRT，并把结果写进 KV cache。任务经队列异步执行，取消在 decode 循环每步与分块边界处生效。</figcaption>
+<figcaption>图 4-1　prefill 的两条路径与异步底座。静态路径按长度挑固定 signature，动态路径分块处理；两者都经 PrefillInternal 落到 LiteRT，并把结果写进 KV cache。任务经队列异步执行，取消在 decode 循环每步与分块边界处生效。</figcaption>
 </figure>
 
 ## 生成中途，为什么能立刻停
@@ -268,13 +268,13 @@ if (current_task) {
 
 (1) 用户回调在回调池的线程上执行，执行池不等它。这同时规避了一类死锁：回调若反过来调引擎接口（例如收到完整回复后立刻发起下一轮 prefill），新任务排进执行池即可，不会出现「执行线程等回调、回调等执行线程」的环。回调池同样单线程，保证回调按任务完成的顺序逐个送达，流式文本不会乱序。这一段的收尾处有一个 `WaitUntilDone(absl::Seconds(10))`，等回调池清空后 `FinishTask` 才返回，源码上方挂着一条 TODO（b/476205457）说计划改成全异步——这是 v0.13.1 里回调路径尚存的一处同步点。
 
-回到主线：`ThreadedExecutionManager` 把任务 `Schedule` 到执行池（`:311`），并在 `QueueTask` 里检查依赖，一个任务若还有 `dependent_tasks` 没跑完就拒绝入列（`:301`）。第 3 章 `Clone` 那节看到的 `last_task_ids_` 串链，串的正是这张依赖图。这条依赖链保证 decode 一定在它依赖的 prefill 完成之后才开始。异步、分块、依赖三者合起来，端侧才有"响应跟手"的体感。
+回到主线：`ThreadedExecutionManager` 把任务 `Schedule` 到执行池（`:311`），并在 `QueueTask` 里检查依赖，一个任务若还有 `dependent_tasks` 没跑完就拒绝入列（`:301`）。第 3 章 `Clone` 那节看到的 `last_task_ids_` 串链，串的正是这张依赖图。这条依赖链保证 decode 一定在它依赖的 prefill 完成之后才开始。异步、分块、依赖三者合起来，端侧才能做到实时响应。
 
 ## 小结
 
 prefill 是算力受限的一步，快，且有静态/动态两条实现路径应对端侧固定形状的约束：静态按预编译入口贪心切工单、代价是填充；动态按 chunk 切、不用填充但少了编译期优化。它随时可被打断——但在 v0.13.1，这份"可打断"来自把长 prefill 切成小段，以及紧接其后的 decode 循环每步查取消标志，而非 prefill 内部主动轮询。异步底座把任务挪出主线程，依赖链保证 decode 接在 prefill 之后。
 
-提示词已经吞进去了，KV cache 也填好了第一段。下一章，最核心的一步：decode 循环，逐字的心跳。
+提示词已经处理完毕，KV cache 的第一段也已填好。下一章进入全书最核心的环节：decode 循环。
 
 ---
 

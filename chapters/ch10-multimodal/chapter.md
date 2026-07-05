@@ -258,7 +258,7 @@ mask_vector.push_back(sample_mask[i / 32] & (1 << (i % 32)));  // (1)
 
 1. **声明工具**。你在对话的开场白里告诉模型有哪些工具可用，就是第 3 章 `Preface` 里的 `tools` 字段。`Preface` 是个 `variant`，实际装的是 `JsonPreface`（`runtime/conversation/io_types.h:30`），里面三个 `nlohmann::ordered_json` 字段并排：`messages` 是对话历史，`tools` 是可用工具列表（`:36`），`extra_context` 留给模型特定的模板渲染。用 `ordered_json` 而非普通 `json` 是有意的——工具和参数的书写顺序要保住，格式化进 prompt 时不能被容器重排。
 2. **格式化进 prompt**。这些工具描述被按模型认得的格式写进提示词。`FormatValueAsFc`（`runtime/components/tool_use/fc_tool_format_utils.h`，`fc` 即 function call）把标准 JSON 转成一种更省 token 的 FC 格式，头文件里的例子把差异讲明白了：键不加引号（`"string_value"` 变 `string_value`），字符串用 `<escape>` 标签包起来而不是双引号（`"foo"` 变 `<escape>foo<escape>`）。去掉成对的引号，是为了让同样的工具声明少占 token——上下文窗口寸土寸金，工具声明又常年占在 prompt 开头。
-3. **生成调用**。模型决定要用某个工具时，输出一段结构化的函数调用文本，长这样：`call:tool_name{param_1:7,param_2:<escape>foo<escape>}`。这里约束解码派上用场：开着它，模型吐出的调用就一定是结构合法的（第 3 章 `ConversationConfig` 那个开关的用途之一）。
+3. **生成调用**。模型决定要用某个工具时，输出一段结构化的函数调用文本，长这样：`call:tool_name{param_1:7,param_2:<escape>foo<escape>}`。这里约束解码派上用场：开着它，模型输出的调用就一定是结构合法的（第 3 章 `ConversationConfig` 那个开关的用途之一）。
 4. **解析回填**。运行时把这段文本解析回结构化的函数名和参数。解析用的是 ANTLR 语法，而不是拿正则去凑。FC 格式的整个文法只有六条规则（`runtime/components/tool_use/antlr/AntlrFcParser.g4`）：
 
 ```antlr

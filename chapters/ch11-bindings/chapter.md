@@ -369,9 +369,9 @@ jstring NewStringStandardUTF(JNIEnv* env, std::string standard_utf8_str) {
 
 ## ARC 释放时机与单会话约束的冲突
 
-绑定层最容易出问题的地方是生命周期管理。这里有一个真实的上游案例，正好把前面几节串起来（对应上游 issue，`LiteRT-LM#2589` 与 `#2613`，【文档】级）。
+绑定层最容易出问题的地方是生命周期管理。这里有一个真实的上游案例，正好把前面几节串起来（对应上游 issue，`LiteRT-LM#2589` 与 `#2613`）。
 
-背景是两个约束的相遇。其一，LiteRT-LM 一个引擎同时只允许一个会话（`LiteRT-LM#2589`，【文档】级）。其二，Swift 用 ARC（自动引用计数）管内存，对象什么时候被销毁，取决于引用何时归零，时机是**不确定**的。看 Swift 侧的对象。在 v0.13.1，会话的 Swift 对应物是 `Conversation`，它把释放只放在 `deinit` 里，`swift/Conversation.swift:65`：
+背景是两个约束的相遇。其一，LiteRT-LM 一个引擎同时只允许一个会话（`LiteRT-LM#2589`）。其二，Swift 用 ARC（自动引用计数）管内存，对象什么时候被销毁，取决于引用何时归零，时机是**不确定**的。看 Swift 侧的对象。在 v0.13.1，会话的 Swift 对应物是 `Conversation`，它把释放只放在 `deinit` 里，`swift/Conversation.swift:65`：
 
 ```swift
 public class Conversation {                    // (1)
@@ -384,7 +384,7 @@ public class Conversation {                    // (1)
   }
 ```
 
-(1) 是 `class`（引用类型，归 ARC 管），(2) 唯一的释放路径是 `deinit`，(3) 在 `deinit` 里才调到 C ABI 的 delete。问题就出在这条唯一路径上：`deinit` 何时触发，由 ARC 决定，而 ARC 只在最后一个引用归零时才回收对象，这个时点调用方控制不了。于是场景是：你逻辑上用完了一个会话想再开一个，可旧 `Conversation` 对象还被某个引用（一个闭包捕获、一个还没出作用域的局部变量）持有。`deinit` 没跑、(3) 没执行、原生会话还占着那唯一的名额，新会话一创建就撞上「已有一个会话」的约束。
+(1) 是 `class`（引用类型，归 ARC 管），(2) 唯一的释放路径是 `deinit`，(3) 在 `deinit` 里才调到 C ABI 的 delete。问题就出在这条唯一路径上：`deinit` 何时触发，由 ARC 决定，而 ARC 只在最后一个引用归零时才回收对象，这个时点调用方控制不了。于是场景是：你逻辑上用完了一个会话想再开一个，可旧 `Conversation` 对象还被某个引用（一个闭包捕获、一个还没出作用域的局部变量）持有。`deinit` 没跑、(3) 没执行、原生会话还占着那唯一的名额，新会话一创建就遇到「已有一个会话」的约束。
 
 对照 Kotlin 侧，同样的资源却有一条不依赖 GC 的确定释放路径。`kotlin/.../Engine.kt:36` 的 `Engine` 实现 `AutoCloseable`：
 
@@ -403,7 +403,7 @@ class Engine(val engineConfig: EngineConfig) : AutoCloseable {  // (1)
 
 (1) 实现 `AutoCloseable`，(2) 的 `close()` 是一个使用者能主动、当场调的方法（配合 Kotlin 的 `use { }` 还能在作用域结束时自动触发），(3) 立刻调到原生 delete，(4) 把句柄置空，杜绝二次释放。它不等任何 GC。Python 侧走的是第三条路，`python/litert_lm/engine.py:126` 把 `close()`、`__del__`、`__exit__` 三者同时挂上：`with` 语句退出即释放，`del` 或回收时由 `__del__` 作为保障路径兜住，析构在 `close()` 里判空防重入。
 
-问题的根源，正是第二节那条「谁创建谁释放」没有落到确定的时机上：C ABI 那边 delete 必须被调，但早期 Swift 把释放时机完全交由 ARC 的 `deinit` 决定。issue 里提的解法也顺理成章（`LiteRT-LM#2613`，【文档】级）：给 Swift 加一个公开的 `close()`，让使用者能主动释放会话，无需等待 ARC 回收。这恰好对齐了 Kotlin 的 `AutoCloseable.close()` 与 Python 的 `__exit__`：三种语言最终都得给出一条由调用方显式控制的释放路径，光靠语言自带的自动回收，处理不了「单会话」这种带独占语义的资源。
+问题的根源，正是第二节那条「谁创建谁释放」没有落到确定的时机上：C ABI 那边 delete 必须被调，但早期 Swift 把释放时机完全交由 ARC 的 `deinit` 决定。issue 里提的解法也顺理成章（`LiteRT-LM#2613`）：给 Swift 加一个公开的 `close()`，让使用者能主动释放会话，无需等待 ARC 回收。这恰好对齐了 Kotlin 的 `AutoCloseable.close()` 与 Python 的 `__exit__`：三种语言最终都得给出一条由调用方显式控制的释放路径，光靠语言自带的自动回收，处理不了「单会话」这种带独占语义的资源。
 
 这个案例落到一句论断上：跨语言桥最难的往往不是调得通，而是两边的资源模型如何对齐。C 的手动配对、Swift 的 ARC、Kotlin 的 AutoCloseable，把三套资源模型衔接到一起而不产生泄漏，是绑定层最容易出 bug 的地方。
 

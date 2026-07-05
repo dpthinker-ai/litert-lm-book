@@ -231,7 +231,7 @@ diff 出的增量文本随后交给 `GetInputDataVectorForMessages`（`conversat
 
 ## 从文本到数字：两种 tokenizer
 
-增量文本有了，最后一步是把它切成 token id——模型只吃数字。做这件事的叫 tokenizer，它们都实现同一个抽象接口 `Tokenizer`（`runtime/components/tokenizer.h:41`）：
+增量文本有了，最后一步是把它切成 token id——模型只接受数字作为输入。做这件事的叫 tokenizer，它们都实现同一个抽象接口 `Tokenizer`（`runtime/components/tokenizer.h:41`）：
 
 ```cpp
 class Tokenizer {
@@ -248,7 +248,7 @@ class Tokenizer {
       const TokenIds& token_ids) = 0;
 ```
 
-(1) 输入侧只用得到 `TextToTokenIds`：文本进、id 序列出。(2) 反方向的 `TokenIdsToText` 是输出侧（第 5 章）用的，注释里那句"incomplete BPE sequence 会返回 `DataLossError`"，正是第 5 章末尾"吐半个字"现象的接口层伏笔。解码到半个 BPE 序列时，tokenizer 会明确拒绝，而不是吐出乱码。
+(1) 输入侧只用得到 `TextToTokenIds`：文本进、id 序列出。(2) 反方向的 `TokenIdsToText` 是输出侧（第 5 章）用的，注释里那句"incomplete BPE sequence 会返回 `DataLossError`"，正是第 5 章末尾"输出不完整 token 现象的接口层伏笔：解码到不完整的 BPE 序列时，tokenizer 会明确拒绝，而不是产生乱码。
 
 LiteRT-LM 提供两种实现，都继承这个接口。SentencePiece 版（Gemma 等模型用）的编码实现薄得几乎透明（`runtime/components/sentencepiece_tokenizer.cc:65`）：
 
@@ -264,7 +264,7 @@ absl::StatusOr<std::vector<int>> SentencePieceTokenizer::TextToTokenIds(
 }
 ```
 
-(1) 真正干活的是 `processor_`——一个 `sentencepiece::SentencePieceProcessor`。LiteRT-LM 这一层只做了薄薄一层包装：把第三方库的 `Encode` 转接到统一接口上，错误原样透传。HuggingFace 版（`runtime/components/huggingface_tokenizer.cc:55`）同样是转接，但多了一个耐人寻味的细节：
+(1) 真正干活的是 `processor_`——一个 `sentencepiece::SentencePieceProcessor`。LiteRT-LM 这一层只做了薄薄一层包装：把第三方库的 `Encode` 转接到统一接口上，错误原样透传。HuggingFace 版（`runtime/components/huggingface_tokenizer.cc:55`）同样是转接，但多了一个值得留意的细节：
 
 ```cpp
 absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
@@ -279,9 +279,9 @@ absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
 }
 ```
 
-(2) 底层 `tokenizer_` 是 HuggingFace 的 Rust 分词器，通过 FFI 调用。(1) 那行 `LeakCheckDisabler` 泄漏了实现真相：这是个跨语言边界的封装，Rust 的 `lazy_static` 初始化会被 Google 的泄漏检查器误报，只能临时关掉检查。两种 tokenizer 都实现同一个 `Tokenizer` 抽象——又一次"接口隔离"原则：上层只管"把这段文本变成 id 序列"，不关心底下是 C++ 的 SentencePiece 还是 Rust 的 HuggingFace，更不关心后者还要跟泄漏检查器打架。
+(2) 底层 `tokenizer_` 是 HuggingFace 的 Rust 分词器，通过 FFI 调用。(1) 那行 `LeakCheckDisabler` 泄漏了实现真相：这是个跨语言边界的封装，Rust 的 `lazy_static` 初始化会被 Google 的泄漏检查器误报，只能临时关掉检查。两种 tokenizer 都实现同一个 `Tokenizer` 抽象——又一次"接口隔离"原则：上层只管"把这段文本变成 id 序列"，不关心底下是 C++ 的 SentencePiece 还是 Rust 的 HuggingFace，更不关心后者还需禁用泄漏检查器。
 
-这个抽象还解释了第 5 章末尾那个"吐半个字"现象的一半来由：SentencePiece 的解码路径（`sentencepiece_tokenizer.cc:84`）会把 byte token 攒进一个 `chunk_byte_token_ids` 缓冲、等凑齐一个完整字符再吐。子词分词意味着一个 token 未必是一个完整的字，跨 token 的边界必须小心处理。编码是这条边界的正向，解码是反向，同一条规则的两面。
+这个抽象还解释了第 5 章末尾那个"输出不完整 token 现象的一半来由：SentencePiece 的解码路径（`sentencepiece_tokenizer.cc:84`）会把 byte token 累积进 `chunk_byte_token_ids` 缓冲，等凑齐一个完整字符再输出。子词分词意味着一个 token 未必是一个完整的字，跨 token 的边界必须小心处理。编码是这条边界的正向，解码是反向，同一条规则的两面。
 
 ## 还差半步：token id 变成 embedding
 
@@ -299,7 +299,7 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
                                    size_t byte_offset) = 0;         // (2)
 ```
 
-(1) prefill 阶段一次查一批 token 的 embedding，拼接后写进 `output_tensor`。(2) 那个 `byte_offset` 参数是给增量续写用的：当 `output_tensor` 里已经有一部分 embedding，新的一批从指定字节偏移接着写。这和上一节 diff 增量、上上节 Clone 共享前缀是同一种"接着已有的往下补，别从头来"的思路，只不过这次落在了张量的字节层面。
+(1) prefill 阶段一次查一批 token 的 embedding，拼接后写进 `output_tensor`。(2) 那个 `byte_offset` 参数是给增量续写用的：当 `output_tensor` 里已经有一部分 embedding，新的一批从指定字节偏移接着写。这和上一节 diff 增量、上上节 Clone 共享前缀是同一种"在前面已有内容基础上续写而非从头计算"的思路，只不过这次落在了张量的字节层面。
 
 ### 查表其实是跑一个编译子图
 
@@ -317,7 +317,7 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
   compiled_model_->Run(signature_key_.value(), input_buffers_, output_buffers_); // (2)
 ```
 
-(2) 是要点：embedding 不是对一张权重表做内存索引，而是把 token id 写进输入 buffer、**跑一次编译好的 TFLite 子模型**，输出才是那个高维向量。这个子模型在模型文件里是独立的一段：实剖本书基准模型，`embedder` 段占 171 MB、签名输入恰是 `token_ids[1, 1]`——一次一个 token，与下面批量路径逐 token 调用的行为互相印证（附录 D）。做成独立子图的收益与第 7 章的量化直接相关：嵌入表是量化过的（第 7 章那个混合方案里嵌入层压到 int4），「查表」实际包含解量化，编译器把这一步连同取数一起编译成算子；同时它与主模型解耦，多模态路径可以单独复用或替换。(1) 是一个此刻看着奇怪、到第 10 章会豁然的分支：**负数 token 不查表，直接返回一个预置的默认向量**。第 10 章图像占位符 `kSpecialToken` 的值恰是 -1，文本查表路径对这些占位先填默认向量，真正的图像 embedding 随后由视觉执行器覆写。
+(2) 是要点：embedding 不是对一张权重表做内存索引，而是把 token id 写进输入 buffer、**跑一次编译好的 TFLite 子模型**，输出才是那个高维向量。这个子模型在模型文件里是独立的一段：实剖本书基准模型，`embedder` 段占 171 MB、签名输入恰是 `token_ids[1, 1]`——一次一个 token，与下面批量路径逐 token 调用的行为互相印证（附录 D）。做成独立子图的收益与第 7 章的量化直接相关：嵌入表是量化过的（第 7 章那个混合方案里嵌入层压到 int4），「查表」实际包含解量化，编译器把这一步连同取数一起编译成算子；同时它与主模型解耦，多模态路径可以单独复用或替换。(1) 是一个此刻看似特殊、在第 10 章会变得清晰的分支：**负数 token 不查表，直接返回一个预置的默认向量**。第 10 章图像占位符 `kSpecialToken` 的值恰是 -1，文本查表路径对这些占位先填默认向量，真正的图像 embedding 随后由视觉执行器覆写。
 
 批量的 `LookupPrefill`（`:148`）先做一串防御性校验（rank 一致、维度逐一相等、写入范围不越界），然后是主循环和一段收尾（`:225`）：
 
@@ -341,11 +341,11 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
   }
 ```
 
-(1) 指针先跳过 `byte_offset`，落到续写起点。(2) 批量路径没有批量算子：循环体逐 token 调 `LookupInternal`，也就是每个 token 跑一次子模型的 `Run`。(3) 是 padding 语义：输出张量是定长的（第 4 章的固定形状 prefill 窗口），token 数不足时，剩余槽位全部填上默认向量。源码注释说得直白：把剩下的位置当作 token 0 对待。第 4 章算 prefill 工单的填充浪费时，浪费的那些槽位在物理上就是这一段 `memcpy` 填出来的。
+(1) 指针先跳过 `byte_offset`，落到续写起点。(2) 批量路径没有批量算子：循环体逐 token 调 `LookupInternal`，也就是每个 token 跑一次子模型的 `Run`。(3) 是 padding 语义：输出张量是定长的（第 4 章的固定形状 prefill 窗口），token 数不足时，剩余槽位全部填上默认向量。源码注释的原文是：把剩下的位置当作 token 0 对待。第 4 章算 prefill 工单的填充浪费时，浪费的那些槽位在物理上就是这一段 `memcpy` 填出来的。
 
-id 是名字，embedding 才是模型真正计算的对象。这半步平时不用你操心，但记住它：第 10 章讲图片怎么进模型时，它会成为主角——图像编码器输出的正是这种 embedding，绕过 tokenizer 直接从这一步接入。
+id 是名字，embedding 才是模型真正计算的对象。这半步平时是自动完成的，但值得记住：第 10 章讲图片怎么进模型时，它会成为主角——图像编码器输出的正是这种 embedding，绕过 tokenizer 直接从这一步接入。
 
-至此，输入之路走完。你敲进去的一句话，历经"消息 → 套模板 → diff 增量 → 分词 → 查表"，变成了一串准备好的向量。
+至此，输入之路走完。输入的一句话，历经"消息 → 应用模板 → diff 增量 → 分词 → 查表"，变成了一串准备好的向量。
 
 <figure>
 {{#include figs/fig-3-1.svg}}
@@ -356,7 +356,7 @@ id 是名字，embedding 才是模型真正计算的对象。这半步平时不�
 
 输入侧有两个关键设计：Engine/Session 的两级抽象（把昂贵的权重和廉价的对话状态分开），以及模板 diff 增量渲染（把逻辑全量翻译成物理增量）。一个管空间，一个管时间。而 Clone 共享前缀、diff 增量、embedding 的 `byte_offset` 续写，三处不同层面的代码指向同一条准则：已经算过的，别再算第二遍。
 
-那串 token id 现在躺在门口。下一章，`RunPrefill` 会把它一口吞进模型。
+那串 token id 现在已经就绪。下一章，`RunPrefill` 会将它送入模型处理。
 
 ---
 

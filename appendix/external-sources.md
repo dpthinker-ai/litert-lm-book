@@ -10,7 +10,7 @@
 ## 对照项目（第 3–10 章「对照视野」侧栏）
 
 - llama.cpp：github.com/ggml-org/llama.cpp。侧栏中的行号锚定其提交 `b9873`。
-- MLC-LLM：github.com/mlc-ai/mlc-llm（文档 mlc.ai）；第 8 章提到其经 TVM 提前编译的做法为【文档】级引用。
+- MLC-LLM：github.com/mlc-ai/mlc-llm（文档 mlc.ai）；第 8 章提到其经 TVM 提前编译的做法为文档级引用。
 - ExecuTorch：github.com/pytorch/executorch。
 
 以上访问于 2026-07-05。
