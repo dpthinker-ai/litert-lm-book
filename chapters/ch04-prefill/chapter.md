@@ -55,6 +55,6 @@ prefill 是算力受限的一步，快，且有静态/动态两条实现路径�
 
 - prefill 编排：`runtime/core/tasks.cc:413 @ v0.13.1`（`Prefill`）。
 - 静态/动态路径与内部实现：`runtime/executor/llm_litert_compiled_model_executor.h @ v0.13.1`（`PrefillInternal`:247；`SortedPrefillSignatureMap`:415）。
-- 取消与限长：`ExecutorPrefillParams`（`runtime/executor/llm_executor_io_types.h @ v0.13.1`，精确行号待补读核验）。
+- 取消与限长：`ExecutorPrefillParams`（`runtime/executor/llm_executor_io_types.h:376 @ v0.13.1`）。
 
 <!-- 缺口：ExecutorPrefillParams 与异步任务队列的精确行号待第 4 章补读（tasks.cc / execution_queue.cc）核验后回填。 -->

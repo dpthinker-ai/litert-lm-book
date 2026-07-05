@@ -25,7 +25,7 @@
 - **纪律**：正文只引用本数据集与注明出处的官方数据；换后端/模型/机器即另一组数据，单独标注，不混算（第 8 章）。
 - 原始 CSV 存 `experiments/data/baseline.csv` 与 `mtp.csv`，元信息存 `experiments/data/_meta.txt`。
 
-## 三、结果（待回填）
+## 三、结果
 
 **主基准（Gemma 4 E4B，decode 128 token，各条件中位数）：**
 

@@ -114,4 +114,4 @@ LiteRT-LM 的位置可以一句话概括：**它是把 LiteRT（原 TFLite）这
 - 端侧运行时版图各项定位：各项目官方仓库 README——llama.cpp（github.com/ggml-org/llama.cpp）、MLC-LLM（github.com/mlc-ai/mlc-llm）、ExecuTorch（github.com/pytorch/executorch）（访问 2026-07-05）。
 - 移动内存带宽与 SoC 算力规格：待按缺口补 2-3 款代表性 SoC 的官方数据表（LPDDR5/5X 通道配置、NPU TOPS）。
 
-<!-- 缺口（见 notes.md）：SoC 带宽/算力精确数字；官方博客与各仓库 README 的完整链接与访问日期，均于 P5 统稿回填。 -->
+<!-- 开放缺口：SoC 带宽/算力精确数字（需官方数据表，未补前正文只用示例量级）。参考链接已回填。 -->
