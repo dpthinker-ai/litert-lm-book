@@ -53,6 +53,8 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 - **prefill** 一次处理许多 token，同一批权重被许多 token 共用，算术强度高，落在 Roofline 的"算力受限"区——所以它拼的是 TOPS。
 - **decode** 一次只处理一个 token，把全部权重读进来只为算这一个字，算术强度低到贴地，落在"带宽受限"区——所以它拼的是 GB/s，与算力无关。这正是第 1 章那条 25 tok/s 上限公式的来历。
 
+这副眼镜在本书基准数据里立刻显形〔基准 D〕：换到 GPU，prefill 从每秒 259 个 token 跳到 999（约 3.9 倍——算力受限，堆算力就快）；decode 却只从 24.7 到 50.6（约 2 倍——被带宽顶住，算力再强也只能干等内存）。同一台机器、同一个模型，两类操作对"更强的硬件"的反应截然不同。
+
 <figure>
 
 {{#include figs/fig-2-2.svg}}

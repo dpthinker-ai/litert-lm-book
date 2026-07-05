@@ -3,7 +3,7 @@
 > 状态：**v4.0 — 完整初稿**（2026-07-05）：**前言 + 11 章 + 尾声 + 附录 A-D 全部成稿**（正文约 10 万字、12 张 SVG 图、12 份 review.md，全书 lint 0 命中，代码引用逐条对 v0.13.1 核验）。
 > - 全书 12 篇正文：两个 pass 全部完成（事实核查 + 除 AI 味含**独立审校 12/12**）。
 > - P5 已完成：前言、附录 A 术语表、B 代码地图、C 复现指南、D 基准数据集（表格骨架，数据待采集）；统稿（图表编号理顺、SUMMARY 链接校验、全书 lint）。
-> **唯一未完项**：实测数字采集——待 HF 登录后跑 `experiments/bench_baseline.sh`，回填全书「〔基准 D〕」与附录 D 表格。
+> **v4.1（2026-07-05）：基准数据集已采集并回填全书**（Gemma 4 E4B，30 次矩阵 + 强制 MTP 验证；附录 D 含结果表与四条对账解读，其中 MTP "未复现 3x" 如实报告）。剩余开放项仅附录 D 对账清单的三个 ⬜（KV 公式代入、int4vs8、并行加载单测）与 P5 参考链接回填。
 > 书名（已定）：《端侧大模型推理：原理与 LiteRT-LM 实现》
 > *On-Device LLM Inference: Principles and Practice with LiteRT-LM*
 > 素材基础：`/Users/dpthinker/workspace/litert-lm-guide/data.json`（12 模块深度分析，约 20 万字）

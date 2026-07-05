@@ -45,7 +45,7 @@
 
 `.litertlm` 的分段结构在这里第二次发力。读取时，LiteRT-LM 用 **mmap** 把文件映射进地址空间（`ReadHeaderFromLiteRTLM` 与按段读取的接口，`schema/core/litertlm_read.h:116`、`:151 @ v0.13.1`，注释里明说读到的是"mmapped buffer"）。mmap 的好处是：不必先把几 GB 拷进内存，操作系统按需分页——用到哪段才真正读哪段。
 
-分段还带来并行的机会：各段互相独立，可以同时加载。这由一个开关控制（`litert_lm_engine_settings_set_parallel_file_section_loading`，`c/engine.h:295 @ v0.13.1`，默认开）。此外，编译后的模型产物也能缓存到磁盘（第 2 章 benchmark 见过的 `--cache disk`），二次启动直接复用、省掉重新编译。mmap 按需分页、分段并行、编译产物缓存——三招合起来对付的就是冷启动。（这几招对冷启动的实际影响，待基准数据集测量后回填〔基准 D〕。）
+分段还带来并行的机会：各段互相独立，可以同时加载。这由一个开关控制（`litert_lm_engine_settings_set_parallel_file_section_loading`，`c/engine.h:295 @ v0.13.1`，默认开）。此外，编译后的模型产物也能缓存到磁盘（第 2 章 benchmark 见过的 `--cache disk`），二次启动直接复用、省掉重新编译。mmap 按需分页、分段并行、编译产物缓存——三招合起来对付的就是冷启动。其中编译缓存的效果在本书基准里直接可见：GPU 后端首次运行（缓存未热）Init 5.29 s，其后稳定在约 1.77 s〔基准 D〕；分段并行加载的开关对比本书未单测。
 
 ## LoRA：不动基座，换个人格
 
