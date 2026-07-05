@@ -155,7 +155,7 @@ Time to first token:  3.9400 s
 
 注意这张表最左和第三列的对应关系：**prefill 吞吐和 decode 吞吐不是一个东西，也不该被平均成"一个速度"。** 一个模型的 prefill 吞吐常常比 decode 高出一到两个数量级（本书基准机上是 10-20 倍〔基准 D〕；NPU 或更强的 GPU 上差距更大）。原因第 1 章已经埋下：prefill 拼算力（可并行），decode 拼带宽（每步搬全部权重）。把它俩混在一起谈"这模型多少 tok/s"，是端侧性能讨论里一个常见的混淆。
 
-> 本书所有实测数字来自附录 D 的基准数据集（同一台 Mac、Gemma 4 E4B、公开可复现的采集脚本）。凡标注「〔基准 D〕」处，即由这套数据回填。
+> 本书所有实测数据来自附录 D 的基准数据集（同一台 Mac、Gemma 4 E4B、公开可复现的采集脚本）。凡标注「〔基准 D〕」处，即由这套数据回填。
 
 ## 这些数字怎么来的：计时器与测量语义
 
@@ -220,7 +220,7 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 <figcaption>图 2-2　Roofline 模型：prefill 落在算力受限区，decode 落在带宽受限区。两者受完全不同的资源约束，这是全书性能分析的基准框架。</figcaption>
 </figure>
 
-### 差的那一段：从两个实测数字反解 KV cache
+### 差的那一段：从两个实测数据反解 KV cache
 
 Roofline 框架立刻能做一次有内容的练习。附录 D 里，cpu 后端 decode 吞吐在 256 上下文时是 24.8 tok/s，4096 上下文时掉到 20.7〔基准 D〕。权重没变，后端没变，变的只有上下文长度。慢掉的这一段去哪了？
 
