@@ -44,4 +44,3 @@
 - **性能为什么是这样**：`kv_cache_interface.h` 与执行器的双缓冲成员、`llm_litert_mtp_drafter.cc`、`executor_settings_base.h` 的 Backend。
 - **想加一个后端**：看 `..._factory.cc` 的 `switch(GetBackend())` 与 `LlmExecutor` 抽象。
 
-> 一份更细、可点击的模块导览，见本书伴生的离线学习站点（`litert-lm-guide/`）。

@@ -1,9 +1,9 @@
 # 附录 A · 术语表
 
 > 全书术语的统一写法与速查。英文技术术语在正文首次出现时括注中文，此后统一用英文写法（如全书用 prefill，不用"预填充"）。
-> "首现章"以成书章节顺序为准。
+> "首现章"指该术语被**正式引入**（给定义，而非前瞻性提及）的章，按成书顺序。
 
-| 术语 | 中文 | 首现章 | 一句话 |
+| 术语 | 对照 | 首现章 | 一句话 |
 |---|---|---|---|
 | prefill | 预填充 | 1 | 把整段提示词一次性并行喂进模型、批量填 KV cache 的阶段；算力受限 |
 | decode | 解码 | 1 | 逐个 token 自回归生成的阶段，每步读一遍全部权重；带宽受限 |
@@ -14,11 +14,12 @@
 | quantization | 量化 | 1 | 把权重降到低比特（如 int4=0.5 字节/参数）以压体积、提带宽利用率 |
 | Roofline | 屋顶线 | 2 | 判断一段计算被算力还是带宽顶住的分析框架 |
 | TTFT | 首 token 时延 | 2 | time-to-first-token，从发起到第一个字出来的时间 |
-| tokens/s | — | 2 | 吞吐单位；prefill 与 decode 的 tokens/s 常差两个数量级 |
+| tokens/s | — | 2 | 吞吐单位；prefill 常比 decode 高一到两个数量级，两者不可混谈 |
 | Engine | — | 3 | 重量级、持有模型权重、可被多会话共享的资源持有者 |
 | Session | 会话 | 3 | 轻量、有状态的一次对话，持 KV cache 与采样配置 |
 | Conversation | 对话层 | 3 | 面向使用者的多轮对话 API，维护历史、套模板 |
 | tokenizer | 分词器 | 3 | 文本↔token id 的双向转换（SentencePiece / HuggingFace 两种） |
+| embedding | 嵌入 | 3 | token id 查表得到的高维向量；模型真正计算的对象（图像/音频也各自编码成它） |
 | 模板 diff 增量渲染 | — | 3 | 只 prefill 新旧渲染串的差值，多轮对话不重算历史 |
 | signature | 签名 | 4 | LiteRT CompiledModel 的具名入口（不同长度的 prefill、decode、verify） |
 | 静态/动态形状 | — | 4 | 预编译固定长度入口（静态）vs 序列可变、分块 prefill（动态） |
@@ -41,10 +42,12 @@
 | drafter / verify | 草稿模型 / 验证 | 9 | drafter 草拟候选 token，base 模型的 verify signature 一次验一串 |
 | 接受率 | — | 9 | 草拟 token 被接受的比例，决定推测解码到底快多少 |
 | bonus token | — | 9 | 首个不匹配处或全对时 base 给的额外正确 token，保证 token 数不亏 |
-| embedding | — | 10 | 把 token / 图像 patch / 音频编码成的向量；模型在 embedding 上工作 |
 | patchify | — | 10 | 把图像切成正方 patch，供视觉执行器编码成 embedding |
 | 约束解码 | constrained decoding | 10 | 每步采样前把不合语法的 token 的 logit 设为 -inf，保证输出结构合法 |
 | Tool Use | 工具调用 | 10 | 让模型输出结构化函数调用，经 ANTLR 文法解析后执行、回填 |
+| Preface | 开场白 | 10 | 对话的初始背景：系统消息 + 可用工具声明，Tool Use 链路的第一步 |
+| llguidance | — | 10 | 约束解码的语法引擎（Rust 库，经 cxx bridge 接入），逐步给出合法 token 位图 |
+| ANTLR | — | 10 | 文法解析器生成器；tool_use 用它的 .g4 文法把函数调用文本解析回结构 |
 | C ABI | — | 11 | 收敛成纯 C 的接口层，用不透明句柄 + C 函数当所有语言绑定的公约数 |
 | 不透明句柄 | opaque handle | 11 | 跨语言只传指针、不暴露 C++ 类型；create/delete 成对管理生命周期 |
 | FFI | — | 11 | 外部函数接口；各语言接 C ABI 的机制（ctypes / JNI / C 互操作 / WASM） |

@@ -2,7 +2,7 @@
 
 > 使命：一套 C++ 核心，怎么变成 Python、Kotlin、Swift、Web 都能调的 SDK。看清那层作为"通用桥"的 C ABI，以及一个真实的跨语言生命周期坑；再顺带看这套代码是怎么保证自己可测、可构建的。
 
-前面十章讲的都是 C++ 核心里发生了什么。但真正用它的人，多半不写 C++——App 开发者用 Kotlin、Swift，脚本作者用 Python，前端用 JavaScript。一套核心怎么服务这么多语言？这是最后一块工程拼图。
+前面十章讲的都是 C++ 核心里发生了什么。但真正用它的人，多半不写 C++——App 开发者用 Kotlin、Swift，脚本作者用 Python，前端用 JavaScript。加上核心的 C++ 和马上要讲的那层 C，这就是本章标题里"六种语言"的账本。一套核心怎么服务这么多语言？这是最后一块工程拼图。
 
 ## 为什么中间要隔一层 C
 
@@ -32,7 +32,7 @@ C 没有析构函数，也没有垃圾回收。所以 C ABI 的规矩是**创建
 - **Python** 用 `ctypes`：运行时按签名声明 C 结构和函数，直接调共享库（`python/litert_lm/_ffi.py:36 @ v0.13.1` 声明了 `LiteRtLmSamplerParams` 这样的 `ctypes.Structure`；还有个小巧的 `c_string_p`，自动把 Python 字符串编码成 UTF-8 字节，`:24`）。
 - **Kotlin/Android** 用 JNI：声明一串 `external fun`，由 JNI 桥到原生库（`kotlin/.../LiteRtLmJni.kt:19 @ v0.13.1` 那个 `LiteRtLmJni` object，里面是 `nativeCreateEngine` 等外部函数，`:52`）。句柄以 `Long`（一个指针大小的整数）在 Kotlin 和原生之间传递。
 - **Swift/iOS & macOS** 用 C 互操作：直接 `import` C 头文件调用（`swift/Engine.swift:17` 的 `import CLiteRTLM`）。它的 `Engine` 是一个 `actor`（`:28`）——用 Swift 的并发原语保证对原生引擎的访问是串行、安全的，而不用手写锁。
-- **Web** 把核心编成 WebAssembly，用 TypeScript 包一层在浏览器里跑。
+- **Web** 把核心编成 WebAssembly，用 TypeScript 包一层在浏览器里跑（`js/packages/core @ v0.13.1`）。
 
 同一个 prompt，走 Python 和走 C++ 会得到一致的行为——因为它们最终进的是同一套 `runtime`（这也是本章开头那句"一套核心"的实感）。各语言的 SDK 看起来风格迥异，底下是同一个引擎。
 
@@ -50,7 +50,7 @@ C 没有析构函数，也没有垃圾回收。所以 C ABI 的规矩是**创建
 
 最后两笔工程纪律，一笔关于测试，一笔关于构建。
 
-**可测试性**。推理要跑真模型、要硬件，测起来又慢又不稳定。LiteRT-LM 的对策是一个假执行器 `FakeLlmExecutor`（`runtime/executor/fake_llm_executor.h:37 @ v0.13.1`）——它实现同一个 `LlmExecutor` 接口（第 5 章），但不跑模型，而是按预先写好的脚本返回 token。有了它，上层的 prefill/decode 编排、采样、停止逻辑，全都能脱离真实模型和硬件来单测。这又是"接口隔离"的红利：因为上层只依赖 `LlmExecutor` 抽象，就能把真执行器换成假的来测。
+**可测试性**。推理要跑真模型、要硬件，测起来又慢又不稳定。LiteRT-LM 的对策是一个假执行器 `FakeLlmExecutor`（`runtime/executor/fake_llm_executor.h:37 @ v0.13.1`）——它实现第 4、5 章那层执行器抽象（`LlmExecutor`），但不跑模型，而是按预先写好的脚本返回 token。有了它，上层的 prefill/decode 编排、采样、停止逻辑，全都能脱离真实模型和硬件来单测。这又是"接口隔离"的红利：因为上层只依赖 `LlmExecutor` 抽象，就能把真执行器换成假的来测。
 
 **可构建**。这套代码要在 Android、iOS、Linux、macOS、Windows、Web 上都编得出来，还牵着一堆第三方依赖（sentencepiece、llguidance、skia……）。它用两套构建系统兜住：主用 Bazel，另备一套 CMake 供嵌入式或不便用 Bazel 的场景。这部分是纯工程的活，本书不展开（细节见附录 C），但值得记住一点：一个能投产到六个平台的运行时，构建系统的分量不亚于运行时本身。
 
