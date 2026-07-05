@@ -22,7 +22,7 @@
 
 - [x] `scripts/lint_prose.sh chapters/ch10-multimodal/chapter.md` —— 0 命中（2026-07-05）
 - [x] 除 AI 味清单第 1-13 条：撰写时自查（双主题章，两半切干净，各自独立小结前不硬拔高）
-- [ ] 第 14 条 独立审校：**待独立会话执行**
+- [x] 第 14 条 独立审校：**已由独立审校会话执行（2026-07-05）**，判为"AI 味很淡、可放行"；升华式收尾格言/自我总结拔高/长句等问题已逐条修正，修后 lint 复跑 0 命中
 
 ## 待清零（补读/数据）
 - [x] vision/audio executor：读 .h（Encode 接口 + kSpecialToken 对齐约定），机制层面足够；full .cc 走查可留待深化
