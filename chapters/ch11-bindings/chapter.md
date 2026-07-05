@@ -10,7 +10,7 @@
 
 通行的解法是退一步：先把核心收敛成一层纯 **C 接口**。几乎每种语言都能调 C（这是几十年攒下的事实标准），所以只要有一层 C ABI，就等于给所有语言开了门。LiteRT-LM 的这层门在 `c/engine.h`。
 
-它的写法有两个要点。其一，**不透明句柄**（opaque handle）。C 接口不暴露任何 C++ 类型，只给你一个不透明的指针——`LiteRtLmEngine`、`LiteRtLmSession`（`c/engine.h:41`、`:44 @ v0.13.1`）都是"只知道有这么个东西、不知道里面长啥样"的结构体指针。你拿着它调函数，但碰不到它的内部。其二，**纯 C 函数**。所有操作都是普通 C 函数：`litert_lm_engine_create`（`:380`）造一个引擎、`litert_lm_engine_create_session`（`:396`）开一个会话、`litert_lm_session_run_prefill`（`:421`）跑 prefill——你会发现这些函数名，正是第 3 章那套 Engine/Session 接口的 C 语言镜像。
+它的写法有两个要点。其一，**不透明句柄**（opaque handle）。C 接口不暴露任何 C++ 类型，只给你一个不透明的指针——`LiteRtLmEngine`、`LiteRtLmSession`（`c/engine.h:41`、`:44 @ v0.13.1`）都是"只知道有这么个东西、不知道里面长啥样"的结构体指针。你拿着它调函数，但碰不到它的内部。其二，**纯 C 函数**。所有操作都是普通 C 函数：`litert_lm_engine_create`（`:380`）造一个引擎、`litert_lm_engine_create_session`（`:396`）开一个会话、`litert_lm_session_run_prefill`（`:421`）跑 prefill。你会发现这些函数名，正是第 3 章那套 Engine/Session 接口的 C 语言镜像。
 
 <figure>
 
