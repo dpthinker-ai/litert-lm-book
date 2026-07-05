@@ -1,0 +1,49 @@
+<svg viewBox="0 0 700 300" width="700" height="300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="多模态 embedding 注入序列">
+  <style>
+    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .box  { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+    .t  { fill: var(--fig-text, #1f2328); }
+    .ts { fill: var(--fig-text-soft, #57606a); }
+    .accent { fill: var(--fig-accent, #0b57d0); }
+    .txt { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.3; }
+    .slot { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.6; }
+    .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
+  </style>
+  <defs><marker id="a10" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker></defs>
+
+  <text class="t" x="350" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">图片如何进入 token 序列：万物皆 embedding</text>
+
+  <!-- 图片 -->
+  <rect class="box" x="24" y="70" width="90" height="60" rx="6"/>
+  <text class="t" x="69" y="96" text-anchor="middle" style="font-size:12px;font-weight:700">图片</text>
+  <text class="ts" x="69" y="114" text-anchor="middle" style="font-size:10px">像素</text>
+
+  <!-- patchify -->
+  <rect class="box" x="150" y="70" width="110" height="60" rx="6"/>
+  <text class="t" x="205" y="92" text-anchor="middle" style="font-size:12px;font-weight:700">① patchify</text>
+  <text class="ts" x="205" y="110" text-anchor="middle" style="font-size:10px">切成正方 patch</text>
+  <text class="ts" x="205" y="124" text-anchor="middle" style="font-size:9.5px">缩放到 patch 数≤上限</text>
+
+  <!-- 视觉执行器 -->
+  <rect class="box" x="296" y="70" width="120" height="60" rx="6"/>
+  <text class="t" x="356" y="92" text-anchor="middle" style="font-size:12px;font-weight:700">② 视觉执行器</text>
+  <text class="ts" x="356" y="110" text-anchor="middle" style="font-size:10px">Encode → embedding</text>
+  <text class="ts" x="356" y="124" text-anchor="middle" style="font-size:9.5px">ExecutorVisionData</text>
+
+  <path class="edge" marker-end="url(#a10)" d="M114,100 H148"/>
+  <path class="edge" marker-end="url(#a10)" d="M260,100 H294"/>
+
+  <!-- ③ 注入序列 -->
+  <text class="accent" x="350" y="176" text-anchor="middle" style="font-size:12px;font-weight:700">③ FillVisionEmbeddings：把 embedding 填进特殊 token 占的坑</text>
+  <g transform="translate(150,196)">
+    <rect class="txt"  x="0"   y="0" width="52" height="40" rx="4"/><text class="t" x="26"  y="25" text-anchor="middle" style="font-size:11px">文本</text>
+    <rect class="slot" x="58"  y="0" width="52" height="40" rx="4"/><text class="accent" x="84"  y="20" text-anchor="middle" style="font-size:9px">special</text><text class="accent" x="84" y="32" text-anchor="middle" style="font-size:9px">(-1)</text>
+    <rect class="slot" x="116" y="0" width="52" height="40" rx="4"/><text class="accent" x="142" y="20" text-anchor="middle" style="font-size:9px">special</text><text class="accent" x="142" y="32" text-anchor="middle" style="font-size:9px">(-1)</text>
+    <rect class="slot" x="174" y="0" width="52" height="40" rx="4"/><text class="accent" x="200" y="20" text-anchor="middle" style="font-size:9px">special</text><text class="accent" x="200" y="32" text-anchor="middle" style="font-size:9px">(-1)</text>
+    <rect class="txt"  x="232" y="0" width="52" height="40" rx="4"/><text class="t" x="258" y="25" text-anchor="middle" style="font-size:11px">文本</text>
+    <rect class="txt"  x="290" y="0" width="52" height="40" rx="4"/><text class="t" x="316" y="25" text-anchor="middle" style="font-size:11px">文本</text>
+  </g>
+  <!-- 视觉 embedding 落入坑 -->
+  <path class="edge" marker-end="url(#a10)" d="M356,130 C 356,160 300,175 292,194"/>
+  <text class="ts" x="350" y="264" text-anchor="middle" style="font-size:10.5px">蓝框=视觉 embedding 填入的坑；对模型而言，与文本 embedding 无差别 → 照常 prefill/decode</text>
+</svg>
