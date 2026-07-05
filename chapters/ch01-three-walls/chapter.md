@@ -13,9 +13,7 @@
 这一章不谈 LiteRT-LM 的任何一行代码。先把这三堵墙量化清楚——因为后面每一章讲的优化，说到底都是在凿其中某一堵墙。你手里得先有把尺子，才看得懂那些优化到底省下了什么。
 
 <figure>
-
 {{#include figs/fig-1-1.svg}}
-
 <figcaption>图 1-1　端侧 LLM 的三堵墙：内存墙决定能跑多大，带宽墙决定逐字多快，功耗/异构墙决定能否持续稳定地跑。</figcaption>
 </figure>
 
@@ -112,8 +110,8 @@ LiteRT-LM 的位置可以一句话概括：**它是把 LiteRT（原 TFLite）这
 
 ## 参考
 
-- LiteRT-LM 投产于 Chrome / Chromebook Plus / Pixel Watch：Google AI Edge 官方博客（访问日期待补，P5 统稿回填完整链接）。
-- 端侧运行时版图各项定位：llama.cpp / MLC-LLM / ExecuTorch 各自官方仓库 README（版本与访问日期待补）。
+- LiteRT-LM 投产于 Chrome / Chromebook Plus / Pixel Watch：Google 开发者博客 *On-device GenAI in Chrome, Chromebook Plus and Pixel Watch*，https://developers.googleblog.com/on-device-genai-in-chrome-chromebook-plus-and-pixel-watch-with-litert-lm/（经 LiteRT-LM 仓库 README 索引，访问 2026-07-05）。
+- 端侧运行时版图各项定位：各项目官方仓库 README——llama.cpp（github.com/ggml-org/llama.cpp）、MLC-LLM（github.com/mlc-ai/mlc-llm）、ExecuTorch（github.com/pytorch/executorch）（访问 2026-07-05）。
 - 移动内存带宽与 SoC 算力规格：待按缺口补 2-3 款代表性 SoC 的官方数据表（LPDDR5/5X 通道配置、NPU TOPS）。
 
 <!-- 缺口（见 notes.md）：SoC 带宽/算力精确数字；官方博客与各仓库 README 的完整链接与访问日期，均于 P5 统稿回填。 -->

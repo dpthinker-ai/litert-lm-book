@@ -23,9 +23,7 @@
 **第三步，接受。** 逐位比对草拟和验证结果，接受最长的匹配前缀。
 
 <figure>
-
 {{#include figs/fig-9-1.svg}}
-
 <figcaption>图 9-1　推测解码一轮：drafter 逐个草拟 G 个 token，base 模型一次前向验证 G+1 个位置，接受最长匹配前缀再加一个 bonus token。一次昂贵前向，产出 1 到 G+1 个 token。</figcaption>
 </figure>
 
@@ -93,6 +91,6 @@ if (bonus_token == -1) {                     // 全猜对
 
 - MTP drafter 实现：`runtime/executor/llm_litert_mtp_drafter.cc @ v0.13.1`（`Draft`:453；`RunDraftingLoop`:328；`RunVerification`:437；接受循环:473-483；输出:490-492；接受率统计:165-171、493-494；`num_draft_steps`:256；verify signature:63、228）。
 - 能力声明：`schema/capabilities/speculative_decoding.h @ v0.13.1`（`HasSpeculativeDecodingSupport`:33、44）。
-- "约 3 倍"：Google AI Edge 官方博客（Gemma 4 MTP），【文档】级，完整链接与访问日期 P5 回填。
+- "约 3 倍"：Google 官方博客 *Accelerating Gemma 4: faster inference with multi-token prediction drafters*，https://blog.google/innovation-and-ai/technology/developers-tools/multi-token-prediction-gemma-4/（经 LiteRT-LM 仓库 README 索引，访问 2026-07-05）。本书实测未复现，见〔基准 D〕。
 
 <!-- MTP 开/关已实测（附录 D）：差异在抖动内、未复现 3x，正文已如实报告并以接受率经济学解释。文体接受率对比未做（CLI 不输出接受率）。#2227 无真机，成因为经济账推断、按【文档】级引 issue。图 9-2(接受率-收益曲线) 表 9-1(开/关实测) 需实测数据，待基准 D；本轮出签名图 9-1(时序)。 -->

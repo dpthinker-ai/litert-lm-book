@@ -28,9 +28,7 @@ executor 怎么"吞"这段 token，是一道端侧特有的选择题。
 > "预编译多个固定长度入口"这个取舍在端侧很典型：宁可多占一点编译产物和填充浪费，换取运行时的确定性与峰值性能。云端更倾向动态形状（灵活、省显存），因为它不缺重新编译的算力，也不在乎多留几个 kernel。同一个问题，两端因约束不同给出相反的默认答案——这类"因地制宜"贯穿全书。
 
 <figure>
-
 {{#include figs/fig-4-1.svg}}
-
 <figcaption>图 4-1　prefill 的两条路径与异步底座。静态路径按长度挑固定 signature，动态路径分块吞入；两者都经 PrefillInternal 落到 LiteRT，并把结果写进 KV cache。任务经队列异步执行，取消标志随时可打断。</figcaption>
 </figure>
 

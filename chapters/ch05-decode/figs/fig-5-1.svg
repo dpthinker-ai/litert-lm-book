@@ -15,51 +15,40 @@
     <marker id="a5"  orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker>
     <marker id="a5b" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent, #0b57d0)"/></marker>
   </defs>
-
   <text class="t" x="360" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">一次 decode 心跳（循环直到 ShouldStop）</text>
-
   <!-- 上一个 token -->
   <rect class="box" x="40" y="70" width="120" height="46" rx="6"/>
   <text class="t" x="100" y="90" text-anchor="middle" style="font-size:12px;font-weight:700">上一个 token</text>
   <text class="ts" x="100" y="107" text-anchor="middle" style="font-size:10px">喂进模型</text>
-
   <!-- 前向 -->
   <rect class="box" x="230" y="70" width="150" height="46" rx="6"/>
   <text class="t" x="305" y="90" text-anchor="middle" style="font-size:12px;font-weight:700">模型前向</text>
   <text class="ts" x="305" y="107" text-anchor="middle" style="font-size:10px">读全部权重 → logits</text>
-
   <!-- KV cache 侧 -->
   <rect class="kv" x="230" y="140" width="150" height="34" rx="6"/>
   <text class="t" x="305" y="162" text-anchor="middle" style="font-size:11px">KV cache（读+追加）</text>
-
   <!-- 分岔：内部/外部 -->
   <rect class="hot" x="450" y="52" width="230" height="46" rx="6"/>
   <text class="accent" x="565" y="72" text-anchor="middle" style="font-size:11px;font-weight:700">内部采样：executor 一步出 token</text>
   <text class="ts" x="565" y="89" text-anchor="middle" style="font-size:9.5px">片上采样，省 logits 搬运（第 8 章）</text>
-
   <rect class="box" x="450" y="110" width="230" height="52" rx="6"/>
   <text class="a2" x="565" y="128" text-anchor="middle" style="font-size:11px;font-weight:700">外部采样：DecodeLogits</text>
   <text class="ts" x="565" y="144" text-anchor="middle" style="font-size:9.5px">logits 处理（重复惩罚/约束）</text>
   <text class="ts" x="565" y="157" text-anchor="middle" style="font-size:9.5px">→ 采样器（第 10 章）</text>
-
   <!-- 采样出 token id -->
   <rect class="box" x="450" y="200" width="230" height="40" rx="6"/>
   <text class="t" x="565" y="224" text-anchor="middle" style="font-size:12px;font-weight:700">采样出 token id</text>
-
   <!-- 转文本 + 缓冲 -->
   <rect class="box" x="450" y="270" width="230" height="52" rx="6"/>
   <text class="t"  x="565" y="290" text-anchor="middle" style="font-size:11px;font-weight:700">转文本 + 流式吐出</text>
   <text class="ts" x="565" y="306" text-anchor="middle" style="font-size:9.5px">停止词回吐 · 半字暂存</text>
-
   <!-- ShouldStop -->
   <rect class="hot" x="230" y="276" width="150" height="46" rx="6"/>
   <text class="accent" x="305" y="296" text-anchor="middle" style="font-size:12px;font-weight:700">ShouldStop?</text>
   <text class="ts" x="305" y="312" text-anchor="middle" style="font-size:9.5px">停止token/超长/取消</text>
-
   <!-- 出口 -->
   <rect class="box" x="40" y="276" width="120" height="46" rx="6"/>
   <text class="t" x="100" y="300" text-anchor="middle" style="font-size:12px;font-weight:700">结束 → 交回</text>
-
   <!-- edges -->
   <path class="edge" marker-end="url(#a5)" d="M160,93 H228"/>
   <path class="edge" marker-end="url(#a5)" d="M305,116 V138"/>
@@ -71,7 +60,6 @@
   <text class="ts" x="415" y="290" text-anchor="middle" style="font-size:10px">每步</text>
   <path class="edge" marker-end="url(#a5)" d="M230,299 H162"/>
   <text class="ts" x="196" y="291" text-anchor="middle" style="font-size:10px">是</text>
-
   <!-- 循环回边（否） -->
   <path class="loop" marker-end="url(#a5b)" d="M305,276 V210 C 200,210 160,180 100,180 V118"/>
   <text class="accent" x="150" y="205" text-anchor="middle" style="font-size:11px;font-weight:700">否 → 下一次心跳</text>

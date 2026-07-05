@@ -53,9 +53,7 @@ LiteRT-LM 的对策朴素而有效：**只 prefill 新增的那一小段。**
 至此，输入之路走完。你敲进去的一句话，历经"消息 → 套模板 → diff 增量 → 分词"，变成了一串准备好的 token id。
 
 <figure>
-
 {{#include figs/fig-3-1.svg}}
-
 <figcaption>图 3-1　输入侧数据流：一句话经对话模板渲染、与历史做 diff 取增量、再分词，最终成为一串 token id。只有增量部分需要 prefill——这是多轮对话不重算历史的关键。</figcaption>
 </figure>
 

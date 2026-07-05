@@ -31,9 +31,7 @@
 它的结构是"头 + 分段"。头是一个 FlatBuffer，用类型化的键值对（`KeyValuePair`，`schema/core/litertlm_header_schema.fbs:56 @ v0.13.1`）记录元数据；正文是若干**段**（section），每段装一样东西——一段权重、一段 tokenizer、一段元数据。段的存储方式还挺灵活：可以直接指向文件里的一块字节（`FileBackedSectionStream`，`schema/core/litertlm_section.h:98 @ v0.13.1`），可以是一个 protobuf（`ProtoBufSectionStream`，`:189`），也可以是 zlib 压缩过的（`ZlibBackendedSectionStream`，`:252`）。
 
 <figure>
-
 {{#include figs/fig-7-1.svg}}
-
 <figcaption>图 7-1　.litertlm 文件结构：一个 FlatBuffer 头（类型化键值对元数据）+ 若干段。段可以是文件字节、protobuf 或 zlib 压缩流。权重、tokenizer、模板、能力声明打包进同一个文件。</figcaption>
 </figure>
 

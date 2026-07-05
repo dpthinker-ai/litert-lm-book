@@ -9,30 +9,24 @@
     .dot { fill: var(--fig-accent-2, #6639ba); }
     .band { fill: var(--fig-surface, #f6f8fa); }
   </style>
-
   <text class="t" x="320" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">Roofline：性能被算力或带宽顶住</text>
-
   <!-- 坐标轴 -->
   <line class="axis" x1="70" y1="320" x2="600" y2="320"/>
   <line class="axis" x1="70" y1="320" x2="70" y2="60"/>
   <text class="ts" x="335" y="360" text-anchor="middle" style="font-size:12px">算术强度（每读一字节摊上多少次计算）→</text>
   <text class="ts" x="24" y="190" text-anchor="middle" style="font-size:12px" transform="rotate(-90 24 190)">性能 →</text>
-
   <!-- 屋顶线：先斜坡（带宽受限）后水平（算力受限） -->
   <path class="roof" d="M70,300 L300,110 L600,110"/>
   <text class="ts" x="470" y="100" text-anchor="middle" style="font-size:11px">算力屋顶（峰值 TOPS）</text>
   <text class="ts" x="150" y="180" text-anchor="middle" style="font-size:11px" transform="rotate(-39 150 180)">带宽斜坡</text>
-
   <!-- 拐点 -->
   <line class="grid" x1="300" y1="110" x2="300" y2="320"/>
   <text class="ts" x="300" y="336" text-anchor="middle" style="font-size:10px">拐点</text>
-
   <!-- decode 点（低强度，贴带宽斜坡） -->
   <circle class="dot" cx="130" cy="250" r="6"/>
   <text class="t" x="130" y="238" text-anchor="middle" style="font-size:12px;font-weight:700">decode</text>
   <text class="ts" x="130" y="278" text-anchor="middle" style="font-size:10px">每步读全部权重</text>
   <text class="ts" x="130" y="291" text-anchor="middle" style="font-size:10px">→ 带宽受限</text>
-
   <!-- prefill 点（高强度，近算力屋顶） -->
   <circle class="dot" cx="470" cy="110" r="6"/>
   <text class="t" x="470" y="140" text-anchor="middle" style="font-size:12px;font-weight:700">prefill</text>

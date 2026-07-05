@@ -31,9 +31,7 @@ switch (backend) {
 上层拿到的都是同一个 `LlmExecutor` 抽象（第 5 章那个接口），完全不知道底下是 CPU 还是 NPU。这就是"可插拔后端"落到代码里的样子：一个枚举、一个工厂、一个共同接口。加一个新后端，就是加一个 case，上层一行不改。
 
 <figure>
-
 {{#include figs/fig-8-1.svg}}
-
 <figcaption>图 8-1　后端工厂分派：Backend 枚举经工厂函数分成 CPU/GPU 一路、NPU 一路，都产出同一个 LlmExecutor 抽象。上层对后端差异无感知。</figcaption>
 </figure>
 

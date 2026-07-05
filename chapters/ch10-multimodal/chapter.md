@@ -15,9 +15,7 @@
 第三步的"预留位置"是整件事最巧的地方。序列里先放一串占位的特殊 token（代码里 `kSpecialToken` 值为 -1，`runtime/executor/llm_executor_io_types.h:220 @ v0.13.1`）。头文件里有个直观的例子（`:202`）：`token_ids = [2, kSpecialToken, kSpecialToken, kSpecialToken, 106, 77, ...]`——那几个 `kSpecialToken` 就是给视觉 embedding 占的坑。真正 prefill 前，`FillVisionEmbeddings`（`runtime/executor/llm_executor_base.h:178 @ v0.13.1`）把视觉 embedding 填进这些坑。填完，序列里一部分槽装文本 embedding、一部分装视觉 embedding，对模型来说都是一样的 embedding，一视同仁地往下算。
 
 <figure>
-
 {{#include figs/fig-10-1.svg}}
-
 <figcaption>图 10-1　模型怎么"看见"：图片先 patchify 切块、经视觉执行器编码成 embedding，再填进 token 序列里由特殊 token（kSpecialToken）占好的坑。对模型而言，视觉 embedding 和文本 embedding 无差别。</figcaption>
 </figure>
 

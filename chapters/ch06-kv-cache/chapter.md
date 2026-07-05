@@ -39,9 +39,7 @@ KV cache 要频繁读写，这在 GPU 上撞见一个具体麻烦：部分 GPU �
 LiteRT-LM 的解法不玄乎：**备两套缓冲**（`kv_cache_buffers_1_` 和 `kv_cache_buffers_2_`，`llm_litert_compiled_model_executor.h:329-330 @ v0.13.1`），再用两个指针分别指向"当前读的"和"当前写的"（`input_kv_cache_buffers_` / `output_kv_cache_buffers_`，`:331-333`）。每一步，从旧缓冲读、往新缓冲写，然后把两个指针一交换——下一步的"新"就成了"旧"。全程不需要把数据从一块缓冲拷到另一块，只是换个指针指向。
 
 <figure>
-
 {{#include figs/fig-6-1.svg}}
-
 <figcaption>图 6-1　KV cache 双缓冲。每步读旧缓冲、写新缓冲，然后交换两个指针——用一次指针交换避开了"同缓冲读写"的限制，也避开了数据拷贝。</figcaption>
 </figure>
 
