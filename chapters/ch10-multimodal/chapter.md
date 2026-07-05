@@ -174,7 +174,23 @@ for (int i = 0; i < model.GetNumSignatures(); ++i) {
 
 音频走同一条路，只是特殊 token 换成 -2（`ExecutorAudioData::kSpecialToken`，`llm_executor_io_types.h:281 @ v0.13.1`；对齐约定在 `:263` 的注释里，与视觉逐字对应）。三个模态各用一个 `kSpecialToken` 值（文本无、视觉 -1、音频 -2）区分各自的占位符槽位，填充时各填各的。这就是多模态的统一之处：各模态各有编码器把输入编码成同一嵌入空间的向量，一旦成为 embedding，后续的 prefill、decode（第 4、5 章）无需任何改动——它们本就工作在 embedding 上，不关心这些向量原本来自文本、图像还是音频。第 2 章那套分层架构因此得以保持干净：多模态是在输入端多接一个编码器，而非改动整条流水线。
 
-音频链路比视觉多一层结构，值得单独展开——它并非「编码器 Run 一次、适配器 Run 一次」这么简单。
+### 音频链路：DSP 前端与分块编码
+
+音频链路比视觉多两层结构。第一层在编码器之前：喂给音频编码器的不是波形，而是 log-mel 频谱图，这是语音处理的经典前端。预处理器（`runtime/components/preprocessor/audio_preprocessor_miniaudio.cc @ v0.13.1`）把波形切帧后逐帧做实数 FFT（`kiss_fftr`，`:265`，用的是 kissfft 库），取平方幅度谱，再交给 `MelFilterbank` 加权。这个类的注释一句话说清了它做的变换：把平方幅度谱的一个切片转换为三角 mel 加权的线性幅度滤波器组（`runtime/components/preprocessor/mel_filterbank.h:25 @ v0.13.1`），初始化参数就是教科书上那几个：FFT bin 数、采样率、mel 通道数、频率上下限（`:38`）。滤波器组输出取对数前还加一个下限保护（`audio_preprocessor_miniaudio.cc:295` 一带，对数值加 floor 防止 log(0)），得到最终的 log-mel 频谱。到这里音频已经变成一个 `[帧数, mel 通道数]` 的浮点矩阵，后续才轮到神经网络。
+
+第二层在编码器内部：频谱图不是一次性喂进编码器，而是分块编码。`Encode`（`runtime/executor/audio_litert_compiled_model_executor.cc:941 @ v0.13.1`）先校验频谱与掩码的形状一致性，然后进入分块循环（`:987`）：
+
+```cpp
+  // Chunk the spectrogram into smaller pieces and encode them one by one.
+  int total_valid_tokens = 0;
+  int pos = 0;
+  while (pos < input_sequence_length) {                        // (1)
+    int end = std::min(pos + sequence_length_, input_sequence_length);
+```
+
+(1) 每轮取至多 `sequence_length_` 帧（编码器 signature 的固定输入长度），编码器对每块 Run 一次，输出按 `encoder_shrinking_factor_` 缩减后的 token 数拼接进结果，`total_valid_tokens` 累计有效 token。这与第 4 章 prefill 的分块是同一个约束的两次出现：编译好的模型入口是定长的，任意长度的输入只能切块喂。一段几十秒的音频有几千帧频谱，分块让编码器的输入 buffer 尺寸有界，代价同样是块间串行。
+
+两层加起来，音频的成本结构与视觉不同：视觉的预处理大头在重采样（纯 CPU 浮点），音频的预处理是 FFT 加滤波器组（同样纯 CPU，但随音频时长线性增长），编码阶段则多了分块循环的串行段。落到序列里之后二者归一：音频 token 同样按第 4 章的规则参与 prefill、按第 6 章的规则占 KV cache，上一节的预算算式对它同样适用。
 
 ## 让输出守规矩：约束解码
 

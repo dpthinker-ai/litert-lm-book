@@ -120,6 +120,35 @@ virtual absl::Status SampleToIdAndScoreBuffer(
 
 签名里有两个设计取向。(1) 的 `logits_tensor` 形状是 `[batch_size, sequence_size, vocab_size]`，`ids_tensor` 是 `[batch_size, sequence_size]`：采样器一次处理一整批候选，而非逐个处理，因为 `num_output_candidates > 1` 时（束搜索、多候选生成）批处理能摊薄固定开销。(2) 的 `scores_tensor` 可空：传入则把采样到的 token 的概率也写回，供上层做候选排序；不需要则传 `nullptr`。方法直接读写 `TensorBuffer` 而非 `std::vector`，是为了让实现能落在 GPU 上。这个抽象既能包 CPU 采样器，也能包片上采样器（第 8 章）。
 
+### 采样器从哪来：工厂分派与一条降级链
+
+具体用哪个采样器实现，由工厂函数按后端分派（`CreateSampler`，`runtime/components/sampler_factory.cc:707 @ v0.13.1`）。GPU 分支里藏着一条设计得很完整的降级链：
+
+```cpp
+    case Backend::GPU: {
+      // ...
+      auto sampler_or =
+          CreateGpuSampler(batch_size, sampler_params, env, sequence_size_value,
+                           vocab_size.value(), activation_data_type);
+      if (sampler_or.ok() ||
+          sampler_or.status().code() != absl::StatusCode::kUnavailable) {
+        // For a normal failure or success, return the result.
+        return sampler_or;                                       // (1)
+      }
+      // For a failure due to GPU sampler unavailable, fall back to CPU.
+      ABSL_LOG(WARNING)
+          << "GPU sampler unavailable. Falling back to CPU sampling. To use "
+             "GPU sampling, please make sure libLiteRtTopKWebGpuSampler.so or "
+             "libLiteRtTopKOpenClSampler.so is available at LD_LIBRARY_PATH "
+             "on device. You can find the shared library under prebuilt/";
+      ABSL_FALLTHROUGH_INTENDED;                                 // (2)
+    }
+    case Backend::CPU:
+      return CreateCpuSampler(batch_size, sequence_size_value, sampler_params);
+```
+
+日志文本交代了背景：GPU 片上采样器不是编进主库的，而是独立的动态库（WebGPU 或 OpenCL 两种实现），运行时按符号名动态加载（`GetSamplerCApi`，定义 `:283`、OpenCL 调用点 `:360`，加载 `libLiteRtTopKOpenClSampler.so` 并解析 `Create`/`Destroy`/`SampleToIdAndScoreBuffer` 等 C 符号）。设备上没有这个 `.so` 时，加载失败返回 `kUnavailable`。(1) 处的判断把错误分成两类：真正的失败（参数错、初始化错）原样上抛；仅仅是「不可用」则 (2) 用显式标注的 `ABSL_FALLTHROUGH_INTENDED` 落进 CPU 分支，换 CPU 采样器继续跑。功能不受影响，代价是每步 decode 多一次 logits 回搬（上一节刚算过这笔账）。把可选的加速件做成独立动态库加运行时探测，主库不背 GPU 采样的依赖，没有它照样正确，这与第 8 章 CPU 亲和性只在特定设备上生效是同一种工程姿态：加速是机会性的，正确性是无条件的。
+
 常用的一种实现是 `TopPSampler`（`runtime/components/top_p_cpu_sampler.h:30 @ v0.13.1`）。它用一个类覆盖多种策略，靠参数区分：
 
 ```cpp
