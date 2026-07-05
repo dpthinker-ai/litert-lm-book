@@ -31,7 +31,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 
 ## 读懂第一批数字
 
-跑起来只是开始。要理解性能，得让它把话说清楚。`litert_lm_main` 有一个 benchmark 模式，专门吐性能数字（本书附录 D 的基准数据集就是这么采的）。它报告的量，背后是一个叫 `BenchmarkInfo` 的结构，C API 把每一项都暴露了出来。四个最该盯住的：
+`litert_lm_main` 有一个 benchmark 模式，专门吐性能数字（本书附录 D 的基准数据集就是这么采的）。它报告的量，背后是一个叫 `BenchmarkInfo` 的结构，C API 把每一项都暴露了出来。四个最该盯住的：
 
 | 指标 | 含义 | 属于哪堵墙 | C API（`c/engine.h @ v0.13.1`） |
 |---|---|---|---|
@@ -42,7 +42,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 
 > 表 2-1　benchmark 报告的四个核心指标，以及它们各自受哪堵墙约束。第 6、7 章会分别深挖 decode 吞吐和初始化时间。
 
-注意这张表最左和第三列的对应关系：**prefill 吞吐和 decode 吞吐不是一个东西，也不该被平均成"一个速度"。** 一个模型可以 prefill 每秒几千 token、decode 每秒几十——差两个数量级。原因第 1 章已经埋下：prefill 拼算力（可并行），decode 拼带宽（每步搬全部权重）。把它俩混在一起谈"这模型多少 tok/s"，是端侧性能讨论里最常见的误导。
+注意这张表最左和第三列的对应关系：**prefill 吞吐和 decode 吞吐不是一个东西，也不该被平均成"一个速度"。** 一个模型可以 prefill 每秒几千 token、decode 每秒几十——差两个数量级。原因第 1 章已经埋下：prefill 拼算力（可并行），decode 拼带宽（每步搬全部权重）。把它俩混在一起谈"这模型多少 tok/s"，是端侧性能讨论里一个常见的混淆。
 
 > 本书所有实测数字来自附录 D 的基准数据集（同一台 Mac、Gemma 3n E2B int4、公开可复现的采集脚本）。基准数据集尚在采集，具体数值将于 P1 完成后回填本章各处标注「〔基准 D〕」的位置。
 
