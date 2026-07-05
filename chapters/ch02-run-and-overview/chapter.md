@@ -157,6 +157,53 @@ Time to first token:  3.9400 s
 
 > 本书所有实测数字来自附录 D 的基准数据集（同一台 Mac、Gemma 4 E4B、公开可复现的采集脚本）。凡标注「〔基准 D〕」处，即由这套数据回填。
 
+## 这些数字怎么来的：计时器与测量语义
+
+会读数字之后，还要知道数字是怎么得到的，否则无从判断它可不可信。四个指标全部出自 `BenchmarkInfo`（`runtime/engine/io_types.h:420 @ v0.13.1`），它的计时模型很简单：每一轮 prefill 或 decode 记为一个 turn，起点打一个时间戳，终点用当前时间减起点，连同这一轮处理的 token 数存进列表（`runtime/engine/io_types.cc:307 @ v0.13.1`）：
+
+```cpp
+absl::Status BenchmarkInfo::TimePrefillTurnEnd(uint64_t num_prefill_tokens) {
+  const std::string phase_name = absl::StrCat("prefill:", prefill_turn_index_);
+  // ...
+  prefill_turns_.emplace_back(num_prefill_tokens,
+                              absl::Now() - start_time_map_[phase_name]);  // (1)
+  prefill_turn_index_++;
+  return absl::OkStatus();
+}
+```
+
+(1) 一个 turn 就是一条 `(token 数, 耗时)` 记录。吞吐的定义随之而来：某一轮的 tokens/s 就是这条记录的 `num_tokens / duration`（`GetDecodeTokensPerSec`，`io_types.cc:434 @ v0.13.1`，函数里对零时长与越界各有防护）。前面表 2-1 里的 `last_*_per_second`，取的是最后一轮的这个商。
+
+TTFT 的口径也写在代码里（`GetTimeToFirstToken`，`io_types.cc:455 @ v0.13.1`）：
+
+```cpp
+double first_decode_token_seconds = absl::ToDoubleSeconds(
+    decode_turns_[0].duration / decode_turns_[0].num_tokens);   // (1)
+double first_prefill_token_seconds =
+    absl::ToDoubleSeconds(prefill_turns_[0].duration);          // (2)
+return first_decode_token_seconds + first_prefill_token_seconds;
+```
+
+(2) 是首轮 prefill 的完整耗时，(1) 是首轮 decode 平摊到单 token 的时长，两者相加。上一节那笔 256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s 的验算不是本书发明的口径，就是这个函数的算式本身。也因此 Init 不在里面：模型加载在任何 turn 开始之前就结束了。
+
+数字可信还依赖两处刻意改变执行语义的设计。其一，benchmark 模式强制 prefill 同步完成（`runtime/core/tasks.cc:435 @ v0.13.1`）：
+
+```cpp
+// Wait for prefill to complete if benchmark mode is enabled.
+params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
+```
+
+正常路径上 prefill 可以异步提交、不等硬件真正跑完就返回（第 4 章）；计时若落在这样的路径上，测到的只是「提交耗时」。这一行把 benchmark 模式下的计时终点钉在硬件完成之后。其二，`ShouldStop` 对 benchmark 有专门分支（`tasks.cc:86 @ v0.13.1`，第 5 章贴过全文）：指定了 decode 步数就跑满 N 步、忽略停止词。原因也是测量语义：若模型第 20 步碰巧生成了停止词，一次 128 步的吞吐测量就会缩水成 20 步的样本，抖动大且不可比。
+
+这两处合起来是一条测量原则：**基准模式可以改变执行语义，但改变的方向必须让数字更接近想测的那件事**（硬件真实耗时、固定长度的稳态吞吐），并且写在代码里可以被核对。
+
+有了定义与语义，瓶颈判定可以给出一个操作化流程，全书各章会反复用到：
+
+1. **Init 偏大**：与推理无关，是加载问题，查第 7 章（mmap、分段、并行加载）。
+2. **TTFT 偏大而 decode 正常**：几乎总是 prefill 的账（TTFT 算式里 prefill 项占大头），受算力约束，换更强的后端收益直接（本节上文 3.9 倍）。
+3. **decode 吞吐低**：先用第 1 章的公式算纯权重上限（带宽 ÷ 权重字节），实测贴近上限说明已被内存带宽约束住，加算力无用；离上限还远则查采样、约束解码等每步的额外开销（第 5、10 章）。
+4. **decode 随上下文变长而变慢**：KV cache 的带宽占用在增长，见下一节的反解练习与第 6 章的正式对账。
+
 ## 一副眼镜：Roofline
 
 有了 prefill/decode 两类指标，就能戴上一副贯穿全书的"眼镜"——Roofline（屋顶线）模型。它一句话讲完：**一段计算的速度，要么被算力顶住，要么被带宽顶住，取决于它每读一字节数据能摊上多少次计算**（这个比值叫算术强度，是体系结构教科书的常识内容）。
@@ -173,7 +220,13 @@ Time to first token:  3.9400 s
 <figcaption>图 2-2　Roofline 模型：prefill 落在算力受限区，decode 落在带宽受限区。两者受完全不同的资源约束，这是全书性能分析的基准框架。</figcaption>
 </figure>
 
-戴上它，第 6 章那个问题就有了着落：实测的 decode 吞吐，离第 1 章那条纯权重上限还有一段距离，那段距离是被谁吃掉的？（剧透：KV cache 也要占带宽。）
+### 差的那一段：从两个实测数字反解 KV cache
+
+Roofline 框架立刻能做一次有内容的练习。附录 D 里，cpu 后端 decode 吞吐在 256 上下文时是 24.8 tok/s，4096 上下文时掉到 20.7〔基准 D〕。权重没变，后端没变，变的只有上下文长度。慢掉的这一段去哪了？
+
+按带宽受限的模型推一遍（以下是推算，假设两档的有效带宽相同、每步读全量 KV cache）。256 上下文时 KV cache 只有几十 MB，相对 3.4 GB 权重可以忽略，于是有效带宽约为 24.8 × 3.4 ≈ 84 GB/s。4096 上下文时每步搬运总量变为 84 ÷ 20.7 ≈ 4.07 GB，比权重多出约 0.67 GB。这多出的部分除以 4096 个 token，约 160 KiB/token，恰好落在 KV cache 每 token 占用的量级上（第 6 章用示例参数算出约 120 KiB/token，真实数字从模型元数据读出）。也就是说，**仅凭两档吞吐实测加一条带宽等式，就能反解出 KV cache 的存在和它的量级**。
+
+同样的练习放到 gpu 上（50.6 → 45.6 tok/s）反解出约 90 KiB/token，与 cpu 侧的 160 KiB 并不一致。这个偏差本身有信息量：恒定带宽是近似假设，注意力计算的额外开销、两个后端不同的带宽利用率都混在商里。数量级（每 token 百 KiB 级）是可靠的，精确到字节的账要从模型元数据正着算，第 6 章做这件事，第 13 问（`--max-num-tokens` 为什么影响速度）也在那里得到解答。
 
 ## 二十个问题
 
@@ -342,6 +395,7 @@ Section 2:
 - `litert-lm` CLI 子命令注册：`python/litert_lm_cli/main.py:52 @ v0.13.1`；`run` 的 Engine/Session 创建与流式循环：`python/litert_lm_cli/commands/run.py:240,100 @ v0.13.1`；`benchmark` 输出：`python/litert_lm_cli/commands/benchmark.py:102 @ v0.13.1`。
 - C++ 演示程序 `litert_lm_main` 的一次推理主干：`runtime/engine/litert_lm_main.cc:113 @ v0.13.1`；flag 定义在 `:52`（`--backend`）、`:54`（`--model_path`）；构建见附录 C。
 - benchmark 指标定义：`c/engine.h @ v0.13.1` 的 `litert_lm_benchmark_info_*` 系列（TTFT `:583`、Init `:591`、prefill/decode 吞吐 `:634`/`:643`）；文本输出格式见 `runtime/engine/io_types.cc:473 @ v0.13.1`。
+- 测量语义：`BenchmarkInfo` 类声明 `runtime/engine/io_types.h:420 @ v0.13.1`；turn 计时器 `io_types.cc:307`、吞吐算式 `:434`、TTFT 算式 `:455`；benchmark 强制同步 `runtime/core/tasks.cc:435`；`ShouldStop` 的 benchmark 分支 `:86`（全文见第 5 章）——均 @ v0.13.1。KV cache 反解练习的数据：附录 D（cpu/gpu，256 与 4096 上下文档）。
 - 五层落到具体文件：接口层 `runtime/engine/engine.h:70`（`SessionInterface`）；编排层 `runtime/core/tasks.cc:413`（`Prefill`）、`:86`（`ShouldStop`）、`:571`（decode 循环）；执行层 `runtime/executor/llm_executor_base.h:40`（`LlmExecutorBase`）——均 @ v0.13.1。架构分层与设计原则改编自本书伴生的代码地图（附录 B）。
 - `.litertlm` 分段结构与打印工具：`schema/core/litertlm_print.cc:155 @ v0.13.1`；section 数据类型枚举 `schema/core/litertlm_utils.cc:31 @ v0.13.1`；元数据字段 `runtime/proto/llm_metadata.proto @ v0.13.1`。
 
