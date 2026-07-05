@@ -197,7 +197,70 @@ if (current_task) {
 
 (1) 任务在锁**外**执行。注释点明了原因：任务自己可能回头调 `Enqueue` 或 `Remove`（比如一个 prefill 任务完成后排入 decode），若持锁执行就会自锁死。这是并发代码里常见的一处纪律——临界区只碰共享结构，真正的活儿在锁外干。
 
-要说清楚的是，在 v0.13.1 里 `ExecutionQueue` 是 framework 提供的独立原语，会话路径实际用的是另一套 `ThreadedExecutionManager`，它把任务 `Schedule` 到一个线程池上跑（`runtime/framework/resource_management/threaded_execution_manager.cc:311 @ v0.13.1`），并在 `QueueTask` 里检查依赖：一个任务若还有 `dependent_tasks` 没跑完就拒绝入列（同文件:301）。这条依赖链保证 decode 一定在它依赖的 prefill 完成之后才开始。异步、分块、依赖三者合起来，端侧才有"响应跟手"的体感。这层线程模型第 8 章会展开。
+要说清楚的是，在 v0.13.1 里 `ExecutionQueue` 是 framework 提供的独立原语，会话路径实际用的是另一套 `ThreadedExecutionManager`。它才是 prefill/decode 任务真正的调度者，下面把它拆开。先划一条边界：这里讲的是**任务层**的排队与依赖（inter-op，谁先谁后）；算子内部用几个线程、绑哪个核（intra-op 并行度）是第 8 章的事，两者互不越界。
+
+### 会自己扩容的 ThreadPool
+
+底层原语是一个按需扩容的线程池。`Schedule` 提交任务时顺带决定要不要加人手（`runtime/framework/threadpool.cc:78 @ v0.13.1`）：
+
+```cpp
+  // If all worker threads are (supposed to be) busy, instantiates a new worker
+  // thread to run the task.
+  size_t num_threads = threads_.size();
+  if (num_threads < max_num_threads_) {
+    size_t num_tasks = num_active_tasks_ + tasks_.size();
+    if (num_threads <= num_tasks) {                       // (1)
+      auto thread = WorkerThread::Create(this, name_prefix_);
+      if (thread.ok()) {
+        threads_.push_back(std::move(*thread));
+      } else if (num_threads == 0) {
+        // ...
+        return thread.status();                           // (2)
+      }
+      // ...
+    }
+  }
+
+  tasks_.push_back(std::move(callback));                  // (3)
+```
+
+(1) 扩容判据：在跑的加在排的任务数不少于现有线程数，且未到 `max_num_threads_` 上限，就再建一个工作线程。池从零起步、按压力生长，空闲时不预留线程。(2) 错误容忍分两档：第一个线程都建不出来是致命错误，直接上抛；后续扩容失败只记警告，任务仍然入队，由现有线程消化。(3) 无论扩容成败，任务都进队列。工作线程的主循环则是和 `ExecutionQueue` 一样的锁外执行纪律（`RunWorker`，`:180`）：取任务、`mutex_.unlock()`、执行、再 `mutex_.lock()`，任意用户代码都不在持锁状态下运行。
+
+### 两个只有一个线程的池
+
+`ThreadedExecutionManager` 的构造函数把这套线程池用得很反直觉（`runtime/framework/resource_management/threaded_execution_manager.cc:74 @ v0.13.1`）：
+
+```cpp
+  execution_thread_pool_ =
+      std::make_unique<ThreadPool>(/*name_prefix=*/"execution_thread_pool",
+                                   /*max_num_threads=*/1);       // (1)
+  callback_thread_pool_ =
+      std::make_unique<ThreadPool>(/*name_prefix=*/"callback_thread_pool",
+                                   /*max_num_threads=*/1);       // (2)
+```
+
+两个池、各限一个线程。(1) 执行池单线程不是省资源，是**用构造保证串行**：执行器与 KV cache 都不是线程安全的，所有 prefill/decode/克隆任务都排进同一个单线程池，天然互斥，不需要给执行器内部加一把锁。多会话（第 3 章）也因此天然安全：不同 Session 的任务最终都汇进这一个线程。(2) 回调池单独一个线程，用途在下一段。
+
+### 回调走另一条线程，别堵住执行
+
+任务完成后要通知调用方（流式回调、完成回调）。回调是用户代码，跑多久、干什么都不可控。若在执行线程上直接调它，一个慢回调就会卡住后面所有排队的 decode step。`ThreadedExecutionManager` 的处理是把回调改投到回调池（`threaded_execution_manager.cc:438 @ v0.13.1`）：
+
+```cpp
+    if (callback_thread_pool_ != nullptr) {
+      RETURN_IF_ERROR(callback_thread_pool_->Schedule(
+          [callback = std::move(callback), responses = std::move(responses),
+           task_id = task_id, next_task_state = std::move(next_task_state),
+           this]() mutable {
+            callback(std::move(responses));                      // (1)
+            absl::MutexLock lock(session_and_task_lookup_mutex_);
+            auto status = UpdateTaskState(task_id, next_task_state);
+            // ...
+          }));
+```
+
+(1) 用户回调在回调池的线程上执行，执行池不等它。这同时规避了一类死锁：回调若反过来调引擎接口（例如收到完整回复后立刻发起下一轮 prefill），新任务排进执行池即可，不会出现「执行线程等回调、回调等执行线程」的环。回调池同样单线程，保证回调按任务完成的顺序逐个送达，流式文本不会乱序。这一段的收尾处有一个 `WaitUntilDone(absl::Seconds(10))`，等回调池清空后 `FinishTask` 才返回，源码上方挂着一条 TODO（b/476205457）说计划改成全异步——这是 v0.13.1 里回调路径尚存的一处同步点。
+
+回到主线：`ThreadedExecutionManager` 把任务 `Schedule` 到执行池（`:311`），并在 `QueueTask` 里检查依赖，一个任务若还有 `dependent_tasks` 没跑完就拒绝入列（`:301`）。第 3 章 `Clone` 那节看到的 `last_task_ids_` 串链，串的正是这张依赖图。这条依赖链保证 decode 一定在它依赖的 prefill 完成之后才开始。异步、分块、依赖三者合起来，端侧才有"响应跟手"的体感。
 
 ## 小结
 
@@ -215,4 +278,5 @@ prefill 是算力受限的一步，快，且有静态/动态两条实现路径�
 - 内部实现与 pending token / current_step：`runtime/executor/llm_litert_compiled_model_executor.cc:543 @ v0.13.1`（基类 `PrefillInternal`）。
 - signature 排序与选路：`runtime/executor/litert_compiled_model_executor_utils.h:43 @ v0.13.1`（`SortedPrefillSignatureMap`）；`runtime/executor/litert_compiled_model_executor_utils.cc:248 @ v0.13.1`（`GetOptimizedPrefillWorkGroups`）。
 - 取消与限长参数：`runtime/executor/llm_executor_io_types.h:376 @ v0.13.1`（`ExecutorPrefillParams`；`GetCancelFlag` / `GetMaxPrefillSequenceLength` 在 v0.13.1 尚未被 executor 消费）。取消实际生效在 decode 循环 `runtime/core/tasks.cc:487 @ v0.13.1`，会话侧置标志在 `runtime/core/session_advanced.h:68 @ v0.13.1`。
-- 异步队列原语：`runtime/framework/execution_queue.cc @ v0.13.1`（`ExecutionQueue`，锁外执行在 :97）；会话路径实用的线程池与依赖检查在 `runtime/framework/resource_management/threaded_execution_manager.cc:311 @ v0.13.1`。
+- 异步队列原语：`runtime/framework/execution_queue.cc @ v0.13.1`（`ExecutionQueue`，锁外执行在 :97）。
+- 任务层调度：`ThreadPool::Schedule` 弹性扩容 `runtime/framework/threadpool.cc:78`、`RunWorker` 锁外执行 `:180`；`ThreadedExecutionManager` 双单线程池构造 `runtime/framework/resource_management/threaded_execution_manager.cc:74`、回调改投回调池 `:438`（含 TODO b/476205457）、`Schedule` 到执行池 `:311`、`QueueTask` 依赖检查 `:301`——均 @ v0.13.1。
