@@ -35,7 +35,7 @@ enum class ActivationDataType {
 
 四档从上到下越来越省。(1) FLOAT32 是最保真的基准，一个激活值占 4 字节；(2) FLOAT16 折半到 2 字节，是端侧最常见的默认；(3) INT8 压到 1 字节，比 fp32 省四分之三，但对数值范围敏感的层可能掉精度。这是一个 `enum class` 而非松散的整数常量——传错档在编译期就会被拦下，配错激活精度不会静默跑出一个精度更低的模型。
 
-这给了工程师一个权衡空间：激活用 fp16 比 fp32 省一半显存和带宽，通常质量损失可忽略；进一步压到 int8 更省，但对某些模型精度影响变大。注意激活精度与权重量化是彼此独立的两个旋钮：同一份 int4 权重，激活可以配 fp16 也可以配 int8。权重量化管"模型多大"，激活精度管"跑起来占多少、多快、多准"。旁边紧挨着的 `Backend` 枚举（`:34`–`:54`）列出这些精度实际落地的执行后端：`CPU`、`GPU`、`NPU`，外加两条手写优化路径 `GPU_ARTISAN` 与 `GOOGLE_TENSOR_ARTISAN`——哪档激活精度在哪个后端上真正快，取决于后端算子的支持，这条线留到第 8 章接。
+这给了工程师一个权衡空间：激活用 fp16 比 fp32 省一半显存和带宽，通常质量损失可忽略；进一步压到 int8 更省，但对某些模型精度影响变大。注意激活精度与权重量化是彼此独立的两个旋钮：同一份 int4 权重，激活可以配 fp16 也可以配 int8。权重量化管"模型多大"，激活精度管"跑起来占多少、多快、多准"。旁边紧挨着的 `Backend` 枚举（`:34`–`:54`）列出这些精度实际落地的执行后端：`CPU`、`GPU`、`NPU`，外加两条手写优化路径 `GPU_ARTISAN` 与 `GOOGLE_TENSOR_ARTISAN`。哪档激活精度在哪个后端上真正快，取决于后端算子的支持，这条线留到第 8 章接。
 
 ## 为什么要自造一个文件格式
 
@@ -61,7 +61,7 @@ table KeyValuePair {
 }
 ```
 
-union 里每个成员都是一个各含单字段的 `table`（如 `table UInt8 { value: ubyte; }`），(1) 连字符串也包成 `StringValue`——这样 union 里放的是带类型标签的对象，读取方能问"这个值到底是什么类型"而不是自己猜。(2) `key` 和 `value` 都标了 `(required)`，FlatBuffer 在校验期强制它们非空，一个没有值的元数据项进不了合法文件。相比塞一段裸 JSON，这套 schema 把"元数据长什么样"钉死在编译期：新增字段要动 `.fbs` 并升版本号，schema 头部注释写明了规矩——纯加段是 minor 版本，段的顺序和删除要 bump major 版本。
+union 里每个成员都是一个各含单字段的 `table`（如 `table UInt8 { value: ubyte; }`），(1) 连字符串也包成 `StringValue`——这样 union 里放的是带类型标签的对象，读取方能问"这个值到底是什么类型"而不是自己猜。(2) `key` 和 `value` 都标了 `(required)`，FlatBuffer 在校验期强制它们非空，一个没有值的元数据项进不了合法文件。相比塞一段裸 JSON，这套 schema 把"元数据长什么样"钉死在编译期：新增字段要动 `.fbs` 并升版本号，schema 头部注释写明了规矩：纯加段是 minor 版本，段的顺序和删除要 bump major 版本。
 
 正文是若干**段**（section），每段装一样东西——一段权重、一段 tokenizer、一段元数据。段的类型由 `AnySectionDataType` 枚举声明（`:72`）：`TFLiteModel`、`SP_Tokenizer`、`LlmMetadataProto`、`HF_Tokenizer_Zlib`（zlib 压缩的 HuggingFace tokenizer）、`TFLiteWeights`（与 `TFLiteModel` 配对的外挂权重）。每段在文件里的位置由 `SectionObject` 记录（`:91`）：
 
@@ -76,7 +76,7 @@ table SectionObject {
 }
 ```
 
-每段就是文件里 `[begin_offset, end_offset)` 的一段字节。上面注释里那条约束是这套设计的骨架：下一段的起点被对齐到 `BLOCK_SIZE = 16 KiB` 的整数倍。为什么对齐到 16 KiB？因为下一节的 mmap 要按页映射——段边界落在页边界的整数倍上，才能对单独一段做零拷贝映射，而不必牵连相邻段。写文件的一侧则用几个流类把不同来源的数据填进段里：文件字节（`FileBackedSectionStream`，`schema/core/litertlm_section.h:98 @ v0.13.1`）、protobuf（`ProtoBufSectionStream`，`:189`）、zlib 压缩流（`ZlibBackendedSectionStream`，`:252`）。这几个是**写路径**的构件——`FileBackedSectionStream::Prepare()` 把整个文件读进内存缓冲再吐出去；读路径不走它们，走的是下一节的 mmap。
+每段就是文件里 `[begin_offset, end_offset)` 的一段字节。上面注释里那条约束是这套设计的骨架：下一段的起点被对齐到 `BLOCK_SIZE = 16 KiB` 的整数倍。为什么对齐到 16 KiB？因为下一节的 mmap 要按页映射——段边界落在页边界的整数倍上，才能对单独一段做零拷贝映射，而不必牵连相邻段。写文件的一侧则用几个流类把不同来源的数据填进段里：文件字节（`FileBackedSectionStream`，`schema/core/litertlm_section.h:98 @ v0.13.1`）、protobuf（`ProtoBufSectionStream`，`:189`）、zlib 压缩流（`ZlibBackendedSectionStream`，`:252`）。这几个是**写路径**的构件：`FileBackedSectionStream::Prepare()` 把整个文件读进内存缓冲再吐出去；读路径不走它们，走的是下一节的 mmap。
 
 <figure>
 {{#include figs/fig-7-1.svg}}

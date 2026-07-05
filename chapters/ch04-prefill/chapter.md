@@ -125,7 +125,7 @@ std::transform(prefill_input_pos_ptr, prefill_input_pos_ptr + prefill_length,
 
 <figure>
 {{#include figs/fig-4-1.svg}}
-<figcaption>图 4-1　prefill 的两条路径与异步底座。静态路径按长度挑固定 signature，动态路径分块吞入；两者都经 PrefillInternal 落到 LiteRT，并把结果写进 KV cache。任务经队列异步执行，取消标志随时可打断。</figcaption>
+<figcaption>图 4-1　prefill 的两条路径与异步底座。静态路径按长度挑固定 signature，动态路径分块吞入；两者都经 PrefillInternal 落到 LiteRT，并把结果写进 KV cache。任务经队列异步执行，取消在 decode 循环每步与分块边界处生效。</figcaption>
 </figure>
 
 ## 生成中途，为什么能立刻停
@@ -148,7 +148,7 @@ while (true) {
 }
 ```
 
-(1) 每次循环先读原子标志，(2) 一旦为真就立刻返回 `CancelledError`。注意编排层的 `Prefill`（tasks.cc:413）签名里根本没有 `cancelled` 参数，只有 `Decode` 有——这印证了前面的判断：v0.13.1 里 prefill 的可打断性来自"被切成小段"，decode 的可打断性才来自"每步查标志"。第 9 问答案的这一半，落在 decode 的 `ShouldStop` 路径（第 5 章展开）。会话层把两者串起来：`SessionAdvanced::Cancel()` 只做一件事——`cancelled_->store(true)`（`runtime/core/session_advanced.h:68 @ v0.13.1`），把这个共享原子量置真，正在跑的 decode 循环下一步就会读到。
+(1) 每次循环先读原子标志，(2) 一旦为真就立刻返回 `CancelledError`。注意编排层的 `Prefill`（tasks.cc:413）签名里根本没有 `cancelled` 参数，只有 `Decode` 有，这印证了前面的判断：v0.13.1 里 prefill 的可打断性来自"被切成小段"，decode 的可打断性才来自"每步查标志"。第 9 问答案的这一半，落在 decode 的 `ShouldStop` 路径（第 5 章展开）。会话层把两者串起来：`SessionAdvanced::Cancel()` 只做一件事——`cancelled_->store(true)`（`runtime/core/session_advanced.h:68 @ v0.13.1`），把这个共享原子量置真，正在跑的 decode 循环下一步就会读到。
 
 ## 异步底座：把 prefill 挪出主线程
 

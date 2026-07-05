@@ -49,7 +49,7 @@ _run_module.register(cli)
 
 (1) `Engine` 只认一个模型路径加几个后端开关——它是全书第 3 章要拆的两层结构里的外层，负责加载权重、装配后端；(2) `create_session` 才拿到真正跑对话的 `session`。一个 Engine 可以开多个 Session，这就是第 5 问「Engine 和 Session 为什么要分两层」的入口：权重加载一次，会话状态各自独立。`run` 用 `with` 托管 Engine 的生命周期，退出时自动释放显存与 KV cache。
 
-第一次运行会从 Hugging Face 拉取模型（`from_huggingface_repo` 触发 `common.download_from_huggingface`，`run.py:571 @ v0.13.1`；litert-community 的 Gemma 4 版可直接下载，google/ 官方版是受限发布，需先接受许可条款。模型文件数 GiB，留足磁盘和耐心）。跑通之后，你会看到答案一个字一个字地刷出来——那种"挤牙膏"的手感，就是第 1 章带宽墙的现场。
+第一次运行会从 Hugging Face 拉取模型：`from_huggingface_repo` 触发 `common.download_from_huggingface`（`run.py:571 @ v0.13.1`）。litert-community 的 Gemma 4 版可直接下载，google/ 官方版是受限发布，需先接受许可条款；模型文件数 GiB，留足磁盘和耐心。跑通之后，你会看到答案一个字一个字地刷出来——那种"挤牙膏"的手感，就是第 1 章带宽墙的现场。
 
 流式那口"挤牙膏"的手感，在 `run` 的输出循环里看得最清楚：它对 `send_message_async` 返回的 stream 逐块迭代，每块只是一小段文本，边收边打印，不等整段生成完（`run.py:100 @ v0.13.1`）：
 
@@ -103,7 +103,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
   RETURN_IF_ERROR(engine->WaitUntilDone(absl::Minutes(10)));
 ```
 
-四步走完一次推理：(1) 把 `--backend` 字符串解析成 `Backend` 枚举，再交给工厂——CPU/GPU/NPU 从这里分岔，对应第二条设计原则「可插拔后端」（第 8 章）。(2) 这个演示程序把 benchmark 默认打开，所以它每跑一次都顺手报一份性能数字，这也是附录 D 数据的采集口。(3) `SendMessageAsync` 是非阻塞的，真正的 prefill 和 decode 在后台线程跑，主线程靠 `WaitUntilDone` 等它；文本通过 `CreateMessageCallback` 一段段回调出来，`message->is_null()` 时打一个换行表示结束。整章的主线「一个 token 的一生」，起点就是这一句 `SendMessageAsync`——它往下钻，就是第二部要走的路。
+三步走完一次推理：(1) 把 `--backend` 字符串解析成 `Backend` 枚举，再交给工厂：CPU/GPU/NPU 从这里分岔，对应第二条设计原则「可插拔后端」（第 8 章）。(2) 这个演示程序把 benchmark 默认打开，所以它每跑一次都顺手报一份性能数字，这也是附录 D 数据的采集口。(3) `SendMessageAsync` 是非阻塞的，真正的 prefill 和 decode 在后台线程跑，主线程靠 `WaitUntilDone` 等它；文本通过 `CreateMessageCallback` 一段段回调出来，`message->is_null()` 时打一个换行表示结束。整章的主线「一个 token 的一生」，起点就是这一句 `SendMessageAsync`——它往下钻，就是第二部要走的路。
 
 ## 读懂第一批数字
 
@@ -164,7 +164,7 @@ Time to first token:  3.9400 s
 - **prefill** 一次处理许多 token，同一批权重被许多 token 共用，算术强度高，落在 Roofline 的"算力受限"区——所以它拼的是 TOPS。
 - **decode** 一次只处理一个 token，把全部权重读进来只为算这一个字，算术强度低到贴地，落在"带宽受限"区——所以它拼的是 GB/s，与算力无关。这正是第 1 章那条 25 tok/s 上限公式的来历。
 
-这副眼镜在本书基准数据里立刻显形〔基准 D〕：换到 GPU，prefill 从每秒 259 个 token 跳到 999（约 3.9 倍，算力受限，堆算力就快）；decode 却只从 24.7 到 50.6（约 2 倍，被带宽顶住，算力再强也只能干等内存）。同一台机器、同一个模型，两类操作对"更强的硬件"的反应截然不同。
+顺着这个视角，本书基准数据里立刻显形〔基准 D〕：换到 GPU，prefill 从 259 tok/s 跳到 999（约 3.9 倍，算力受限，堆算力就快）；decode 却只从 24.7 到 50.6 tok/s（约 2 倍，被带宽顶住，算力再强也只能干等内存）。同一台机器、同一个模型，两类操作对"更强的硬件"的反应截然不同。
 
 顺手把第 1 章的账对了。那条 25 tok/s 是为一部假想手机（50 GB/s、1.86 GiB 权重）算的；本书基准机是另一套参数，得按同一条公式重算：gpu decode 50.6 tok/s × 3.4 GB 权重，折合约 172 GB/s 的有效搬运速率，量级符合桌面级统一内存芯片。至于 cpu 实测 24.7 恰好贴着"25"，纯属巧合——分子分母都不是同一套。**公式可以迁移，数字不能照搬**，这正是第 1 章说"这是把尺子"而不是"这是个答案"的原因。
 
@@ -173,7 +173,7 @@ Time to first token:  3.9400 s
 <figcaption>图 2-2　Roofline 眼镜：prefill 落在算力受限的斜坡右侧，decode 贴着带宽受限的斜坡——两者被完全不同的资源顶住，这是全书性能分析的基准框架。</figcaption>
 </figure>
 
-戴上这副眼镜，第 6 章那个问题就有了着落：实测的 decode 吞吐，离第 1 章那条纯权重上限还有一段距离，那段距离是被谁吃掉的？（剧透：KV cache 也要占带宽。）
+戴上它，第 6 章那个问题就有了着落：实测的 decode 吞吐，离第 1 章那条纯权重上限还有一段距离，那段距离是被谁吃掉的？（剧透：KV cache 也要占带宽。）
 
 ## 二十个问题
 
@@ -265,7 +265,7 @@ class LlmExecutorBase {
 };
 ```
 
-(1)(2) 上一层调的 `executor.Prefill` / `Decode` 就是这两个纯虚方法；CPU、GPU、NPU 各有一个子类实现它们，同一套 `tasks.cc` 编排代码因此一字不改就能换后端。(3) `ExecutorBackendName` 让上层能问「我现在跑在哪个后端」，第 8 章讲换后端为什么连输出都会变，就从这里的多态分发切进去。第 4、5 层——可复用的 tokenizer / 采样器组件（`runtime/components/`）和 `.litertlm` 文件格式——留到第 5、7、10 章各自展开。
+(1)(2) 上一层调的 `executor.Prefill` / `Decode` 就是这两个纯虚方法；CPU、GPU、NPU 各有一个子类实现它们，同一套 `tasks.cc` 编排代码因此一字不改就能换后端。(3) `ExecutorBackendName` 让上层能问「我现在跑在哪个后端」，第 8 章讲换后端为什么连输出都会变，就从这里的多态分发切进去。第 4、5 层是可复用的 tokenizer / 采样器组件（`runtime/components/`）和 `.litertlm` 文件格式——留到第 5、7、10 章各自展开。
 
 <figure>
 {{#include figs/fig-2-1.svg}}
@@ -329,7 +329,7 @@ Section 2:
     >>>>>>>> end of LlmMetadata
 ```
 
-一个文件里三件东西各占一段：几个 GiB 的权重、几 MiB 的 tokenizer、几 KiB 的元数据。元数据段里的 `start_token`、`stop_tokens`、`prompt_templates` 不是摆设——它们是第 7 问「聊天模板谁在什么时候套上去」、第 12 问「停止词只出现一半吐不吐字」的答案所在，模型文件自带一份它该怎么被对话包裹的说明书。现在先记住"它是分段的、每段一对偏移、能被读工具拆开看"这个事实——第 7 章会真正把它剖开，解释为什么要自造一个格式、以及 mmap 加载怎么帮上冷启动的忙。
+一个文件里三件东西各占一段：几个 GiB 的权重、几 MiB 的 tokenizer、几 KiB 的元数据。元数据段里的 `start_token`、`stop_tokens`、`prompt_templates` 不是摆设——它们是第 7 问「聊天模板谁在什么时候套上去」、第 12 问「停止词只出现一半吐不吐字」的答案所在，模型文件自带一份它该怎么被对话包裹的说明书。现在先记住"它是分段的、每段一对偏移、能被读工具拆开看"这个事实。第 7 章会真正把它剖开，解释为什么要自造一个格式、以及 mmap 加载怎么帮上冷启动的忙。
 
 ## 小结
 

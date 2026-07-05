@@ -46,7 +46,7 @@ switch (backend) {
 }
 ```
 
-`(1)` 后端来自 `LlmExecutorSettings`，而它最终由 CLI 的 `--backend` 或上层配置写入——分派的输入是一个纯数据字段，不是运行时探测。`(2)` `CPU` 和 `GPU` 共用 `case`、落到同一个创建函数，这不是偷懒：这条路径读出的是同一个 `.tflite` 子图（`ModelType::kTfLitePrefillDecode`，`:135`），CPU 与 GPU 的差异被推迟到 LiteRT 编译期由 delegate 决定，工厂层不必区分。`(3)` `NPU` 走独立分支，因为它加载的根本是另一组模型文件（下一节 NPU 的 embedder 子模型就是证据）。`default` 分支把 `CPU_ARTISAN` 这类未接入编译路径的后端挡在门外，返回错误而非崩溃——这是工厂作为唯一入口的价值：非法后端在这里一次性拦下。
+`(1)` 后端来自 `LlmExecutorSettings`，而它最终由 CLI 的 `--backend` 或上层配置写入。分派的输入是一个纯数据字段，不是运行时探测。`(2)` `CPU` 和 `GPU` 共用 `case`、落到同一个创建函数，这不是偷懒：这条路径读出的是同一个 `.tflite` 子图（`ModelType::kTfLitePrefillDecode`，`:135`），CPU 与 GPU 的差异被推迟到 LiteRT 编译期由 delegate 决定，工厂层不必区分。`(3)` `NPU` 走独立分支，因为它加载的根本是另一组模型文件（下一节 NPU 的 embedder 子模型就是证据）。`default` 分支把 `CPU_ARTISAN` 这类未接入编译路径的后端挡在门外，返回错误而非崩溃——这是工厂作为唯一入口的价值：非法后端在这里一次性拦下。
 
 CPU/GPU 那条路径内部还有一次分派，按模型是否动态形状再分（`:139`）：
 
@@ -83,7 +83,7 @@ const TensorCoreAffinity kTensorAffinities[] = {
 };
 ```
 
-`(1)` 每一行是一款 Pixel SoC 的中大核编号——G3 用 4~8 号核、G4 只用 4~7 号，核编号还随代际变（G5/G6 从 2 号起）。芯片型号靠读 Android 系统属性 `ro.soc.model` 识别（`:80`），认不出就返回空表。这张表也划定了这套工具的适用边界：它只认 Google 自家的 Tensor 芯片，高通、联发科的设备走不到这里——`IsPixelTensorDevice()` 直接返回 false。
+`(1)` 每一行是一款 Pixel SoC 的中大核编号：G3 用 4~8 号核、G4 只用 4~7 号，核编号还随代际变（G5/G6 从 2 号起）。芯片型号靠读 Android 系统属性 `ro.soc.model` 识别（`:80`），认不出就返回空表。这张表也划定了这套工具的适用边界：它只认 Google 自家的 Tensor 芯片，高通、联发科的设备走不到这里——`IsPixelTensorDevice()` 直接返回 false。
 
 绑核的动作落在 `SetCpuAffinity`（`cpu_affinity_utils.cc:103 @ v0.13.1`），本质是一次 Linux 系统调用：
 
@@ -138,7 +138,7 @@ sampler_handles_input_ =
     !runs_embedding_on_gpu;
 ```
 
-`(1)` 采样器有自己的 `sampler_backend`，跟主执行器的后端各算各的——GPU 主后端可以配 GPU 采样器，让 logits 不离开显存。`(2)` `gpu_sampler_max_top_k_` 存下 top-k 的 `k`：GPU 上做 top-k 要预先知道候选个数才能开好缓冲区，这个字段就是给 GPU 采样路径准备的（`.h:354`）。`(3)` `sampler_handles_input_` 是关键开关——它为真时，采样器接管 decode 的输入张量，选出的 token 直接在设备上喂回下一步，连"把新 token 拷回来再拷过去"都省了。注意它的最后一个条件 `!runs_embedding_on_gpu`：如果 embedding 本来就在 GPU 上查（`embedding_lookup_ == nullptr`），这条优化反而关掉——两条 GPU 优化路径不叠加，代码在这里划了清楚的边界。
+`(1)` 采样器有自己的 `sampler_backend`，跟主执行器的后端各算各的：GPU 主后端可以配 GPU 采样器，让 logits 不离开显存。`(2)` `gpu_sampler_max_top_k_` 存下 top-k 的 `k`：GPU 上做 top-k 要预先知道候选个数才能开好缓冲区，这个字段就是给 GPU 采样路径准备的（`.h:354`）。`(3)` `sampler_handles_input_` 是关键开关——它为真时，采样器接管 decode 的输入张量，选出的 token 直接在设备上喂回下一步，连"把新 token 拷回来再拷过去"都省了。注意它的最后一个条件 `!runs_embedding_on_gpu`：如果 embedding 本来就在 GPU 上查（`embedding_lookup_ == nullptr`），这条优化反而关掉：两条 GPU 优化路径不叠加，代码在这里划了清楚的边界。
 
 这正是第 18 问的答案。decode 是整个生成里最频繁的操作，每一步省掉这一次数据搬运，累积起来不小。（这一项很难从整机数字中单独剥离，本书未单测；两个后端的整体差距见附录 D——本书基准上 gpu 的 decode 约为 cpu 的 2 倍、prefill 约 3.9 倍〔基准 D〕。）
 
@@ -166,7 +166,7 @@ struct NpuAuxiliaryContext {                         // (3)
 };
 ```
 
-`(1)` embedder 是**一个独立的编译模型**——它有自己的 `Model` 和 `CompiledModel`，而不是主图里的一层。"把 token 变成 embedding"在 NPU 上被切成单独一个模型跑，CPU/GPU 那边这步是融在主图里的。`(2)` 还有一个 per-layer 的 embedder，`(3)` 一个 auxiliary context（`:316`）——注释说它"contains several signatures for Mask, RoPE and KV cache update computation"（`:314`）。也就是说，CPU/GPU 上一个前向就算完的东西，NPU 上被拆成了 embedder、per-layer embedder、mask/RoPE/KV-cache 更新、主 LLM 图等好几个独立编译模型串起来。
+`(1)` embedder 是**一个独立的编译模型**——它有自己的 `Model` 和 `CompiledModel`，而不是主图里的一层。"把 token 变成 embedding"在 NPU 上被切成单独一个模型跑，CPU/GPU 那边这步是融在主图里的。`(2)` 还有一个 per-layer 的 embedder，`(3)` 一个 auxiliary context（`:316`）。注释说它"contains several signatures for Mask, RoPE and KV cache update computation"（`:314`）。也就是说，CPU/GPU 上一个前向就算完的东西，NPU 上被拆成了 embedder、per-layer embedder、mask/RoPE/KV-cache 更新、主 LLM 图等好几个独立编译模型串起来。
 
 这不是猜测，延迟统计字段（`:60`–`:82`）把这条流水线逐段列了出来：`prefill_embedder_inference_latency_us`、`prefill_mask_inference_latency_us`、`prefill_rope_inference_latency_us`、`prefill_llm_inference_latency_us`、`prefill_cache_update_inference_latency_us`——每一段都有独立计时。一个前向被切成这么多段独立计时，正说明它们是各自独立的推理调用。为什么这么切，涉及 NPU 算子约束下的工程取舍（NPU 能跑的算子有限，把不友好的部分单独拆出来是常见做法），没有真机不宜妄下结论，此处只把代码能确证的结构差异记录在案。
 
@@ -176,7 +176,7 @@ struct NpuAuxiliaryContext {                         // (3)
 
 三个后端是三条不同的计算路径：算子的实现不同，数值精度的处理不同（第 7 章那条激活精度谱系在不同后端上落点也不同），量化权重的反量化方式也可能有细微差别。这些差别单看每一步都极小，小到肉眼看不见。但它们会累积进 logits——那组决定"下一个字是什么"的分数。
 
-关键在最后一步：采样。当两个候选 token 的分数本就接近时，后端间那点数值微差，足以让排序翻个个儿，选出不同的 token。一旦某一步选了不同的字，后面整段就顺着岔开了。所以换后端输出会变，不是谁算错了，而是浮点计算在不同硬件路径上本就不可能逐比特一致，而自回归又把这点微差沿着序列放大了。（这是基于代码与浮点常识的解释；`LiteRT-LM#2281` 的具体现象按上游报告，属【文档】级。）
+关键在最后一步：采样。当两个候选 token 的分数本就接近时，后端间那点数值微差，足以让排序翻个个儿，选出不同的 token。一旦某一步选了不同的字，后面整段就顺着岔开了。所以换后端输出会变，不是谁算错了，而是浮点计算在不同硬件路径上本就不可能逐比特一致。自回归又把这点微差沿着序列放大了。（这是基于代码与浮点常识的解释；`LiteRT-LM#2281` 的具体现象按上游报告，属【文档】级。）
 
 这个现象有个实际含义：端侧的"可复现"要带上后端这个条件。本书附录 D 的基准数据集因此严格固定后端——换了后端，就是另一组数据，不能混着比（这也是第 2 章数字纪律的由来）。
 

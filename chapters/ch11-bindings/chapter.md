@@ -85,9 +85,9 @@ LiteRtLmEngine* litert_lm_engine_create(
 void litert_lm_engine_delete(LiteRtLmEngine* engine) { delete engine; }  // (4)
 ```
 
-看 (3) 和 (4) 的对称。create 用 `new` 在堆上造一个 `LiteRtLmEngine` 盒子、把工厂产出的 `unique_ptr<Engine>` 塞进去，返回裸指针；delete 一个 `delete engine` 收场，`delete` 触发盒子的析构，盒子里的 `unique_ptr` 随之析构，真正的 `Engine` 才被销毁。这就是"谁创建谁释放"的全部实现：一个 `new` 配一个 `delete`，中间隔着 FFI 边界。跨过这条边界，C++ 的 RAII（对象析构自动清理）失效了，绑定语言那侧拿到的只是个裸指针，编译器不会替它调析构。(1)、(2) 两处返回 `nullptr` 也值得记：C ABI 用"返回空指针"表达失败，因为 C 没有异常也没有 `StatusOr`；C++ 内部的 `absl::Status` 到了边界一律被翻译成"指针或 NULL"这种 C 能懂的信号。
+看 (3) 和 (4) 的对称。create 用 `new` 在堆上造一个 `LiteRtLmEngine` 盒子、把工厂产出的 `unique_ptr<Engine>` 塞进去，返回裸指针；delete 一个 `delete engine` 收场，`delete` 触发盒子的析构，盒子里的 `unique_ptr` 随之析构，真正的 `Engine` 才被销毁。这就是"谁创建谁释放"的全部实现：一个 `new` 配一个 `delete`，中间隔着 FFI 边界。一旦跨过去，C++ 的 RAII（对象析构自动清理）失效了，绑定语言那侧拿到的只是个裸指针，编译器不会替它调析构。(1)、(2) 两处返回 `nullptr` 也值得记：C ABI 用"返回空指针"表达失败，因为 C 没有异常也没有 `StatusOr`；C++ 内部的 `absl::Status` 到了边界一律被翻译成"指针或 NULL"这种 C 能懂的信号。
 
-各语言怎么接这份合同？各有各的惯用形态：Python 用上下文管理器或 `__del__`，Kotlin 用 `AutoCloseable`，Swift 用 `deinit`。绑定层的活，很大一部分就是把"手动配对的 create/delete"包装成本语言里自然的资源管理。下一节会看到，这件事一旦没接好，会出真问题。
+各语言怎么接这份合同？各有各的惯用形态：Python 交给上下文管理器或 `__del__`，Kotlin 落在 `AutoCloseable` 上，到了 Swift 则是 `deinit`。绑定层的活，很大一部分就是把"手动配对的 create/delete"包装成本语言里自然的资源管理。下一节会看到，这件事一旦没接好，会出真问题。
 
 ## 各语言的 FFI，各有各的接法
 
@@ -119,7 +119,7 @@ external fun nativeDeleteEngine(enginePointer: Long)  // (2)
 
 (1) 的返回类型是 `Long`：这是 JNI 里表达不透明句柄的惯用法，把 C++ 那个指针当成一个 64 位整数，原样在 Kotlin 和原生之间传。(2) 的 delete 收回同一个 `Long`。Kotlin 侧从头到尾不知道这个 `Long` 指向什么，它只是个"要原样还回去"的令牌。JNI 与 ctypes 的路子相反：JNI 需要一层用 C++ 写、名字按 JNI 规则拼出来的原生实现，把 `Long` 转回真指针再调 C ABI——这层胶水是编译期就要产出的，不像 ctypes 全在运行时。
 
-**Swift（iOS 与 macOS）用 C 互操作**：直接 `import` C 头文件调用，`swift/Engine.swift:17` 的 `import CLiteRTLM`，之后就能像调 Swift 函数一样调 `litert_lm_engine_create`。它的 `Engine` 是一个 `actor`（`:28`）：
+Swift（iOS 与 macOS）走的是 C 互操作，直接 `import` C 头文件调用。`swift/Engine.swift:17` 的 `import CLiteRTLM` 之后，就能像调 Swift 函数一样调 `litert_lm_engine_create`。它的 `Engine` 是一个 `actor`（`:28`）：
 
 ```swift
 public actor Engine {                         // (1)
@@ -150,7 +150,7 @@ public class Conversation {                    // (1)
   }
 ```
 
-(1) 是 `class`（引用类型，归 ARC 管），(2) 唯一的释放路径是 `deinit`，(3) 在 `deinit` 里才调到 C ABI 的 delete。问题就出在这条唯一路径上：`deinit` 何时触发，由 ARC 决定，而 ARC 只在最后一个引用归零时才回收对象，这个时点你控制不了。于是场景是：你逻辑上"用完"了一个会话想再开一个，可旧 `Conversation` 对象还被某个引用（一个闭包捕获、一个还没出作用域的局部变量）拽着，`deinit` 没跑、(3) 没执行、原生会话还占着那唯一的名额——新会话一创建就撞上"已有一个会话"。
+(1) 是 `class`（引用类型，归 ARC 管），(2) 唯一的释放路径是 `deinit`，(3) 在 `deinit` 里才调到 C ABI 的 delete。问题就出在这条唯一路径上：`deinit` 何时触发，由 ARC 决定，而 ARC 只在最后一个引用归零时才回收对象，这个时点你控制不了。于是场景是：你逻辑上"用完"了一个会话想再开一个，可旧 `Conversation` 对象还被某个引用（一个闭包捕获、一个还没出作用域的局部变量）拽着。`deinit` 没跑、(3) 没执行、原生会话还占着那唯一的名额，新会话一创建就撞上"已有一个会话"。
 
 对照 Kotlin 侧，同样的资源却有一条不依赖 GC 的确定释放路径。`kotlin/.../Engine.kt:36 @ v0.13.1` 的 `Engine` 实现 `AutoCloseable`：
 
@@ -171,7 +171,7 @@ class Engine(val engineConfig: EngineConfig) : AutoCloseable {  // (1)
 
 坑的根源，正是第二节那个"谁创建谁释放"没有落到确定的时机上：C ABI 那边 delete 必须被调，但早期 Swift 把它独家拖给了 ARC 说了算的 `deinit`。issue 里提的解法也顺理成章（`LiteRT-LM#2613`，【文档】级）——给 Swift 加一个公开的 `close()`，让使用者能主动释放会话，不必干等 ARC。这恰好对齐了 Kotlin 的 `AutoCloseable.close()` 与 Python 的 `__exit__`：三种语言最终都得给出一条"人说了算"的释放路径，光靠语言自带的自动回收兜不住"单会话"这种带独占语义的资源。
 
-这个案例的价值不在某个 API，而在它揭示的一般道理：**跨语言桥最难的往往不是"调得通"，而是两边的资源模型如何对齐。** C 的手动配对、Swift 的 ARC、Kotlin 的 AutoCloseable——把它们缝到一起而不漏，是绑定层最容易出 bug 的地方。
+这个案例落到一句论断上：**跨语言桥最难的往往不是"调得通"，而是两边的资源模型如何对齐。** C 的手动配对、Swift 的 ARC、Kotlin 的 AutoCloseable，把它们缝到一起而不漏，是绑定层最容易出 bug 的地方。
 
 ## 让核心可测、可构建
 
@@ -218,7 +218,7 @@ absl::Status FakeLlmExecutor::Prefill(const ExecutorInputs& inputs) {
 }
 ```
 
-这段把 fake 的双重身份讲清了。它不只是"返回假数据"的桩，还是个**断言器**：(2) 用 `CheckEquivalent` 把上层这次真正喂进来的 token，和脚本里第 `prefill_times_` 条预期逐一比对，对不上就返回 `InvalidArgumentError`，于是测试不但能验证"上层拿到了什么"，还能验证"上层喂进来的是不是对的"。(1) 调用次数超出脚本长度直接报错，(3) 每调一次把游标 `prefill_times_` 往前推，让"第几次调用"对上"脚本第几条"。decode 侧对称：`decode_tokens_set_[decode_times_]` 按游标取出下一批 token 返回。整套逻辑没有一行涉及神经网络——prefill/decode 的编排、采样、停止条件，全都能在这张脚本上脱离真实模型和硬件跑单测，且每次结果完全确定。这是"接口隔离"的直接红利：上层只依赖 `LlmExecutor`，就能把真执行器整个换成这台脚本机。
+这段把 fake 的双重身份讲清了。它不只是"返回假数据"的桩，还是个**断言器**：(2) 用 `CheckEquivalent` 把上层这次真正喂进来的 token，和脚本里第 `prefill_times_` 条预期逐一比对，对不上就返回 `InvalidArgumentError`，于是测试不但能验证"上层拿到了什么"，还能验证"上层喂进来的是不是对的"。(1) 调用次数超出脚本长度直接报错，(3) 每调一次把游标 `prefill_times_` 往前推，让"第几次调用"对上"脚本第几条"。decode 侧对称：`decode_tokens_set_[decode_times_]` 按游标取出下一批 token 返回。整套逻辑没有一行涉及神经网络。prefill/decode 的编排、采样、停止条件，全都能在这张脚本上脱离真实模型和硬件跑单测，且每次结果完全确定。这是"接口隔离"的直接红利：上层只依赖 `LlmExecutor`，就能把真执行器整个换成这台脚本机。
 
 **可构建**。这套代码要在 Android、iOS、Linux、macOS、Windows、Web 上都编得出来，还牵着一堆第三方依赖（sentencepiece、llguidance、skia……）。它用两套构建系统兜住：主用 Bazel，另备一套 CMake 供嵌入式或不便用 Bazel 的场景。这部分是纯工程的活，本书不展开（细节见附录 C），但值得记住一点：一个能投产到六个平台的运行时，构建系统的分量不亚于运行时本身。
 

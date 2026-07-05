@@ -50,7 +50,7 @@ for (int i = 0; i < num_draft_steps_; ++i) {                      // (1)
 }
 ```
 
-`(1)` 循环 G 次，每次一个 token，串行。`(3)` 每步跑的是 `mtp_drafter_model_`——一个**独立装载的小模型**，不是 base 模型，这是运行时能便宜草拟的前提。`(2)` 是 MTP 这一路的特征：drafter 的输入不只是词嵌入，还拼上了上一步的隐藏态 activation（源码注释写明拼完是 `[B=1, T=1, D=3072]`，即 1536 的词嵌入接 1536 的 activation），让草稿头能"续着 base 模型的思路"往下猜。`(4)` 每步只出一个 token（`RET_CHECK_EQ(..., 1)` 兜底）。`(5)` 把这一步的输出喂回下一步的输入——drafter 是自回归的，只是它自回归很便宜。这几步再串行，也远不及大模型一次前向贵。
+`(1)` 循环 G 次，每次一个 token，串行。`(3)` 每步跑的是 `mtp_drafter_model_`——一个**独立装载的小模型**，不是 base 模型，这是运行时能便宜草拟的前提。`(2)` 是 MTP 这一路的特征：drafter 的输入不只是词嵌入，还拼上了上一步的隐藏态 activation（源码注释写明拼完是 `[B=1, T=1, D=3072]`，即 1536 的词嵌入接 1536 的 activation），让草稿头能"续着 base 模型的思路"往下猜。`(4)` 每步只出一个 token（`RET_CHECK_EQ(..., 1)` 兜底）。`(5)` 把这一步的输出喂回下一步的输入：drafter 是自回归的，只是它自回归很便宜。这几步再串行，也远不及大模型一次前向贵。
 
 **第二步，一次验一串。** 把"上一个真 token + 草拟的 G 个"拼起来，交给 base 模型的 verify signature（`RunVerification`，`:437`）：
 
@@ -95,7 +95,7 @@ if (bonus_token == -1) {                               // (4)
 }
 ```
 
-`(1)` 从头逐位比对草拟和验证。`(3)` 一致就接受、`num_correct_tokens` 加一。`(2)` 一旦碰到第一个不一致就停，把 base 模型在这个位置给出的正确 token 记为 **bonus**——这一位草拟错了，但 base 已经算出了对的，不浪费。`(4)` 循环走完 `bonus_token` 还是 −1，说明 G 个全对；`(5)` 这时直接收下第 G+1 个位置的验证结果——verify 本来就多算了这一位（上一步 `RunVerification` 返回 G+1 个 id），全对时它就是白送的第 G+1 个字。
+`(1)` 从头逐位比对草拟和验证。`(3)` 一致就接受、`num_correct_tokens` 加一。`(2)` 一旦碰到第一个不一致就停，把 base 模型在这个位置给出的正确 token 记为 **bonus**——这一位草拟错了，但 base 已经算出了对的，不浪费。`(4)` 循环走完 `bonus_token` 还是 −1，说明 G 个全对；`(5)` 这时直接收下第 G+1 个位置的验证结果：verify 本来就多算了这一位（上一步 `RunVerification` 返回 G+1 个 id），全对时它就是白送的第 G+1 个字。
 
 被反复更新的 `last_verified_token_id_idx_` 不是记账用的：它记住接受前缀在 verify 输出缓冲里的下标，下一轮 `RunDraftingLoop` 走 `ConcatenateEmbeddingsAndActivationsFromVerifierBuffer` 分支时，正是靠这个下标取出接受位置的 activation 作为草拟的新起点——接受循环和下一轮草拟就这样接上了。
 
@@ -151,7 +151,7 @@ LlmLiteRtMtpDrafter::~LlmLiteRtMtpDrafter() {
 
 ## 它不是随便就能开的
 
-最后两个务实的点。
+要开推测解码，得先过两道门槛：模型自己声明支持，以及草拟步数 G 早在导出时就定死。
 
 其一，一个模型支不支持推测解码，写在它的能力声明里。运行时用 `HasSpeculativeDecodingSupport`（`schema/capabilities/speculative_decoding.h:33`、`:44 @ v0.13.1`）判断——头文件给了两个重载，一个吃 `std::istream&`、一个吃文件路径，后者只是打开文件转调前者。真正的判断在 `.cc` 里，机制很朴素（`speculative_decoding.cc:40`–`:73`）：
 

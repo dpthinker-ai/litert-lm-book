@@ -93,7 +93,7 @@ bool constrained_decoding_enabled() const {                        // (3)
 bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4)
 ```
 
-(1) `Preface` 是开场白：系统指令、few-shot 示例、可用工具描述的统一载体，它定义整段对话的背景。(2) `PromptTemplate` 默认从模型元数据里的 jinja 模板读，也可在这里覆盖。(3) 约束解码开关，开启后模型被强制输出结构合法的函数调用（第 10 章）。(4) `prefill_preface_on_init` 决定要不要在创建对话时就把 Preface 预先 prefill 进 KV cache——代价是初始化更久，回报是首条用户消息的响应更快。这四个开关，接下来 diff 那一节里会用到最后一个。
+(1) `Preface` 是开场白：把系统指令、few-shot 示例、可用工具描述装在一起，它定义整段对话的背景。(2) `PromptTemplate` 默认从模型元数据里的 jinja 模板读，也可在这里覆盖。(3) 约束解码开关，开启后模型被强制输出结构合法的函数调用（第 10 章）。(4) `prefill_preface_on_init` 决定要不要在创建对话时就把 Preface 预先 prefill 进 KV cache——代价是初始化更久，回报是首条用户消息的响应更快。这四个开关，接下来 diff 那一节里会用到最后一个。
 
 到这一步，你的一句"帮我改写这段"已经变成了一长串带角色标记的纯文本。下一步该把它切成 token 了——但在那之前，有一个多轮对话绕不开的问题。
 
@@ -131,7 +131,7 @@ return new_string.substr(old_string.length());                       // (3)
 
 (3) 就是那个"文本差"：`new_string` 砍掉 `old_string` 那段前缀，剩下的尾巴，就是本轮真正需要 prefill 的增量文本。旧的部分早已在 KV cache 里（第 6 章），无需重来。
 
-值得停下来看的是 (1) 和 (2) 这两道防线，它们暴露了这个 diff 的一个前提假设：**新渲染必须是旧渲染的字符串前缀。** 一旦模板不满足"追加消息只会在尾部加内容"——比如某些模型的模板会在结尾放一个固定的收尾标记、加新消息时要先把它挪走——`new_string` 就可能比 `old_string` 短，或者不以它开头。代码没有去猜、去做通用的最长公共前缀，而是直接返回 `InternalError` 把渲染结果整个打印出来。这是一个刻意的设计取舍：diff 只在"纯前缀增长"这一类模板上成立，不成立就当场报错，而不是悄悄算错、把错位的文本 prefill 进 KV cache 污染整段对话。第 4 章会看到，prefill 进去的东西是没法轻易撤回的，所以这里宁可炸也不将就。
+(1) 和 (2) 这两道防线暴露了这个 diff 的一个前提假设：**新渲染必须是旧渲染的字符串前缀。** 一旦模板不满足"追加消息只会在尾部加内容"——比如某些模型的模板会在结尾放一个固定的收尾标记、加新消息时要先把它挪走——`new_string` 就可能比 `old_string` 短，或者不以它开头。代码没有去猜、去做通用的最长公共前缀，而是直接返回 `InternalError` 把渲染结果整个打印出来。这是一个刻意的设计取舍：diff 只在"纯前缀增长"这一类模板上成立，不成立就当场报错，而不是悄悄算错、把错位的文本 prefill 进 KV cache 污染整段对话。第 4 章会看到，prefill 进去的东西是没法轻易撤回的，所以这里宁可炸也不将就。
 
 diff 出的增量文本，随后交给 `GetInputDataVectorForMessages`（`conversation.cc:824 @ v0.13.1`）转成 `InputData` 向量、送进 `Session::RunPrefill`。它把"逻辑上每轮都是全量历史"翻译成了"物理上每轮只处理增量"。表面看只是个字符串相减，背后接住的是整个 KV cache 复用的收益——和上一节 `Clone` 共享前缀是同一个动机的两种长相：一个靠拷贝会话状态，一个靠比对渲染文本。
 
@@ -154,7 +154,7 @@ class Tokenizer {
       const TokenIds& token_ids) = 0;
 ```
 
-(1) 输入侧只用得到 `TextToTokenIds`：文本进、id 序列出。(2) 反方向的 `TokenIdsToText` 是输出侧（第 5 章）用的，注释里那句"incomplete BPE sequence 会返回 `DataLossError`"，正是第 5 章末尾"吐半个字"现象的接口层伏笔——解码到半个 BPE 序列时，tokenizer 会明确拒绝，而不是吐出乱码。
+(1) 输入侧只用得到 `TextToTokenIds`：文本进、id 序列出。(2) 反方向的 `TokenIdsToText` 是输出侧（第 5 章）用的，注释里那句"incomplete BPE sequence 会返回 `DataLossError`"，正是第 5 章末尾"吐半个字"现象的接口层伏笔。解码到半个 BPE 序列时，tokenizer 会明确拒绝，而不是吐出乱码。
 
 LiteRT-LM 提供两种实现，都继承这个接口。SentencePiece 版（Gemma 等模型用）的编码实现薄得几乎透明（`runtime/components/sentencepiece_tokenizer.cc:65 @ v0.13.1`）：
 
@@ -187,7 +187,7 @@ absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
 
 (2) 底层 `tokenizer_` 是 HuggingFace 的 Rust 分词器，通过 FFI 调用。(1) 那行 `LeakCheckDisabler` 泄漏了实现真相：这是个跨语言边界的封装，Rust 的 `lazy_static` 初始化会被 Google 的泄漏检查器误报，只能临时关掉检查。两种 tokenizer 都实现同一个 `Tokenizer` 抽象——又一次"接口隔离"原则：上层只管"把这段文本变成 id 序列"，不关心底下是 C++ 的 SentencePiece 还是 Rust 的 HuggingFace，更不关心后者还要跟泄漏检查器打架。
 
-这个抽象还解释了第 5 章末尾那个"吐半个字"现象的一半来由：SentencePiece 的解码路径（`sentencepiece_tokenizer.cc:84 @ v0.13.1`）会把 byte token 攒进一个 `chunk_byte_token_ids` 缓冲、等凑齐一个完整字符再吐——子词分词意味着一个 token 未必是一个完整的字，跨 token 的边界必须小心处理。编码是这条边界的正向，解码是反向，同一条规则的两面。
+这个抽象还解释了第 5 章末尾那个"吐半个字"现象的一半来由：SentencePiece 的解码路径（`sentencepiece_tokenizer.cc:84 @ v0.13.1`）会把 byte token 攒进一个 `chunk_byte_token_ids` 缓冲、等凑齐一个完整字符再吐。子词分词意味着一个 token 未必是一个完整的字，跨 token 的边界必须小心处理。编码是这条边界的正向，解码是反向，同一条规则的两面。
 
 ## 还差半步：token id 变成 embedding
 
@@ -205,7 +205,7 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
                                    size_t byte_offset) = 0;         // (2)
 ```
 
-(1) prefill 阶段一次查一批 token 的 embedding，拼接后写进 `output_tensor`。(2) 那个 `byte_offset` 参数是给增量续写用的：当 `output_tensor` 里已经有一部分 embedding，新的一批从指定字节偏移接着写——和上一节 diff 增量、上上节 Clone 共享前缀是同一种"接着已有的往下补，别从头来"的思路，只不过这次落在了张量的字节层面。id 是名字，embedding 才是模型真正计算的对象。这半步平时不用你操心，但记住它：第 10 章讲图片怎么进模型时，它会成为主角——图像编码器吐出的正是这种 embedding，绕过了 tokenizer 直接从这一步接入。
+(1) prefill 阶段一次查一批 token 的 embedding，拼接后写进 `output_tensor`。(2) 那个 `byte_offset` 参数是给增量续写用的：当 `output_tensor` 里已经有一部分 embedding，新的一批从指定字节偏移接着写。这和上一节 diff 增量、上上节 Clone 共享前缀是同一种"接着已有的往下补，别从头来"的思路，只不过这次落在了张量的字节层面。id 是名字，embedding 才是模型真正计算的对象。这半步平时不用你操心，但记住它：第 10 章讲图片怎么进模型时，它会成为主角——图像编码器吐出的正是这种 embedding，绕过了 tokenizer 直接从这一步接入。
 
 至此，输入之路走完。你敲进去的一句话，历经"消息 → 套模板 → diff 增量 → 分词 → 查表"，变成了一串准备好的向量。
 
