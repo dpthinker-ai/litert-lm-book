@@ -383,4 +383,4 @@ LoRA 的价值恰好呼应本章主题：它是"变体"的最省成本形态—�
 - 并行加载：`c/engine.h:295`（`litert_lm_engine_settings_set_parallel_file_section_loading`，默认 true）。
 - LoRA：`runtime/components/lora.h:40`（`LoRA`）；`runtime/components/lora_manager.h`（`LoraManager`:39；`LoadLoRA`:57；`lora_data_`/`loras_` 两张表:75–76）；`runtime/components/lora_manager.cc:46`（`LoadLoRA` 只填 `lora_data_`，后端资源由 `UseLoRA` 于 `:57` 惰性创建）。
 
-<!-- 实测（int4 vs int8 三角、并行加载 on/off 冷启动、litertlm_print 实剖）待基准 D 回填〔基准 D〕；量化内部(分组/scale)未展开，仅到"权重压 4bit + 激活精度谱系"层面，未臆测未核验的细节。图 7-2(mmap/并行加载) 与表 7-1(量化三角) 规格见 notes.md，本轮出签名图 7-1。 -->
+<!-- litertlm_print 实剖已完成（附录 D 第六节，自研扫描替代）。仍开放：int4 vs int8 三角（无同模型两种量化产物）、并行加载 on/off 冷启动（CLI 未暴露开关）；量化内部(分组/scale)未展开，仅到"权重压 4bit + 激活精度谱系"层面，未臆测未核验的细节。图 7-2(mmap/并行加载) 与表 7-1(量化三角) 规格见 notes.md，本轮出签名图 7-1。 -->

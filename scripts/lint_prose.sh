@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 文风机检：禁词表、填充词、中英文空格、连续破折号。
-# 用法：scripts/lint_prose.sh [文件或目录...]   缺省检查所有 chapters/**/chapter.md
+# 用法：scripts/lint_prose.sh [文件...]   缺省检查 chapters/**/chapter.md + appendix/*.md + preface.md + cover.md
 # 退出码：有命中返回 1，干净返回 0（可挂 pre-commit / CI）。
 # 规则依据 CLAUDE.md 第三、五节；此脚本只查 chapter.md（正文），不查 notes.md（含源码摘录）。
 set -euo pipefail
@@ -11,6 +11,8 @@ if [ "$#" -gt 0 ]; then
 else
   TARGETS=()
   while IFS= read -r f; do TARGETS+=("$f"); done < <(find chapters -name 'chapter.md' 2>/dev/null)
+  while IFS= read -r f; do TARGETS+=("$f"); done < <(find appendix -name '*.md' 2>/dev/null)
+  for f in preface.md cover.md; do [ -f "$f" ] && TARGETS+=("$f"); done
 fi
 [ "${#TARGETS[@]}" -eq 0 ] && { echo "无 chapter.md 可检查（尚未开始写正文）。"; exit 0; }
 

@@ -110,15 +110,15 @@
 
 ## 七、每章工作流与验收
 
-1. **先读代码后下笔**：`notes.md` 备料（素材、出处、待核实清单）；无出处素材不得进正文
+1. **先读代码后下笔**：`archive/chapters/chNN/notes.md` 备料（素材、出处、待核实清单）；无出处素材不得进正文
 2. 节级大纲：4-6 节，单节 ≤6 页，同时规划本节图表（第六节预算）
 3. 初稿：只管内容密度，允许难看
-4. 事实核查 pass：逐断言按四级制核对，**逐条 Read 引用行**；在 `chapters/chNN-slug/review.md` 留记录（断言→级别→出处，未过项列明）
+4. 事实核查 pass：逐断言按四级制核对，**逐条 Read 引用行**；在 `archive/chapters/chNN-slug/review.md` 留记录（断言→级别→出处，未过项列明）
 5. 除 AI 味 pass：先跑 `scripts/lint_prose.sh`（grep 禁词表、填充词、中英文空格缺失），再过第五节清单，逐项在 `review.md` 打钩；第 14 条由独立会话执行
 6. 验收自问：本章"一句话使命"兑现了吗？实验可复现吗？与 `BOOK_PLAN.md` 章卡一致吗？验收看 `review.md`，不听口头
 
 ## 八、文件与格式约定
 
-- 章目录：`chapters/chNN-slug/{chapter.md, notes.md, review.md, figs/}`；实验脚本入 `experiments/`，附录 C 汇总复现命令
+- 章目录：`chapters/chNN-slug/{chapter.md, figs/}`；备料与审校记录归档在 `archive/chapters/chNN-slug/`（见 archive/README.md）；实验脚本入 `experiments/`，附录 C 汇总复现命令
 - 章节交叉引用统一写"见第 N 章 / 见 N.M 节"，不引用页码；前向引用须点明该处解答什么问题（例："双缓冲的实现细节见 6.3 节"），禁止空指的"后文详述"
 - 代码锚定 tag 在 `BOOK_PLAN.md` 顶部声明，全书统一；上游演进写入「版本注记」侧栏，不改正文

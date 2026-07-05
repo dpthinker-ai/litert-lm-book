@@ -381,4 +381,4 @@ KV cache 是用内存换计算的经典权衡：它省掉重复的注意力计�
 - 检查点与回退：`runtime/core/session_advanced.cc`（`SaveCheckpoint`:455；`RewindToCheckpoint`:467）；`CheckpointInfo` 结构:`session_advanced.h:257-260`。
 - 会话状态：`runtime/engine/engine.h`（`Clone`:245，用法示例注释:238；`CloneAsync`:263；`SaveCheckpoint`:270；`RewindToCheckpoint`:277）；`runtime/executor/llm_executor_io_types.h`（`RuntimeState`:78，"不含 KVCache 状态" 注释:75-77；`LlmContext`:92）。
 
-<!-- 实验（--max-num-tokens 扫描解释 #2568、Clone 分叉、get_token_count 增长）数字待基准 D 回填〔基准 D〕。KV cache 公式为示例量级；具体模型 L/H_kv/D 待第 7 章 litertlm_print 读出后可补精确值。图 6-2(增长)、图 6-3(状态分叉) 与表 6-1(内存账) 规格见 notes.md，本轮先出签名图 6-1(双缓冲)。 -->
+<!-- 实验（--max-num-tokens 扫描解释 #2568、Clone 分叉、get_token_count 增长）数字待基准 D 回填〔基准 D〕。KV cache 公式已用实剖真值补齐（24 层/int8/28 KiB per token，附录 D 第六节）。图 6-2(增长)、图 6-3(状态分叉) 与表 6-1(内存账) 规格见 notes.md，本轮先出签名图 6-1(双缓冲)。 -->

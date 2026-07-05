@@ -350,6 +350,8 @@ for (int i = 0; i < num_output_candidates_; ++i) {
 
 两个队列各管一件事：`bpe_partial_token_ids_` 保证输出的是完整字符，`pending_stop_tokens_` 保证输出的不含半截停止词。它们共用 `Run` 里那个 `for (int i ...)` 逐候选走一遍，互不干扰。
 
+一个如实的补充：部分匹配路径在本书基准环境下无法从命令行触发。CLI 没有自定义停止词的参数，而基准模型的默认停止符来自聊天模板的收尾标记（实剖模板用 `<turn|>`，附录 D 第六节的同一份解剖）；据此推断它映射为单个专用 token，单 token 停止词一步即完全命中，暂存窗口长度为零。这套机制真正服务的是多 token 停止序列：引擎配置里 `stop_token_ids_` 的类型是 `std::vector<std::vector<int>>`（`runtime/engine/engine_settings.h:290`），每个停止词本身就是一段 id 序列，嵌入式集成方经 API 自定义字符串停止词时，部分匹配与暂存就成为必需。
+
 这两处边界（停止词暂存、BPE 半字暂存）共同的模式是：**decode 是逐 token 的，但用户要的是完整、正确的文本单元，中间需要一层缓冲把"逐 token"翻译成"逐可显示单元"。** 看懂这层缓冲，你就看懂了流式生成为什么不是"算一个吐一个"这么简单。
 
 ## 小结
@@ -378,4 +380,4 @@ for (int i = 0; i < num_output_candidates_; ++i) {
 - 采样器：`runtime/components/sampler.h`（`Sampler` 抽象:34，贴出核心方法 `SampleToIdAndScoreBuffer`:45）；`runtime/components/top_p_cpu_sampler.h`（`TopPSampler`:30，贴出 `Create` 签名:38，含 k/p/temperature/seed）。
 - 停止符检测：`runtime/components/stop_token_detector.h`（`StopTokenDetector`:45；`ProcessTokens`:67；贴出 `MaxPartialStopTokenLength`:93 含返回值语义注释；`GetStopTokensFound`:89；`AllDone`:85）。
 
-<!-- 温度对比已实测回填（附录 D 第八节）。停止词暂存用例仍待构造专门 prompt 复现。 -->
+<!-- 温度对比已实测回填（附录 D 第八节）。停止词暂存：CLI 不暴露自定义停止词、默认停止符为单 token，不可从命令行触发，正文已据实说明（结案）。 -->
