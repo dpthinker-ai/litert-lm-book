@@ -1,8 +1,8 @@
 # 第 2 章 跑起来与鸟瞰：从 benchmark 数字到五层架构
 
-> 使命：让模型在你自己的机器上跑起来，学会读出它吐给你的第一批性能数字，并拿到一张能带着走完全书的地图。
+> 本章目标：在本机把模型跑起来，读懂它输出的第一批性能指标，并建立一张贯穿全书的架构地图。
 
-上一章全是纸面推演。这一章，我们让它变成你终端里真实的字，并把第 1 章那条"25 tokens/s 上限"放到实测面前对一次账。
+第 1 章的推导停留在纸面。本章把它落到终端里真实的输出，并用实测数据核对第 1 章那条「约 25 tokens/s 的 decode 上限」估算。
 
 ## 让它先跑起来
 
@@ -16,7 +16,7 @@ litert-lm run \
   --prompt="What is the capital of France?"
 ```
 
-这个 `litert-lm` 命令是一层薄薄的 Python 门面：它把 C++ 运行时用 FFI 包起来，再用 click 挂上八个子命令（`python/litert_lm_cli/main.py:52 @ v0.13.1`）。你日常会碰到五个：`run` 交互对话、`benchmark` 采性能数字、`import` 把模型收进本地目录、`list` 看有哪些、`serve` 起一个 OpenAI 兼容的本地服务。
+`litert-lm` 是一层轻量的 Python 封装：它通过 FFI 绑定 C++ 运行时，再用 click 注册八个子命令（`python/litert_lm_cli/main.py:52 @ v0.13.1`）。日常常用五个：`run` 交互对话、`benchmark` 采集性能指标、`import` 把模型收进本地目录、`list` 查看已有模型、`serve` 起一个 OpenAI 兼容的本地服务。
 
 ```python
 _serve_module.register(cli)      // (1)
@@ -29,9 +29,9 @@ _benchmark_module.register(cli)
 _run_module.register(cli)
 ```
 
-每个子命令是一个独立模块，各自 `register(cli)` 把自己挂进同一个 click group——加子命令不动别的模块，这是全书第一条设计原则「接口隔离」在 CLI 层的一次微缩预演。(2) 那行的 `import` 要靠 `importlib.import_module` 动态加载，因为 `import` 是 Python 关键字、不能直接写成 `from ... import import`（`main.py:33 @ v0.13.1`）。
+每个子命令是一个独立模块，各自调用 `register(cli)` 挂进同一个 click group。新增子命令不牵动其他模块，这是全书第一条设计原则「接口隔离」在 CLI 层的一次缩影。(2) 处的 `import` 子命令要靠 `importlib.import_module` 动态加载，因为 `import` 是 Python 关键字，不能直接写成 `from ... import import`（`main.py:33 @ v0.13.1`）。
 
-`run` 子命令的核心，是它拿到模型路径后怎么把一次对话跑起来。剥掉参数解析，主干是这样：
+`run` 子命令的核心，是拿到模型路径后如何把一次对话跑起来。略去参数解析，核心逻辑如下：
 
 ```python
       engine_cm = litert_lm.Engine(       // (1)
@@ -47,11 +47,11 @@ _run_module.register(cli)
       runner_cm = engine.create_session(...)
 ```
 
-(1) `Engine` 只认一个模型路径加几个后端开关——它是全书第 3 章要拆的两层结构里的外层，负责加载权重、装配后端；(2) `create_session` 才拿到真正跑对话的 `session`。一个 Engine 可以开多个 Session，这就是第 5 问「Engine 和 Session 为什么要分两层」的入口：权重加载一次，会话状态各自独立。`run` 用 `with` 托管 Engine 的生命周期，退出时自动释放显存与 KV cache。
+(1) `Engine` 只接受一个模型路径和几个后端开关。它是第 3 章要拆解的两层结构里的外层，负责加载权重、装配后端。(2) `create_session` 才返回真正承载对话的 `session`。一个 Engine 可以派生多个 Session，这是第 5 问「Engine 和 Session 为什么分两层」的入口：权重加载一次，会话状态各自独立。`run` 用 `with` 托管 Engine 的生命周期，退出时释放显存与 KV cache。
 
-第一次运行会从 Hugging Face 拉取模型：`from_huggingface_repo` 触发 `common.download_from_huggingface`（`run.py:571 @ v0.13.1`）。litert-community 的 Gemma 4 版可直接下载，google/ 官方版是受限发布，需先接受许可条款；模型文件数 GiB，留足磁盘和耐心。跑通之后，你会看到答案一个字一个字地刷出来——那种"挤牙膏"的手感，就是第 1 章带宽墙的现场。
+第一次运行会从 Hugging Face 拉取模型：`from_huggingface_repo` 触发 `common.download_from_huggingface`（`run.py:571 @ v0.13.1`）。litert-community 的 Gemma 4 版可直接下载，google/ 官方版是受限发布，需先接受许可条款。模型文件通常数 GiB，需预留磁盘空间，首次下载耗时较长。跑通之后，答案会逐 token 刷出：每个 decode step 产出一个增量 token，边生成边输出，这就是第 1 章内存带宽约束（后文有时称带宽墙）在终端里的直接表现。
 
-流式那口"挤牙膏"的手感，在 `run` 的输出循环里看得最清楚：它对 `send_message_async` 返回的 stream 逐块迭代，每块只是一小段文本，边收边打印，不等整段生成完（`run.py:100 @ v0.13.1`）：
+逐 token 的流式输出，在 `run` 的输出循环里看得最清楚：它对 `send_message_async` 返回的 stream 逐块迭代，每块是一小段文本，边收边打印，不等整段生成完（`run.py:100 @ v0.13.1`）：
 
 ```python
   stream = conversation.send_message_async(prompt)
@@ -67,9 +67,9 @@ _run_module.register(cli)
     conversation.cancel_process()
 ```
 
-(1) 每一次循环体对应一次 decode 步吐出的增量，`nl=False` 让它们首尾相接刷成流。(2) 按下 Ctrl-C，`KeyboardInterrupt` 直接调 `cancel_process()`——这就是第 9 问「生成中途取消为什么能立刻停」在最外层的落点：取消信号一路往下传到 decode 循环，第 4、5 章会顺着这条线走到底。
+(1) 每次循环体对应一个 decode step 产出的增量 token，`nl=False` 让它们首尾相接连成一条流。(2) 按下 Ctrl-C，`KeyboardInterrupt` 直接调用 `cancel_process()`。这是第 9 问「生成中途取消为什么能立即停止」在最外层的入口：取消信号沿调用链传到 decode 循环，第 4、5 章会顺着这条链讲到底。本章稍后走读 decode 循环时，会看到这个取消信号在 `tasks.cc` 里被检查的确切位置。
 
-如果你要读源码、改代码，就得从源码编译那个 C++ 的演示程序 `litert_lm_main`（第 11 章和附录 C 讲完整的构建；这里先只用它）。它最核心的两个开关：
+如果要读源码、改代码，就得从源码编译 C++ 演示程序 `litert_lm_main`（完整构建见第 11 章与附录 C，这里先直接用它）。它最核心的两个开关：
 
 - `--backend`：选执行后端，默认是 `gpu`（`runtime/engine/litert_lm_main.cc:52 @ v0.13.1`）。想用 CPU 就传 `--backend=cpu`。
 - `--model_path`：指向一个 `.litertlm` 模型文件（`litert_lm_main.cc:54 @ v0.13.1`）。
@@ -80,7 +80,7 @@ _run_module.register(cli)
 litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 ```
 
-这个 C++ 程序把「一次对话」压缩成十来行，正好当作五层架构的第一张导览图（`runtime/engine/litert_lm_main.cc:113 @ v0.13.1`）：
+这个 C++ 程序把「一次对话」压缩成十来行，正好当作五层架构的第一张导览图（`runtime/engine/litert_lm_main.cc:113 @ v0.13.1`）。下面这段是 `MainHelper` 的主干（省略了错误处理与 conversation 的装配）：
 
 ```cpp
   ASSIGN_OR_RETURN(ModelAssets model_assets,  // NOLINT
@@ -103,11 +103,11 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
   RETURN_IF_ERROR(engine->WaitUntilDone(absl::Minutes(10)));
 ```
 
-三步走完一次推理：(1) 把 `--backend` 字符串解析成 `Backend` 枚举，再交给工厂：CPU/GPU/NPU 从这里分岔，对应第二条设计原则「可插拔后端」（第 8 章）。(2) 这个演示程序把 benchmark 默认打开，所以它每跑一次都顺手报一份性能数字，这也是附录 D 数据的采集口。(3) `SendMessageAsync` 是非阻塞的，真正的 prefill 和 decode 在后台线程跑，主线程靠 `WaitUntilDone` 等它；文本通过 `CreateMessageCallback` 一段段回调出来，`message->is_null()` 时打一个换行表示结束。整章的主线「一个 token 的一生」，起点就是这一句 `SendMessageAsync`——它往下钻，就是第二部要走的路。
+三步完成一次推理：(1) 把 `--backend` 字符串解析成 `Backend` 枚举，再交给工厂。CPU/GPU/NPU 的执行器实现从这里分岔，对应第二条设计原则「可插拔后端」（第 8 章）；本章末尾会走读这条分发路径的具体代码。(2) 这个演示程序默认打开 benchmark，因此每跑一次都会输出一份性能指标，附录 D 的数据即由此采集。(3) `SendMessageAsync` 是非阻塞调用，prefill 与 decode 在后台线程执行，主线程靠 `WaitUntilDone` 等待；文本通过 `CreateMessageCallback` 分段回调，`message->is_null()` 时输出一个换行表示结束。本书的主线是推理流水线——一段输入从 prefill 吞入、经 decode 逐 token 产出的完整链路，起点就是这一句 `SendMessageAsync`，第二部会顺着它往下钻。
 
 ## 读懂第一批数字
 
-`litert-lm benchmark` 专门吐性能数字（本书附录 D 的基准数据集就是这么采的）。它跑一个纯性能循环——不做真对话，只按你指定的 token 数各跑一轮 prefill 和 decode，然后把四个数字打出来（`python/litert_lm_cli/commands/benchmark.py:102 @ v0.13.1`）：
+`litert-lm benchmark` 专门输出性能指标（本书附录 D 的基准数据集即由此采集）。它跑一个纯性能循环，不做真实对话，只按指定的 token 数各跑一轮 prefill 和 decode，再输出四个数字（`python/litert_lm_cli/commands/benchmark.py:102 @ v0.13.1`）：
 
 ```python
     result = benchmark_obj.run()                            // (1)
@@ -127,7 +127,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
     )
 ```
 
-四行输出，正好对应四堵墙。(1) `benchmark_obj.run()` 底下是 C++ 那套 `BenchmarkInfo`——prefill 和 decode 被分别计时，`last_*_per_second` 取的是最后一轮的吞吐。(2) Init 单独一项，是把模型加载到就绪的时间，它**不算**进 (3) 的 TTFT，这个分家是下面验算 TTFT 的关键。一次真实采集大概长这样（M5 Pro、Gemma 4 E4B、cpu、prefill 256 token / decode 128 token〔基准 D〕）：
+四行输出，分别对应四个受不同资源约束的指标。(1) `benchmark_obj.run()` 底层是 C++ 的 `BenchmarkInfo`：prefill 和 decode 分别计时，`last_*_per_second` 取最后一轮的吞吐。(2) Init 是把模型加载到就绪的时间，单列一项，不计入 (3) 的 TTFT。这一点是下面验算 TTFT 的关键。一次真实采集大致如下（M5 Pro、Gemma 4 E4B、cpu、prefill 256 token / decode 128 token〔基准 D〕）：
 
 ```text
 Backend                    : cpu
@@ -170,7 +170,7 @@ Time to first token:  3.9400 s
 
 <figure>
 {{#include figs/fig-2-2.svg}}
-<figcaption>图 2-2　Roofline 眼镜：prefill 落在算力受限的斜坡右侧，decode 贴着带宽受限的斜坡——两者被完全不同的资源顶住，这是全书性能分析的基准框架。</figcaption>
+<figcaption>图 2-2　Roofline 模型：prefill 落在算力受限区，decode 落在带宽受限区。两者受完全不同的资源约束，这是全书性能分析的基准框架。</figcaption>
 </figure>
 
 戴上它，第 6 章那个问题就有了着落：实测的 decode 吞吐，离第 1 章那条纯权重上限还有一段距离，那段距离是被谁吃掉的？（剧透：KV cache 也要占带宽。）
@@ -233,9 +233,9 @@ class SessionInterface {
 };
 ```
 
-(1) `GenerateContent` 是高层的一步到位；(2)(3) 把它拆成 `RunPrefill` 和 `RunDecode` 两个可分别调用的原语——「一个 token 的一生」这条脊柱在接口层就已经是两段：先 prefill 吞提示词，再 decode 逐字吐。第 3 章讲 Engine/Session 分层，就从这个 `= 0` 的纯虚签名开始。
+(1) `GenerateContent` 是高层的一步到位；(2)(3) 把它拆成 `RunPrefill` 和 `RunDecode` 两个可分别调用的原语。推理流水线在接口层就已经分成两段：先 prefill 并行处理提示词，再 decode 逐 token 生成。第 3 章讲 Engine/Session 分层，就从这个 `= 0` 的纯虚签名开始。
 
-第 2 层的编排落在 `runtime/core/tasks.cc`。`RunPrefill`/`RunDecode` 往下调，就到这里的 `Prefill` 和 `Decode` 两个自由函数。`Prefill` 的开头先撞第 1 章那三堵墙里的一堵——上下文长度上限（`runtime/core/tasks.cc:413 @ v0.13.1`）：
+第 2 层的编排落在 `runtime/core/tasks.cc`。`RunPrefill`/`RunDecode` 往下调，就到这里的 `Prefill` 和 `Decode` 两个自由函数。`Prefill` 的开头先检查上下文长度上限（KV cache 容量，第 1 章内存容量约束的一个具体面）（`runtime/core/tasks.cc:413 @ v0.13.1`）：
 
 ```cpp
   auto num_tokens = token_id_tensor_type.Layout().Dimensions().back();

@@ -1,18 +1,16 @@
-# 第 10 章 不止聊天：多模态、约束解码与 Tool Use
+# 第 10 章 多模态输入、约束解码与工具调用
 
-> 使命：走出纯文本，看两个方向的扩展——模型怎么"看见"图片、"听见"声音（感知的输入端），以及模型的输出怎么被约束成合法 JSON、变成能执行的函数调用（受控的输出端）。
+> 本章走出纯文本，考察两个方向的扩展。输入端：模型如何把图像、音频编码为可处理的表示，接入以文本为设计前提的推理流水线。输出端：如何在采样层约束生成，使输出恒为合法 JSON 或可执行的函数调用。
 
-前三部把纯文本的生成讲透了：一句话进去，一串字出来。但真实应用要的往往不止聊天——它要看图、听音，要模型输出的不是散文而是一个能直接跑的函数调用。这一章讲这两件事。它们方向相反（一个管输入、一个管输出），但各自都建立在前面的地基上。
+前三部把纯文本生成讲透了：一段文本进入模型，一串 token 逐步生成。真实应用要的往往不止对话。它要处理图像和音频输入，要模型给出的不是自由文本而是一个可直接执行的函数调用。本章讲这两件事。二者方向相反，一个作用于输入、一个作用于输出，但都建立在前几章的推理流水线之上，核心的 prefill 与 decode 一字未改。
 
-## 模型怎么"看见"一张图
+## 图像如何进入模型
 
-先说输入端。模型的骨架是处理 token 序列的（第 3 章），它不认识像素。那图片怎么进去？
+先看输入端。Transformer 主干处理的是 token 序列（第 3 章），它不接受像素。图像怎么接进去？
 
-答案朴素得意外：**把图片也变成 embedding，混进 token 序列里。** 第 3 章说过，文本要先经 embedding 才进模型；图片走的是同一条路，只是"变 embedding"的方式不同。
+思路是把图像也编码成 embedding，注入到 token 序列中。第 3 章讲过，文本先经词嵌入（embedding）查表才进入主干；图像走同一条路，区别只在于「如何得到 embedding」。整条链路分三步：切块、编码、注入。
 
-分三步：切块、编码、注入。
-
-第一步，切块。一张图先被切成许多小块（patch），这一步叫 patchify。切之前要先决定切成多大——`GetAspectRatioPreservingSize`（`runtime/components/preprocessor/image_preprocessor_utils.cc:26 @ v0.13.1`）算的就是这个尺寸。这段算法值得摊开看，它把"patch 数不能超上限"这条约束落成了几行浮点运算：
+第一步，切块。一张图先被切成许多小块（patch），这一步叫 patchify。切之前要先决定缩放到多大——`GetAspectRatioPreservingSize`（`runtime/components/preprocessor/image_preprocessor_utils.cc:26 @ v0.13.1`）算的就是这个目标尺寸。这段算法把「patch 数不超过上限」这条约束落成了几行浮点运算：
 
 ```cpp
 float total_px = width * height;
@@ -30,9 +28,69 @@ int target_width =
     static_cast<int>(std::floor(ideal_width / side_mult)) * side_mult;
 ```
 
-(1) 先算允许的总像素上限：`max_num_patches` 个 patch，每个 patch 占 `patch_width × patch_height` 像素。(2) 拿这个上限除以原图像素数、开方，得到一个各向同性的缩放系数 `factor`。这个系数乘在宽高上，缩放后的总面积恰好压到上限，同时不改变长宽比。(3)(4) 处理网格对齐：缩放后的宽高不能是任意整数，必须是 `side_mult` 的整数倍，`side_mult` 等于池化核尺寸乘 patch 边长。所以代码先除以 `side_mult`、向下取整、再乘回去，把宽高对齐到网格。为什么要对齐？因为下游要按 `patch_width` 均匀切块、再按 `pooling_kernel_size` 做池化，宽高不是这个乘积的整数倍就切不齐。函数开头还有一句硬性检查：`patch_width != patch_height` 直接返回错误，patch 必须是正方形。向下取整可能把某一边压成 0（细长图），代码专门兜了这个情况：把 0 的那边设成一个 `side_mult`、另一边按原始长宽比放大但不超过 `max_side_length`。这笔账读者可以自己验算：给定 `max_num_patches`、`patch_width`、原图尺寸，`target_height × target_width / (patch_width × patch_height)` 就是这张图最终占多少个 visual token——也就是要在序列里挖多少个坑。
+(1) 先算允许的总像素上限：`max_num_patches` 个 patch，每个 patch 占 `patch_width × patch_height` 像素。(2) 拿这个上限除以原图像素数、开方，得到一个各向同性的缩放系数 `factor`。这个系数乘在宽高上，缩放后的总面积恰好压到上限，同时保持长宽比不变。(3)(4) 处理网格对齐：缩放后的宽高必须是 `side_mult` 的整数倍，`side_mult` 等于池化核尺寸乘 patch 边长。代码先除以 `side_mult`、向下取整、再乘回去，把宽高对齐到网格。对齐的原因在于下游要按 `patch_width` 均匀切块、再按 `pooling_kernel_size` 做池化，宽高不是这个乘积的整数倍就无法整除切分。函数开头有一句前置检查：`patch_width != patch_height` 直接返回错误，patch 必须为正方形。向下取整可能把某一边压成 0（极端细长的图），代码对此单列了一个分支：把为 0 的那一边设成一个 `side_mult`，另一边按原始长宽比放大且不超过 `max_side_length`。
 
-第二步，编码。切好的图交给视觉执行器编码成 embedding。执行器的 `Encode`（声明 `runtime/executor/vision_litert_compiled_model_executor.h:57`，实现 `vision_litert_compiled_model_executor.cc:454 @ v0.13.1`）返回一个装着 embedding 的 `ExecutorVisionData`，它的实现是两级串联：
+这里可以当面把 visual token 数算清。给定 `max_num_patches`、`patch_width`、原图尺寸，$\text{target\_height} \times \text{target\_width} / (\text{patch\_width} \times \text{patch\_height})$ 就是这张图切出的 patch 数，也就是它在序列里占用的 visual token 数——序列里要为此预留的 `kSpecialToken` 占位符槽位数量。这个数字并非无关紧要，本节末尾会把它连到 prefill 计算量与 KV cache 占用上，量化「看一张图」的真实代价。
+
+上面这段只算目标尺寸，真正的重采样发生在另一处。`MaybeResizeImageWithSameAspectRatio`（`runtime/components/preprocessor/stb_image_preprocessor.cc:56 @ v0.13.1`）拿到目标尺寸后，先判断是否需要缩放，再逐张调重采样：
+
+```cpp
+ASSIGN_OR_RETURN(auto size,
+                 GetAspectRatioPreservingSize(
+                     width, height, parameter.GetPatchifyConfig().value()));
+int new_height = size.first;
+int new_width = size.second;
+
+if (new_height == height && new_width == width) {
+  resized_image_data = std::move(image_data);
+  return absl::OkStatus();                                  // (1)
+}
+// ...
+for (int i = 0; i < batch_size; ++i) {
+  // ...
+  if (stbir_resize(input_data, width, height, 0, output_data, new_width,
+                   new_height, 0,
+                   static_cast<stbir_pixel_layout>(channels),
+                   STBIR_TYPE_UINT8_SRGB, STBIR_EDGE_CLAMP,
+                   STBIR_FILTER_CATMULLROM) == 0) {          // (2)
+    return absl::InternalError("Failed to resize image.");
+  }
+}
+```
+
+(1) 短路分支：若目标尺寸与原图相等，直接 `move` 走原数据、不做任何重采样。已经符合 patch 约束的图（例如上游已按网格裁好）在此零开销通过。(2) 逐张调 `stbir_resize`（stb_image_resize2 提供），滤波器选 `STBIR_FILTER_CATMULLROM`（Catmull-Rom 三次插值），色彩空间按 `STBIR_TYPE_UINT8_SRGB` 处理，边缘按 `STBIR_EDGE_CLAMP` 钳位。Catmull-Rom 每个输出像素要采样源图一个邻域并做加权，是纯 CPU 上的密集浮点运算。缩放本身在图像预处理里往往是耗时占比最大的一步：一张 4K 图缩到几百像素见方，输出像素虽少，但每个输出像素的插值核要覆盖较大的源邻域，代价随源图分辨率上升。这也是短路分支值得单列的原因——能跳过就跳过一整趟重采样。重采样在 CPU 上串行完成，与后续视觉编码器可能跑在 GPU/NPU 上形成一段串行前缀，端到端时延里这段无法与主干计算重叠。
+
+重采样之后是归一化与切块。第二步真正把像素搬成 patch 序列的是 `PatchifyImage`（`stb_image_preprocessor.cc:120 @ v0.13.1`）。这一步不做数学变换，只做数据布局重排：把 HWC 连续排列的像素重新打包成 `[batch, num_patches, patch_dim]`，同时为每个 patch 生成它在网格里的 (w, h) 坐标。核心是一段六重嵌套循环：
+
+```cpp
+for (int b = 0; b < batch_size; ++b) {
+  for (int h = 0; h < num_patches_h; ++h) {
+    for (int w = 0; w < num_patches_w; ++w) {
+      int patch_idx = h * num_patches_w + w;
+      int global_patch_idx = b * num_patches + patch_idx;
+      positions_ptr[global_patch_idx * 2] = w;
+      positions_ptr[global_patch_idx * 2 + 1] = h;              // (1)
+      for (int ph = 0; ph < patch_height; ++ph) {
+        for (int pw = 0; pw < patch_width; ++pw) {
+          for (int c = 0; c < channels; ++c) {
+            int src_h = h * patch_height + ph;
+            int src_w = w * patch_width + pw;
+            int src_idx =
+                ((b * height + src_h) * width + src_w) * channels + c;  // (2)
+            int dest_idx = global_patch_idx * patch_dim +
+                           ((ph * patch_width + pw) * channels + c);    // (3)
+            patches_ptr[dest_idx] = static_cast<float>(image_data[src_idx]);
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+(1) 外三层遍历每个 patch 的网格位置，顺带把它的 (w, h) 坐标写进 `positions_xy` 张量。这份坐标随后要连同像素一起喂给编码器，用于恢复 patch 的空间位置。(2) 内三层遍历 patch 内的每个像素通道，`src_idx` 是标准的 HWC 行主序索引 `((b·H+src_h)·W+src_w)·C+c`。(3) `dest_idx` 是 patch 主序索引：同一 patch 的 `patch_dim = patch_width·patch_height·channels` 个值在目的缓冲里连续排布。这段循环的访存模式值得留意。目的端 `patches_ptr` 严格顺序写入，cache 友好；源端 `image_data` 的读取则在行内连续（`pw` 与 `c` 变化时），但每换一个 patch 行（`ph` 递增）就跳一整个图像宽度 `W·C` 个元素：源读取有周期性的大 stride 跳跃，patch 越大、图越宽，跳跃越频繁，L1/L2 命中率越低。这段是逐元素标量拷贝，未做 SIMD 向量化；实际负载不算大（一张图的像素总量），但它落在缩放之后、编码之前的串行 CPU 段里，和重采样一样属于「喂进编码器之前」必须付的前处理成本。`positions_xy` 之所以显式外传而非由编码器内部推算，是因为下一步的变分辨率编码要按它对齐可变数量的 patch。
+
+第二步的后半段，切好的图交给视觉执行器编码成 embedding。执行器的 `Encode`（声明 `runtime/executor/vision_litert_compiled_model_executor.h:57`，实现 `vision_litert_compiled_model_executor.cc:454 @ v0.13.1`）返回一个装着 embedding 的 `ExecutorVisionData`，它的实现是两级串联：
 
 ```cpp
 absl::StatusOr<ExecutorVisionData> VisionLiteRtCompiledModelExecutor::Encode(
@@ -55,7 +113,7 @@ absl::StatusOr<ExecutorVisionData> VisionLiteRtCompiledModelExecutor::Encode(
 }
 ```
 
-(1) 把预处理好的图像张量写进编码器的输入 buffer。(2) 跑视觉编码器（vision encoder）——这是一个独立的 LiteRT 编译模型，产出的是编码器自己空间里的特征。(3) 编码器的输出直接喂给视觉适配器（vision adapter）再跑一次：适配器负责把编码器特征投影到 LLM 的 embedding 空间，维度对齐成 `model_dimension`，模型骨架才认。两个模型都是编译好的 `CompiledModel`，一个负责"看懂图"、一个负责"翻译成 LLM 的语言"。(4) 返回时 `per_layer_embeddings` 传 `std::nullopt`，这条路只产一份普通 embedding，不产逐层 embedding（后者是某些模型的额外通道，这里用不上）。中间那段被 `// ...` 省掉的代码在处理一个后端相关的坑：WebGPU 和 Metal 内存下，输出 buffer 不能复用，第二次调 `Encode` 会报 lock 失败，得每次新建（注释里挂着内部 bug 号 b/457483190）。
+(1) 把预处理好的图像张量写进编码器的输入 buffer。(2) 跑视觉编码器（vision encoder）——一个独立的 LiteRT 编译模型，产出编码器自身特征空间里的向量。(3) 编码器的输出直接喂给视觉适配器（vision adapter）再跑一次：适配器把编码器特征投影到 LLM 的 embedding 空间，维度对齐到 `model_dimension`，此后 Transformer 主干可与文本 embedding 一并处理。两个模型都是编译好的 `CompiledModel`，视觉编码器提取视觉特征，视觉适配器将其投影到 LLM 嵌入空间。(4) 返回时 `per_layer_embeddings` 传 `std::nullopt`，该路径仅输出常规 embedding，不产出 per-layer embeddings（逐层嵌入，供特定模型架构使用，此处不需要）。中间被 `// ...` 省去的代码处理一个后端相关的约束：WebGPU 与 Metal 内存下输出 buffer 不可复用，第二次调 `Encode` 会触发 lock 失败，需每次新建（源码注释挂着内部编号 b/457483190）。
 
 第三步，注入——整件事最巧的地方在"预留位置"。序列里先放一串占位的特殊 token，`kSpecialToken` 值为 -1（`runtime/executor/llm_executor_io_types.h:220 @ v0.13.1`）。头文件里给了直观的例子（`:202`）：
 
@@ -68,14 +126,55 @@ absl::StatusOr<ExecutorVisionData> VisionLiteRtCompiledModelExecutor::Encode(
 //  [0.9, ...]]  // Embedding for the 3rd kVisionSpecialToken
 ```
 
-三个 `kSpecialToken` 就是给视觉 embedding 占的三个坑，`ExecutorVisionData` 里 embedding 的行数必须严格等于序列中 `kSpecialToken` 的个数——上一步 patchify 算出的 visual token 数，在这里必须对得上。真正 prefill 前，`FillVisionEmbeddings`（`runtime/executor/llm_executor_base.h:178 @ v0.13.1`）把这些 embedding 按行填进对应的坑。它的签名里带一个 `image_index` 参数：一次对话可以塞多张图，每张图占一段连续的 `kSpecialToken`，`image_index` 指定这批 embedding 覆盖哪一张。填完，序列里一部分槽装文本 embedding、一部分装视觉 embedding，对模型来说都是一样的 embedding，一视同仁地往下算。
+三个 `kSpecialToken` 就是给视觉 embedding 预留的三个占位符槽位，`ExecutorVisionData` 里 embedding 的行数必须严格等于序列中 `kSpecialToken` 的个数——上一步 patchify 算出的 visual token 数，在这里必须对得上。prefill 之前，`FillVisionEmbeddings`（`runtime/executor/llm_executor_base.h:178 @ v0.13.1`）把这些 embedding 按行填进对应槽位。它的签名带一个 `image_index` 参数：一次对话可含多张图，每张图占一段连续的 `kSpecialToken`，`image_index` 指定这批 embedding 覆盖哪一张。填完，序列里一部分槽位是文本 embedding、一部分是视觉 embedding，对主干而言都是同一空间的向量，统一处理。
 
 <figure>
 {{#include figs/fig-10-1.svg}}
-<figcaption>图 10-1　模型怎么"看见"：图片先 patchify 切块、经视觉执行器编码成 embedding，再填进 token 序列里由特殊 token（kSpecialToken）占好的坑。对模型而言，视觉 embedding 和文本 embedding 无差别。</figcaption>
+<figcaption>图 10-1　图像输入的三步链路：图片先 patchify 切块、经视觉编码器与适配器编码为 embedding，再填入 token 序列中由特殊 token（kSpecialToken）预留的占位符槽位。对主干而言，视觉 embedding 与文本 embedding 同属一个嵌入空间。</figcaption>
 </figure>
 
-音频走的是同一条路，只是特殊 token 换成 -2（`ExecutorAudioData::kSpecialToken`，`llm_executor_io_types.h:281 @ v0.13.1`；对齐约定在 `:263` 的注释里，和视觉逐字对应）。音频执行器 `AudioLiteRtCompiledModelExecutor::Encode`（`runtime/executor/audio_litert_compiled_model_executor.cc:941 @ v0.13.1`）的结构和视觉那段几乎一样：编码器 `Run` 一次、适配器 `Run` 一次、包成 `ExecutorAudioData` 返回。三个模态各用一个 `kSpecialToken` 值（文本无、视觉 -1、音频 -2）把坑区分开，填的时候各填各的。这就是多模态的统一技巧：**万物皆 embedding**。不同模态各有各的编码器把自己变成 embedding，一旦变成了 embedding，后面的 prefill、decode（第 4、5 章）一个字都不用改：它们本就是在 embedding 上工作，不在乎这些 embedding 当初是文本、图片还是声音。这也是为什么第 2 章那五层架构能保持干净：多模态是"在输入端多接一个编码器"，而不是"把整条流水线改一遍"。
+### 变分辨率的视觉编码
+
+上面那个 `Encode` 重载接受单个图像张量，隐含假设编码器只有一种固定的输入尺寸。实际的视觉编码器往往内置多个 signature，按输入 patch 数在运行时择一派发。第二个 `Encode` 重载（`vision_litert_compiled_model_executor.cc:499 @ v0.13.1`）就是走这条路：它接受 `input_maps`（含 `images` 与 `positions_xy` 两个键），从 `images` 张量的形状里读出实际 patch 数，再选签名：
+
+```cpp
+const auto& images_dimensions = images_tensor_type.Layout().Dimensions();
+const int num_patches_from_input = images_dimensions[1];               // (1)
+ASSIGN_OR_RETURN(auto encoder_signature_index,
+                 GetVitSignatureIndex(vision_encoder_->GetModel(),
+                                      vision_executor_properties_,
+                                      num_patches_from_input));         // (2)
+```
+
+(1) patch 数直接取自输入张量的第 1 维——就是 patchify 那步 `num_patches_h × num_patches_w` 的结果。(2) 把它交给 `GetVitSignatureIndex` 选签名。选择逻辑（`:138 @ v0.13.1`）是「够用的最小者」：
+
+```cpp
+const int max_num_tokens =
+    num_patches / vision_executor_properties.patch_num_shrink_factor.value();  // (1)
+for (int i = 0; i < model.GetNumSignatures(); ++i) {
+  // ... 从签名名末尾解析出该签名支持的 length ...
+  if (current_length >= max_num_tokens && current_length < best_length) {  // (2)
+    best_length = current_length;
+    best_signature_index = i;
+  }
+}
+```
+
+(1) 先把 patch 数按 `patch_num_shrink_factor` 折算成编码后 token 数：池化会缩减序列长度，编码器 signature 是按输出 token 数命名的。(2) 遍历所有以 `kVisionLengthPrefix` 打头的签名，从名字末尾解析出各自支持的长度，取「大于等于所需长度、且最短」的那个。若没有任何签名够长，返回错误并提示把 `max_num_tokens` 降到 `max_available_length`——宁可报错也不静默截断图像。
+
+这套多签名设计是对「静态 shape」与「动态 shape」的一种折中。纯动态 shape（一个签名吃任意长度）在移动端后端上代价高：GPU/NPU 常要按具体形状预编译 kernel，运行时才定形状会触发重编译或走慢速回退路径。纯单一静态 shape（把所有图 pad 到最大长度）则浪费算力：一张小图也得按最大 patch 数跑一遍编码器。多签名相当于预编译好若干档固定长度，运行时按实际 patch 数向上取整到最近一档。代价是模型文件里要多带几套编码器权重的 signature（同一权重、不同输入形状的多个入口），换来的是每张图只按贴近实际的档位付算力。这也解释了为什么 `positions_xy` 要在 patchify 阶段显式生成并外传：可变数量的 patch 需要显式的位置信息，编码器无法从固定网格假设里反推。
+
+单张量重载则是这套机制的退化情形：当 `GetNumSignatures() == 1` 时 `GetVitSignatureIndex` 直接返回 0（`:142 @ v0.13.1`），跳过全部选择逻辑。固定分辨率模型走这条快路径，变分辨率模型走上面那条。
+
+### 视觉 token 折算成的 prefill 与 KV cache 开销
+
+回到本节开头留下的账。patchify 公式算出的 visual token 数，不只决定序列里预留多少槽位，它直接放大 prefill 的计算量与 KV cache 的占用。视觉 token 一旦填进序列，对 prefill 而言与文本 token 无差别（第 4 章）：每个 token 都要过一遍完整的 Transformer 前向，都要在每一层写入一份 K/V 进 cache。
+
+把数字代进去。设某视觉编码器 `patch_width = patch_height = 14`，`max_num_patches = 256`，`pooling_kernel_size = 1`（不额外池化）。一张接近上限的图折算成约 256 个 visual token。这 256 个 token 等价于 256 个文本 token 的 prefill 成本：prefill 的计算量随 token 数近似线性（注意力那部分随序列长度平方增长，但在几百 token 尺度下线性项主导），KV cache 占用则严格线性：`num_layers × 2 × model_dimension × num_tokens × sizeof(dtype)`。以一个 26 层、`model_dimension = 2048`、fp16 KV 的配置粗算，256 个 token 的 KV cache 约为 $26 \times 2 \times 2048 \times 256 \times 2 \approx 54\,\text{MiB}$（按 $2^{20}$ 计）。也就是说，「看一张图」在上下文里的占位，相当于一次几百 token 的额外 prefill，外加数十 MiB 的 KV cache 常驻。多图对话会成倍放大这两项：三张图就是约 768 个 visual token、约 160 MiB KV cache。这解释了 `max_num_patches` 为何是端侧多模态的关键预算旋钮——它是「图像细节」与「prefill 时延／显存」之间的直接兑换比。〔本节字面值为按公式的量级估算，真机端到端时延与显存占用待附录 D 基准回填〕
+
+音频走同一条路，只是特殊 token 换成 -2（`ExecutorAudioData::kSpecialToken`，`llm_executor_io_types.h:281 @ v0.13.1`；对齐约定在 `:263` 的注释里，与视觉逐字对应）。三个模态各用一个 `kSpecialToken` 值（文本无、视觉 -1、音频 -2）区分各自的占位符槽位，填充时各填各的。这就是多模态的统一之处：各模态各有编码器把输入编码成同一嵌入空间的向量，一旦成为 embedding，后续的 prefill、decode（第 4、5 章）无需任何改动——它们本就工作在 embedding 上，不关心这些向量原本来自文本、图像还是音频。第 2 章那套分层架构因此得以保持干净：多模态是在输入端多接一个编码器，而非改动整条流水线。
+
+音频链路比视觉多一层结构，值得单独展开——它并非「编码器 Run 一次、适配器 Run 一次」这么简单。
 
 ## 让输出守规矩：约束解码
 

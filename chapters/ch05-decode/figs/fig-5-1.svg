@@ -15,7 +15,7 @@
     <marker id="a5"  orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker>
     <marker id="a5b" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent, #0b57d0)"/></marker>
   </defs>
-  <text class="t" x="360" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">一次 decode 心跳（循环直到 ShouldStop）</text>
+  <text class="t" x="360" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">一次 decode step（循环直到 ShouldStop）</text>
   <!-- 上一个 token -->
   <rect class="box" x="40" y="70" width="120" height="46" rx="6"/>
   <text class="t" x="100" y="90" text-anchor="middle" style="font-size:12px;font-weight:700">上一个 token</text>
@@ -40,8 +40,8 @@
   <text class="t" x="565" y="224" text-anchor="middle" style="font-size:12px;font-weight:700">采样出 token id</text>
   <!-- 转文本 + 缓冲 -->
   <rect class="box" x="450" y="270" width="230" height="52" rx="6"/>
-  <text class="t"  x="565" y="290" text-anchor="middle" style="font-size:11px;font-weight:700">转文本 + 流式吐出</text>
-  <text class="ts" x="565" y="306" text-anchor="middle" style="font-size:9.5px">停止词回吐 · 半字暂存</text>
+  <text class="t"  x="565" y="290" text-anchor="middle" style="font-size:11px;font-weight:700">转文本 + 流式输出</text>
+  <text class="ts" x="565" y="306" text-anchor="middle" style="font-size:9.5px">停止词暂存 · BPE 半字暂存</text>
   <!-- ShouldStop -->
   <rect class="hot" x="230" y="276" width="150" height="46" rx="6"/>
   <text class="accent" x="305" y="296" text-anchor="middle" style="font-size:12px;font-weight:700">ShouldStop?</text>
@@ -62,5 +62,5 @@
   <text class="ts" x="196" y="291" text-anchor="middle" style="font-size:10px">是</text>
   <!-- 循环回边（否） -->
   <path class="loop" marker-end="url(#a5b)" d="M305,276 V210 C 200,210 160,180 100,180 V118"/>
-  <text class="accent" x="150" y="205" text-anchor="middle" style="font-size:11px;font-weight:700">否 → 下一次心跳</text>
+  <text class="accent" x="150" y="205" text-anchor="middle" style="font-size:11px;font-weight:700">否 → 下一个 decode step</text>
 </svg>

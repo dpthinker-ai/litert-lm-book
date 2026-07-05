@@ -1,21 +1,22 @@
-# 第 4 章 Prefill：吞下提示词
+# 第 4 章 Prefill：并行处理提示词
 
-> 使命：理解 prefill 为什么快、它的两条实现路径各自在权衡什么，以及支撑"生成中途能立刻取消"的那层异步底座。
+> 本章目标：说清 prefill 为什么是计算受限（compute-bound）的一步、静态与动态两条实现路径各自的权衡、每次 prefill 调用背后的隐性 CPU 开销（注意力掩码、embedding 装配、KV cache 缓冲交换），以及支撑异步执行与合作式取消的那层线程调度底座。
 
-上一章，你的输入变成了一串 token id。现在 `Prefill` 接过它，把它一口吞进模型。这一步决定了"第一个字多久出来"。
+上一章末尾，输入文本已经变成一串 token id。`Prefill` 接过这串 id，一次前向处理整段提示词，把注意力中间结果写进 KV cache。这一步的耗时直接决定首 token 时延（TTFT，time-to-first-token）。
 
-## prefill 快在哪
+## prefill 为什么是计算受限的一步
 
-回到第 2 章的 Roofline 眼镜：prefill 一次处理一整段提示词，几百上千个 token 共用同一批读进来的权重——算术强度高、算力受限，这就是它快的全部原因。它与 decode 的差距（本书基准上 10-20 倍〔基准 D〕）不是实现好坏，是物理分工。本章会从第 2 层的编排入口（`Tasks::Prefill`）一路下探到第 3 层的 executor。
+沿用第 2 章的 Roofline 分析。prefill 一次前向处理整段提示词，几百上千个 token 复用同一批已读入的权重，算术强度（每字节权重承担的浮点运算数）高，落在 Roofline 的计算受限区。它与 decode 的差距不是实现优劣，是两类操作被不同资源顶住：prefill 受算力约束，decode 受内存带宽约束。
 
-编排入口很短，也很直白。它先算出模型能吃的最大 token 数，做一次越界校验，再把整段 token 交给 executor（`runtime/core/tasks.cc:413 @ v0.13.1`）：
+这一差距在本书基准上是实测可见的。附录 D 的主基准（Gemma 4 E4B，公开权重，`litert-lm benchmark` 中位数）里，gpu 后端上下文 1024 时 prefill 吞吐 999.1 tokens/s、decode 仅 50.6 tokens/s，相差约 20 倍；cpu 后端上下文 1024 时 prefill 259.2 tokens/s、decode 24.7 tokens/s，相差约 10 倍〔基准 D〕。同一模型、同一后端，两个数字差一到两个数量级，因为一个吃算力、一个吃带宽。本章从第 2 层的编排入口（`Tasks::Prefill`）下探到第 3 层的 executor，把这条路径上的每一处开销摊开。
+
+编排入口很短。它先取模型能接受的最大 token 数，做一次越界校验，再把整段 token 交给 executor（`runtime/core/tasks.cc:412 @ v0.13.1`）：
 
 ```cpp
 absl::StatusOr<Responses> Prefill(
     LlmExecutor& executor, ExecutorInputs& inputs, bool wait_for_completion,
     std::optional<BenchmarkInfo>& benchmark_info) {
   const int max_num_tokens = TryGetMaxNumTokens(executor);
-  ASSIGN_OR_RETURN(auto text_data, inputs.GetTextDataPtr());
   // ...
   auto num_tokens = token_id_tensor_type.Layout().Dimensions().back();
   if (num_tokens >= max_num_tokens) {                                    // (1)
@@ -25,28 +26,45 @@ absl::StatusOr<Responses> Prefill(
   // ...
   ExecutorPrefillParams params;
   params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());  // (2)
-  // ...
-  RETURN_IF_ERROR(executor.Prefill(inputs, params));                    // (3)
+  if (benchmark_info.has_value()) {
+    RETURN_IF_ERROR(benchmark_info->TimePrefillTurnStart());            // (3)
+  }
+  RETURN_IF_ERROR(executor.Prefill(inputs, params));                    // (4)
+  if (benchmark_info.has_value()) {
+    RETURN_IF_ERROR(benchmark_info->TimePrefillTurnEnd(ids_buffer_span.size()));
+  }
   return Responses(TaskState::kDone);
 }
 ```
 
-三行值得点名。(1) 这里的越界判断用的是 `>=` 而非 `>`：模型的上下文窗口要留一个位置给 decode 阶段的第一个 pending token，所以 prefill 能塞进去的 token 必须严格小于 `max_num_tokens`。(2) `wait_for_completion` 与 benchmark 开关做了一次按位或——只要在跑基准，就强制同步等待，否则拿不到干净的 prefill 计时。(3) 真正的活儿一行就交出去了：这个函数不碰模型、不选形状、不管 KV cache，全部下沉给 `executor.Prefill`。这是本书反复出现的"接口隔离"：第 2 层只做校验与编排，形状怎么选、算子怎么跑是第 3 层的事。
+四处值得说明。(1) 越界判断用 `>=` 而非 `>`。模型的上下文窗口要留一个位置给随后的 pending token（下一节展开这个 token 的来历），所以 prefill 能写入的 token 数必须严格小于 `max_num_tokens`。(2) `wait_for_completion` 与 benchmark 开关做了一次按位或：只要在跑基准就强制同步等待，否则计时会把还在异步执行的 prefill 提前算完，拿到偏短的数字。(3)(4) 计时探针 `TimePrefillTurnStart` / `TimePrefillTurnEnd` 把 `executor.Prefill` 夹在中间，`TimePrefillTurnEnd` 收到本轮 token 数用于算吞吐。真正的计算下沉给 `executor.Prefill`：这个函数不碰模型、不选形状、不管 KV cache。第 2 层只做校验、计时与编排，形状怎么选、算子怎么跑是第 3 层 executor 的事。
 
-## 一道选择题：固定长度还是可变长度
+这两个探针的实现极薄。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键记一个 `absl::Now()` 起点，`TimePrefillTurnEnd` 再取一次 `absl::Now()` 求差，连同 token 数存进 `prefill_turns_`（`runtime/engine/io_types.cc:296` 与 `:306 @ v0.13.1`）。它量的是整个 `executor.Prefill` 的墙钟时间，包含下面要讲的分块循环、掩码填充、embedding 装配与 KV cache 缓冲交换的全部开销。附录 D 那张 prefill 吞吐表，每个数字都出自这一对探针。
 
-executor 怎么"吞"这段 token，是一道端侧特有的选择题。
+### 用探针复算一次 prefill 曲线
 
-模型编译成能在硬件上跑的形式后，它接受的输入形状（多长的序列）往往是**固定**的。可提示词长度千变万化，有时 20 个 token，有时 2000 个。怎么办？LiteRT-LM 给了两条路径，对应两个 executor 子类：`LlmLiteRtCompiledModelExecutorStatic` 与 `LlmLiteRtCompiledModelExecutorDynamic`。
+拿这对探针可以复现 notes 里列的实验：把提示词长度从 100 扫到 4000，画 prefill 耗时与吞吐曲线（附录 C 复现表第 4 项，`litert-lm benchmark` 扫 `-p 100…4000`）。曲线的形状能直接印证「计算受限」这个判断。
 
-**静态形状**：预先编译好若干个固定长度的 prefill 入口（signature），比如 128、512、1024 各一个。这组入口按长度排好序存着（`SortedPrefillSignatureMap`，`runtime/executor/litert_compiled_model_executor_utils.h:43 @ v0.13.1`）：
+短提示词区间吞吐偏低。附录 D 里 cpu 后端上下文 256 时 prefill 只有 65.6 tokens/s，到 1024 时跳到 259.2 tokens/s〔基准 D〕。原因是几百个 token 还喂不满 CPU 的向量单元，算术强度不够高，一部分时间花在读权重而非做乘加，此时更接近带宽受限。随着长度增加，同一批权重被更多 token 复用，算术强度上升，吞吐爬向该后端的算力上限。gpu 后端同样从 256 档的 259.8 tokens/s 升到 1024 档的 999.1 tokens/s〔基准 D〕。
+
+长提示词区间吞吐回落。cpu 从 1024 档的 259.2 降到 4096 档的 226.5，gpu 从 999.1 降到 925.2〔基准 D〕。回落来自注意力本身：因果注意力的计算量随序列长度平方增长，长上下文里注意力占的比重变大，而下一节会看到，掩码填充也是 O(L²) 的 CPU 开销。这条「先升后回落」的曲线不是实现瑕疵，是算术强度上升与注意力二次项此消彼长的自然结果。
+
+TTFT 与吞吐互为倒数，可当面对账。cpu/4096 的 TTFT 实测 18.13 s，而 4096 ÷ 226.5 tokens/s ≈ 18.08 s，两者吻合到小数点后一位〔基准 D〕。这条对账说明 TTFT 在长上下文下几乎全部是 prefill 耗时，加载与采样的固定开销可忽略。工程含义直接：要压 TTFT，要么减少 prefill 的 token 数（模板 diff 增量渲染，见第 3 章），要么换到 prefill 吞吐更高的后端（gpu/4096 的 TTFT 只有 4.45 s）。
+
+## 设计权衡：固定形状还是动态形状
+
+executor 如何处理这段 token，是一处端侧特有的设计权衡。
+
+模型编译成能在硬件上运行的形式后，它接受的输入形状（序列长度）往往是固定的。而提示词长度千变万化，有时 20 个 token，有时 2000 个。LiteRT-LM 给出两条路径，对应两个 executor 子类：`LlmLiteRtCompiledModelExecutorStatic` 与 `LlmLiteRtCompiledModelExecutorDynamic`。
+
+静态形状路径预先编译好若干个固定长度的 prefill 入口（signature），比如 128、512、1024 各一个。这组入口按长度排序存放（`SortedPrefillSignatureMap`，`runtime/executor/litert_compiled_model_executor_utils.h:43 @ v0.13.1`）：
 
 ```cpp
 using SortedPrefillSignatureMap =
     absl::btree_map<int, std::string, std::greater<int>>;                // (1)
 ```
 
-键是序列长度，值是 signature 名，比较器 `std::greater<int>` 让它**从大到小**排——`begin()` 就是最长的那个入口 (1)。选路的策略贪心而朴素（`GetOptimizedPrefillWorkGroups`，`runtime/executor/litert_compiled_model_executor_utils.cc:248 @ v0.13.1`）：
+键是序列长度，值是 signature 名，比较器 `std::greater<int>` 让它从大到小排列，`begin()` 即最长的入口 (1)。选路策略是一个贪心切分（`GetOptimizedPrefillWorkGroups`，`runtime/executor/litert_compiled_model_executor_utils.cc:248 @ v0.13.1`）：
 
 ```cpp
 int max_seq_len = prefill_runner_set.begin()->first;                    // (1)
@@ -67,7 +85,13 @@ if (input_length > 0) {
 }
 ```
 
-这段代码把一段输入切成一串「用哪个 signature、跑多长」的工单。(1) 先取最大的固定长度；(2) 只要剩余长度还够，就反复用最大入口铺过去，每次消掉 `max_seq_len`；(3)(4) 剩下的尾巴，从大往小找到第一个「再小一档就装不下」的入口收尾——即恰好覆盖尾巴的最小入口。举个可验算的账：入口集是 {1024, 512, 128}、输入 1300 个 token，则第一步用 1024 铺一次剩 276，尾巴 276 装不进 128、装得进 512，于是最终工单是 [1024, 512]，第二段用 512 的入口跑 276 个 token、余下 236 个位置填充。这就是固定形状的代价：换来编译器把 kernel 尽力优化的确定性，付出的是填充浪费和预编译多个入口的产物体积。
+这段代码把一段输入切成一串「用哪个 signature、处理多长」的工单。(1) 先取最大的固定长度；(2) 只要剩余长度还够，就反复用最大入口覆盖，每次消耗 `max_seq_len` 个位置；(3)(4) 剩余长度不足一个最大入口时，从大往小找到第一个「再小一档就装不下」的入口收尾，即恰好覆盖剩余长度的最小入口。
+
+举一个可复算的例子。入口集是 {1024, 512, 128}、输入 1300 个 token：第一步用 1024 覆盖一次，剩 276；276 装不进 128、装得进 512，于是最终工单是 [1024, 512]，第二段用 512 的入口处理 276 个真实 token、余下 236 个位置填充。这就是固定形状的代价：换来编译器把 kernel 充分优化的确定性，付出的是填充浪费和预编译多个入口带来的产物体积。
+
+**填充浪费定量。** 这个策略的浪费量随输入长度呈锯齿状波动，可以对固定入口集算一条曲线。仍用 {1024, 512, 128}。设输入长度 L，贪心切分先用若干个 1024 铺满，剩余 r = L mod 1024，再用恰好覆盖 r 的最小入口收尾；浪费量等于该收尾入口的长度减去 r。当 r 落在 (512, 1024) 区间时，收尾用 1024，最坏浪费接近 512（例如 L = 1025，r = 1，用 1024 收尾，浪费 1023，占该段的 99.9%）；r 恰等于某个入口长度时浪费为 0（例如 L = 1536，工单 [1024, 512]，零填充）。对整段而言，L = 1300 的例子填了 236 个零、总位置 1536，填充率约 15%；而 L 取 (1024, 1536] 区间的下沿时，例如 L = 1025，整段填充率高达约 40%（1024 + 512 = 1536 个位置里只有 1025 个是真实 token）。这条锯齿曲线的最坏点，恰好落在每一档入口长度刚被跨过的位置。
+
+源码在这个函数上留了一条 TODO：`b/378772479 - Improve this strategy once we have benchmarked costs`（`runtime/executor/litert_compiled_model_executor_utils.cc:255 @ v0.13.1`）。它承认当前策略只是「先用最大入口铺、剩余用最小可容入口收尾」的朴素贪心，尚未按实测成本调优。据此推断，更优的切分会权衡两件事：大入口的算术强度更高、单位 token 更省时，但一旦最后一段填充率高，被填充的零位置也要走一遍前向计算，白付算力。在填充率高的区间，用两个较小入口拼可能比一个大入口更省——但这需要 benchmark 各入口的实际 kernel 成本才能定夺，也正是 TODO 想做的事。这属于基于代码与注释的推断，v0.13.1 尚未实现。
 
 `Static::Prefill` 拿到工单后逐段调用底层（`runtime/executor/llm_litert_compiled_model_executor.cc:1537 @ v0.13.1`）：
 

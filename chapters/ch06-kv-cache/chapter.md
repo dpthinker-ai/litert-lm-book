@@ -1,40 +1,105 @@
 # 第 6 章 KV cache 与会话状态
 
-> 使命：把 KV cache 算清楚——它有多大、为什么 decode 离不开它、又为什么它拖慢了 decode；再看 LiteRT-LM 如何把这份状态做成一个能搬运的对象，换来会话克隆、检查点、回退这些能力。
+> 使命：把 KV cache 的容量与带宽两笔开销算清楚，说明 decode 为什么离不开它、又为什么被它拖慢；再看 LiteRT-LM 如何把这份状态封装成可拷贝、可序列化、可回退的对象，换来会话克隆、检查点、回退等能力。
 
-第 5 章末尾留了个账没算：那条 25 tokens/s 的纯权重上限，实测为什么还够不着？欠的这笔，就欠在 KV cache 上。这一章把它补齐，顺带解开第 2 章"二十个问题"里的第 13、14 问。
+第 5 章末尾留了一个未算完的数：那条 25 tokens/s 的纯权重带宽上限，实测为什么还够不着。差额的主要来源是 KV cache。本章把这笔账补齐，同时回答第 2 章「二十个问题」里的第 13、14 问。
 
-## 先算一笔账：KV cache 有多大
+术语约定：本章反复出现的 decode step，指一次「前向计算加采样」的迭代，每个 decode step 产出一个 token。prefill 指把输入 prompt 一次性喂入模型、批量填充 KV cache 的阶段。两者的定义见第 4 章。
 
-先说它是什么。注意力机制里，每生成一个新 token，都要让它去"看"前面所有 token——具体说，是拿它的 query 去和前面每个 token 的 key、value 做运算。如果不缓存，第 1000 步就要把前 999 个 token 的 key/value 全部重算一遍，第 1001 步再重算一遍……这是第 1 章带宽墙的最坏放大。
+## KV cache 的内存占用估算
 
-KV cache 就是把这些 key/value 存下来，算过一次就不再重算。**用内存，换掉重复计算。**
+先说它是什么。注意力机制里，每生成一个新 token，都要拿它的 query 与前文每个 token 的 key、value 做注意力计算（attention over previous tokens）。如果不缓存，第 1000 个 decode step 就要把前 999 个 token 的 key/value 全部重算一遍，第 1001 步再重算一遍。这正是第 1 章内存带宽约束的最坏放大：计算量随上下文长度平方增长。
 
-它有多大？一个可以写下来的公式：
+KV cache 就是把这些 key/value 存下来，算过一次不再重算，以内存容量换掉重复计算。
+
+它有多大，可以写下一个封闭公式：
 
 $$ \text{KV 字节} = 2 \times L \times H_{kv} \times D \times S \times b $$
 
-其中 L 是层数，H_kv × D 是每层 KV 的投影维度，S 是序列长度（缓存了多少个 token），b 是每个元素的字节数，最前面的 2 是 key 和 value 各一份。
+其中 L 是层数，H_kv × D 是每层 KV 的投影维度，S 是序列长度（缓存了多少个 token），b 是每个元素的字节数，最前面的 2 对应 key 和 value 各一份。
 
-代入一组示例量级（层数 30、KV 投影维度 1024、fp16 即每元素 2 字节）：每个 token 约
+代入一组示例量级（层数 30、KV 投影维度 1024、fp16 即每元素 2 字节），每个 token 约
 
 $$ 2 \times 30 \times 1024 \times 2 = 122880 \text{ 字节} \approx 120 \text{ KiB/token} $$
 
-到 4096 个 token 的上下文，就是约 480 MiB。（这里的 L、H_kv、D 都是示例；某个具体模型的真实数字可以从它的元数据读出，第 7 章的 `litertlm_print` 会带你看。）
+到 4096 个 token 的上下文，就是约 480 MiB。（这里的 L、H_kv、D 都是示例量级；某个具体模型的真实数字可以从它的元数据读出，第 7 章的 `litertlm_print` 会带你看。）
 
-把这个数字接回第 1 章的内存墙：权重约 2 GiB，KV cache 又要几百 MiB，而且它随对话变长一直涨。这解释了第 2 问——为什么 8 GiB 的手机跑 4B 模型也紧张：吃内存的不止权重。
+把这个数字接回第 1 章的内存容量约束：权重约 2 GiB，KV cache 又要几百 MiB，而且它随对话变长持续增加。这解释了第 2 问——为什么 8 GiB 的手机跑 4B 模型也紧张，占内存的不止权重。
 
-## 它也占带宽：补上第 5 章欠的账
+## KV cache 对解码带宽的影响
 
-现在补第 5 章那笔账。decode 每一步，除了把 2 GiB 权重读一遍（第 1 章的账），**还要读一遍到目前为止的整个 KV cache，并把新 token 的 key/value 追加进去。** 上下文越长，这部分越重。
+现在补第 5 章那笔账。每个 decode step，除了把 2 GiB 权重读一遍（第 1 章的账），还要读一遍到目前为止的整个 KV cache，并把新 token 的 key/value 追加进去。上下文越长，这部分访存越重。
 
-于是那条 25 tokens/s 的纯权重上限，只是"权重"这一项的账；实测更慢，慢的那部分有很大一头是被 KV cache 的读写吃掉的（还有采样、非注意力算子等零头）。顺带防一个误读：本机 cpu 实测 24.8 与那个"25"几乎相等纯属巧合。上限要按各自机器的带宽重算，对账见第 2 章。上下文短时差距小，一旦长到几千 token，KV cache 的带宽开销变得不可忽略，decode 会随对话变长而变慢。本书基准里这条曲线清楚可见：上下文从 256 拉到 4096，decode 从 24.8 掉到 20.7 tok/s（cpu，-17%），gpu 也从 50.6 掉到 45.6〔基准 D〕。这不是实现的锅，是自回归 + 注意力的固有代价。
+于是那条 25 tokens/s 的纯权重上限，只计入了「权重」这一项；实测更慢，慢下来的部分有很大一头是 KV cache 的读写带宽（还有采样、非注意力算子等零头）。这里防一个误读：本机 cpu 实测 24.8 与那个「25」几乎相等纯属巧合，带宽上限要按各自机器的带宽重新计算，方法见第 2 章。上下文短时差距小，一旦长到几千 token，KV cache 的带宽开销就不可忽略，decode 会随对话变长而变慢。本书基准里这条曲线清晰可见：上下文从 256 拉到 4096，decode 从 24.8 降到 20.7 tok/s（cpu，-17%），gpu 也从 50.6 降到 45.6〔基准 D〕。这不是实现的问题，而是自回归加注意力的固有代价。
 
-这也顺带解释了第 13 问，一个真实的上游现象（`LiteRT-LM#2568`）：`--max-num-tokens` 这个参数为什么会影响解码速度？因为它设定的是 KV cache 能容纳多少 token——也就是要预留多大的一块缓存。在固定形状的路径上（第 4 章），decode 的注意力按整个预留长度计算，没用到的位置靠 mask 屏蔽，但读写并不因此免单。所以它不是越大越好：预留多大，每步就要为多大的缓存付账。
+### `--max-num-tokens` 如何决定预留大小
 
-## 双缓冲：一个朴素的工程手艺
+这也顺带解释了第 13 问，一个真实的上游现象（`LiteRT-LM#2568`）：`--max-num-tokens` 这个参数为什么会影响解码速度。它设定的是 KV cache 能容纳多少 token，也就是要预留多大的一块缓存。在固定形状的执行路径上（第 4 章），decode 的注意力按整个预留长度计算，没用到的位置靠 attention mask 屏蔽，但这些位置的读写并不因 mask 而省去。预留多大，每个 decode step 就要为多大的缓存付出访存代价。
 
-KV cache 要频繁读写，这在 GPU 上撞见一个具体麻烦：部分 GPU 后端不允许对同一块缓冲同时读和写。这不是猜的，源码注释直接写在成员声明上方（`runtime/executor/llm_litert_compiled_model_executor.h:327-333 @ v0.13.1`）：
+这个参数并非直接来自命令行填多少就是多少，它有一段默认值推导。当用户没有显式指定时（`GetMaxNumTokens()` 返回 0），LiteRT-LM 按 prompt 长度推一个默认值（`runtime/engine/engine_settings.cc:293-301 @ v0.13.1`）：
+
+```cpp
+if (main_executor_settings_.GetMaxNumTokens() == 0) {
+  // ...
+  int max_num_tokens = ((num_prompt_tokens + 1023) / 4096 + 1) * 4096;   // (1)
+  if (metadata.max_num_tokens() > 0) {                                   // (2)
+    max_num_tokens = metadata.max_num_tokens();
+  }
+  main_executor_settings_.SetMaxNumTokens(max_num_tokens);
+}
+```
+
+(1) 是核心：它先给 prompt 的 token 数加上 1023，做整数除以 4096 再向上取一格，最后乘回 4096。效果是把预留长度对齐到 4096 的整数倍，并且总留出至少一格（那个 `+ 1`）给 decode 输出，注释里说的 1024 默认解码长度就藏在这个 `+ 1023` 里。举例：prompt 有 100 个 token，`(100 + 1023) / 4096` 整数除得 0，`+ 1` 得 1，乘 4096 得 4096；prompt 涨到 4000 个 token，`(4000 + 1023) / 4096` 整数除仍得 1，`+ 1` 得 2，预留跳到 8192。这解释了 `#2568` 里观察到的现象：预留长度按 4096 的粒度阶梯式跳变，而不是随 prompt 平滑变化。(2) 是覆盖闸门：如果模型元数据里写了 `max_num_tokens`，就用元数据的值，模型作者对自己的上下文窗口有最终发言权。
+
+预留长度确定后，它就是第 1 节公式里的 S。预留 4096，KV cache 按 4096 个槽位分配内存、每个 decode step 按 4096 的宽度做注意力，哪怕当前只填了 100 个 token。这就是 `#2568` 里参数影响速度的直接原因：调大 `--max-num-tokens` 不改变 prompt，却把每步 decode 要读写的 KV cache 宽度整体放大。
+
+预留长度还是解码循环的终止条件之一。`ShouldStop` 判定何时停止解码（`runtime/core/tasks.cc:99-100 @ v0.13.1`）：
+
+```cpp
+} else if (current_step >= max_num_tokens) {
+  // Reaching maximum number of kv-cache size.
+  return true;
+```
+
+`current_step` 是已经填到第几个槽位。一旦它顶到 `max_num_tokens`，KV cache 没有空位再追加，解码必须停。这条判定的上方，`TryGetMaxNumTokens`（`tasks.cc:73 @ v0.13.1`）在执行器设置取不到时回退到 `kDefaultMaxNumTokens = 4096`（`:72`），并挂了一条 `TODO(b/423364170)`——目标是让所有 LLM 执行器都遵守模型返回的最大 token 数、届时移除这个默认回退。所以 4096 这个数字在代码里出现两次，含义一致：它既是默认预留粒度，也是取不到配置时的兜底上限。
+
+### 固定形状与动态 KV cache
+
+上面说「固定形状路径上，未用到的位置靠 mask 屏蔽、读写不省」，这句话背后有一个分支。LiteRT-LM 的 KV cache 支持两种形态：固定形状预留满 S 个槽位，动态形状则随实际长度增长。区分它们的是 KV 张量里有没有一个动态维度。推断上下文宽度的代码写在这里（`runtime/executor/litert/kv_cache.cc:302-311 @ v0.13.1`）：
+
+```cpp
+LITERT_ASSIGN_OR_RETURN(const SimpleTensor& mask_tensor,
+                        signature.InputTensor(mask_input_name));
+// ...
+auto dims = mask_tensor_type.Layout().Dimensions();
+// Expect [1, 1, Sequence, KV Length]
+RET_CHECK_EQ(dims.size(), 4);
+const bool is_dynamic_kv_cache = k_dynamic_dim.has_value();   // (1)
+context_size = is_dynamic_kv_cache ? 1 : dims[3];             // (2)
+```
+
+(1) 用 key 张量有没有动态维度（`k_dynamic_dim.has_value()`）判定是不是动态 KV cache。(2) 是关键分叉：动态时 `context_size` 记为 1，固定时取 attention mask 的最后一维 `dims[3]`，也就是完整的 KV Length。注释里写明 mask 的形状是 `[1, 1, Sequence, KV Length]`；代码宁可从 mask 推断上下文宽度，因为 key、value 张量的内部布局各不相同、不能直接读出这个宽度。
+
+固定形状下 `context_size` 等于整个预留宽度，这一句就把上一段的带宽账坐实了：注意力算子看到的序列宽度是 S，不是当前已填的长度。屏蔽由 attention mask 完成——`FillAttentionMask` 每个 decode step 只把当前步之前的合法位置置为可见（`runtime/executor/litert_compiled_model_executor_utils.cc:362-366 @ v0.13.1`）：
+
+```cpp
+for (int b = 0; b < batch_size; ++b) {
+  for (int i = 0; i < steps; ++i) {
+    int current_step = start_timestep + i;
+    int offset = b * batch_offset + i * channel_size;
+    // For current step = n, we fill (n+1) positions for the mask sequence.
+```
+
+注释那行说得很直白：当前步为 n 时，mask 只填 n+1 个可见位置，其余位置保持屏蔽值。屏蔽让被 mask 的位置不贡献注意力结果，却不改变张量的物理宽度——kernel 仍按 S 的宽度遍历、读取整段 KV。这正是「固定预留付固定带宽」的机制来源：mask 管的是数值正确性（不让未来 token 泄漏进注意力），管不了访存量。动态 KV cache 把 `context_size` 收到实际长度，才能让访存量随上下文增长而非一步到位付满，代价是形状动态会限制部分后端的图优化（第 4 章讨论过固定形状对编译期优化的价值）。
+
+<figure>
+{{#include figs/fig-6-1.svg}}
+<figcaption>图 6-1　KV cache 双缓冲。每个 decode step 从旧缓冲读取、向新缓冲写入，随后交换两个指针，以一次指针交换规避同缓冲读写限制并消除数据拷贝。</figcaption>
+</figure>
+
+## 双缓冲
+
+KV cache 每步都要读写，这在 GPU 上撞见一个具体约束：部分 GPU 后端不允许对同一块缓冲同时读和写。这不是推断，源码注释直接写在成员声明上方（`runtime/executor/llm_litert_compiled_model_executor.h:327-333 @ v0.13.1`）：
 
 ```cpp
 // KV cache double buffers because some GPU backends can't allocate one buffer
@@ -46,9 +111,9 @@ absl::flat_hash_map<absl::string_view, TensorBuffer>*
     output_kv_cache_buffers_;
 ```
 
-(1)(2) 是两套实打实的缓冲，各持一份 KV。(3) 起的两个指针才是关键：它们不拥有数据，只指向那两套缓冲之一——`input_kv_cache_buffers_` 指向"这一步读哪套"，`output_kv_cache_buffers_` 指向"这一步写哪套"。构造时（`:199-200`）两者分别指向 `kv_cache_buffers_1_` 和 `kv_cache_buffers_2_`，一读一写、错开。
+(1)(2) 是两套实打实的缓冲，各持一份 KV。(3) 的两个指针是关键：它们不拥有数据，只指向那两套缓冲之一。`input_kv_cache_buffers_` 指向「这一步从哪套读」，`output_kv_cache_buffers_` 指向「这一步向哪套写」。构造时（`:199-200`）两者分别指向 `kv_cache_buffers_1_` 和 `kv_cache_buffers_2_`，一读一写、错开。这是 double buffering（双缓冲），一种以指针交换规避读写别名的常见工程手法，图形学和并发编程里都有它。
 
-交换动作发生在每次跑完模型之后。prefill 的路径上（`llm_litert_compiled_model_executor.cc:738 @ v0.13.1`）：
+交换动作发生在每次跑完模型之后。prefill 的路径上（`llm_litert_compiled_model_executor.cc:737-738 @ v0.13.1`）：
 
 ```cpp
 if (!gpu_optimized_single_buffer_cache_) {   // (1)
@@ -56,18 +121,48 @@ if (!gpu_optimized_single_buffer_cache_) {   // (1)
 }
 ```
 
-(2) 只交换两个指针的指向，不动缓冲里的字节——这一步刚往 `output` 那套写了新 token 的 key/value，交换后它就变成下一步的 `input`，上一步读过的旧缓冲则腾出来当下一步的写入目标。几百 MiB 的 KV 数据一次也没搬。(1) 是个例外闸门：`gpu_optimized_single_buffer_cache_` 为真时（某些 GPU 后端反而支持同缓冲读写）跳过交换，两个指针始终指同一套缓冲（`:1960-1961` 就是这么初始化的），省掉第二套的内存。同一份 `std::swap` 在 decode 路径也各来一次（`:947`），逻辑一致。
+(2) 只交换两个指针的指向，不动缓冲里的字节。这一步刚往 `output` 那套写了新 token 的 key/value，交换后它就成为下一步的 `input`；上一步读过的旧缓冲腾出来当下一步的写入目标。几百 MiB 的 KV 数据一次也没拷贝。(1) 是个例外闸门：`gpu_optimized_single_buffer_cache_` 为真时跳过交换。同一份 `std::swap` 在 decode 路径也有一次（`:946-947`），逻辑一致。
 
-<figure>
-{{#include figs/fig-6-1.svg}}
-<figcaption>图 6-1　KV cache 双缓冲。每步读旧缓冲、写新缓冲，然后交换两个指针——用一次指针交换避开了"同缓冲读写"的限制，也避开了数据拷贝。</figcaption>
-</figure>
+### 单缓冲路径的额外代价
 
-这个手艺没有高深算法，但它是端侧工程的典型样子：一个来自硬件的具体约束（GPU 不能同缓冲读写），一个来自成本的具体考量（不想拷贝几百 MiB），凑出一个朴素解法（两套缓冲 + 指针交换）。全书这类"约束逼出手艺"的例子会一再出现。
+`gpu_optimized_single_buffer_cache_` 这个闸门牵动的不止一次 swap。某些 GPU 后端反而支持同缓冲原地更新（inplace update），启用后可以省掉第二套缓冲，把 KV 内存对半砍。这条路径值得摊开看，因为「省一半内存」不是白得的，它换来了一处额外机制。
 
-## 状态即对象
+启用的判据是模型签名里有没有一个 int32 参数张量（`llm_litert_compiled_model_executor.cc:428-429 @ v0.13.1`）：
 
-到这里，一次会话的核心状态已经清楚了：一堆 KV cache，加上"当前到第几步"这样的元信息。LiteRT-LM 把它们打包成一个对象——`LlmContext`（`runtime/executor/llm_executor_io_types.h:92 @ v0.13.1`）：
+```cpp
+if (signatures_.input_int32_param.has_value()) {
+  gpu_optimized_single_buffer_cache_ = true;
+```
+
+有这个参数张量，就认定后端走单缓冲原地更新路径。之后两套缓冲退化为一套，两个指针始终指向同一块，swap 被前一节那个 `if (!gpu_optimized_single_buffer_cache_)` 跳过。省下的是第二份几百 MiB 的 KV 内存。
+
+换来的额外机制是：既然读写落在同一块缓冲上，kernel 必须知道「这一步该往哪个槽位区间写」,否则会覆盖到旧数据。双缓冲不需要这个信息，因为写入目标整块都是空的旧缓冲。单缓冲路径就得每步额外填一个参数张量告诉 kernel 当前的写入区间。prefill 与 decode 两侧各填一次（`llm_litert_compiled_model_executor.cc:673-677 @ v0.13.1`，decode 侧在 `:904-907`）：
+
+```cpp
+if (gpu_optimized_single_buffer_cache_) {
+  LITERT_RETURN_IF_ERROR(signatures_.input_int32_param.has_value());
+  RETURN_IF_ERROR(FillSingleBufferCacheParamTensor(
+      prefill_input_buffers[signatures_.input_int32_param.value()],
+      start_step, ids.size()));
+}
+```
+
+填的内容是什么，看 `FillSingleBufferCacheParamTensor`（`runtime/executor/litert_compiled_model_executor_utils.cc:331-334 @ v0.13.1`）：
+
+```cpp
+int end_index = start_index + update_length;
+int32_t params[] = {start_index, end_index, end_index};   // (1)
+LITERT_RETURN_IF_ERROR(sizeof(params) <= packed_size);
+std::memcpy(param_tensor_lock_and_addr.second, params, sizeof(params));
+```
+
+(1) 就是那个写入区间：起点 `start_index`（当前 step）、终点 `end_index`。函数上方注释交代了这三个 int32 的分工——前两个给 `add_values_to_cache` kernel 用来定位写入区间，第三个给 `runtime_batched_matmul` kernel 检查通道结束位置。换句话说，双缓冲用「换一整块空缓冲写」这个简单办法免掉了区间管理；单缓冲省了内存，但把区间管理的责任交回给了 host，每个 decode step 多一次 memset 加 memcpy 的小填充，并要求模型签名带上这个 int32 参数张量。这是一个具体的空间与复杂度的对换：双缓冲多一份内存、逻辑更简单；单缓冲省内存、但 host 侧和 kernel 都要多认一个「当前写到哪」的参数。
+
+这个双缓冲方案没有高深算法，它是端侧工程的典型形态：一个来自硬件的约束（部分 GPU 不能同缓冲读写），一个来自成本的考量（不想拷贝几百 MiB），组合出一个直接的解法（两套缓冲加指针交换），再为愿意付出额外复杂度的后端保留一条省内存的单缓冲支路。
+
+## 会话状态封装为可搬运对象
+
+到这里，一次会话的核心状态已经清楚：一份 KV cache，加上「当前到第几步」这样的元信息。LiteRT-LM 把它们封装成一个对象 `LlmContext`（`runtime/executor/llm_executor_io_types.h:92 @ v0.13.1`）：
 
 ```cpp
 struct RuntimeState {
@@ -89,16 +184,16 @@ class LlmContext {
 };
 ```
 
-三样东西各管一摊。(3) 的 `processed_context_` 装已处理的 token 和它们的 KV cache，KV 那几百 MiB 就在这下面。`runtime_config_` 是运行配置。(1) 的 `runtime_state_` 记运行状态，其中 `current_step` 就是"当前到第几步"这个游标；`RuntimeState` 上方那行源码注释特意声明它"不含直接与 KVCache 相关的状态"（`:75-76`），所以搬运时 KV cache 走 `processed_context_` 那一路，步数游标走 `runtime_state_` 这一路，两者分开。(2) 三个访问器返回引用，底下全用 `unique_ptr` 独占持有——想搬运整个上下文，只要把这三个 `unique_ptr` 一起打包。
+三样东西各管一摊。(3) 的 `processed_context_` 装已处理的 token 和它们的 KV cache，那几百 MiB 就在这下面。`runtime_config_` 是运行配置。(1) 的 `runtime_state_` 记运行状态，其中 `current_step` 是「当前到第几步」的游标。`RuntimeState` 上方那行源码注释特意声明它「不含直接与 KVCache 相关的状态」（`:75-77`）：搬运时 KV cache 走 `processed_context_` 一路，步数游标走 `runtime_state_` 一路，两者分开。(2) 三个访问器返回引用，底下全用 `unique_ptr` 独占持有；要拷贝整个上下文，只需把这三个 `unique_ptr` 各复制一份。
 
-把状态做成一个能整体搬运的对象，是第 2 章那条"状态即对象"原则的兑现。它一旦成立，几件原本很难的事就顺理成章：
+把状态封装成一个可整体拷贝、可序列化的对象，是第 2 章那条「会话状态即对象」原则的兑现。严格地说，这条原则的技术含义是：一次会话的全部可变状态都归拢进单一对象、外部只通过它的接口读写，从而这份状态能被整体 clone、serialize、restore。它一旦成立，几件原本很难的事就顺理成章：
 
-- **克隆会话**（`Clone`，`runtime/engine/engine.h:245 @ v0.13.1`；还有异步版 `CloneAsync`，`:263`）：复制这个对象，就得到一个独立的会话分支。
-- **存检查点、回退**（`SaveCheckpoint`，`engine.h:270 @ v0.13.1`；配套的 `RewindToCheckpoint`）：给当前状态打个标记，之后能退回来。
+- 克隆会话（`Clone`，`runtime/engine/engine.h:245 @ v0.13.1`；异步版 `CloneAsync`，`:263`）：复制这个对象，就得到一个独立的会话分支。
+- 存检查点、回退（`SaveCheckpoint`，`engine.h:270 @ v0.13.1`；配套的 `RewindToCheckpoint`）：给当前状态打个标记，之后能退回来。
 
-克隆的价值，头文件注释里有个现成的例子（`engine.h:238 @ v0.13.1`）：session1 先 `Prefill("What is the tallest building ")`，`Clone` 出 session2，之后 session1 接 `"in the world?"`、session2 接 `"in France?"`，那段公共前缀的 prefill 只跑一次。这就是第 14 问的答案：克隆分叉不必重算公共前缀，因为那段 KV cache 被整个复制了过去，而不是重新 prefill。
+克隆的价值，头文件注释里有个现成的例子（`engine.h:238 @ v0.13.1`）：session1 先 `Prefill("What is the tallest building ")`，`Clone` 出 session2，之后 session1 接 `"in the world?"`、session2 接 `"in France?"`，那段公共前缀的 prefill 只跑一次。这就是第 14 问的答案：克隆分叉不必重算公共前缀，因为那段 KV cache 被整份复制了过去，而不是重新 prefill。
 
-复制到底发生在哪一行？`Clone` 一路走到执行器的 `CloneContext`（`llm_litert_compiled_model_executor.cc:1288 @ v0.13.1`）：
+复制到底发生在哪一行。`Clone` 一路走到执行器的 `CloneContext`（`llm_litert_compiled_model_executor.cc:1288 @ v0.13.1`）：
 
 ```cpp
 std::optional<uint32_t> lora_id;
@@ -117,11 +212,43 @@ return std::make_unique<LlmContext>(std::move(new_processed_context),
                                     std::move(new_runtime_state));   // (2)
 ```
 
-(2) 就是上一节那个 `LlmContext` 的新实例，克隆的产物正是一个装齐三样东西的新上下文对象，"状态即对象"在这里收口。真正搬字节的是 (1) 的 `CloneKVCacheBuffers`（`:1243`），它逐个遍历 `input_kv_cache_buffers_`，对每块调 `CopyTensorBuffer` 复制一份。这就是 `DeepCopy` 注释里那句"昂贵操作"的具体来源：4096 token 上下文下按第 1 节的账约 480 MiB，克隆一次就要原样拷这么多字节——克隆的代价，全在这个循环里。
+(2) 就是上一节那个 `LlmContext` 的新实例：克隆的产物正是一个装齐三样东西的新上下文对象，「会话状态即对象」在这里收口。真正拷贝字节的是 (1) 的 `CloneKVCacheBuffers`（`:1243`），它逐块深拷贝——遍历 `input_kv_cache_buffers_`，对每块调 `CopyTensorBuffer` 复制一份（`:1246-1248`）：
 
-## KV cache 的搬运接口
+```cpp
+for (const auto& [name, buffer] : *input_kv_cache_buffers_) {
+  LITERT_ASSIGN_OR_RETURN(auto buffer_copy, CopyTensorBuffer(env_, buffer));
+  kv_cache_buffers[name] = std::move(buffer_copy);
+}
+```
 
-克隆、回退这些能力，底层要求 KV cache 本身能被搬运。所以它有一个专门的接口 `KVCacheInterface`（`runtime/executor/kv_cache_interface.h:28 @ v0.13.1`），一组纯虚函数划定了"搬运工具箱"的边界：
+这就是接口里 `DeepCopy` 注释那句「昂贵操作」的具体来源：4096 token 上下文下按第 1 节的估算约 480 MiB，克隆一次就要原样拷这么多字节。克隆的代价，全在这个循环里。
+
+### 克隆链路上多出的一次拷贝
+
+克隆的账面代价是一次约 480 MiB 的深拷贝，但实际链路上可能不止一次。`CloneContext` 负责产出新上下文，把它装载回执行器则走 `RestoreContext`，后者调 `RestoreKVCacheBuffers`。这个函数当前的实现里挂着一条明确的优化 TODO（`llm_litert_compiled_model_executor.cc:1253-1263 @ v0.13.1`）：
+
+```cpp
+absl::Status LlmLiteRtCompiledModelExecutorBase::RestoreKVCacheBuffers(
+    const absl::flat_hash_map<absl::string_view, TensorBuffer>&
+        kv_cache_buffers) {
+  // TODO: b/452977992: Instead of copying, consider replacing our kv cache
+  // buffers the caller's.
+  if (!gpu_optimized_single_buffer_cache_) {
+    for (const auto& [name, buffer] : kv_cache_buffers) {
+      RETURN_IF_ERROR(CopyBuffer(buffer, (*input_kv_cache_buffers_)[name]));   // (1)
+    }
+  }
+  return absl::OkStatus();
+}
+```
+
+(1) 又对每块 KV 缓冲逐块拷贝了一遍。也就是说，一条 clone 到 restore 的完整链路上，KV cache 可能被拷两次：`CloneKVCacheBuffers` 深拷一份产出新上下文，`RestoreKVCacheBuffers` 把它装载进执行器时再拷一份进 `input_kv_cache_buffers_`。TODO `b/452977992` 说的正是这一点：与其拷贝，不如直接用调用方传入的缓冲替换掉自己的（move 而非 copy）。我们据此推断，在 4096 token 的固定预留下，clone 的实际字节拷贝量可能接近账面的两倍（约 960 MiB 量级），而修复方向就是把 (1) 处的 `CopyBuffer` 换成缓冲所有权的转移。这条注释还有一层含义：单缓冲路径（`gpu_optimized_single_buffer_cache_` 为真）直接跳过整个拷贝块，因为它没有可替换的第二套缓冲，restore 的语义在那条路径上另作处理。
+
+`RestoreContext` 自己也有一处边界值得注意（`:1305-1319`）：只有 `current_step > 0` 时才 move 装载 KV 缓冲，step 0 的空 KV cache 允许直接复用现有缓冲、省掉一次搬移。
+
+## KV cache 的拷贝与序列化接口
+
+克隆、回退这些能力，底层要求 KV cache 本身能被拷贝、能被序列化。所以它有一个专门的接口 `KVCacheInterface`（`runtime/executor/kv_cache_interface.h:28 @ v0.13.1`），一组纯虚函数划定了拷贝与序列化的边界：
 
 ```cpp
 class KVCacheInterface {
@@ -137,15 +264,71 @@ class KVCacheInterface {
 };
 ```
 
-(1)(2) 是持久化的一对：`Serialize` 把 KV cache 压成一个 `std::string` 字节串，`Load` 反向读回，存盘、跨进程传都靠这两个。(5) 的 `DeepCopy` 返回一个新的 `unique_ptr<KVCacheInterface>`，源码注释就写在这行上方：`This is an expensive operation. Use sparingly.`（`:60`）——上一节 `CloneKVCacheBuffers` 那个逐块拷贝的循环，正是这条注释在具体实现里的兑现。(3)(4) 是一对方向相反的批处理搬运，注释里各带一个 shape 例子：`SelectAndCopyFrom` 从 `[3, ...]` 的多分支缓存里挑第 `batch_index` 条拷到自己这个 `[1, ...]`；`BroadcastAndCopyFrom` 反过来，把 `[1, ...]` 的一条广播到 `[3, ...]` 的每一路。它们服务于并行采样这类"一进多出、多进一出"的场景。
+(1)(2) 是序列化与反序列化的一对：`Serialize` 把 KV cache 压成一个 `std::string` 字节串，`Load` 反向读回，用于落盘或跨进程传递。(5) 的 `DeepCopy` 返回一个新的 `unique_ptr<KVCacheInterface>`，源码注释就写在这行上方：`This is an expensive operation. Use sparingly.`（`:60`），它正是上一节 `CloneKVCacheBuffers` 那个逐块深拷贝循环的接口对应物。(3)(4) 是一对方向相反的批处理拷贝，注释里各带一个 shape 例子：`SelectAndCopyFrom` 从 `[3, ...]` 的多分支缓存里挑第 `batch_index` 条拷到自己这个 `[1, ...]`；`BroadcastAndCopyFrom` 反过来，把 `[1, ...]` 的一条广播到 `[3, ...]` 的每一路。它们服务于并行采样这类批量场景。
 
-注意这五个方法全是 `= 0` 的纯虚声明——`KVCacheInterface` 只定契约，不含一行实现。真正的字节搬运落在具体后端里，比如 `LitertKVCache::DeepCopy`（`runtime/executor/litert/kv_cache.cc:380 @ v0.13.1`）。接口与实现分离，是 LiteRT-LM 支持多后端（cpu/gpu/npu）的一贯手法，后面几章还会反复见到。
+这五个方法全是 `= 0` 的纯虚声明，`KVCacheInterface` 只定契约、不含实现。真正的字节拷贝落在具体后端里，比如 `LitertKVCache`。接口与实现分离，是 LiteRT-LM 支持多后端（cpu/gpu/npu）的一贯手法，后面几章还会反复见到。
 
-## 顺带一手：把思考从缓存里择出去
+### 序列化在 LiteRT 后端尚未实现
 
-最后一个应用，把前面的机制串起来。有些模型会先"想"再答，把思考过程也吐出来（第 10 章的 channel 机制会细讲）。思考内容对用户不必展示，也不该占着 KV cache，否则接下来每一步 decode 都要连着这段思考一起读，白白付带宽（第 2 节的账）。
+这里有一处容易误读的地方，值得当面点破。接口把 `Serialize`/`Load` 列为契约，但 LiteRT 后端目前并没有兑现它们（`runtime/executor/litert/kv_cache.h:45-51 @ v0.13.1`）：
 
-LiteRT-LM 的处理是：把思考这段 channel 内容从 KV cache 里"择"出去。做法正是回退——退到思考开始前的那个位置，丢掉这段的 KV cache。看 `RewindToCheckpoint` 是怎么退的（`runtime/core/session_advanced.cc:467 @ v0.13.1`）：
+```cpp
+absl::StatusOr<std::string> Serialize() const override {
+  return absl::UnimplementedError("Not implemented");
+}
+
+absl::Status Load(absl::string_view serialized_kv_cache) override {
+  return absl::UnimplementedError("Not implemented");
+}
+```
+
+两个都是返回 `UnimplementedError` 的桩实现。也就是说，在 v0.13.1 的 LiteRT 后端上，「把 KV cache 落盘、跨进程传」这条路径接口上留了口子、实现上还没打通；配套的单测 `SerializeNotSupported`（`kv_cache_test.cc:117`）恰恰断言它返回未实现错误。当前真正能用的 KV cache 搬运，是内存内的 `DeepCopy` 与下面两个批处理拷贝，而非序列化。把三者放到同一张代价表上看得更清楚：
+
+| 操作 | 实现 | 字节搬运量（4096 上下文示例） | 用途 |
+|---|---|---|---|
+| `RewindToCheckpoint` | 改一个 `int` 游标 | 0（不动 KV 字节） | 回退到检查点 |
+| `DeepCopy` / `CloneKVCacheBuffers` | 逐块 `CopyTensorBuffer` | 约 480 MiB（restore 若再拷则近翻倍，见前节 TODO） | 克隆会话分支 |
+| `Serialize` / `Load` | 未实现（`UnimplementedError`） | 不适用 | 计划中的落盘、跨进程传递 |
+
+表 6-1 把「会话状态即对象」的收益兑现成一张可查的代价账：同一份 KV cache，回退几乎零成本、克隆是几百 MiB 的一次性深拷、序列化则还在路上。
+
+### 并行采样的批处理拷贝
+
+`SelectAndCopyFrom` 与 `BroadcastAndCopyFrom` 服务于并行采样：从一条上下文广播出 N 条并行走，各自采样后再择回其中一条。LiteRT 后端的实现把批处理的约束写在了一组 `RET_CHECK` 里（`runtime/executor/litert/kv_cache.cc:351-360 @ v0.13.1`）：
+
+```cpp
+absl::Status LitertKVCache::BroadcastAndCopyFrom(KVCacheInterface& other) {
+  auto other_litert = dynamic_cast<LitertKVCache*>(&other);
+  RET_CHECK(other_litert != nullptr) << "Only support LitertKVCache.";
+  RET_CHECK(!bank_2_key_cache_buffers_.has_value());               // (1)
+  RET_CHECK(!other_litert->bank_2_key_cache_buffers_.has_value()); // (1)
+  RET_CHECK_EQ(other_litert->batch_size_, 1);                      // (2)
+  RET_CHECK_GT(batch_size_, other_litert->batch_size_);            // (3)
+```
+
+(2)(3) 划定方向：源必须是 batch size 为 1 的单条（`other_litert->batch_size_ == 1`），目标的 batch size 必须更大，广播才有意义。(1) 是一处关键边界：源和目标都不能持有第二套缓冲（`bank_2` 必须为空）。`bank_2` 就是双缓冲里的第二套。这条断言等于说，批处理拷贝不能在双缓冲激活的状态下做——并行采样与双缓冲这两种用途在这里互斥。真正搬字节的是 `BroadcastAndCopyBuffer`（`:179`），它对每块缓冲把源的内容 memcpy 复制 `dst_batch_size` 份，铺满整个 batch 维度（`:216-219`）：
+
+```cpp
+for (int i = 0; i < dst_batch_size; ++i) {
+  memcpy(dst_buffer_ptr, src_buffer_ptr, src_buffer_size);
+  dst_buffer_ptr += src_buffer_size;
+}
+```
+
+反方向的 `SelectAndCopyFrom` 断言对称（`:328-330`）：目标的 batch size 必须更小（`other.batch_size > batch_size`），并从源里挑出第 `batch_index` 条。它的搬运靠 `SelectAndCopyBuffer`，用一句指针偏移定位到要挑的那一条（`:174`）：
+
+```cpp
+src_buffer_ptr += batch_index * dst_buffer_size;
+memcpy(dst_buffer_ptr, src_buffer_ptr, dst_buffer_size);
+```
+
+这段拷贝依赖一个布局假设，注释写在偏移上方：KV cache 的布局是 `[batch * X, ...]` 或 `[1, batch * X, ...]`，同一 batch 的数据在内存里连续、不与其他 batch 交错，所以「挑第 batch_index 条」可以简化成一次线性偏移加一次 memcpy。这个假设对当前所有后端的 LLM 模型成立，注释也如实标明它是假设而非普遍保证。
+
+## 从 KV cache 中丢弃思考内容
+
+最后一个应用把前面的机制串起来。有些模型会先「想」再答，把思考过程也一并生成（第 10 章的 channel 机制会细讲）。思考内容对用户不必展示，也不该占着 KV cache，否则接下来每个 decode step 都要连着这段思考一起读，付出额外访存开销（第 2 节的账）。
+
+LiteRT-LM 的处理是把思考这段 channel 内容从 KV cache 里丢弃（discard）。做法正是回退：退到思考开始前的那个位置，丢掉这段的 KV cache。看 `RewindToCheckpoint` 怎么退（`runtime/core/session_advanced.cc:467 @ v0.13.1`）：
 
 ```cpp
 int target_step = it->second.step;    // (1)
@@ -157,24 +340,27 @@ absl::erase_if(checkpoint_map_, [target_step](const auto& pair) {   // (2)
 return execution_manager_lock->SetCurrentStep(*session_info_, target_step);   // (3)
 ```
 
-回退没有拷贝、没有删除任何 KV 字节。它做的是 (3)：把游标 `current_step` 调回 `target_step`，也就是上一节 `RuntimeState` 里那个整数。`SaveCheckpoint`（`:455`）存的也不过是 `{current_step, session_state_}` 这一对（`CheckpointInfo`，`session_advanced.h:257-260`），一个步数加一份会话状态引用，几十字节。之后继续 prefill 时，新 token 从 `target_step` 这个位置往后写，直接覆盖掉原来那段思考占的 KV 槽位——旧字节没被主动清除，而是被下一轮写入盖过。(2) 顺手把 `target_step` 之后的所有检查点从 map 里抹掉，让检查点集合始终是当前时间线的一条前缀，避免退回后残留一个指向"未来"的悬空标记。
+回退没有拷贝、没有删除任何 KV 字节。它做的是 (3)：把游标 `current_step` 调回 `target_step`，也就是上一节 `RuntimeState` 里那个整数。`SaveCheckpoint`（`:455`）存的也不过是 `{current_step, session_state_}` 这一对（`CheckpointInfo`，`session_advanced.h:257-260`），一个步数加一份会话状态引用，几十字节。之后继续 prefill 时，新 token 从 `target_step` 这个位置往后写，直接覆盖掉原来那段思考占的 KV 槽位。旧字节没被主动清除，而是被下一轮写入盖过。(2) 顺手把 `target_step` 之后的所有检查点从 map 里删掉，让检查点集合始终是当前时间线的一条前缀，避免退回后残留一个指向「未来」的悬空标记。
 
-一个只在 `RuntimeState` 上加减整数、连内存都不释放的回退，就顺手解决了"别让思考污染上下文"的问题。代价与克隆恰成对照：`Clone` 要深拷几百 MiB（上一节那个循环），`RewindToCheckpoint` 只动一个 `int`。
+一个只在 `RuntimeState` 上加减整数、连内存都不释放的回退，就解决了「别让思考污染上下文」的问题。代价与克隆恰成对照：`Clone` 要深拷几百 MiB（上一节那个循环），`RewindToCheckpoint` 只动一个 `int`。这也是表 6-1 那三行代价的两端。
 
 ## 小结
 
-KV cache 是"用内存换计算"的经典权衡：它省掉了重复的注意力计算，代价是吃内存、也吃带宽（decode 变慢的一部分来自它）。围绕它，LiteRT-LM 做了两件事——一个朴素的双缓冲手艺应对 GPU 的读写约束，一套"状态即对象"的设计换来克隆、检查点、回退，还顺手解决了思考污染上下文的问题。
+KV cache 是用内存换计算的经典权衡：它省掉重复的注意力计算，代价是占内存、也占带宽（decode 变慢的一部分来自它）。`--max-num-tokens` 决定预留多大，进而决定每个 decode step 的固定访存宽度，这解释了它为何按 4096 的粒度影响速度。围绕这份状态，LiteRT-LM 做了几件事：一个双缓冲方案应对 GPU 的读写约束（并为部分后端保留省内存的单缓冲支路）；一套「会话状态即对象」的封装换来克隆、检查点、回退；具体的字节搬运则由 `DeepCopy` 与批处理拷贝承担，序列化路径在 v0.13.1 尚未实现。回退还顺带解决了思考内容污染上下文的问题。
 
-下一章，我们去看这份账的另一半：模型本身怎么被压小、装箱、变体——量化、`.litertlm` 格式与 LoRA。
+下一章去看这份账的另一半：模型本身怎么被压小、装箱、变体——量化、`.litertlm` 格式与 LoRA。
 
 ---
 
 ## 参考
 
-- KV cache 接口：`runtime/executor/kv_cache_interface.h @ v0.13.1`（`KVCacheInterface`:28；`Serialize`:39；`Load`:42；`SelectAndCopyFrom`:50；`BroadcastAndCopyFrom`:58；`DeepCopy`:61，"expensive operation"注释:60）；具体实现 `LitertKVCache::DeepCopy`:`runtime/executor/litert/kv_cache.cc:380 @ v0.13.1`。
-- 双缓冲：`runtime/executor/llm_litert_compiled_model_executor.h @ v0.13.1`（注释:327-328；`kv_cache_buffers_1_/2_`:329-330；读写指针:331-333；构造初始化:199-200）；指针交换 `runtime/executor/llm_litert_compiled_model_executor.cc @ v0.13.1`（prefill `std::swap`:738；decode `std::swap`:947；单缓冲初始化:1960-1961）。
-- 克隆：`runtime/core/session_advanced.cc @ v0.13.1`（`Clone`:389；`CloneAsyncLocked`:412）；执行器侧 `CloneContext`:`llm_litert_compiled_model_executor.cc:1288 @ v0.13.1`；`CloneKVCacheBuffers`:1243。
+- KV cache 接口：`runtime/executor/kv_cache_interface.h @ v0.13.1`（`KVCacheInterface`:28；`Serialize`:39；`Load`:42；`SelectAndCopyFrom`:50；`BroadcastAndCopyFrom`:58；`DeepCopy`:61，"expensive operation" 注释:60）；LiteRT 后端桩实现 `Serialize`/`Load`:`runtime/executor/litert/kv_cache.h:45-51 @ v0.13.1`（返回 `UnimplementedError`，单测 `SerializeNotSupported`:`kv_cache_test.cc:117`）；具体实现 `LitertKVCache::DeepCopy`:`runtime/executor/litert/kv_cache.cc:380 @ v0.13.1`。
+- 批处理拷贝：`runtime/executor/litert/kv_cache.cc @ v0.13.1`（`SelectAndCopyFrom`:322；`BroadcastAndCopyFrom`:351；`SelectAndCopyBuffer`:156；`BroadcastAndCopyBuffer`:179；`bank_2` 为空断言:325-326、354-355）。
+- 预留大小与终止：`runtime/engine/engine_settings.cc @ v0.13.1`（默认值计算:293-301）；`runtime/core/tasks.cc @ v0.13.1`（`kDefaultMaxNumTokens`:72；`TryGetMaxNumTokens`:73；`current_step >= max_num_tokens` 终止:99-100）。
+- 固定/动态形状与 attention mask：`runtime/executor/litert/kv_cache.cc @ v0.13.1`（`context_size` 与 `is_dynamic_kv_cache` 推断:302-311）；`runtime/executor/litert_compiled_model_executor_utils.cc @ v0.13.1`（`FillSingleBufferCacheParamTensor`:318；`FillAttentionMask`:339，可见位置填充:362-366）。
+- 双缓冲与单缓冲：`runtime/executor/llm_litert_compiled_model_executor.h @ v0.13.1`（注释:327-328；`kv_cache_buffers_1_/2_`:329-330；读写指针:331-333；`gpu_optimized_single_buffer_cache_`:379）；`runtime/executor/llm_litert_compiled_model_executor.cc @ v0.13.1`（构造初始化:199-200；单缓冲判据:428-429；prefill `std::swap`:738；decode `std::swap`:947；prefill 参数张量填充:673-677；decode 参数张量填充:904-907）。
+- 克隆与恢复：`runtime/core/session_advanced.cc @ v0.13.1`（`Clone`:389；`CloneAsyncLocked`:412）；执行器侧 `CloneContext`:`llm_litert_compiled_model_executor.cc:1288 @ v0.13.1`；`CloneKVCacheBuffers`:1243；`RestoreKVCacheBuffers` 含 `TODO b/452977992`:1253-1263；`RestoreContext` 的 step 0 分支:1305-1319。
 - 检查点与回退：`runtime/core/session_advanced.cc @ v0.13.1`（`SaveCheckpoint`:455；`RewindToCheckpoint`:467）；`CheckpointInfo` 结构:`session_advanced.h:257-260 @ v0.13.1`。
-- 会话状态：`runtime/engine/engine.h @ v0.13.1`（`Clone`:245，用法示例注释:238；`CloneAsync`:263；`SaveCheckpoint`:270；`RewindToCheckpoint`:277）；`runtime/executor/llm_executor_io_types.h @ v0.13.1`（`RuntimeState`:78，"不含 KVCache 状态"注释:75-76；`LlmContext`:92）。
+- 会话状态：`runtime/engine/engine.h @ v0.13.1`（`Clone`:245，用法示例注释:238；`CloneAsync`:263；`SaveCheckpoint`:270；`RewindToCheckpoint`:277）；`runtime/executor/llm_executor_io_types.h @ v0.13.1`（`RuntimeState`:78，"不含 KVCache 状态" 注释:75-77；`LlmContext`:92）。
 
 <!-- 实验（--max-num-tokens 扫描解释 #2568、Clone 分叉、get_token_count 增长）数字待基准 D 回填〔基准 D〕。KV cache 公式为示例量级；具体模型 L/H_kv/D 待第 7 章 litertlm_print 读出后可补精确值。图 6-2(增长)、图 6-3(状态分叉) 与表 6-1(内存账) 规格见 notes.md，本轮先出签名图 6-1(双缓冲)。 -->

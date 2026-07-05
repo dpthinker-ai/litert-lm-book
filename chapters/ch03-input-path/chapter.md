@@ -1,12 +1,12 @@
-# 第 3 章 输入之路：从 Engine API 到 token 序列
+# 第 3 章 输入侧：从 Engine API 到 token 序列
 
-> 使命：走通输入侧的全程——你敲进去的一句话，如何变成模型能吃的一串数字。沿途会遇到本书第一个真正精巧的设计：多轮对话怎么做到不重算历史。
+> 本章目标：走通推理流水线的输入侧全程——一段用户输入如何被组装、渲染、分词，最终成为模型可以处理的 token id 序列。其中多轮对话的增量渲染，是本书遇到的第一处与性能直接相关的设计。
 
-第二部是全书的脊柱：跟着一个 token 走完它的一生。这一章是它的上半程——从你调用 API，到一串 token id 准备好被喂进模型。生成还没开始，但成败已经埋在这里。
+第二部是全书的主线，覆盖推理流水线从输入到输出的完整链路。本章处理其前半段：从调用方发起 API 调用，到一串 token id 就绪、等待进入 prefill。生成尚未开始，但这一段的组织方式已经决定了后续几项开销的量级。
 
-## 门面：为什么是 Engine 和 Session 两层
+## 公共 API 分层：Engine 与 Session
 
-打开 LiteRT-LM 的对外接口，第一眼看到的是两个类：`Engine` 和 `Session`。头文件顶部的 Example usage 注释（`runtime/engine/engine.h:44 @ v0.13.1`）把典型用法压成了五步：
+LiteRT-LM 的对外接口以两个类为核心：`Engine` 与 `Session`。头文件顶部的 Example usage 注释（`runtime/engine/engine.h:44 @ v0.13.1`）给出了典型用法的最小示例：
 
 ```cpp
 // Create the engine.
@@ -23,14 +23,11 @@ auto responses = (*session)->GenerateContent({InputText("What's the tallest
 building in the world?")});                              // (3)
 ```
 
-(1) 建 Engine 时要交两样东西：`ModelAssets`（模型权重从哪来）和 `Backend`（跑在 CPU 还是 GPU）。这一步会把以 GiB 计的权重加载进内存——第 1 章那笔账的量级。(2) 建 Session 只吃一个 `SessionConfig`，不碰权重。(3) 生成挂在 Session 上，不挂在 Engine 上。三行代码，两级对象，界限清清楚楚。
+(1) 创建 Engine 需要两个输入：`ModelAssets`（模型权重的来源）与 `Backend`（在 CPU 还是 GPU 上执行）。这一步把以 GiB 计的权重加载进内存，量级与第 1 章内存容量约束一节的估算一致。(2) 创建 Session 只接收一个 `SessionConfig`，不触及权重。(3) 生成入口挂在 Session 上而非 Engine 上。两级对象的职责边界清晰。
 
-为什么要分两层？因为它们的生命周期和成本完全不同。
+分层的依据是两者的生命周期与成本不同。Engine 持有以 GiB 计的模型权重，加载一次耗时数秒、常驻数 GiB 内存，应当创建一次并长期复用。Session 代表一次对话，只持有该对话的状态：KV cache、采样配置、当前步数。它的创建与销毁开销小，一个 Engine 可以派生多个 Session。
 
-- **Engine 重**。它持有模型权重——以 GiB 计。加载一次要几秒、占几 GiB 内存。它应该被创建一次、长期复用。
-- **Session 轻**。它代表一次对话，持有的是这次对话的状态：KV cache、采样配置、步数。它可以随开随关，一个 Engine 能开出多个 Session。
-
-这个划分对应第 2 章那条"状态即对象"原则：把"不变的、昂贵的"（权重）和"多变的、廉价的"（对话状态）分到两级，各自有各自的生命周期。`SessionInterface` 这个抽象（`runtime/engine/engine.h:70 @ v0.13.1`）定义了一次会话能做的事——它同时暴露了高层和低层两套接口。高层的两个入口签名如下（`engine.h:112,128 @ v0.13.1`）：
+这一划分对应第 2 章的原则：把不变且加载昂贵的权重，与多变且创建廉价的对话状态，分到两级各自管理生命周期。`SessionInterface` 抽象（`runtime/engine/engine.h:70 @ v0.13.1`）定义了一次会话能执行的操作，同时暴露高层与低层两套接口。高层的两个入口签名如下（`engine.h:112,128 @ v0.13.1`）：
 
 ```cpp
 virtual absl::StatusOr<Responses> GenerateContent(
@@ -41,9 +38,9 @@ virtual absl::Status GenerateContentStream(
     absl::AnyInvocable<void(absl::StatusOr<Responses>)> callback) = 0;  // (2)
 ```
 
-(1) `GenerateContent` 阻塞到底、一次给完整 `Responses`。(2) `GenerateContentStream` 立即返回，结果通过 `callback` 逐段流式吐出——注释约定：生成成功时回调收到一个空 `Responses` 表示结束，出错时收到错误状态并不再有后续，被取消时收到 Cancellation 错误。两者的输入都是 `std::vector<InputData>`，不是裸字符串：`InputData` 是文本、图像、音频的统一载体，多模态在接口层就已经预留了位置（第 10 章的主角）。
+(1) `GenerateContent` 阻塞至生成结束，一次返回完整的 `Responses`。(2) `GenerateContentStream` 立即返回，结果通过 `callback` 逐段流式返回。注释约定了三种终止语义：生成正常结束时，回调收到一个空 `Responses`；出错时收到错误状态且不再有后续回调；被取消时收到 Cancellation 错误。两者的输入都是 `std::vector<InputData>` 而非裸字符串，`InputData` 是文本、图像、音频的统一载体，多模态在接口层已预留位置（见第 10 章）。
 
-低层接口把 prefill 和 decode 拆成两个独立方法（`engine.h:174,188 @ v0.13.1`）：
+低层接口把 prefill 与 decode 拆成两个独立方法（`engine.h:174,188 @ v0.13.1`）：
 
 ```cpp
 // Adds the input prompt/query to the model for starting the prefilling
@@ -54,11 +51,11 @@ virtual absl::Status RunPrefill(const std::vector<InputData>& contents) = 0;  //
 virtual absl::StatusOr<Responses> RunDecode() = 0;       // (2)
 ```
 
-(1) `RunPrefill` 只把输入写进 KV cache、不产出 token，注释明说可以分多次调用把长 prompt 切块喂进去。(2) `RunDecode` 才开始逐 token 预测。高层的 `GenerateContent` 不过是这两步的组合：先 prefill 再 decode。把它们拆开，调用方就能在两步之间插手——最典型的用法就是下面要讲的 `Clone`。第 4 章讲 `RunPrefill` 里发生了什么，第 5 章讲 `RunDecode`。
+(1) `RunPrefill` 只把输入写入 KV cache，不产出 token；注释指出可以分多次调用，把长 prompt 切块送入。(2) `RunDecode` 才开始逐 token 预测。高层的 `GenerateContent` 是这两步的顺序组合：先 prefill 后 decode。拆开之后，调用方可以在两步之间介入，最典型的用法是下文的 `Clone`。`RunPrefill` 内部的执行见第 4 章，`RunDecode` 见第 5 章。
 
-### 共享前缀：Clone 把一次 prefill 分叉成多条对话
+### 共享前缀：Clone 将一次 prefill 分叉为多条对话
 
-拆分接口最见功力的一处，是 `SessionInterface::Clone`（`runtime/engine/engine.h:231 @ v0.13.1`）。它的注释直接给了一个"共享前缀"的例子：
+拆分接口的一处直接收益，是 `SessionInterface::Clone`（`runtime/engine/engine.h:245 @ v0.13.1`）。它的注释给出了一个共享前缀的例子：
 
 ```cpp
 // Example usage:
@@ -71,17 +68,76 @@ virtual absl::StatusOr<Responses> RunDecode() = 0;       // (2)
 //   session2->Decode();
 ```
 
-(1) `session1` 先 prefill 了公共前缀 "What is the tallest building "。(2) `Clone` 在这一刻分叉：`session2` 继承了 `session1` 到此为止的全部状态——包括那段前缀已经算好的 KV cache。(3) 之后两个 session 各走各的："in the world?" 和 "in France?" 只需各自 prefill 自己那半句。公共前缀那段算力，两条对话分摊，只付了一次。
+(1) `session1` 先 prefill 公共前缀 "What is the tallest building "。(2) `Clone` 在此处分叉：`session2` 继承 `session1` 到调用点为止的全部状态，包括该前缀已经计算好的 KV cache。(3) 此后两个 session 各自延续："in the world?" 与 "in France?" 各只需 prefill 自己的后半句。公共前缀的 prefill 计算只执行一次，被两条对话复用。
 
-这正是低层接口存在的理由：因为 prefill 能被单独调用、能在中途 `Clone`，"共享前缀"才成为可能。如果只有 `GenerateContent` 这种一锤子接口，前缀就无从复用。同一个"不重算已算过的东西"的动机，接下来会以另一种形态出现在对话层——那里没有显式的 `Clone`，靠的是文本 diff。
+这是低层接口存在的理由之一：因为 prefill 可以单独调用、并可在中途 `Clone`，共享前缀才成为可能。若只有 `GenerateContent` 这种单次调用、不可中途介入的接口（one-shot 接口），前缀无从复用。避免重复计算这一动机，稍后会在对话层以另一种形态出现，那里没有显式的 `Clone`，靠的是渲染文本相减。
 
-## 从消息到文本：对话与模板
+#### Clone 的实现：一次排入任务队列的异步克隆
 
-多数使用者不直接摆弄 token，而是发"消息"：一句 user 说的话，期待一句 model 的回答。把消息组织成模型认得的格式，是 `Conversation` 这一层的活（第 2 章五层架构里的"对话与编排层"）。它内部持有一个 `Engine::Session`，替你维护历史、套模板、调度 prefill/decode。
+接口注释把 `Clone` 说成"继承到调用点为止的全部状态"，容易让人以为它是一次就地的状态拷贝。实现层并非如此。`engine.h` 里的 `Clone` 只是一个返回 `UnimplementedError` 的默认桩（`runtime/engine/engine.h:245 @ v0.13.1`）：
 
-模型并不理解"谁是 user、谁是 model"。它只认一长串文本，其中用特殊的标记把角色圈出来。把结构化的消息渲染成这样一长串带标记的文本，靠的是**聊天模板**（prompt template）。这里的消息本身是一个有序 JSON——`Message` 就是 `nlohmann::ordered_json` 的别名（`runtime/conversation/io_types.h:26 @ v0.13.1`），形如 `{"role":"user","content":"..."}`。用 JSON 而非固定 struct，是为了让多模型、多模态、工具调用、思考通道这些可变字段都能塞进同一个类型，对话层主体不必为每种模型改结构。
+```cpp
+virtual absl::StatusOr<std::unique_ptr<SessionInterface>> Clone() {
+  return absl::UnimplementedError("Not implemented.");         // (1)
+};
+```
 
-不同模型的模板不同——Gemma、Qwen 各有各的圈法，LiteRT-LM 为此准备了按模型类型分派的处理器（`model_data_processor`，第 10 章的工具调用还会回到它）。`ConversationConfig`（`runtime/conversation/conversation.h:56 @ v0.13.1`）就是配置这一层行为的地方。它暴露的只读入口能看出这一层管哪些事：
+(1) 基类不提供任何克隆逻辑，未覆写该方法的 Session 实现调用 `Clone` 会直接得到 `UnimplementedError`。真正实现克隆的是 `SessionAdvanced::Clone`（`runtime/core/session_advanced.cc:389 @ v0.13.1`）。它本身只是异步版本的同步封装：
+
+```cpp
+absl::StatusOr<std::unique_ptr<SessionInterface>> SessionAdvanced::Clone() {
+  absl::Status status = absl::OkStatus();
+  std::unique_ptr<SessionInterface> session;
+  {
+    absl::MutexLock lock(mutex_);
+    ASSIGN_OR_RETURN(
+        session,
+        CloneAsyncLocked([&status](absl::StatusOr<Responses> responses) {  // (1)
+          status = responses.status();
+        }));
+  }
+  RETURN_IF_ERROR(WaitUntilDone());                            // (2)
+  RETURN_IF_ERROR(status);
+  return session;
+}
+```
+
+(1) 同步 `Clone` 先在持锁状态下调用 `CloneAsyncLocked` 排入克隆任务，并立即拿到指向新 session 的句柄。(2) 随后 `WaitUntilDone` 阻塞，直到该任务在后台执行完成。换言之，返回的 `SessionInterface` 在函数返回时其克隆动作已经落地，但克隆本身是走异步任务队列完成的，不是在调用线程里同步 memcpy 一份状态。
+
+克隆任务的登记发生在 `CloneAsyncLocked`（`runtime/core/session_advanced.cc:412 @ v0.13.1`）：
+
+```cpp
+ASSIGN_OR_RETURN(auto task_id, execution_manager_lock->GetNewTaskId());
+
+ASSIGN_OR_RETURN(auto session_id, execution_manager_lock->RegisterNewSession(  // (1)
+                                      session_info_->session_config,
+                                      session_info_->benchmark_info));
+
+RETURN_IF_ERROR(execution_manager_lock->AddCloneSessionTask(  // (2)
+    session_id_, task_id, last_task_ids_, session_id,
+    std::make_shared<std::atomic<bool>>(false), std::move(callback)));
+
+last_task_ids_ = {task_id};                                   // (3)
+
+ASSIGN_OR_RETURN(auto session_info,
+                 execution_manager_lock->GetSessionInfo(session_id));
+
+return absl::WrapUnique(new SessionAdvanced(session_id, execution_manager_,  // (4)
+                                            tokenizer_, session_info,
+                                            session_state_, last_task_ids_));
+```
+
+(1) 先向执行管理器注册一个新 session、拿到 `session_id`。(2) `AddCloneSessionTask` 把克隆任务挂进任务图，第三个参数 `last_task_ids_` 是本 session 当前所有未完成任务的 id，克隆任务被串在它们之后，确保克隆发生在此前 prefill 都执行完之后的那个状态点。(3) 随即把 `last_task_ids_` 重置为这个克隆任务，让源 session 后续的操作排在克隆之后。(4) 新 `SessionAdvanced` 与源 session 共享同一个 `execution_manager_` 与 `tokenizer_`，并带上指向克隆任务的 `last_task_ids_`，因此对新 session 的第一次 prefill 会自动排在克隆完成之后。
+
+这一设计把 `Clone` 纳入了与 prefill、decode 同一套任务图调度（第 4 章展开执行管理器）。它带来两点直接后果。其一，`Clone` 是与前序任务串行、与其他 session 可并发的，源 session 上尚未完成的 prefill 会先执行，克隆看到的是一个确定的状态点，而非某个竞态中的中间态。其二，KV cache 的实际复制发生在后台任务里，其代价取决于该处采用的复制策略（引用共享、写时复制或深拷贝）。v0.13.1 的执行管理器把这一步封装在 `AddCloneSessionTask` 内部，正文不展开其后端相关的具体拷贝路径；据接口语义可推断，克隆后两个 session 对各自 KV cache 的写入互不影响，否则 `session1` 续写 "in the world?" 会污染 `session2` 的前缀，与注释给出的用法矛盾。
+
+## 从消息到文本：对话层与聊天模板
+
+多数调用方不直接操作 token，而是发送消息：一条 user 角色的输入，期待一条 model 角色的回复。把消息组织成模型能处理的格式，是 `Conversation` 层的职责（对应第 2 章五层架构中的对话与编排层）。它内部持有一个 `Engine::Session`，负责维护对话历史、应用聊天模板并调度 prefill/decode。
+
+模型不理解 user 与 model 这样的角色概念，它的输入是一段连续文本，角色边界由特殊标记（special token）界定。把结构化的消息渲染为这样一段带标记的文本，靠的是聊天模板（chat template / prompt template）。消息本身是一个有序 JSON，`Message` 是 `nlohmann::ordered_json` 的别名（`runtime/conversation/io_types.h:26 @ v0.13.1`），形如 `{"role":"user","content":"..."}`。用 JSON 而非固定 struct，是为了让多模型、多模态、工具调用、思考通道这些可变字段共用同一类型，对话层主体不必为每种模型改动数据结构。
+
+不同模型的模板语法不同，Gemma 与 Qwen 各有各的角色标记与拼接方式。LiteRT-LM 为此准备了按模型类型分派的处理器（`model_data_processor`，工具调用见第 10 章）。`ConversationConfig`（`runtime/conversation/conversation.h:56 @ v0.13.1`）配置这一层的行为。它暴露的只读入口反映了这一层管辖的范围：
 
 ```cpp
 const Preface& GetPreface() const { return preface_; }              // (1)
@@ -93,15 +149,15 @@ bool constrained_decoding_enabled() const {                        // (3)
 bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4)
 ```
 
-(1) `Preface` 是开场白：把系统指令、few-shot 示例、可用工具描述装在一起，它定义整段对话的背景。(2) `PromptTemplate` 默认从模型元数据里的 jinja 模板读，也可在这里覆盖。(3) 约束解码开关，开启后模型被强制输出结构合法的函数调用（第 10 章）。(4) `prefill_preface_on_init` 决定要不要在创建对话时就把 Preface 预先 prefill 进 KV cache——代价是初始化更久，回报是首条用户消息的响应更快。这四个开关，接下来 diff 那一节里会用到最后一个。
+(1) `Preface` 是开场部分：把系统指令、few-shot 示例、可用工具描述组织在一起，定义整段对话的背景。(2) `PromptTemplate` 默认从模型元数据中的 Jinja 模板读取，也可在此覆盖。(3) 约束解码（constrained decoding）开关，开启后模型被强制输出结构合法的函数调用（见第 10 章）。(4) `prefill_preface_on_init` 决定是否在创建对话时就把 Preface 预先 prefill 进 KV cache：代价是初始化耗时增加，收益是首条用户消息的响应更快。这四个开关中，最后一个会在下一节的增量渲染里用到。
 
-到这一步，你的一句"帮我改写这段"已经变成了一长串带角色标记的纯文本。下一步该把它切成 token 了——但在那之前，有一个多轮对话绕不开的问题。
+至此用户输入已被渲染为一段带角色标记的纯文本。下一步是把它切成 token，但在此之前，多轮对话有一个绕不开的问题。
 
-## 不重算历史：模板 diff 增量渲染
+## 增量渲染：多轮对话不重算历史
 
-问题是这样的。多轮对话里，第二轮的输入在逻辑上是"历史全文 + 新消息"。如果每一轮都把整段历史重新渲染、重新 prefill，那么对话越长，每轮的开销越大——第十轮要把前九轮重算一遍。这是纯粹的重复计算：历史的 KV cache 本来就在手里，却每轮重付一遍 prefill 的算力，TTFT 随对话变长越来越糟。
+问题如下。多轮对话中，第 n 轮的输入在逻辑上是"历史全文 + 新消息"。若每一轮都把整段历史重新渲染、重新 prefill，则对话越长每轮开销越大，第 10 轮要把前 9 轮重算一遍。这是重复计算：历史对应的 KV cache 已经驻留在内存中，却每轮重新支付一遍 prefill 的算力，TTFT（首 token 时延）随对话轮数线性增长。
 
-LiteRT-LM 的对策朴素而有效：**只 prefill 新增的那一小段。** 实现落在 `Conversation::GetPrefillTextForMessages`（`runtime/conversation/conversation.cc:751 @ v0.13.1`）。它的做法是把同一套模板跑两遍——一遍只喂旧消息，一遍喂旧消息加新消息，再相减：
+LiteRT-LM 采用的方法是只 prefill 新增的那一段。实现落在 `Conversation::GetPrefillTextForMessages`（`runtime/conversation/conversation.cc:751 @ v0.13.1`）。它把同一套模板渲染两遍：一遍只含旧消息，一遍含旧消息加新消息，再相减：
 
 ```cpp
 // Render the `old` string.
@@ -117,7 +173,11 @@ ASSIGN_OR_RETURN(std::string new_string,
                  prompt_template_.Apply(new_context));                // (2)
 ```
 
-(1) `old_string` 是把 Preface 加旧消息完整渲染出来的字符串。(2) `new_context` 直接拷贝自 `old_context`、再追加新消息，`new_string` 是渲染加了新消息之后的结果。因为 `new_context` 是从 `old_context` 拷来的，两次渲染的前半段用的是同一份上下文——这保证了 `new_string` 应当以 `old_string` 为前缀。相减的逻辑就压在最后几行（`conversation.cc:806,813,820 @ v0.13.1`）：
+(1) `old_string` 是 Preface 加旧消息完整渲染后的字符串。(2) `new_context` 从 `old_context` 拷贝而来再追加新消息，`new_string` 是加入新消息后重新渲染的结果。由于 `new_context` 拷贝自 `old_context`，两次渲染的前半段基于同一份上下文，这保证了 `new_string` 应当以 `old_string` 为前缀。
+
+这里的 `include_preface` 参数控制第一轮的相减语义，值得单独说明。当 `old_messages` 为空（首轮对话）时，是否渲染 `old_string` 取决于 `include_preface`（`conversation.cc:786 @ v0.13.1` 的条件 `if (!old_messages.empty() || !include_preface)`）。若 `include_preface` 为 true，`old_string` 保持为空，于是 Preface 会被算进返回的增量文本、随首条消息一并 prefill；若为 false，`old_string` 含 Preface，Preface 会被从增量里减去。这对应上一节 `prefill_preface_on_init` 的两种取值：Preface 已在初始化时预先 prefill，则首轮增量不应再包含它。
+
+相减的逻辑在函数末尾（`conversation.cc:806,813,820 @ v0.13.1`）：
 
 ```cpp
 if (old_string.length() > new_string.length()) {                     // (1)
@@ -129,11 +189,19 @@ if (new_string.substr(0, old_string.size()) != old_string) {         // (2)
 return new_string.substr(old_string.length());                       // (3)
 ```
 
-(3) 就是那个"文本差"：`new_string` 砍掉 `old_string` 那段前缀，剩下的尾巴，就是本轮真正需要 prefill 的增量文本。旧的部分早已在 KV cache 里（第 6 章），无需重来。
+(3) 就是这段增量文本：`new_string` 去掉 `old_string` 前缀后剩下的尾部，即本轮需要 prefill 的部分。旧的部分对应的 KV cache 已经驻留（第 6 章展开 KV cache 结构），无需重新计算。
 
-(1) 和 (2) 这两道防线暴露了这个 diff 的一个前提假设：**新渲染必须是旧渲染的字符串前缀。** 一旦模板不满足"追加消息只会在尾部加内容"——比如某些模型的模板会在结尾放一个固定的收尾标记、加新消息时要先把它挪走——`new_string` 就可能比 `old_string` 短，或者不以它开头。代码没有去猜、去做通用的最长公共前缀，而是直接返回 `InternalError` 把渲染结果整个打印出来。这是一个刻意的设计取舍：diff 只在"纯前缀增长"这一类模板上成立，不成立就当场报错，而不是悄悄算错、把错位的文本 prefill 进 KV cache 污染整段对话。第 4 章会看到，prefill 进去的东西是没法轻易撤回的，所以这里宁可炸也不将就。
+(1) 和 (2) 这两处前置校验（precondition check）暴露了增量渲染的前提假设：新渲染必须是旧渲染的字符串前缀。一旦模板不满足"追加消息只在尾部增加内容"这一性质，例如某些模型的模板在结尾固定放一个收尾标记、加新消息时要先移除它，则 `new_string` 可能比 `old_string` 短，或不以它开头。代码没有退而求最长公共前缀，而是直接返回 `InternalError` 并把两次渲染结果整个打印出来。这是一处明确的取舍：增量渲染只在"纯前缀增长"这一类模板上成立，不成立时选择直接返回错误而非降级处理，以免把错位的文本 prefill 进 KV cache、污染整段对话。第 4 章会说明，prefill 写入的内容无法轻易撤回，因此此处宁可报错也不将就一个可能错误的结果。
 
-diff 出的增量文本，随后交给 `GetInputDataVectorForMessages`（`conversation.cc:824 @ v0.13.1`）转成 `InputData` 向量、送进 `Session::RunPrefill`。它把"逻辑上每轮都是全量历史"翻译成了"物理上每轮只处理增量"。表面看只是个字符串相减，背后接住的是整个 KV cache 复用的收益——和上一节 `Clone` 共享前缀是同一个动机的两种长相：一个靠拷贝会话状态，一个靠比对渲染文本。
+#### 增量渲染的成本账：省下的是 prefill，不是渲染
+
+这里有一处容易被忽略的成本。`GetPrefillTextForMessages` 每一轮都完整渲染两遍：一遍"旧全量"、一遍"旧全量 + 新"。第 n 轮渲染的字符数与到该轮为止的历史长度成正比，整段 n 轮对话累计处理的字符数是 O(n²) 量级。也就是说，增量渲染并没有省下渲染本身的开销，反而每轮都把历史重新渲染了一遍（甚至两遍）。
+
+它省下的是 prefill 的算力。要判断这笔账是否划算，需要对比两侧的量级。模板渲染是纯字符串处理，走 CPU，单位是每字符若干纳秒；prefill 是对每个 token 跑一遍模型前向，在端侧 4B 级量化模型上，单 token 的 prefill 涉及数十亿次浮点运算，二者相差多个数量级。设历史有 H 个 token，全量重算方案每轮多付 H 个 token 的 prefill；增量渲染方案每轮多付的是"再渲染一遍 H 个 token 对应文本"的字符串开销。前者是模型前向，后者是字符串扫描，即便渲染累计到 O(n²)，其绝对开销仍远小于被省下的 O(n²) 量级 prefill 前向。净收益为正，且随对话变长收益越大。（该量级对比为基于代码路径的分析，具体数字取决于设备、模型与量化，此处不给绝对时延。）
+
+如果要进一步压掉渲染侧的 O(n²)，理论上可以缓存上一轮的 `new_string` 作为下一轮的 `old_string`，省去重复渲染旧消息。v0.13.1 未做这一步，每轮都从 Preface 起重新渲染。据此推断，这一取舍的依据是渲染开销相对 prefill 可忽略，缓存渲染文本引入的一致性维护（模板、Preface、extra_context 任一变化都需失效缓存）不值得。
+
+diff 出的增量文本随后交给 `GetInputDataVectorForMessages`（`conversation.cc:824 @ v0.13.1`）转为 `InputData` 向量，送入 `Session::RunPrefill`。它把"逻辑上每轮都是全量历史"翻译成"物理上每轮只处理增量"。表面是字符串相减，背后是整个 KV cache 复用的收益，与上一节 `Clone` 共享前缀是同一优化动机的两种实现形态：一个复制会话状态，一个比对渲染文本。
 
 ## 从文本到数字：两种 tokenizer
 

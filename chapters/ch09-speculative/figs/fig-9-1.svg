@@ -13,7 +13,7 @@
     .edge  { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.4; fill: none; }
   </style>
   <defs><marker id="a9" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker></defs>
-  <text class="t" x="340" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">推测解码一轮：一次 base 前向，吐多个 token</text>
+  <text class="t" x="340" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">推测解码一轮：一次 base 前向，产出多个 token</text>
   <!-- 第一步：drafter 草拟 G 个 -->
   <text class="accent" x="40" y="70" style="font-size:12px;font-weight:700">① drafter 小模型逐个草拟 G 个（便宜）</text>
   <g>
@@ -28,13 +28,13 @@
   <rect class="base" x="60" y="170" width="420" height="40" rx="6"/>
   <text class="accent" x="270" y="195" text-anchor="middle" style="font-size:12px;font-weight:700">base.verify signature —— 一次 RunAsync</text>
   <!-- 第三步：接受前缀 + bonus -->
-  <text class="a2" x="40" y="250" style="font-size:12px;font-weight:700">③ 接受最长匹配前缀 + 1 个 bonus 兜底</text>
+  <text class="a2" x="40" y="250" style="font-size:12px;font-weight:700">③ 接受最长匹配前缀 + 1 个 bonus token</text>
   <g>
     <rect class="ok"    x="60"  y="262" width="50" height="34" rx="5"/><text class="t" x="85"  y="284" text-anchor="middle" style="font-size:11px">✓ d₁</text>
     <rect class="ok"    x="122" y="262" width="50" height="34" rx="5"/><text class="t" x="147" y="284" text-anchor="middle" style="font-size:11px">✓ d₂</text>
     <rect class="bad"   x="184" y="262" width="50" height="34" rx="5"/><text class="ts" x="209" y="284" text-anchor="middle" style="font-size:10px">✗ 丢</text>
     <rect class="bonus" x="246" y="262" width="70" height="34" rx="5"/><text class="a2" x="281" y="284" text-anchor="middle" style="font-size:10.5px;font-weight:700">bonus</text>
   </g>
-  <text class="ts" x="360" y="284" style="font-size:11px">首个不匹配处取 base 正确答案；全对则白赚第 G+1 个</text>
+  <text class="ts" x="360" y="284" style="font-size:11px">首个不匹配处取 base 正确答案；全对则额外获得第 G+1 个</text>
   <text class="ts" x="340" y="322" text-anchor="middle" style="font-size:11px;font-weight:700">产出 1..G+1 个 token —— 快多少，全看接受率 = 接受数 ÷ 草拟数</text>
 </svg>

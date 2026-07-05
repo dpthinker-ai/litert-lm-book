@@ -1,14 +1,14 @@
 # 第 8 章 异构算力：CPU、GPU 与 NPU
 
-> 使命：讲清一部手机上三类计算单元各自的脾气，LiteRT-LM 如何用一个工厂把它们藏在同一套接口后面，以及一个让很多人困惑的现象——为什么换个后端，连模型的输出都会变。
+> 本章讲三件事：一部手机上 CPU、GPU、NPU 三类计算单元各自的特性与约束；LiteRT-LM 如何用一个工厂把它们封装在同一套接口之后；以及一个常被误解的现象——换一个后端，连模型的输出文字都会变。
 
-第 1 章说过第三堵墙有两半：功耗和异构。这一章处理异构这半。手机上不止一个能算的地方，CPU、GPU、NPU 各有各的强项和麻烦。一个端侧运行时既要用得上它们，又要对上层藏起它们的差异。先从一个让人挠头的现象说起。
+第 1 章把端侧的硬约束分成内存容量、内存带宽、功耗与异构三类。前两类已经在第 6、7 章处理，这一章处理功耗与异构这一类里的异构部分。手机上能做计算的不止一处：CPU、GPU、NPU 各有各的强项和限制。一个端侧运行时既要用得上它们，又要对上层封装掉它们的差异。先从一个反直觉的现象说起。
 
-## 同一个模型，三种脾气
+## 同一个模型，三种后端
 
-第 2 章"二十个问题"的第 17 问，来自一个真实的上游困惑（`LiteRT-LM#2281`）：同一个 `.litertlm` 文件，`--backend=cpu` 和 `--backend=gpu` 跑出来，不只是速度不同，连**输出的文字都可能不一样**。这反直觉——不是同一个模型、同一个提示词吗？
+第 2 章"二十个问题"的第 17 问，来自一个真实的上游困惑（`LiteRT-LM#2281`）：同一个 `.litertlm` 文件，`--backend=cpu` 和 `--backend=gpu` 跑出来，不只是速度不同，连**输出的文字都可能不一样**。这与直觉相悖：不是同一个模型、同一个提示词吗？
 
-先接受这个事实，本章最后一节解释它的成因。现在只需记住：后端不是"同一个计算的不同速度"，它们是**不同的计算路径**。理解了这一点，"可插拔后端"这个设计的分量才显出来——它不是锦上添花，是端侧必须面对的现实。
+先接受这个事实，本章最后一节解释它的成因。现在只需记住一点：后端不是"同一个计算的不同速度"，它们是**不同的计算路径**。算子实现不同，数值精度处理不同，反量化方式也可能有细微差别。理解了这一点，"可插拔后端"这个设计的分量才显出来。它并非可选的增强特性，而是端侧必须面对的现实：一部手机上多种计算单元并存，运行时必须在它们之间做选择，又要让上层代码对这个选择无感。
 
 ## 一个工厂，按 Backend 分派
 
@@ -46,33 +46,57 @@ switch (backend) {
 }
 ```
 
-`(1)` 后端来自 `LlmExecutorSettings`，而它最终由 CLI 的 `--backend` 或上层配置写入。分派的输入是一个纯数据字段，不是运行时探测。`(2)` `CPU` 和 `GPU` 共用 `case`、落到同一个创建函数，这不是偷懒：这条路径读出的是同一个 `.tflite` 子图（`ModelType::kTfLitePrefillDecode`，`:135`），CPU 与 GPU 的差异被推迟到 LiteRT 编译期由 delegate 决定，工厂层不必区分。`(3)` `NPU` 走独立分支，因为它加载的根本是另一组模型文件（下一节 NPU 的 embedder 子模型就是证据）。`default` 分支把 `CPU_ARTISAN` 这类未接入编译路径的后端挡在门外，返回错误而非崩溃——这是工厂作为唯一入口的价值：非法后端在这里一次性拦下。
+`(1)` 后端来自 `LlmExecutorSettings`，而它最终由 CLI 的 `--backend` 或上层配置写入。分派的输入是一个纯数据字段，不是运行时探测。`(2)` `CPU` 和 `GPU` 共用 `case`、落到同一个创建函数。这并非实现上的妥协：这条路径读出的是同一个 `.tflite` 子图（`ModelType::kTfLitePrefillDecode`，`:135`），CPU 与 GPU 的差异被推迟到 LiteRT 编译期由 delegate 决定，工厂层不必区分。`(3)` `NPU` 走独立分支，因为它加载的是另一组模型文件（下一节 NPU 的 embedder 子模型就是证据）。`default` 分支把 `CPU_ARTISAN` 这类未接入编译路径的后端挡在门外，返回 `InvalidArgumentError` 而非崩溃。这是工厂作为唯一入口的价值：非法后端在这里一次性拦下。
 
-CPU/GPU 那条路径内部还有一次分派，按模型是否动态形状再分（`:139`）：
+### 静态形状与动态形状：第二次分派
+
+CPU/GPU 那条路径内部还有一次分派，按模型导出时是静态形状还是动态形状再分（`llm_litert_compiled_model_executor_factory.cc:137 @ v0.13.1`）：
 
 ```cpp
 ASSIGN_OR_RETURN(bool is_dynamic_model, IsDynamicModel(*litert_model));
 if (is_dynamic_model) {
-  ASSIGN_OR_RETURN(executor, LlmLiteRtCompiledModelExecutorDynamic::Create(...));
+  ASSIGN_OR_RETURN(executor, LlmLiteRtCompiledModelExecutorDynamic::Create(
+                                 executor_settings, lrt_env, resources));  // (1)
 } else {
-  ASSIGN_OR_RETURN(executor, LlmLiteRtCompiledModelExecutorStatic::Create(...));  // (1)
+  ASSIGN_OR_RETURN(executor, LlmLiteRtCompiledModelExecutorStatic::Create(
+                                 executor_settings, lrt_env, resources));  // (2)
 }
 ```
 
-`(1)` 静态形状走 `Static` 执行器：形状在编译期定死，运行时不再变，省掉重新编译的开销。这层选择对上层同样不可见。
+这个 `is_dynamic_model` 不是配置项，而是从模型文件里读出来的事实。`IsDynamicModel` 检查 prefill 子图里两组张量的形状是不是运行时可变（`llm_litert_compiled_model_executor_factory.cc:98 @ v0.13.1`）：
 
-无论走哪条分支，工厂返回的都是 `absl::StatusOr<std::unique_ptr<LlmExecutor>>`——上层拿到的是同一个 `LlmExecutor` 抽象（第 5 章那个接口），完全不知道底下是 CPU 还是 NPU、是 Static 还是 Dynamic。这就是"可插拔后端"落到代码里的样子：一个枚举、一个工厂、一个共同接口。加一个新后端，就是加一个 `case`，上层一行不改。
+```cpp
+ASSIGN_OR_RETURN(bool is_k_dynamic, IsDynamicTensor(k_tensor));
+// ...
+ASSIGN_OR_RETURN(bool is_v_dynamic, IsDynamicTensor(v_tensor));
+RET_CHECK(is_k_dynamic == is_v_dynamic)
+    << "KV cache k and v need to be dynamic or static at the same time.";  // (1)
+is_kv_cache_dynamic = is_k_dynamic && is_v_dynamic;
+// ...
+ASSIGN_OR_RETURN(is_seq_len_dynamic, IsDynamicTensor(position_tensor));
+RET_CHECK(is_kv_cache_dynamic == is_seq_len_dynamic)
+    << "KV cache and seq len need to be dynamic or static at the same time.";  // (2)
+return is_kv_cache_dynamic;
+```
+
+`(1)` 判据取自 KV cache 的 K、V 两个张量的形状是否动态，并用 `RET_CHECK` 强制两者一致：一个模型不允许 K 动态而 V 静态。`(2)` 更强的一条约束在最后：KV cache 的动静态必须与序列长度（position 张量）的动静态一致，否则直接报错退出。换句话说，一个导出的模型要么整体是动态形状，要么整体是静态形状，不存在混合态。这条 `RET_CHECK` 把"半动态"的非法组合挡在加载阶段，而不是留到运行时崩溃。
+
+两条路径的性能含义不同。静态形状走 `Static` 执行器：prefill 与 decode 的张量形状在编译期就定死，KV cache 按最大上下文长度一次性分配，运行时形状不再变，delegate 只需编译一次。动态形状走 `Dynamic` 执行器：KV cache 随 decode 步逐步增长，每次增长 `kv_increment_size` 个位置（默认 16，`llm_executor_settings.h:110 @ v0.13.1`）。动态形状的好处是短对话不必按最大长度预分配缓冲区，峰值内存更省；代价是形状变化可能触发底层重新准备。正文后面会看到，`prefill_chunk_size` 这个参数的注释明确写着"only applicable to dynamically exported models"（`llm_executor_settings.h:113 @ v0.13.1`）——分块 prefill 只对动态模型有意义，因为静态模型的 prefill 形状已经固定。这层静态/动态的选择对上层同样不可见。
+
+无论走哪条分支，工厂返回的都是 `absl::StatusOr<std::unique_ptr<LlmExecutor>>`。上层拿到的是同一个 `LlmExecutor` 抽象（第 5 章那个接口），不知道底下是 CPU 还是 NPU、是 Static 还是 Dynamic。这就是"可插拔后端"落到代码里的样子：一个枚举、一个工厂、一个共同接口。加一个新后端，就是加一个 `case`，上层一行不改。
 
 <figure>
 {{#include figs/fig-8-1.svg}}
 <figcaption>图 8-1　后端工厂分派：Backend 枚举经工厂函数分成 CPU/GPU 一路、NPU 一路，都产出同一个 LlmExecutor 抽象。上层对后端差异无感知。</figcaption>
 </figure>
 
-## CPU：随时可用，但要做线程功课
+## CPU：随时可用，但需管理线程与亲和性
 
-CPU 的好处是随时都在、什么算子都能跑。它的挑战是第三堵墙的另一半——功耗与调度。
+CPU 的好处是随时都在、什么算子都能跑。它的挑战落在功耗与调度上，需要两件配置到位：线程绑核与线程数量。
 
-手机 CPU 是大小核混合的：几个高性能核，几个高能效核。推理这种重活，跑在性能核上才快；但如果不管不顾，系统调度器可能把线程挪到能效核上，速度就掉了。LiteRT-LM 为此提供了 CPU 亲和性工具（`runtime/engine/cpu_affinity_utils.h @ v0.13.1`），三个函数：判定是不是 Pixel Tensor 设备（`:25`）、查出性能核编号（`:29`）、把当前线程绑上去（`:35`）。"性能核编号"不是运行时算出来的，是按芯片型号硬编码的一张表（`cpu_affinity_utils.cc:57 @ v0.13.1`）：
+### CPU 亲和性：只认 Pixel Tensor 的一张硬编码表
+
+手机 CPU 是大小核混合的：几个高性能核，几个高能效核。推理这种计算密集的任务跑在性能核上才快；但若不加干预，系统调度器可能把线程迁到能效核上，吞吐随之下降。LiteRT-LM 为此提供了 CPU 亲和性工具（`runtime/engine/cpu_affinity_utils.h @ v0.13.1`），对外三个函数：判定是不是 Pixel Tensor 设备（`:25`）、查出性能核编号（`:29`）、把当前线程绑上去（`:35`）。性能核编号不是运行时算出来的，是按芯片型号硬编码的一张表（`cpu_affinity_utils.cc:57 @ v0.13.1`）：
 
 ```cpp
 const TensorCoreAffinity kTensorAffinities[] = {
@@ -83,7 +107,30 @@ const TensorCoreAffinity kTensorAffinities[] = {
 };
 ```
 
-`(1)` 每一行是一款 Pixel SoC 的中大核编号：G3 用 4~8 号核、G4 只用 4~7 号，核编号还随代际变（G5/G6 从 2 号起）。芯片型号靠读 Android 系统属性 `ro.soc.model` 识别（`:80`），认不出就返回空表。这张表也划定了这套工具的适用边界：它只认 Google 自家的 Tensor 芯片，高通、联发科的设备走不到这里——`IsPixelTensorDevice()` 直接返回 false。
+`(1)` 每一行是一款 Pixel SoC 的中大核编号。核编号随代际变化：G3 用 4 到 8 号核，G4 收窄到 4 到 7 号，G5、G6 则从 2 号起。这套编号对应各代 Tensor SoC 的物理核布局，硬编码而非探测，因为 Android 没有一个可移植的接口能报告"哪些核是大核"。
+
+识别芯片型号的逻辑值得展开，正文早先只提了半句。判定走 `GetCurrentPixelSoc`（`cpu_affinity_utils.cc:66 @ v0.13.1`），它读两个系统属性并做双重校验：
+
+```cpp
+static const PixelSoc soc = []() {
+  char manufacturer[PROP_VALUE_MAX] = {0};
+  char soc_model[PROP_VALUE_MAX] = {0};
+  __system_property_get("ro.soc.manufacturer", manufacturer);  // (1)
+  __system_property_get("ro.soc.model", soc_model);
+  if (absl::string_view(manufacturer) != "Google") {
+    return PixelSoc::kUnknown;                                 // (2)
+  }
+  absl::string_view soc_str(soc_model);
+  if (soc_str == "Tensor G3") return PixelSoc::kTensorG3;      // (3)
+  // ...
+  return PixelSoc::kUnknown;
+}();
+return soc;
+```
+
+`(1)` 读的是两个属性：制造商 `ro.soc.manufacturer` 与型号 `ro.soc.model`。`(2)` 先卡制造商——不是 Google 直接判为未知，这道校验能挡掉那些恰好把型号字符串取名 "Tensor" 的第三方设备。`(3)` 再逐一比对型号字符串。整段包在一个 `static` 局部变量的 lambda 初始化里，C++ 保证它只求值一次，此后每次调用直接返回缓存结果，避免反复读系统属性。认不出就返回 `kUnknown`，`IsPixelTensorDevice()` 随之返回 false。
+
+这张表和这道校验一起划定了工具的适用边界：只认 Google 自家的 Tensor 芯片。高通、联发科的设备走不到这里，`GetPixelPerformanceCores()` 对未知 SoC 返回空表。空表进 `SetCpuAffinity` 会被第一行直接短路（`cpu_affinity_utils.cc:104 @ v0.13.1`）：`cpu_affinity_cores.empty()` 为真时记一条 warning 就返回 `OkStatus`，绑核这一步在非 Pixel 设备上等于跳过。更彻底的是非 Android 编译分支——整个 `cpu_affinity_utils.cc` 的实现被 `#if defined(__ANDROID__)` 包住，在非 Android 平台上 `IsPixelTensorDevice` 恒为 false、`SetCpuAffinity` 是空实现直接返回成功（`cpu_affinity_utils.cc:130 @ v0.13.1`）。作者手上那台 Mac 走的正是这条空实现分支。
 
 绑核的动作落在 `SetCpuAffinity`（`cpu_affinity_utils.cc:103 @ v0.13.1`），本质是一次 Linux 系统调用：
 
@@ -99,25 +146,39 @@ if (sched_setaffinity(0, sizeof(mask), &mask) != 0) {  // (2)
 }
 ```
 
-`(1)` 把每个性能核编号写进一个位掩码；`(2)` `sched_setaffinity` 的第一个参数是 0，代表"当前线程"——这是一个建议而非命令，头文件的注释也说得明白："The scheduler will then attempt to run the thread on these cores most of the time"（`cpu_affinity_utils.h:31`）。调度器多数时候会照办，但没有硬保证。绑核失败不致命：只记一条 warning，推理照跑，只是可能落到能效核上慢一点。
+`(1)` 把每个性能核编号写进一个位掩码。`(2)` `sched_setaffinity` 的第一个参数是 0，代表当前线程。这是一个建议而非命令，头文件注释说得明白："The scheduler will then attempt to run the thread on these cores most of the time"（`cpu_affinity_utils.h:31`）。调度器多数时候会照办，但没有硬保证。绑核失败不致命：只记一条 warning，推理照跑，只是可能落到能效核上慢一点。
 
-这段代码在"一个 token 的一生"里的位置很靠前——它不在 decode 循环里，而在引擎创建时执行一次（`engine_factory.h:136 @ v0.13.1`）：`if (IsPixelTensorDevice())` 才查核、绑核。绑一次，此后整个会话的推理线程都倾向留在性能核上。
+这段代码在推理流水线里的位置很靠前。它不在 decode 循环里，而在引擎创建时执行一次（`engine_factory.h:136 @ v0.13.1`）：`if (IsPixelTensorDevice())` 为真才查核、绑核，且绑的是引擎创建线程本身。头文件注释说明这次绑核会波及该线程之后创建的子线程（"the current thread and any child threads it creates"，`cpu_affinity_utils.h:31`），推理线程池由此继承同一份亲和性。绑一次，此后整个会话的推理线程都倾向留在性能核上。
 
-线程本身由一个线程池管（`runtime/framework/threadpool.h:51 @ v0.13.1`），构造时给一个上限 `max_num_threads`（`:57`）。用几个线程是个权衡：多了未必快（内存带宽是瓶颈，第 1 章），还更耗电、更烫。这个数默认是 4（`CpuConfig::number_of_threads`，`runtime/executor/llm_executor_settings.h:120 @ v0.13.1`），CLI 用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`）。它的接线只有两行（`litert_lm_lib.cc:528 @ v0.13.1`）：
+### 线程数：为什么默认是 4
+
+线程本身由一个线程池管（`runtime/framework/threadpool.h:51 @ v0.13.1`），构造时给一个上限 `max_num_threads`（`:57`）。这里说的是算子内并行度——一个矩阵乘法拆给几个线程一起算。用几个线程是个权衡：线程多了未必更快，因为 decode 阶段的瓶颈是内存带宽而非算力（第 1 章的带宽约束），线程再多也快不过内存往核里喂权重的速度；而线程一多，功耗和发热却是实打实地涨。
+
+这个数默认是 4（`CpuConfig::number_of_threads`，`runtime/executor/llm_executor_settings.h:120 @ v0.13.1`），注释直接写"The default value is 4"。CLI 用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`）。覆盖路径落在 CPU 后端专属的配置分支里（`litert_lm_lib.cc:523 @ v0.13.1`）：
 
 ```cpp
-if (settings.num_cpu_threads > 0) {                  // (1)
-  cpu_settings.number_of_threads = settings.num_cpu_threads;
+if (backend == Backend::CPU) {
+  auto& executor_settings = engine_settings.GetMutableMainExecutorSettings();
+  ASSIGN_OR_RETURN(
+      auto cpu_settings,
+      executor_settings.MutableBackendConfig<litert::lm::CpuConfig>());
+  if (settings.num_cpu_threads > 0) {                    // (1)
+    cpu_settings.number_of_threads = settings.num_cpu_threads;
+  }
+  cpu_settings.prefill_chunk_size = settings.prefill_chunk_size;  // (2)
+  executor_settings.SetBackendConfig(cpu_settings);
 }
 ```
 
-`(1)` 只有传了正值才覆盖默认的 4——传 0 或不传就保留默认。这些都是"可持续速度"的功课：不是把资源开满，而是让线程数匹配内存带宽这个真正的上限。绑核选性能核、线程数压在带宽上限附近，两件事合起来才是 CPU 后端在第三堵墙下的正确姿势。
+`(1)` 只有传了正值才覆盖默认的 4，传 0 或不传就保留默认。`(2)` 同一分支里顺带把 `prefill_chunk_size` 也写进去——前面说过它只对动态导出的模型生效，静态模型忽略这个值。整个分支用 `backend == Backend::CPU` 守卫，GPU、NPU 各有自己的配置分支，`CpuConfig` 只在 CPU 路径上被读写。
 
-## GPU：并行强，还能就地采样
+这两件事合起来才是 CPU 后端在功耗与带宽约束下的推荐配置：绑核让线程留在性能核上，线程数压在内存带宽上限附近而不是把核开满。要把"多线程未必更快"这句话从断言变成实测，可以扫描线程数：固定设备、模型、上下文，让 `--num_cpu_threads` 取 1、2、4、8，各跑三次取中位数，对比 prefill 与 decode 吞吐。可以预期 prefill 对线程数更敏感（它更接近算力受限，第 2 章），decode 增益会更早触顶（带宽先封顶）。本书基准数据集固定后端与线程默认值，未做这一维扫描（附录 D），此处把方法记录在案，结论待实测回填。
 
-GPU 的强项是大规模并行，适合矩阵运算这种活。它在端侧的一个精巧优化，第 5 章已经埋过引子——**片上采样**。
+## GPU：并行强，还能在设备上采样
 
-回忆第 5 章的两条采样路径。内部采样之所以快，是因为采样这一步可以直接在 GPU 上做，不用把 logits 搬回 CPU。这个"省一次搬运"值多少？decode 每一步都会产出一整组 logits——词表有多大，这组数就有多大，动辄几十万个。如果采样在 CPU 做，这几十万个数每步都要从 GPU 拷回 CPU；在 GPU 上就地采样，这次拷贝就省了。
+GPU 的强项是大规模并行，适合矩阵运算。它在端侧的一个优化第 5 章已经埋过引子：片上采样（on-device sampling），把采样这一步直接放在 GPU 上做，省掉 decode 每步一次 logits 回传 CPU。
+
+回忆第 5 章的两条采样路径。设备上采样之所以快，是因为采样这一步不必把 logits 搬回 CPU。这次省掉的拷贝值多少，可以当面算一笔账。decode 每一步都会产出一整组 logits，长度等于词表大小。以 Gemma 系列约 26 万的词表、logits 按 FP16（2 字节）计，一步的 logits 就是 26 万 × 2 字节 ≈ 512 KiB。若采样在 CPU 做，这 512 KiB 每步都要从 GPU 显存拷回 CPU 内存（一次 device→host 传输）；在 GPU 上就地采样，这次拷贝省下。单看一步不大，但 decode 是整个生成里最频繁的操作，生成 512 个 token 就是 512 次这样的往返。第 1 章说过 decode 是内存带宽受限的：每一步真正的工作量是把几个 GiB 的权重读一遍，相比之下 512 KiB 的 logits 回传占比不高，所以这次省拷贝对整机吞吐的贡献是二阶的，很难从整机数字里单独剥离出来（本书未单测）。它更实在的价值在延迟链路上：省掉 device→host 同步，decode 每步少一次跨设备等待。
 
 采样器怎么建、跑在哪，都在 `InitializeSampler` 里定（`runtime/executor/llm_litert_compiled_model_executor.h:160 @ v0.13.1`，实现见 `.cc:1335`）：
 
@@ -138,9 +199,50 @@ sampler_handles_input_ =
     !runs_embedding_on_gpu;
 ```
 
-`(1)` 采样器有自己的 `sampler_backend`，跟主执行器的后端各算各的：GPU 主后端可以配 GPU 采样器，让 logits 不离开显存。`(2)` `gpu_sampler_max_top_k_` 存下 top-k 的 `k`：GPU 上做 top-k 要预先知道候选个数才能开好缓冲区，这个字段就是给 GPU 采样路径准备的（`.h:354`）。`(3)` `sampler_handles_input_` 是关键开关——它为真时，采样器接管 decode 的输入张量，选出的 token 直接在设备上喂回下一步，连"把新 token 拷回来再拷过去"都省了。注意它的最后一个条件 `!runs_embedding_on_gpu`：如果 embedding 本来就在 GPU 上查（`embedding_lookup_ == nullptr`），这条优化反而关掉：两条 GPU 优化路径不叠加，代码在这里划了清楚的边界。
+`(1)` 采样器有自己的 `sampler_backend`，与主执行器的后端相互独立配置：GPU 主后端可以配 GPU 采样器，让 logits 不离开显存。`(2)` `gpu_sampler_max_top_k_` 存下 top-k 的 `k`。GPU 上做 top-k 要预先知道候选个数才能开好缓冲区，这个字段就是给 GPU 采样路径准备的（`.h:354`）；预分配的是"最多取 k 个候选"这块显存，避免每步动态分配。`(3)` `sampler_handles_input_` 是关键开关。注意它的最后一个条件 `!runs_embedding_on_gpu`：如果 embedding 本来就在 GPU 上查（`embedding_lookup_ == nullptr`），这条优化反而关掉。两条 GPU 优化路径不叠加，代码在这里划了清楚的边界。
 
-这正是第 18 问的答案。decode 是整个生成里最频繁的操作，每一步省掉这一次数据搬运，累积起来不小。（这一项很难从整机数字中单独剥离，本书未单测；两个后端的整体差距见附录 D——本书基准上 gpu 的 decode 约为 cpu 的 2 倍、prefill 约 3.9 倍〔基准 D〕。）
+### 让 token 不出显存：输入张量接管的完整通路
+
+开关为真只是前提，"省搬运"到底省在哪几步，要看采样器如何接管 decode 的输入张量。这条路径此前正文一句带过，这里摊开。
+
+`sampler_handles_input_` 为真时，`InitializeSampler` 先给采样器备好两块输入缓冲——decode 的 position 张量和 attention mask 张量的"上一步"副本（`decode_prev_input_pos_`、`decode_prev_mask_`），然后做一次"设一次再复位"的预热（`llm_litert_compiled_model_executor.cc:1383 @ v0.13.1`）：
+
+```cpp
+RETURN_IF_ERROR(SetSamplerInputHandling(/*reset=*/false));
+RETURN_IF_ERROR(SetSamplerInputHandling(/*reset=*/true));  // (1)
+```
+
+`(1)` 先 `false` 再 `true` 这一对调用是有意的：注释写着"Set, then reset the input handling to get the underlying model ready, but not to bind the input tensors"。先设一遍让底层模型把输入形状准备好，再复位解绑，避免在初始化阶段就把张量绑死。真正的绑定发生在 decode 循环里。
+
+绑定的核心是 `SetSamplerInputHandling`（`llm_litert_compiled_model_executor.cc:1404 @ v0.13.1`），它把一组张量指针和一个回调函数一起交给采样器：
+
+```cpp
+return sampler_->SetInputTensorsAndInferenceFunc(
+    &decode_input_buffers_[signatures_.input_tokens], &decode_prev_input_pos_,
+    &decode_input_buffers_[signatures_.input_positions],
+    has_input_attn_mask ? &decode_prev_mask_ : nullptr,
+    has_input_attn_mask ? &decode_input_buffers_[*signatures_.input_attn_mask]
+                        : nullptr,
+    BindTensorsAndRunDecodeStatic, this);  // (1)
+```
+
+采样器拿到的第一个指针是 decode 的输入 token 张量（`input_tokens`）。含义是：采样器选出下一个 token 之后，直接把它写进这块输入张量——这块张量正是下一步 decode 的输入。token 从产生到被消费，全程留在设备缓冲里，不经过一次 device→host→device 的往返。`(1)` 最后传进去的 `BindTensorsAndRunDecodeStatic` 是一个静态回调，采样器在设备上定完 token 后回调它推进下一步 decode（`llm_litert_compiled_model_executor.cc:952 @ v0.13.1`）：
+
+```cpp
+int LlmLiteRtCompiledModelExecutorBase::BindTensorsAndRunDecodeStatic(
+    void* arg) {
+  auto self = static_cast<LlmLiteRtCompiledModelExecutorBase*>(arg);
+  auto status = self->BindTensorsAndRunDecode(/*output_logits=*/nullptr);  // (1)
+  // ...
+  return status.raw_code();
+}
+```
+
+`(1)` 回调里绑好张量就直接跑下一步 decode。控制权在设备侧循环，CPU 不必在每步之间介入把 token 搬来搬去。这就形成"token 不出显存"的完整回路：采样在 GPU 上完成，选出的 token 写回设备输入张量，回调在设备上触发下一次 decode。
+
+还有一处双缓冲的细节。position 和 mask 张量需要区分"这一步"和"上一步"，因为 decode 推进时当前步要读上一步的位置。`SwapSamplerInputTensors` 用 `std::swap` 把"当前"和"上一步"两块缓冲对调指针，再重新绑定（`llm_litert_compiled_model_executor.cc:1391 @ v0.13.1`）：读旧写新、交换指针，不额外分配也不拷贝内容。这与第 6 章 KV cache 的双缓冲是同一套思路，都用指针交换回避对同一块缓冲的读写冲突。
+
+这正是第 18 问的答案。两个后端的整体吞吐差距见附录 D：本书基准（Apple M5 Pro，Gemma 4 E4B，context 1024，decode 128 token）上 gpu 的 decode ≈ 50.6 tok/s、cpu ≈ 24.7 tok/s，gpu 约为 cpu 的 2 倍；prefill 在同条件下 gpu ≈ 999、cpu ≈ 259，gpu 约为 cpu 的 3.9 倍〔基准 D〕。片上采样只是这个整体差距里的一项，无法单独计价。
 
 ## NPU：能效最高，接口最封闭
 
