@@ -306,13 +306,4 @@ struct NpuAuxiliaryContext {                         // (3)
 
 > 提示与参考答案见附录 E。
 
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- 后端枚举与工厂：`runtime/executor/executor_settings_base.h:34`（`Backend`，`CPU_ARTISAN`:39、CPU/GPU 于 `:45`/`:48`、`NPU`:54）；`runtime/executor/llm_litert_compiled_model_executor_factory.cc`（`CreateLlmLiteRtCompiledModelExecutor`:165；`GetBackend`:168；分派:170/174；default 拦截:177；CPU/GPU 内部动/静态分派:139；读取 prefill/decode 子图:135）。
-- 片上采样：`runtime/executor/llm_litert_compiled_model_executor.h`（`InitializeSampler`:160；`gpu_sampler_max_top_k_`:354）；实现于 `.cc:1335`（`GetSamplerBackend`、`sampler_handles_input_`、`runs_embedding_on_gpu`）。
-- 线程与亲和性：`runtime/framework/threadpool.h:51`（`max_num_threads` 构造:57）；`runtime/engine/cpu_affinity_utils.h`（`IsPixelTensorDevice`:25、性能核:29、设亲和性:35）；实现于 `.cc`（`kTensorAffinities` 表:57、SoC 识别:80、`SetCpuAffinity`/`sched_setaffinity`:103）；调用点 `runtime/engine/engine_factory.h:136`；线程数默认 `runtime/executor/llm_executor_settings.h:120`、CLI 接线 `runtime/engine/litert_lm_lib.cc:528`（`--num_cpu_threads`）。
-- NPU：`runtime/executor/llm_litert_npu_compiled_model_executor.h`（类:51、类注释:50；`LatencyStats` 逐段计时:60-82；`EmbedderContext`:266、`EmbedderPerLayerContext`:287、`NpuAuxiliaryContext`:316/注释:314）。
-
 <!-- NPU 无真机，全程标注"基于代码分析"。片上采样省多少、cpu 线程数扫描、cpu vs gpu 对比 待基准 D 回填〔基准 D〕。#2281 现象按【文档】级引用，成因为基于浮点常识的解释、未臆测 issue 内部。图 8-2(数据路径) 表 8-1(权衡) 规格见 notes.md，本轮出签名图 8-1。 -->

@@ -369,18 +369,4 @@ LoRA 的价值恰好呼应本章主题：它是"变体"的最省成本形态—�
 
 > 提示与参考答案见附录 E。
 
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- loader 层：`runtime/util/litert_lm_loader.h:100`（`LitertLmLoader`）；`GetSectionBuffer` 双检锁 `litert_lm_loader.cc:270`、`MapSection` 对齐补偿 `:141`；Windows 分配粒度 `runtime/util/memory_mapped_file_win.cc:95`。内存口径：`LogMemoryUsage`，`runtime/engine/litert_lm_lib.cc:427`。
-- LoRA 机制：`LoraData` 类注释与 `GetLoRARank`，`runtime/util/lora_data.h:28,54`；`LoRA::Init` 逐张量拷贝 `runtime/components/lora.cc:70`、`GetLoRABuffer` 引用计数 `:106`。
-- `litertlm_print` 实现：`PrintKeyValuePair` 的 VData 分派 `schema/core/litertlm_print.cc:61`；段遍历与 `LlmMetadataProto` 特判 `:155`、`:181`。
-
-- 激活精度与后端：`runtime/executor/executor_settings_base.h`（`ActivationDataType`:62，FLOAT32/16、INT16/8 于 `:64`–`:73`；`Backend`:34，`GPU_ARTISAN`/`CPU`/`GPU`/`GOOGLE_TENSOR_ARTISAN`/`NPU` 于 `:42`–`:54`）。
-- `.litertlm` 格式：`schema/core/litertlm_header_schema.fbs`（`union VData`:39；`KeyValuePair`:56；`AnySectionDataType`:72；`SectionObject`:91，`begin_offset`/`end_offset` 于 `:93`–`:94`，`BLOCK_SIZE=16*1024` 见 `:90` 注释）；`schema/core/litertlm_section.h`（写路径流类：`FileBackedSectionStream`:98；`ProtoBufSectionStream`:189；`ZlibBackendedSectionStream`:252）。
-- mmap 加载：`schema/core/litertlm_read.h`（`ReadHeaderFromLiteRTLM`:116；按段读的 mmapped buffer 约定:151）；`schema/core/litertlm_read.cc`（`ReadSectionIntoTFLite`:219 用 `MMAPAllocation`；`ReadSectionIntoTFLiteMappedFile`:238 用 `MemoryMappedFile::Create`）。
-- 并行加载：`c/engine.h:295`（`litert_lm_engine_settings_set_parallel_file_section_loading`，默认 true）。
-- LoRA：`runtime/components/lora.h:40`（`LoRA`）；`runtime/components/lora_manager.h`（`LoraManager`:39；`LoadLoRA`:57；`lora_data_`/`loras_` 两张表:75–76）；`runtime/components/lora_manager.cc:46`（`LoadLoRA` 只填 `lora_data_`，后端资源由 `UseLoRA` 于 `:57` 惰性创建）。
-
 <!-- litertlm_print 实剖已完成（附录 D 第六节，自研扫描替代）。仍开放：int4 vs int8 三角（无同模型两种量化产物）、并行加载 on/off 冷启动（CLI 未暴露开关）；量化内部(分组/scale)未展开，仅到"权重压 4bit + 激活精度谱系"层面，未臆测未核验的细节。图 7-2(mmap/并行加载) 与表 7-1(量化三角) 规格见 notes.md，本轮出签名图 7-1。 -->

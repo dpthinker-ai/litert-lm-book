@@ -406,15 +406,4 @@ Section 2:
 
 > 提示与参考答案见附录 E。
 
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- `litert-lm` CLI 子命令注册：`python/litert_lm_cli/main.py:52`；`run` 的 Engine/Session 创建与流式循环：`python/litert_lm_cli/commands/run.py:240,100`；`benchmark` 输出：`python/litert_lm_cli/commands/benchmark.py:102`。
-- C++ 演示程序 `litert_lm_main` 的一次推理主干：`runtime/engine/litert_lm_main.cc:113`；flag 定义在 `:52`（`--backend`）、`:54`（`--model_path`）；构建见附录 C。
-- benchmark 指标定义：`c/engine.h` 的 `litert_lm_benchmark_info_*` 系列（TTFT `:583`、Init `:591`、prefill/decode 吞吐 `:634`/`:643`）；文本输出格式见 `runtime/engine/io_types.cc:473`。
-- 测量语义：`BenchmarkInfo` 类声明 `runtime/engine/io_types.h:420`；turn 计时器 `io_types.cc:307`、吞吐算式 `:434`、TTFT 算式 `:455`；benchmark 强制同步 `runtime/core/tasks.cc:435`；`ShouldStop` 的 benchmark 分支 `:86`（全文见第 5 章）。KV cache 反解练习的数据：附录 D（cpu/gpu，256 与 4096 上下文档）。
-- 五层落到具体文件：接口层 `runtime/engine/engine.h:70`（`SessionInterface`）；编排层 `runtime/core/tasks.cc:413`（`Prefill`）、`:86`（`ShouldStop`）、`:571`（decode 循环）；执行层 `runtime/executor/llm_executor_base.h:40`（`LlmExecutorBase`）。架构分层与设计原则改编自本书伴生的代码地图（附录 B）。
-- `.litertlm` 分段结构与打印工具：`schema/core/litertlm_print.cc:156`；section 数据类型枚举 `schema/core/litertlm_utils.cc:31`；元数据字段 `runtime/proto/llm_metadata.proto`。
-
 <!-- 基准数字已回填（附录 D）；表 2-2 已定稿为完整 20 问。 -->

@@ -364,14 +364,4 @@ num_draft_steps = input_pos_dims[0] - 1;                         // (1)
 
 > 提示与参考答案见附录 E。
 
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- MTP drafter 实现：`runtime/executor/llm_litert_mtp_drafter.cc`（`Draft` 三步骨架 :453、463-469；`RunDraftingLoop` 循环体 :328、336-370，activation 两条来源分支 :346-353、回喂 :369；`ConcatenateEmbeddingsAndActivations` :80 起；`PrepareVerifierInputBuffers` :374-423，`input_pos`/mask/`LookupPrefill`/`Duplicate`/`param_tensor` 分支 :380-472 各字段；`PrepareVerifierOutputBuffers` :424；`RunVerification` :437、440-450；接受循环 :471-484；输出 :492-493；接受率统计 :494-495、析构打印 :164-172；`CreateGreedySampler` :65-79，两处采样器构造 :263-272；接受判定严格相等 :475；`num_draft_steps` 由 verify signature 形状定 :250-256；`"verify"` signature 常量 :62、取用 :227；drafter section 装载 `GetTFLiteModel(kTfLiteMtpDrafter)` :196；drafter 独立小模型成员 `mtp_drafter_model_`）。
-- 执行器集成：`runtime/executor/llm_litert_compiled_model_executor.cc`（`Decode` MTP 分支 :1003-1082，稳态分支 Draft 调用 :1036、首个 decode 分支 :1073、`current_step` 累加 :1042/1077、真 token 回插 :1079；drafter 装载条件 :1810-1818；`ran_decode` 置位 :517/:969）。
-- 能力声明与 CLI 链路：`schema/capabilities/speculative_decoding.h`（`HasSpeculativeDecodingSupport` :33、44）；探测逻辑 `schema/capabilities/speculative_decoding.cc:40-73`（扫 section 的 `model_type` 是否为 `"tf_lite_mtp_drafter"`）；CLI 选项 `python/litert_lm_cli/common.py:108`、映射 `parse_speculative_decoding :21-41`；C++ 默认关 `runtime/engine/shared_flags.cc:149`；注入执行器设置 `runtime/engine/litert_lm_lib.cc:592`。
-- 推测采样的分布无损性（文献对照）：Y. Leviathan, M. Kalman, Y. Matias, *Fast Inference from Transformers via Speculative Decoding*, ICML 2023；C. Chen 等, *Accelerating Large Language Model Decoding with Speculative Sampling*, 2023（【文档】级，说明经典推测采样的概率接受与本章贪心接受路径的差别）。
-- 「约 3 倍」：Google 官方博客 *Accelerating Gemma 4: faster inference with multi-token prediction drafters*，https://blog.google/innovation-and-ai/technology/developers-tools/multi-token-prediction-gemma-4/（经 LiteRT-LM 仓库 README 索引，访问 2026-07-05）。本书实测未复现，见〔基准 D〕。
-
 <!-- MTP 开/关已实测（附录 D）：差异在抖动内、未复现 3x，正文已如实报告并以接受率经济学（含闭式加速比公式与盈亏平衡分析）解释。文体接受率对比未做（CLI 不输出接受率，已在正文给出插桩方案）。#2227 无真机，成因为经济账推断、按【文档】级引 issue。图 9-2(接受率-收益曲线) 表 9-1(开/关实测) 需实测数据，待基准 D；本轮出签名图 9-1(时序)。 -->

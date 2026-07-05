@@ -369,13 +369,3 @@ id 是名字，embedding 才是模型真正计算的对象。这半步平时不�
 5. **脆弱性演示。** 构造一个模板片段，使 `EditTemplateForMinijinja` 的某条正则产生误改写（提示：让 `.startswith(` 出现在不该被改写的位置）。
 
 > 提示与参考答案见附录 E。
-
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- Engine / Session 接口：`runtime/engine/engine.h`（Example usage:44；SessionInterface:70；GenerateContent:112；GenerateContentStream:128；RunPrefill:174；RunDecode:188；Clone 共享前缀示例:231）。
-- 对话配置与 diff：`runtime/conversation/conversation.h:56`（ConversationConfig）；`runtime/conversation/conversation.cc`（GetPrefillTextForMessages:751；前缀相减:806/813/820；GetInputDataVectorForMessages:824）。
-- 消息类型：`runtime/conversation/io_types.h:26`（Message = nlohmann::ordered_json）。
-- 分词：`runtime/components/tokenizer.h:41`（Tokenizer 抽象）；`runtime/components/sentencepiece_tokenizer.cc:65`（TextToTokenIds）；`runtime/components/huggingface_tokenizer.cc:55`（TextToTokenIds）；SentencePiece 解码的 byte-token 处理:84。
-- token id 到 embedding：`runtime/components/embedding_lookup/embedding_lookup.h:63`（LookupPrefill 批量重载）。

@@ -368,17 +368,4 @@ KV cache 是用内存换计算的经典权衡：它省掉重复的注意力计�
 
 > 提示与参考答案见附录 E。
 
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- KV cache 接口：`runtime/executor/kv_cache_interface.h`（`KVCacheInterface`:28；`Serialize`:39；`Load`:42；`SelectAndCopyFrom`:50；`BroadcastAndCopyFrom`:58；`DeepCopy`:61，"expensive operation" 注释:60）；LiteRT 后端桩实现 `Serialize`/`Load`:`runtime/executor/litert/kv_cache.h:45-51`（返回 `UnimplementedError`，单测 `SerializeNotSupported`:`kv_cache_test.cc:117`）；具体实现 `LitertKVCache::DeepCopy`:`runtime/executor/litert/kv_cache.cc:380`。
-- 批处理拷贝：`runtime/executor/litert/kv_cache.cc`（`SelectAndCopyFrom`:322；`BroadcastAndCopyFrom`:351；`SelectAndCopyBuffer`:156；`BroadcastAndCopyBuffer`:179；`bank_2` 为空断言:325-326、354-355）。
-- 预留大小与终止：`runtime/engine/engine_settings.cc`（默认值计算:293-301）；`runtime/core/tasks.cc`（`kDefaultMaxNumTokens`:72；`TryGetMaxNumTokens`:73；`current_step >= max_num_tokens` 终止:99-100）。
-- 固定/动态形状与 attention mask：`runtime/executor/litert/kv_cache.cc`（`context_size` 与 `is_dynamic_kv_cache` 推断:302-311）；`runtime/executor/litert_compiled_model_executor_utils.cc`（`FillSingleBufferCacheParamTensor`:318；`FillAttentionMask`:339，可见位置填充:362-366）。
-- 双缓冲与单缓冲：`runtime/executor/llm_litert_compiled_model_executor.h`（注释:327-328；`kv_cache_buffers_1_/2_`:329-330；读写指针:331-333；`gpu_optimized_single_buffer_cache_`:379）；`runtime/executor/llm_litert_compiled_model_executor.cc`（构造初始化:199-200；单缓冲判据:428-429；prefill `std::swap`:738；decode `std::swap`:947；prefill 参数张量填充:673-677；decode 参数张量填充:904-907）。
-- 克隆与恢复：`runtime/core/session_advanced.cc`（`Clone`:389；`CloneAsyncLocked`:412）；执行器侧 `CloneContext`:`llm_litert_compiled_model_executor.cc:1288`；`CloneKVCacheBuffers`:1243；`RestoreKVCacheBuffers` 含 `TODO b/452977992`:1253-1263；`RestoreContext` 的 step 0 分支:1305-1319。
-- 检查点与回退：`runtime/core/session_advanced.cc`（`SaveCheckpoint`:455；`RewindToCheckpoint`:467）；`CheckpointInfo` 结构:`session_advanced.h:257-260`。
-- 会话状态：`runtime/engine/engine.h`（`Clone`:245，用法示例注释:238；`CloneAsync`:263；`SaveCheckpoint`:270；`RewindToCheckpoint`:277）；`runtime/executor/llm_executor_io_types.h`（`RuntimeState`:78，"不含 KVCache 状态" 注释:75-77；`LlmContext`:92）。
-
 <!-- 实验（--max-num-tokens 扫描解释 #2568、Clone 分叉、get_token_count 增长）数字待基准 D 回填〔基准 D〕。KV cache 公式已用实剖真值补齐（24 层/int8/28 KiB per token，附录 D 第六节）。图 6-2(增长)、图 6-3(状态分叉) 与表 6-1(内存账) 规格见 notes.md，本轮先出签名图 6-1(双缓冲)。 -->

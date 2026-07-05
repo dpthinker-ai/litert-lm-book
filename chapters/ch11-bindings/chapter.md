@@ -527,14 +527,4 @@ fake 还有一条容易被忽略的能力：它能模拟约束解码（第 9 章
 
 > 提示与参考答案见附录 E。
 
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- C ABI 声明：`c/engine.h`（不透明句柄 `LiteRtLmEngine`:41、`LiteRtLmSession`:44；`litert_lm_engine_create`:380、`_delete`:386；`create_session`:396、`session_delete`:403；`run_prefill`:421；`LiteRtLmInputDataType` 枚举与 `LiteRtLmInputData` 结构:243；`LiteRtLmStreamCallback`:652；`run_decode_async`:665）。
-- C ABI 实现：`c/engine.cc`（`CreateCallback`:50；`ToEngineInputData`:127；不透明句柄完整定义 `struct LiteRtLmEngine`:176、`struct LiteRtLmConversation`:192；`litert_lm_engine_create`/`_delete` 实现:537、:556；`run_decode_async`:653；`get_response_text_at`:725；`render_message_to_string` 收尾:1096、寄养成员写入:1115）。
-- 各语言绑定：`python/litert_lm/_ffi.py`（`c_string_p`:24；`LiteRtLmSamplerParams`:36；`engine_create`/`_delete` 的 `restype`/`argtypes`:170）；`python/litert_lm/engine.py:126`（`close`/`__del__`/`__exit__`）；`kotlin/.../LiteRtLmJni.kt`（`object LiteRtLmJni`:19；`external fun nativeCreateEngine`:52，返回 `Long`）；`kotlin/.../Engine.kt:36`（`AutoCloseable`；`close`:98）；JNI 原生实现 `kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc`（直连 C++ 头 `#include "runtime/engine/engine.h"`:37；`nativeCreateEngine` 的 `engine->release()`:542；`nativeDeleteEngine` 的 `delete reinterpret_cast<Engine*>`:615；`NewStringStandardUTF`:104）；`swift/Engine.swift`（`import CLiteRTLM`:17；`public actor Engine`:28；`handle: OpaquePointer?`:38；`initialize` 约 10 秒注记:50）；`swift/Conversation.swift:65`（`deinit` 释放）；`js/packages/core/src/engine.ts`（Embind `.delete()`）。
-- 生命周期案例：上游 `LiteRT-LM#2589`（单会话约束）、`#2613`（Swift `close()`），【文档】级。
-- 可测试性：`runtime/executor/fake_llm_executor.h:37`；`fake_llm_executor.cc:128`（`Prefill` 脚本比对）、`:177`（`Decode` 的约束解码模拟分支）。构建：见附录 C。
-
 <!-- #2589/#2613 为 open issue，作缺陷案例研究、按【文档】级引，不宣称已修复。实测（Python 与 C++ 行为一致、给 FakeLlmExecutor 写新用例）待基准 D/环境。表 11-1(各语言 FFI 机制) 规格见 notes.md，本轮出签名图 11-1。 -->

@@ -296,12 +296,4 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 
 > 提示与参考答案见附录 E。
 
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- 多模态：`runtime/components/preprocessor/image_preprocessor_utils.cc:26`（`GetAspectRatioPreservingSize` 缩放/切块，头文件声明 `image_preprocessor_utils.h:28`）；`runtime/executor/vision_litert_compiled_model_executor.cc:454`（`Encode` 两级串联，头文件声明 `.h:57`）；`runtime/executor/llm_executor_io_types.h`（`ExecutorVisionData`:216；`kSpecialToken`:220；对齐示例:202；`ExecutorAudioData`:277，注释:263，`kSpecialToken`:281）；`runtime/executor/llm_executor_base.h:178`（`FillVisionEmbeddings`，带 `image_index`）；`runtime/executor/audio_litert_compiled_model_executor.cc:941`（音频 `Encode`）。
-- 约束解码：`runtime/components/constrained_decoding/constrained_decoder.h:48`（循环用法注释:39-47）；`constrained_decoder.cc:73`（`MaskLogits` 双重循环 + `float` 最小值）；`bitmap.h:21`（`Bitmap::Get`）；`llg_constraint.cc`（`Start`/`ComputeNext`/`ComputeBitmap` 三次 FFI、掩码解包:57）；llguidance（`PATCH.llguidance*`）；`docs/api/cpp/constrained-decoding.md`。
-- Tool Use：`runtime/conversation/io_types.h:30`（`JsonPreface`，`tools`:36，`Preface` variant:59）；`runtime/components/tool_use/fc_tool_format_utils.h`（`FormatValueAsFc`，FC 格式）；`fc_parser_utils.h:41`（`ParseFcExpression`）；`antlr/AntlrFcParser.g4`（六条规则文法，另有 `AntlrJson`/`AntlrPython`）；`docs/api/cpp/tool-use.md`。
-
 <!-- 补读：vision/audio executor 已贴 .cc（Encode 两级串联 encoder→adapter），patchify 贴 .cc（GetAspectRatioPreservingSize 缩放对齐公式），约束解码贴 MaskLogits 双重循环 + llg_constraint FFI 三调用 + 掩码位解包，tool_use 贴 AntlrFcParser.g4 六条文法 + FC 格式差异 + ParseFcExpression。实测（图片端到端、visual token 计数、约束解码开/关工具调用成功率）待基准 D 回填〔基准 D〕。双主题章，两半已切干净。图 10-2(约束解码逐步屏蔽) 表 10-1(Tool Use 各环节) 规格见 notes.md，本轮出签名图 10-1。 -->

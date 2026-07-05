@@ -372,12 +372,4 @@ for (int i = 0; i < num_output_candidates_; ++i) {
 
 > 提示与参考答案见附录 E。
 
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- decode 循环与单步：`runtime/core/tasks.cc`。本章贴出：主循环骨架（`while (true)`:486，含取消探测与 `ShouldStop` 调用）；`ShouldStop` 纯函数全文（:86）；`DecodeAndSample` 内/外采样分岔（:319，外部路径 `DecodeLogits`:342、`MaskLogits`、`SampleToIdAndScoreBuffer`，内部路径 `executor_.Decode()`）；`Run` 里的 BPE 补全（`MergeTokenIds`:175、`IsIncompleteBpeSequence`:181）与停止词暂存/释放（:187）。相关：`DecodeOneStep` 类:111；`Decode` 入口:446；内/外采样注释:109。
-- 采样器：`runtime/components/sampler.h`（`Sampler` 抽象:34，贴出核心方法 `SampleToIdAndScoreBuffer`:45）；`runtime/components/top_p_cpu_sampler.h`（`TopPSampler`:30，贴出 `Create` 签名:38，含 k/p/temperature/seed）。
-- 停止符检测：`runtime/components/stop_token_detector.h`（`StopTokenDetector`:45；`ProcessTokens`:67；贴出 `MaxPartialStopTokenLength`:93 含返回值语义注释；`GetStopTokensFound`:89；`AllDone`:85）。
-
 <!-- 温度对比已实测回填（附录 D 第八节）。停止词暂存：CLI 不暴露自定义停止词、默认停止符为单 token，不可从命令行触发，正文已据实说明（结案）。 -->

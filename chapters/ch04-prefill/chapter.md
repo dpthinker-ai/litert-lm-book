@@ -287,16 +287,3 @@ prefill 是算力受限的一步，快，且有静态/动态两条实现路径�
 5. **取消语义。** prefill 阶段的取消为什么依赖分块边界，而 decode 的取消能在每一步生效？
 
 > 提示与参考答案见附录 E。
-
-## 参考
-
-> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
-
-- prefill 编排入口：`runtime/core/tasks.cc:413`（`Prefill`，含 `>=` 越界校验与 `wait_for_completion` 处理）。
-- 静态路径：`runtime/executor/llm_litert_compiled_model_executor.cc:1503`（`Static::Prefill`，工单循环与 async 判定在 :1537）。
-- 动态路径分块：`runtime/executor/llm_litert_compiled_model_executor.cc:1841`（`Dynamic::Prefill`，:1855 起为分块循环）。
-- 内部实现与 pending token / current_step：`runtime/executor/llm_litert_compiled_model_executor.cc:543`（基类 `PrefillInternal`）。
-- signature 排序与选路：`runtime/executor/litert_compiled_model_executor_utils.h:43`（`SortedPrefillSignatureMap`）；`runtime/executor/litert_compiled_model_executor_utils.cc:248`（`GetOptimizedPrefillWorkGroups`）。
-- 取消与限长参数：`runtime/executor/llm_executor_io_types.h:376`（`ExecutorPrefillParams`；`GetCancelFlag` / `GetMaxPrefillSequenceLength` 在 v0.13.1 尚未被 executor 消费）。取消实际生效在 decode 循环 `runtime/core/tasks.cc:487`，会话侧置标志在 `runtime/core/session_advanced.h:68`。
-- 异步队列原语：`runtime/framework/execution_queue.cc`（`ExecutionQueue`，锁外执行在 :97）。
-- 任务层调度：`ThreadPool::Schedule` 弹性扩容 `runtime/framework/threadpool.cc:78`、`RunWorker` 锁外执行 `:180`；`ThreadedExecutionManager` 双单线程池构造 `runtime/framework/resource_management/threaded_execution_manager.cc:74`、回调改投回调池 `:438`（含 TODO b/476205457）、`Schedule` 到执行池 `:311`、`QueueTask` 依赖检查 `:301`。
