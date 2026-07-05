@@ -294,6 +294,5 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 4. **两级结构。** 音频链路中编码器与适配器的输入输出各是什么形状（用实剖数字）？为什么要拆成两级而不是一个模型？
 5. **路径约束。** 约束解码为什么只能工作在外部采样路径上？内部采样路径缺了哪一环？
 
-> 提示与参考答案见附录 E。
 
 <!-- 补读：vision/audio executor 已贴 .cc（Encode 两级串联 encoder→adapter），patchify 贴 .cc（GetAspectRatioPreservingSize 缩放对齐公式），约束解码贴 MaskLogits 双重循环 + llg_constraint FFI 三调用 + 掩码位解包，tool_use 贴 AntlrFcParser.g4 六条文法 + FC 格式差异 + ParseFcExpression。实测（图片端到端、visual token 计数、约束解码开/关工具调用成功率）待基准 D 回填〔基准 D〕。双主题章，两半已切干净。图 10-2(约束解码逐步屏蔽) 表 10-1(Tool Use 各环节) 规格见 notes.md，本轮出签名图 10-1。 -->
