@@ -151,6 +151,26 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 (1) `Preface` 是开场部分：把系统指令、few-shot 示例、可用工具描述组织在一起，定义整段对话的背景。(2) `PromptTemplate` 默认从模型元数据中的 Jinja 模板读取，也可在此覆盖。(3) 约束解码（constrained decoding）开关，开启后模型被强制输出结构合法的函数调用（见第 10 章）。(4) `prefill_preface_on_init` 决定是否在创建对话时就把 Preface 预先 prefill 进 KV cache：代价是初始化耗时增加，收益是首条用户消息的响应更快。这四个开关中，最后一个会在下一节的增量渲染里用到。
 
+### 模板引擎的真身：MiniJinja 与一层正则改写
+
+「渲染」由谁执行值得专门交代，因为它跨了一次语言边界。`PromptTemplate::Apply` 底层调用的不是 C++ 实现的 Jinja，而是 Rust 库 MiniJinja，经生成的 FFI 头接入（`runtime/components/prompt_template.cc:26 @ v0.13.1` 的 `#include "runtime/components/rust/minijinja_template.rs.h"`）。MiniJinja 是 Jinja2 的 Rust 重实现，但与 Python 版并非完全兼容：它不支持在模板里调用任意 Python 方法，而 HuggingFace 模型的 `tokenizer_config.json` 里的聊天模板恰恰常写 `s.startswith("foo")` 这类 Python 习语。LiteRT-LM 的办法是渲染前先用一组 RE2 正则把模板改写成 MiniJinja 认识的语法（`EditTemplateForMinijinja`，`prompt_template.cc:40 @ v0.13.1`）：
+
+```cpp
+  RE2::GlobalReplace(&modified_template, R"regex(\.startswith\((.*?)\))regex",
+                     R"( is startingwith \1)");                        // (1)
+  RE2::GlobalReplace(&modified_template, R"regex(\.endswith\((.*?)\))regex",
+                     R"( is endingwith \1)");
+  // ...
+  RE2::GlobalReplace(&modified_template, R"regex(\.split\((.*?)\)\[0\])regex",
+                     R"( | split(\1) | first)");                       // (2)
+  // ...
+  RE2::GlobalReplace(&modified_template, R"regex({% generation %})regex", ""); // (3)
+```
+
+(1) 把 Python 的方法调用改写成 MiniJinja 的测试语法，(2) 把下标访问改写成过滤器管道，共十余条规则；(3) 直接删掉 MiniJinja 不认识的 `{% generation %}` 标记。这层改写是文本级的正则替换，不是语法解析，脆弱性是明摆着的：模板里若出现规则未覆盖的 Python 习语、或恰好长得像规则左边的普通文本，渲染就会出错或变形。工程上它换来的是兼容大量现成 HuggingFace 模板而不必逐个手改。
+
+这层实现与下一节的关系在于一个前提：diff 增量的整个算法建立在「同一模板对同一输入的渲染是确定的」之上。渲染两次、相减取尾，只有每次渲染逐字节一致才成立。MiniJinja 的确定性渲染提供了这个保证；而正则改写发生在渲染之前、只做一次，不影响确定性。
+
 至此用户输入已被渲染为一段带角色标记的纯文本。下一步是把它切成 token，但在此之前，多轮对话有一个绕不开的问题。
 
 ## 增量渲染：多轮对话不重算历史
@@ -273,7 +293,51 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
                                    size_t byte_offset) = 0;         // (2)
 ```
 
-(1) prefill 阶段一次查一批 token 的 embedding，拼接后写进 `output_tensor`。(2) 那个 `byte_offset` 参数是给增量续写用的：当 `output_tensor` 里已经有一部分 embedding，新的一批从指定字节偏移接着写。这和上一节 diff 增量、上上节 Clone 共享前缀是同一种"接着已有的往下补，别从头来"的思路，只不过这次落在了张量的字节层面。id 是名字，embedding 才是模型真正计算的对象。这半步平时不用你操心，但记住它：第 10 章讲图片怎么进模型时，它会成为主角——图像编码器吐出的正是这种 embedding，绕过了 tokenizer 直接从这一步接入。
+(1) prefill 阶段一次查一批 token 的 embedding，拼接后写进 `output_tensor`。(2) 那个 `byte_offset` 参数是给增量续写用的：当 `output_tensor` 里已经有一部分 embedding，新的一批从指定字节偏移接着写。这和上一节 diff 增量、上上节 Clone 共享前缀是同一种"接着已有的往下补，别从头来"的思路，只不过这次落在了张量的字节层面。
+
+### 查表其实是跑一个编译子图
+
+「查表」这个说法需要修正一处直觉。文本实现 `EmbeddingLookupText` 的单 token 路径长这样（`LookupInternal`，`runtime/components/embedding_lookup/embedding_lookup_text.cc:50 @ v0.13.1`）：
+
+```cpp
+  if (token < 0) {
+    memcpy(buffer.data(), default_embedding_vector_.data(), buffer.size());  // (1)
+    return absl::OkStatus();
+  }
+
+  // The input tensor size was verified when the model was loaded.
+  input_buffers_[0].Write(absl::MakeSpan(const_cast<const int*>(&token), 1));
+
+  compiled_model_->Run(signature_key_.value(), input_buffers_, output_buffers_); // (2)
+```
+
+(2) 是要点：embedding 不是对一张权重表做内存索引，而是把 token id 写进输入 buffer、**跑一次编译好的 TFLite 子模型**，输出才是那个高维向量。做成独立子图的收益与第 7 章的量化直接相关：嵌入表是量化过的（第 7 章那个混合方案里嵌入层压到 int4），「查表」实际包含解量化，编译器把这一步连同取数一起编译成算子；同时它与主模型解耦，多模态路径可以单独复用或替换。(1) 是一个此刻看着奇怪、到第 10 章会豁然的分支：**负数 token 不查表，直接返回一个预置的默认向量**。第 10 章图像占位符 `kSpecialToken` 的值恰是 -1，文本查表路径对这些占位先填默认向量，真正的图像 embedding 随后由视觉执行器覆写。
+
+批量的 `LookupPrefill`（`:148`）先做一串防御性校验（rank 一致、维度逐一相等、写入范围不越界），然后是主循环和一段收尾（`:225`）：
+
+```cpp
+  prefill_output_ptr += byte_offset;                       // (1)
+  for (int token : tokens) {
+    absl::Span<uint8_t> output_buffer(
+        reinterpret_cast<uint8_t*>(prefill_output_ptr), bytes_per_token);
+    RETURN_IF_ERROR(LookupInternal(token, output_buffer)); // (2)
+    prefill_output_ptr += bytes_per_token;
+  }
+
+  // If there are fewer tokens than the output tensor can hold, we need to treat
+  // the remaining tokens as if they were 0.
+  size_t starting_token = byte_offset / bytes_per_token + tokens.size();
+  size_t num_tokens_to_fill = prefill_output_layout.Dimensions()[1];
+  for (int i = starting_token; i < num_tokens_to_fill; ++i) {
+    memcpy(prefill_output_ptr, default_embedding_vector_.data(),  // (3)
+           bytes_per_token);
+    prefill_output_ptr += bytes_per_token;
+  }
+```
+
+(1) 指针先跳过 `byte_offset`，落到续写起点。(2) 批量路径没有批量算子：循环体逐 token 调 `LookupInternal`，也就是每个 token 跑一次子模型的 `Run`。(3) 是 padding 语义：输出张量是定长的（第 4 章的固定形状 prefill 窗口），token 数不足时，剩余槽位全部填上默认向量。源码注释说得直白：把剩下的位置当作 token 0 对待。第 4 章算 prefill 工单的填充浪费时，浪费的那些槽位在物理上就是这一段 `memcpy` 填出来的。
+
+id 是名字，embedding 才是模型真正计算的对象。这半步平时不用你操心，但记住它：第 10 章讲图片怎么进模型时，它会成为主角——图像编码器输出的正是这种 embedding，绕过 tokenizer 直接从这一步接入。
 
 至此，输入之路走完。你敲进去的一句话，历经"消息 → 套模板 → diff 增量 → 分词 → 查表"，变成了一串准备好的向量。
 
