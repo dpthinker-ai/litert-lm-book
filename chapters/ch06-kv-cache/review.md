@@ -18,7 +18,7 @@
 
 - [x] `scripts/lint_prose.sh chapters/ch06-kv-cache/chapter.md` —— 0 命中（2026-07-05）
 - [x] 除 AI 味清单第 1-13 条：撰写时自查
-- [ ] 第 14 条 独立审校：**待独立会话或 prose-review skill 执行**（ch1-5 已审，ch6 待审）
+- [x] 第 14 条 独立审校：**已由独立审校会话执行（2026-07-05）**，判为"AI 味很淡、可放行"；升华式收尾/自夸形容词/括号内同义重述等问题已逐条修正，修后 lint 复跑 0 命中
 
 ## 待清零（补读/数据）
 - [ ] 实验数字（--max-num-tokens 扫描 #2568、Clone 分叉、get_token_count 增长）待基准 D 回填
