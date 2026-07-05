@@ -340,6 +340,12 @@ num_draft_steps = input_pos_dims[0] - 1;                         // (1)
 
 `(1)` G 直接读自 verify signature 的 `input_pos` 张量维度减一——signature 能同时喂进几个位置，G 就是几。verify 一次吃 G+1 个位置（源码注释 `[T = G + 1]`），减去起头那个真 token，就是草拟步数。一个模型草拟几步，在它被导出、signature 形状定死的那一刻就固定了，运行时只能读、不能改。这是第 4 章「固定形状」约束在推测解码上的又一次体现：连草拟几步这个看似是超参的量，也被烘焙进了 signature。这也解释了为何 `CreateGreedySampler` 构造 verifier 采样器时把 `sequence_size` 设为 `num_draft_steps + 1`（`:270`）：采样器的形状必须与 verify signature 一次输出 G+1 个位置对齐。
 
+<div class="aside-compare">
+
+推测解码的组织方式，llama.cpp 给出对照：draft 模型是一个独立的模型文件，用 `--model-draft` 在运行时指定（`llama.cpp/common/arg.cpp:3763 @ b9873`），配一套通用的草拟-验证循环（`common/speculative.cpp`），任何词表兼容的小模型都能当 drafter。LiteRT-LM 的 MTP 则把 drafter 作为一个段打包进同一个 `.litertlm`、verify signature 编进主模型（本章实剖）。前者自由：可以给 70B 配 1B，随时换搭配；后者省心：模型发布者选好、验证好、一个文件带走，运行时按能力声明自动开启。自由度与开箱即用，仍是那道熟悉的选择题。
+
+</div>
+
 ## 小结
 
 推测解码是降低 decode 阶段带宽压力的第三类手段：不改带宽、不改模型，用一个便宜的 drafter 先预测、基础模型一次前向验一串，把开销最高的那次前向摊到多个 token 上。bonus 设计保证它论 token 数不亏，接受率决定它到底快多少。这一章把机制拆到了缓冲与集成两层：verify 走 prefill 形状、以因果 mask 保证逐位比对有意义、对 KV cache 做 `Duplicate()` 或填 `param_tensor`；drafter 每步拼接基础模型的隐藏态自回归下去，起点来自 decode 输出或上一轮接受位置；执行器 decode 用 `current_step += 产出数` 把成倍产出兑现为序列位置的成倍前进。当前这条 MTP 路径做的是贪心接受而非分布无损的推测采样，用一次整数相等比较换掉了分布回传与逐位概率计算。加速比可写成 E[产出] 除以固定额外开销比，存在一个盈亏平衡接受率；〔基准 D〕E4B 在合成负载下未复现 3 倍，与「接受率低则收益趋近于零」的公式相容，但因 CLI 不透出接受率而无法实证归因。

@@ -149,6 +149,12 @@ virtual absl::Status SampleToIdAndScoreBuffer(
 
 日志文本交代了背景：GPU 片上采样器不是编进主库的，而是独立的动态库（WebGPU 或 OpenCL 两种实现），运行时按符号名动态加载（`GetSamplerCApi`，定义 `:283`、OpenCL 调用点 `:360`，加载 `libLiteRtTopKOpenClSampler.so` 并解析 `Create`/`Destroy`/`SampleToIdAndScoreBuffer` 等 C 符号）。设备上没有这个 `.so` 时，加载失败返回 `kUnavailable`。(1) 处的判断把错误分成两类：真正的失败（参数错、初始化错）原样上抛；仅仅是「不可用」则 (2) 用显式标注的 `ABSL_FALLTHROUGH_INTENDED` 落进 CPU 分支，换 CPU 采样器继续跑。功能不受影响，代价是每步 decode 多一次 logits 回搬（上一节刚算过这笔账）。把可选的加速件做成独立动态库加运行时探测，主库不背 GPU 采样的依赖，没有它照样正确，这与第 8 章 CPU 亲和性只在特定设备上生效是同一种工程姿态：加速是机会性的，正确性是无条件的。
 
+<div class="aside-compare">
+
+llama.cpp 的采样只有一条路径：全部在宿主侧执行，做法是把采样器组装成一条链，按参数依次挂上 top-k、top-p、min-p、重复惩罚等环节（`llama.cpp/common/sampling.cpp:334`–`:358 @ b9873`），logits 每步都回到 CPU。这相当于只保留本章的「外部采样」路径：换来任意组合、任意顺序的灵活性，代价正是本章算过的那笔每步回搬。LiteRT-LM 的两条路径与片上采样，多出的是「纯聊天场景省掉回搬」的选项，少掉的是采样环节自由堆叠的空间。两家的取舍映射的是目标场景：一个偏研究与服务器部署的多样采样需求，一个偏端侧固定负载的每一毫秒。
+
+</div>
+
 常用的一种实现是 `TopPSampler`（`runtime/components/top_p_cpu_sampler.h:30 @ v0.13.1`）。它用一个类覆盖多种策略，靠参数区分：
 
 ```cpp

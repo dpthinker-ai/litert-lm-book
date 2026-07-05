@@ -114,6 +114,12 @@ table SectionObject {
 
 单文件加分段的设计服务于两件事：分发只需交付一个文件，以及下一节要讲的按需加载与并行加载。第 2 章介绍过的 `litertlm_print` 工具（`schema/core/litertlm_print.cc`）就是把这些段逐一列出来。本章末尾会走读它的实现，看它如何按类型分派打印各类元数据与段。
 
+<div class="aside-compare">
+
+同类问题的另一份答卷是 llama.cpp 的 GGUF：同样是单文件、键值元数据加张量数据、为 mmap 设计。一处对照很能说明「对齐为谁服务」：GGUF 的默认对齐是 32 字节（`GGUF_DEFAULT_ALIGNMENT`，`llama.cpp/ggml/include/gguf.h:46 @ b9873`），服务的是张量数据的访问对齐；`.litertlm` 的 16 KiB 对齐服务的是「每一段能独立按页 mmap」。粒度差了五百倍，因为二者优化的层不同：GGUF 把整个文件当一块映射、张量在其中寻址，`.litertlm` 要支持段级的按需映射与释放（本章 loader 一节）。LoRA 的挂法也成对照：llama.cpp 用运行时参数 `--lora` 挂独立适配器文件（`common/arg.cpp:2648`），与 LiteRT-LM 的独立 LoRA 文件加 `LoadLoRA`/`UseLoRA` 两拍装载思路相通，殊途同归。
+
+</div>
+
 ## 加载：mmap、按需分页与并行
 
 模型文件常有几 GB。如果加载时把整个文件读进内存，冷启动会等待很久。这是一个直接影响用户体验的冷启动延迟（cold-start latency）问题：从点击到模型可用之间的等待时间，与前面讨论的内存容量、带宽、功耗几类约束并列，是端侧另一项要优化的成本。

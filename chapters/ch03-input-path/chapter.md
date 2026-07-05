@@ -171,6 +171,12 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 这层实现与下一节的关系在于一个前提：diff 增量的整个算法建立在「同一模板对同一输入的渲染是确定的」之上。渲染两次、相减取尾，只有每次渲染逐字节一致才成立。MiniJinja 的确定性渲染提供了这个保证；而正则改写发生在渲染之前、只做一次，不影响确定性。
 
+<div class="aside-compare">
+
+「模板随模型文件走」不是 LiteRT-LM 独有的选择。llama.cpp 的 GGUF 格式同样把聊天模板作为元数据打包进模型文件，键名 `tokenizer.chat_template`（`llama.cpp/src/llama-arch.cpp:343 @ b9873`），渲染引擎则是自带的 C++ 实现（`common/chat.cpp`）。两家都面对同一个现实：Jinja 模板生态源自 Python，端侧运行时没有 Python，只能各自重新实现一个 Jinja 子集——LiteRT-LM 选了 Rust 的 MiniJinja 加一层正则改写，llama.cpp 选了自研 C++ 引擎。权衡的两端是维护成本（借力现成库 vs 自己维护）与兼容面（改写规则 vs 引擎逐步补齐），没有免费的一边。
+
+</div>
+
 至此用户输入已被渲染为一段带角色标记的纯文本。下一步是把它切成 token，但在此之前，多轮对话有一个绕不开的问题。
 
 ## 增量渲染：多轮对话不重算历史

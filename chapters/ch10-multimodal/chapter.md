@@ -242,6 +242,12 @@ mask_vector.push_back(sample_mask[i / 32] & (1 << (i % 32)));  // (1)
 
 (1) 第 `i` 个 token 的允许位，藏在第 `i / 32` 个 32 位字的第 `i % 32` 位——用位运算把它取出来。语法怎么写、GBNF 或 JSON Schema 怎么编译成状态机，都在 Rust 那边；C++ 这层只管"每步取一张位图、按位掩 logits"。分工清楚：约束的表达力归 llguidance，掩码的执行归这三十行 C++。
 
+<div class="aside-compare">
+
+本章两大主题在 llama.cpp 里各有对照。多模态：视觉投影器是独立的 mmproj 文件，运行时用 `--mmproj` 指定（`llama.cpp/common/arg.cpp:2315 @ b9873`），与 `.litertlm` 把视觉编码器、适配器全打包进主文件形成两种分发哲学——组件独立分发便于混搭升级，单文件打包免除版本错配。约束解码：llama.cpp 内置自研的 GBNF 文法引擎（`src/llama-grammar.cpp`，示例文法在 `grammars/*.gbnf`），文法直接在 C++ 里逐 token 推进；LiteRT-LM 则经 C bridge 借 Rust 的 llguidance。自研引擎少一层依赖、文法方言自己定义；借力 llguidance 拿到的是跨项目共享的语法生态与优化。
+
+</div>
+
 约束解码的意义是把"结构合法"从"祈祷模型别出错"变成"从机制上不可能出错"——只要语法写对了，输出就一定合法。这对下一节的工具调用是刚需。
 
 ## Tool Use：让模型调用函数

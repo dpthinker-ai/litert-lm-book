@@ -48,6 +48,12 @@ switch (backend) {
 
 `(1)` 后端来自 `LlmExecutorSettings`，而它最终由 CLI 的 `--backend` 或上层配置写入。分派的输入是一个纯数据字段，不是运行时探测。`(2)` `CPU` 和 `GPU` 共用 `case`、落到同一个创建函数。这并非实现上的妥协：这条路径读出的是同一个 `.tflite` 子图（`ModelType::kTfLitePrefillDecode`，`:135`），CPU 与 GPU 的差异被推迟到 LiteRT 编译期由 delegate 决定，工厂层不必区分。`(3)` `NPU` 走独立分支，因为它加载的是另一组模型文件（下一节 NPU 的 embedder 子模型就是证据）。`default` 分支把 `CPU_ARTISAN` 这类未接入编译路径的后端挡在门外，返回 `InvalidArgumentError` 而非崩溃。这是工厂作为唯一入口的价值：非法后端在这里一次性拦下。
 
+<div class="aside-compare">
+
+后端管理的另两种形态可作参照。llama.cpp 维护一个后端注册表，按编译开关依次注册 CUDA、Metal、SYCL、Vulkan、WebGPU 等，CPU 永远殿后兜底（`llama.cpp/ggml/src/ggml-backend-reg.cpp:117`–`:165 @ b9873`），一个二进制可以带多个后端、运行时探测设备分层调度。MLC-LLM 则走提前编译：用 TVM 把模型按具体目标（某款 GPU、某个架构）编译成专用产物（官方文档，mlc.ai，访问于 2026-07）。三家分布在一条谱系上：MLC 在编译期锁定目标换最深的按机特化，llama.cpp 在运行期探测换一包通吃，LiteRT-LM 居中——执行器按 Backend 工厂分派、模型按后端各自编译，部署时选定组合。谱系上没有对错，只有「产物数量 × 运行时自由度」的兑换率。
+
+</div>
+
 ### 静态形状与动态形状：第二次分派
 
 CPU/GPU 那条路径内部还有一次分派，按模型导出时是静态形状还是动态形状再分（`llm_litert_compiled_model_executor_factory.cc:137 @ v0.13.1`）：
