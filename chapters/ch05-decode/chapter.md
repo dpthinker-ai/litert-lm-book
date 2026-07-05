@@ -4,7 +4,7 @@
 
 prefill 已经把提示词写进 KV cache，第一段前向也完成了。接下来是 decode 阶段：模型逐 token 生成，直到满足停止条件。第 1 章讲过的那条 25 tokens/s 上限，约束的正是这个阶段的每一步——decode 是受内存带宽约束（memory-bound）的逐 token 串行生成，每生成一个 token 都要把全部权重从内存读一遍。
 
-decode 阶段的单步操作在代码里叫 `DecodeOneStep`（`runtime/core/tasks.cc:111 @ v0.13.1`）。整个 decode 就是一个循环，反复调用它，直到满足停止条件（`Decode`，`tasks.cc:446 @ v0.13.1`）。循环的主干只有几行，先看骨架：
+decode 阶段的单步操作在代码里叫 `DecodeOneStep`（`runtime/core/tasks.cc:111`）。整个 decode 就是一个循环，反复调用它，直到满足停止条件（`Decode`，`tasks.cc:446`）。循环的主干只有几行，先看骨架：
 
 ```cpp
 while (true) {
@@ -46,13 +46,13 @@ while (true) {
 
 ## 两条路径：内部采样与外部采样
 
-采样在这里分成两条路径。代码注释写明这是为内部采样和外部采样两种情形准备的（`tasks.cc:110 @ v0.13.1`）。
+采样在这里分成两条路径。代码注释写明这是为内部采样和外部采样两种情形准备的（`tasks.cc:110`）。
 
 内部采样由执行器一步完成。上层调用 `Decode`，执行器内部把前向和采样都做完，直接返回 token id。这条路径更快，因为采样可以在 GPU 上就地完成，省掉把整组 logits 从 GPU 显存搬回 CPU 内存的开销。片上采样的具体机制第 8 章展开，本章后面会算清这笔搬运开销到底占单步耗时多少。
 
-外部采样时执行器只做到前向，把整组 logits 返回（`DecodeLogits`，`tasks.cc:342 @ v0.13.1`），由上层的 logits 处理器和采样器完成处理与采样。这条路径要多付一次 logits 回搬的代价，换来的是灵活性：重复惩罚、约束解码这些需要修改 logits 的功能只能在这条路径上实现。
+外部采样时执行器只做到前向，把整组 logits 返回（`DecodeLogits`，`tasks.cc:342`），由上层的 logits 处理器和采样器完成处理与采样。这条路径要多付一次 logits 回搬的代价，换来的是灵活性：重复惩罚、约束解码这些需要修改 logits 的功能只能在这条路径上实现。
 
-两条路径服务不同需求。纯文本生成、不需要修改 logits 时走内部采样以求速度；需要工具调用、结构化输出、约束解码时走外部采样以求灵活。`DecodeOneStep` 里的 `DecodeAndSample`（`tasks.cc:319 @ v0.13.1`）是这个分岔的落点，靠一个成员指针分道：
+两条路径服务不同需求。纯文本生成、不需要修改 logits 时走内部采样以求速度；需要工具调用、结构化输出、约束解码时走外部采样以求灵活。`DecodeOneStep` 里的 `DecodeAndSample`（`tasks.cc:319`）是这个分岔的落点，靠一个成员指针分道：
 
 ```cpp
 absl::StatusOr<std::vector<std::vector<int>>> DecodeAndSample(
@@ -82,7 +82,7 @@ absl::StatusOr<std::vector<std::vector<int>>> DecodeAndSample(
 
 ### 外部采样的 logits 回搬开销
 
-前面说外部路径要多付一次 logits 回搬的代价。这笔账可以算清楚。`DecodeAndSample` 的外部路径把前向与采样分成两段计时（`tasks.cc:339-360 @ v0.13.1`）：
+前面说外部路径要多付一次 logits 回搬的代价。这笔账可以算清楚。`DecodeAndSample` 的外部路径把前向与采样分成两段计时（`tasks.cc:339-360`）：
 
 ```cpp
 if (benchmark_info_.has_value()) {
@@ -110,7 +110,7 @@ RETURN_IF_ERROR(sampler_.value()->SampleToIdAndScoreBuffer(
 
 ## 采样：从 logits 向量里选出一个 token
 
-不管走哪条路径，都要从 logits 里选出一个 token。怎么选，就是采样策略。LiteRT-LM 的采样器都实现同一个 `Sampler` 抽象（`runtime/components/sampler.h:34 @ v0.13.1`）。这个抽象只强制一个核心方法：
+不管走哪条路径，都要从 logits 里选出一个 token。怎么选，就是采样策略。LiteRT-LM 的采样器都实现同一个 `Sampler` 抽象（`runtime/components/sampler.h:34`）。这个抽象只强制一个核心方法：
 
 ```cpp
 virtual absl::Status SampleToIdAndScoreBuffer(
@@ -122,7 +122,7 @@ virtual absl::Status SampleToIdAndScoreBuffer(
 
 ### 采样器从哪来：工厂分派与一条降级链
 
-具体用哪个采样器实现，由工厂函数按后端分派（`CreateSampler`，`runtime/components/sampler_factory.cc:707 @ v0.13.1`）。GPU 分支里藏着一条设计得很完整的降级链：
+具体用哪个采样器实现，由工厂函数按后端分派（`CreateSampler`，`runtime/components/sampler_factory.cc:707`）。GPU 分支里藏着一条设计得很完整的降级链：
 
 ```cpp
     case Backend::GPU: {
@@ -155,7 +155,7 @@ llama.cpp 的采样只有一条路径：全部在宿主侧执行，做法是把�
 
 </div>
 
-常用的一种实现是 `TopPSampler`（`runtime/components/top_p_cpu_sampler.h:30 @ v0.13.1`）。它用一个类覆盖多种策略，靠参数区分：
+常用的一种实现是 `TopPSampler`（`runtime/components/top_p_cpu_sampler.h:30`）。它用一个类覆盖多种策略，靠参数区分：
 
 ```cpp
 static absl::StatusOr<std::unique_ptr<TopPSampler>> Create(int k, float p,  // (1)
@@ -187,7 +187,7 @@ static absl::StatusOr<std::unique_ptr<TopPSampler>> Create(int k, float p,  // (
 
 表 5-1 概括了四种策略，但真正实现它们的是 `sampling_cpu_util.cc`。这里把 `TopPSampler` 背后的三个函数走读一遍，因为它们直接关系到正确性与性能：`TopKTokenIds` 取候选集，`Softmax` 归一化，`TopKTopPSampling` 做 top-p 截断与采样。
 
-先看候选集选取。`TopKTokenIds` 有两条路径（`sampling_cpu_util.cc:47 @ v0.13.1`）：
+先看候选集选取。`TopKTokenIds` 有两条路径（`sampling_cpu_util.cc:47`）：
 
 ```cpp
 if (k == 1) {  // Greedy sampling. Use std::max_element to be more efficient.
@@ -210,7 +210,7 @@ if (k == 1) {  // Greedy sampling. Use std::max_element to be more efficient.
 
 `k == 1` 是贪心的专门快路径。(1) 用 `std::max_element` 一趟线性扫描直接取 argmax，O(vocab) 时间、不排序。贪心不必走完整条 top-p 流水线，这里被特判掉了。`k > 1` 时 (2) 用 `std::nth_element` 做部分选择：它把最高的 k 个索引挪到前 k 个位置，平均 O(vocab) 时间，但不保证这 k 个内部有序。相比对整个词表排序（O(vocab log vocab)），部分选择省下大头，代价是候选内部的排序留给后面按需处理。
 
-选出候选后，`Softmax` 把候选的 logits 归一化成概率。这一步的数值稳定处理值得细看（`sampling_cpu_util.cc:135 @ v0.13.1`）：
+选出候选后，`Softmax` 把候选的 logits 归一化成概率。这一步的数值稳定处理值得细看（`sampling_cpu_util.cc:135`）：
 
 ```cpp
 float sum_of_exps = 0.0;
@@ -239,7 +239,7 @@ if (sum_of_exps <= std::numeric_limits<float>::epsilon()) {              // (3)
 
 (3)(4) 是两个退化分支。(3) 当所有指数之和小到接近 0（浮点下溢），改为均匀分布兜底，避免后续除以 0。(4) 当和为 `inf`（极小温度让某个指数溢出到无穷），把概率质量全压到最大 logit 对应的 token，也就是退化为贪心。这两个分支处理的是温度趋近 0 或数值极端时的边界，保证 softmax 永远返回一个合法的概率分布，而非 NaN。
 
-归一化之后是 top-p 截断与采样（`sampling_cpu_util.cc:213 @ v0.13.1`）：
+归一化之后是 top-p 截断与采样（`sampling_cpu_util.cc:213`）：
 
 ```cpp
 if (k == 1) {  // Greedy sampling. Return the topk_token_ids directly.
@@ -266,11 +266,11 @@ for (int i = 0; i < k; ++i) {
 
 这里又有一处 `k == 1` 快路径 (1)：贪心直接返回候选，并把得分记为 `1.0f`（确定性选择，概率视为 1）。这是本函数里第二处对贪心的特判——`TopKTokenIds` 的 (1) 特判了候选选取，这里特判了采样。贪心在实现上是两处独立的快路径，不走完整的排序与累积流程。
 
-`k > 1` 时 (2) 只对这 k 个候选按概率降序排序，O(k log k)，而非对整个词表排。(3)(4) 是 top-p 的核心：按降序累加概率，一旦累计值达到 p 就 (4) 停下，`final_sample_size` 记住到此为止选入了几个 token。这就是核采样的自适应性来源：某个 token 概率就占了 0.9、p 设 0.9 时候选集只有它一个；概率平摊时要累加很多个才够 0.9，候选集自然变大。截断之后在 `[0, cumulative_prob)` 上取均匀随机数，落到哪个累积区间就选哪个 token（`sampling_cpu_util.cc:273 @ v0.13.1`）。整条 top-p 路径的复杂度由 `nth_element` 的 O(vocab) 和这里的 O(k log k) 主导，k 通常在几十到几百，远小于词表规模，排序开销不大。
+`k > 1` 时 (2) 只对这 k 个候选按概率降序排序，O(k log k)，而非对整个词表排。(3)(4) 是 top-p 的核心：按降序累加概率，一旦累计值达到 p 就 (4) 停下，`final_sample_size` 记住到此为止选入了几个 token。这就是核采样的自适应性来源：某个 token 概率就占了 0.9、p 设 0.9 时候选集只有它一个；概率平摊时要累加很多个才够 0.9，候选集自然变大。截断之后在 `[0, cumulative_prob)` 上取均匀随机数，落到哪个累积区间就选哪个 token（`sampling_cpu_util.cc:273`）。整条 top-p 路径的复杂度由 `nth_element` 的 O(vocab) 和这里的 O(k log k) 主导，k 通常在几十到几百，远小于词表规模，排序开销不大。
 
 ## 什么时候停
 
-字不能一直吐下去。每一步之后都要问：该停了吗？这个判断集中在一个纯函数里（`ShouldStop`，`tasks.cc:86 @ v0.13.1`），把所有停止条件收在一处：
+字不能一直吐下去。每一步之后都要问：该停了吗？这个判断集中在一个纯函数里（`ShouldStop`，`tasks.cc:86`），把所有停止条件收在一处：
 
 ```cpp
 bool ShouldStop(bool hit_stop_tokens, int benchmark_decode_token_count,
@@ -298,7 +298,7 @@ bool ShouldStop(bool hit_stop_tokens, int benchmark_decode_token_count,
 
 第 2 章清单里的第 11、12 问，每个用过流式生成的人都撞见过：字偶尔会"吐半个"，停止词只出现一半时行为诡异。这一节交代它们。
 
-先看停止词的部分匹配。停止词可能是"###"这样的多字符序列，而模型是一个 token 一个 token 出的。当它刚吐出"#"，你不知道接下来是"##"（真的要停）还是"#号说明"（不该停）。贸然把"#"吐给用户，万一后面真是停止词，你就多吐了不该吐的。LiteRT-LM 的停止符检测器为此逐 token 追踪每条停止序列的匹配进度（`StopTokenDetector`，`runtime/components/stop_token_detector.h:45 @ v0.13.1`；`ProcessTokens` 在 `:67`）。关键是它暴露的这个查询：
+先看停止词的部分匹配。停止词可能是"###"这样的多字符序列，而模型是一个 token 一个 token 出的。当它刚吐出"#"，你不知道接下来是"##"（真的要停）还是"#号说明"（不该停）。贸然把"#"吐给用户，万一后面真是停止词，你就多吐了不该吐的。LiteRT-LM 的停止符检测器为此逐 token 追踪每条停止序列的匹配进度（`StopTokenDetector`，`runtime/components/stop_token_detector.h:45`；`ProcessTokens` 在 `:67`）。关键是它暴露的这个查询：
 
 ```cpp
 // Returns the maximum length of the partial stop token sequence found for the
@@ -307,7 +307,7 @@ bool ShouldStop(bool hit_stop_tokens, int benchmark_decode_token_count,
 int MaxPartialStopTokenLength(int index) const;  // (1)
 ```
 
-(1) 这个函数回答的正是"现在匹配了多长"：返回 0 表示当前 token 跟任何停止序列都不沾边、可以直接输出；返回正数 `L` 表示末尾 `L` 个 token 构成了某条停止序列的前缀，悬而未决；返回 -1 表示停止序列已完整命中。`Run` 就靠这个返回值决定暂存多少 token（`runtime/core/tasks.cc:187 @ v0.13.1`）：
+(1) 这个函数回答的正是"现在匹配了多长"：返回 0 表示当前 token 跟任何停止序列都不沾边、可以直接输出；返回正数 `L` 表示末尾 `L` 个 token 构成了某条停止序列的前缀，悬而未决；返回 -1 表示停止序列已完整命中。`Run` 就靠这个返回值决定暂存多少 token（`runtime/core/tasks.cc:187`）：
 
 ```cpp
 int max_length = stop_token_detector_.MaxPartialStopTokenLength(i);
@@ -331,7 +331,7 @@ if (max_length == 0) {                                                // (4)
 
 那停止序列真命中了怎么办？此时 `AllDone()` 会返回真、`GetStopTokensFound()[i]` 置位，队列里暂存的整段就再也不会走到 (3) 被输出，它们连同停止词一起被丢弃。这是"暂存—释放"的另一半：暂存的内容，确认是停止词就**整段作废**，不是就顺次放出。代价是命中前缀期间输出会滞后至多 `max_length` 个 token，换来的是绝不会把半截停止词漏给用户。
 
-再看"半个字"。子词分词（第 3 章）意味着一个 token 未必是一个完整的字，尤其是中文和 emoji，一个字可能由好几个 token 拼成。decode 一步只出一个 token，如果它是某个字的前半截，直接转文本就是乱码。`Run` 里处理这个的是同一套暂存逻辑，但用另一个成员队列（`runtime/core/tasks.cc:175 @ v0.13.1`）：
+再看"半个字"。子词分词（第 3 章）意味着一个 token 未必是一个完整的字，尤其是中文和 emoji，一个字可能由好几个 token 拼成。decode 一步只出一个 token，如果它是某个字的前半截，直接转文本就是乱码。`Run` 里处理这个的是同一套暂存逻辑，但用另一个成员队列（`runtime/core/tasks.cc:175`）：
 
 ```cpp
 ASSIGN_OR_RETURN(step_tokens, tokenizer_.MergeTokenIds(              // (1)
@@ -372,8 +372,10 @@ for (int i = 0; i < num_output_candidates_; ++i) {
 
 ## 参考
 
-- decode 循环与单步：`runtime/core/tasks.cc @ v0.13.1`。本章贴出：主循环骨架（`while (true)`:486，含取消探测与 `ShouldStop` 调用）；`ShouldStop` 纯函数全文（:86）；`DecodeAndSample` 内/外采样分岔（:319，外部路径 `DecodeLogits`:342、`MaskLogits`、`SampleToIdAndScoreBuffer`，内部路径 `executor_.Decode()`）；`Run` 里的 BPE 补全（`MergeTokenIds`:175、`IsIncompleteBpeSequence`:181）与停止词暂存/释放（:187）。相关：`DecodeOneStep` 类:111；`Decode` 入口:446；内/外采样注释:109。
-- 采样器：`runtime/components/sampler.h @ v0.13.1`（`Sampler` 抽象:34，贴出核心方法 `SampleToIdAndScoreBuffer`:45）；`runtime/components/top_p_cpu_sampler.h @ v0.13.1`（`TopPSampler`:30，贴出 `Create` 签名:38，含 k/p/temperature/seed）。
-- 停止符检测：`runtime/components/stop_token_detector.h @ v0.13.1`（`StopTokenDetector`:45；`ProcessTokens`:67；贴出 `MaxPartialStopTokenLength`:93 含返回值语义注释；`GetStopTokensFound`:89；`AllDone`:85）。
+> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
+
+- decode 循环与单步：`runtime/core/tasks.cc`。本章贴出：主循环骨架（`while (true)`:486，含取消探测与 `ShouldStop` 调用）；`ShouldStop` 纯函数全文（:86）；`DecodeAndSample` 内/外采样分岔（:319，外部路径 `DecodeLogits`:342、`MaskLogits`、`SampleToIdAndScoreBuffer`，内部路径 `executor_.Decode()`）；`Run` 里的 BPE 补全（`MergeTokenIds`:175、`IsIncompleteBpeSequence`:181）与停止词暂存/释放（:187）。相关：`DecodeOneStep` 类:111；`Decode` 入口:446；内/外采样注释:109。
+- 采样器：`runtime/components/sampler.h`（`Sampler` 抽象:34，贴出核心方法 `SampleToIdAndScoreBuffer`:45）；`runtime/components/top_p_cpu_sampler.h`（`TopPSampler`:30，贴出 `Create` 签名:38，含 k/p/temperature/seed）。
+- 停止符检测：`runtime/components/stop_token_detector.h`（`StopTokenDetector`:45；`ProcessTokens`:67；贴出 `MaxPartialStopTokenLength`:93 含返回值语义注释；`GetStopTokensFound`:89；`AllDone`:85）。
 
 <!-- 温度对比已实测回填（附录 D 第八节）。停止词暂存用例仍待构造专门 prompt 复现。 -->

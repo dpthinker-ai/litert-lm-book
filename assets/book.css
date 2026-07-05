@@ -142,9 +142,17 @@ figcaption { color: var(--fig-text-dim, #8b949e); font-size: 0.9em; margin-top: 
     --fig-text:#1f2328; --fig-text-soft:#57606a; --fig-text-dim:#8b949e;
     --fig-green:#1a7f37;
   }
-  /* 图、代码块、表、侧栏尽量整块不跨页断裂 */
-  figure, pre, table, .aside-compare, .aside-version { break-inside: avoid; }
+  /* 图、代码块、侧栏尽量整块不跨页断裂；表格允许跨页（大表比页高，禁则被整页裁掉），
+     但表头与单行不拆 */
+  figure, pre, .aside-compare, .aside-version { break-inside: avoid; }
+  table { break-inside: auto; }
+  thead, tr { break-inside: avoid; }
   h2, h3, h4 { break-after: avoid; }
+  /* 宽表防横向裁切：wrapper 不再滚动裁剪，单元格内代码与长词强制回绕，字号缩小 */
+  .table-wrapper { overflow: visible !important; }
+  .content main table, table { font-size: 10px; line-height: 1.45; width: 100% !important; }
+  th, td { word-break: break-word; padding: 4px 7px !important; }
+  table code { white-space: normal !important; word-break: break-all; font-size: 9px; }
   /* 章间分页由 mdBook 原生 page-break-before 负责，勿再叠加，否则每章前多一空白页 */
   /* 封面下沉标题 */
   .book-cover { padding-top: 9rem; }

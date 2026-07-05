@@ -42,5 +42,5 @@
   <text class="rdt" x="580" y="176" style="font-size:11px;font-weight:700">←读</text>
   <path class="edge rd" marker-end="url(#ard)" d="M600,172 H572" transform="translate(-28,0)"/>
   <text class="ts" x="320" y="235" text-anchor="middle" style="font-size:12px">上一步的「新」，成为这一步的「旧」——避开 GPU「同缓冲读写」限制，且零拷贝</text>
-  <text class="ts" x="320" y="258" text-anchor="middle" style="font-size:10.5px">源码：kv_cache_buffers_1_ / _2_ + input_/output_ 指针（llm_litert_compiled_model_executor.h:329-333 @ v0.13.1）</text>
+  <text class="ts" x="320" y="258" text-anchor="middle" style="font-size:10.5px">源码：kv_cache_buffers_1_ / _2_ + input_/output_ 指针（llm_litert_compiled_model_executor.h:329-333）</text>
 </svg>

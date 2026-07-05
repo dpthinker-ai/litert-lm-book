@@ -43,15 +43,15 @@ $$ 128 \text{ KiB} \times 4096 \approx 0.5 \text{ GiB} $$
 
 这半个 GiB 随对话线性增长，不是常量。上下文再翻倍到 8192，它就是 1 GiB，已经逼近 int4 权重本身的一半。
 
-这里有一个容易被纸面公式掩盖的细节：KV cache 并非在会话开始时就按最大长度一次性分配，而是随 decode 进行分块扩容。LiteRT-LM 的 CPU 路径由 `CpuConfig::kv_increment_size`（默认 16，`runtime/executor/llm_executor_settings.h:110 @ v0.13.1`）控制每次扩容追加多少个 token 的空间，每若干 decode step 触发一次重分配。增量取小，重分配频繁、易产生内存碎片；增量取大，峰值内存偏高。这道"扩容粒度换重分配频率"的权衡属于运行时实现细节，第 6 章会顺着这条分块扩容路径把 KV cache 的实际内存布局讲透，这里只需记住它随 $T$ 线性增长这一条。
+这里有一个容易被纸面公式掩盖的细节：KV cache 并非在会话开始时就按最大长度一次性分配，而是随 decode 进行分块扩容。LiteRT-LM 的 CPU 路径由 `CpuConfig::kv_increment_size`（默认 16，`runtime/executor/llm_executor_settings.h:110`）控制每次扩容追加多少个 token 的空间，每若干 decode step 触发一次重分配。增量取小，重分配频繁、易产生内存碎片；增量取大，峰值内存偏高。这道"扩容粒度换重分配频率"的权衡属于运行时实现细节，第 6 章会顺着这条分块扩容路径把 KV cache 的实际内存布局讲透，这里只需记住它随 $T$ 线性增长这一条。
 
 **激活值的字节量。** decode 一步只前向 1 个 token，逐层的临时张量按一个 token 的宽度计，峰值大约在 $2 \times L \times d_{model} \times b$ 这个量级（相邻层的中间结果，加上 FFN 的中间放大）。取 $d_{model}=3072$、$L=32$、FP16 代入，是几十 MB，与权重和 KV cache 不在一个数量级。所以 decode 阶段的激活值可以近似忽略。真正吃激活值的是 prefill：一次并行处理几百上千个 token，激活值要乘上 token 数。
 
-prefill 的激活峰值并非只能被动承受。LiteRT-LM 的 `CpuConfig::prefill_chunk_size`（默认 -1，即不分块，`runtime/executor/llm_executor_settings.h:117 @ v0.13.1`）就是控制这个峰值的旋钮，其注释明确指出使用更小的 chunk 可以降低峰值内存。把长 prompt 切成固定大小的块逐块前向，激活峰值就从"正比于整段 prompt 长度"降到"正比于 chunk 大小"。以 2K token 的 prompt 为例：不分块时激活峰值正比于 2048，设 chunk = 512 后正比于 512，峰值降到约四分之一，代价是 prefill 分成四段串行、首 token 延迟略增。这是内存容量约束与 prefill 延迟之间一个可调的权衡，第 4 章会沿分块前向的循环把它定量展开。
+prefill 的激活峰值并非只能被动承受。LiteRT-LM 的 `CpuConfig::prefill_chunk_size`（默认 -1，即不分块，`runtime/executor/llm_executor_settings.h:117`）就是控制这个峰值的旋钮，其注释明确指出使用更小的 chunk 可以降低峰值内存。把长 prompt 切成固定大小的块逐块前向，激活峰值就从"正比于整段 prompt 长度"降到"正比于 chunk 大小"。以 2K token 的 prompt 为例：不分块时激活峰值正比于 2048，设 chunk = 512 后正比于 512，峰值降到约四分之一，代价是 prefill 分成四段串行、首 token 延迟略增。这是内存容量约束与 prefill 延迟之间一个可调的权衡，第 4 章会沿分块前向的循环把它定量展开。
 
 **把四项摆到一台 8 GiB 手机上。** 系统与其它 App 占 4 GiB，留给模型 4 GiB。int4 权重 1.86 GiB，4096 上下文的 KV cache 0.5 GiB，decode 激活值算 0.1 GiB，合计约 2.5 GiB，装得下，还有富余。但把同一笔账换成 int8 权重（每参数 1 字节，权重翻到 3.7 GiB），或把上下文拉到 32K（KV cache 涨到 4 GiB），任一项都会超出可用物理内存，触发换页乃至 OOM。这就是为什么端侧几乎一律用 int4、为什么长上下文在端侧格外奢侈：不是算不动，是根本装不下。
 
-这里还要给纸面账加一条修正。上面把权重当作必然整份常驻物理内存，但 LiteRT-LM 通过 `MemoryMappedFile` 把权重文件 mmap 进地址空间（`runtime/util/memory_mapped_file.h @ v0.13.1`）：映射建立的是虚拟地址，首次访问某一页才触发缺页调入，系统在内存压力下也可回收干净的只读页。于是"权重占 1.86 GiB"说的是虚拟映射与文件大小，而进程的物理常驻集（RSS）随访问模式浮动，可能小于文件大小。模型资源加载路径里还进一步区分"应当 mmap 的"与"不应 mmap 的外部权重"（`runtime/components/model_resources.h:164 @ v0.13.1`）。这一层 mmap 语义让"装得下"的判据比纯纸面账更微妙：虚拟地址装得下不等于物理常驻装得下，但在内存吃紧时它给了系统一条泄压路径。第 6 章会沿这条加载路径把内存容量约束的实际边界讲清。
+这里还要给纸面账加一条修正。上面把权重当作必然整份常驻物理内存，但 LiteRT-LM 通过 `MemoryMappedFile` 把权重文件 mmap 进地址空间（`runtime/util/memory_mapped_file.h`）：映射建立的是虚拟地址，首次访问某一页才触发缺页调入，系统在内存压力下也可回收干净的只读页。于是"权重占 1.86 GiB"说的是虚拟映射与文件大小，而进程的物理常驻集（RSS）随访问模式浮动，可能小于文件大小。模型资源加载路径里还进一步区分"应当 mmap 的"与"不应 mmap 的外部权重"（`runtime/components/model_resources.h:164`）。这一层 mmap 语义让"装得下"的判据比纯纸面账更微妙：虚拟地址装得下不等于物理常驻装得下，但在内存吃紧时它给了系统一条泄压路径。第 6 章会沿这条加载路径把内存容量约束的实际边界讲清。
 
 内存容量约束决定了端侧能跑多大的模型，也就解释了为什么端侧模型集中在 2B、4B 这个量级，而不是云端动辄上百 B。一个 70B 模型即便压到 int4 也要 32 GiB 出头，超过绝大多数手机的整机内存；权重连装都装不进，后面的带宽账无从谈起。
 
@@ -82,7 +82,7 @@ $$ \frac{50 \times 10^{9}}{(1.86 + 0.5) \times 1.07 \times 10^{9}} \approx 19.8 
 
 同一台手机、同一个模型，只是把对话从"刚开始"聊到"4096 token 长"，decode 吞吐就从 25 掉到 20 上下，跌了两成。不是模型变笨了，是每生成一个 token 要搬的内存多了两成。这条推论可以在真机上验证：附录 D 那台 Mac（Gemma 4 E4B）把上下文从 256 拉到 4096，CPU decode 从 24.8 掉到 20.7（约 -17%），量级与这里的纸面推导对得上。KV cache 分走带宽，是"对话越长 decode 越慢"的直接原因。
 
-这里还有一处结构性细节，决定了 KV cache 究竟要占多少带宽。是否需要在读旧 KV 的同时写新 KV，取决于后端能否原地更新。LiteRT-LM 的 KV cache 为此提供两套缓冲：后端支持原地更新时返回单份缓冲，输入输出共用；不支持时维护两份（bank_1 / bank_2），每步读一份写另一份、再交换，用"再存一整份 KV cache 的内存"换"某些后端不支持原地写回"这一硬件限制（`runtime/executor/litert/kv_cache.h:70 @ v0.13.1`）。这意味着后端能力会直接改变内存账的高度：同一个模型，在不支持原地更新的后端上，KV cache 的实际内存开销要翻倍。第 6 章会走读这套双缓冲，把它归到内存容量约束与内存带宽约束的耦合上。
+这里还有一处结构性细节，决定了 KV cache 究竟要占多少带宽。是否需要在读旧 KV 的同时写新 KV，取决于后端能否原地更新。LiteRT-LM 的 KV cache 为此提供两套缓冲：后端支持原地更新时返回单份缓冲，输入输出共用；不支持时维护两份（bank_1 / bank_2），每步读一份写另一份、再交换，用"再存一整份 KV cache 的内存"换"某些后端不支持原地写回"这一硬件限制（`runtime/executor/litert/kv_cache.h:70`）。这意味着后端能力会直接改变内存账的高度：同一个模型，在不支持原地更新的后端上，KV cache 的实际内存开销要翻倍。第 6 章会走读这套双缓冲，把它归到内存容量约束与内存带宽约束的耦合上。
 
 另一个方向是分子被高估了：50 GB/s 是内存控制器的峰值规格，实际有效带宽受访问模式、缓存命中率、量化解包开销拖累，通常只能达到峰值的六七成。所以纸面上限是"物理允许的最好情况"，实测总在它下方；两者之差，正是后面几章要解释和缩小的东西。
 
@@ -103,11 +103,11 @@ $$ 2 \times 10^{9} \text{ 字节} \times 20 \times 10^{-12} \text{ 焦/字节} =
 
 一块手机电池约 15 Wh = 54000 焦。就算把全部电量都喂给"搬权重"这一件事，也只够 $54000 / 0.04 \approx 1.35 \times 10^{6}$ 个 token。听着很多，但这是不吃饭不睡觉不亮屏、把整块电池榨干的理想值；真实设备上屏幕、系统、解包和计算本身还要分走大头，可持续生成的 token 数远到不了这个量级。这条账的用处不在精确，而在方向：减少每 token 的访存量同时降低带宽与能耗成本，量化和推测解码因此在端侧比在云端更划算。它也让线程如何调度、绑哪个核、要不要异步都成了真问题，而不是云端那种"开满线程即可"。
 
-线程绑核不是抽象论述，LiteRT-LM 给出了可直接引用的工程决策。`runtime/engine/cpu_affinity_utils.cc @ v0.13.1` 按 Pixel 的 Tensor SoC 型号硬编码了各自应绑定的核清单（例如 Tensor G4 绑 `{4,5,6,7}`、G5/G6 绑 `{2,3,4,5,6,7}`），通过读取 Android 系统属性识别 SoC，再调用 `sched_setaffinity` 绑核，并显式避开能效核（小核）。绑中大核而非全部核，是因为把重活分给慢的小核会拖慢整体、且更易触发发热降频。这段逻辑仅在 Android 下生效，是功耗与异构后端约束在 big.LITTLE 调度上的一个具体落点，第 8 章会走读它。
+线程绑核不是抽象论述，LiteRT-LM 给出了可直接引用的工程决策。`runtime/engine/cpu_affinity_utils.cc` 按 Pixel 的 Tensor SoC 型号硬编码了各自应绑定的核清单（例如 Tensor G4 绑 `{4,5,6,7}`、G5/G6 绑 `{2,3,4,5,6,7}`），通过读取 Android 系统属性识别 SoC，再调用 `sched_setaffinity` 绑核，并显式避开能效核（小核）。绑中大核而非全部核，是因为把重活分给慢的小核会拖慢整体、且更易触发发热降频。这段逻辑仅在 Android 下生效，是功耗与异构后端约束在 big.LITTLE 调度上的一个具体落点，第 8 章会走读它。
 
 再看异构后端。手机上不止一个计算单元：CPU（通用、随时可用）、GPU（并行强，但驱动与内存模型各家不同）、NPU（能效比最高，但接口封闭、支持的算子有限）。同一个模型在 CPU、GPU、NPU 上运行，速度乃至输出都可能不同（这不是 bug，第 8 章会解释，还会看一个真实的相关上游问题 `LiteRT-LM#2281`）。一个端侧运行时得能在这些特性各异的后端之间切换，同时对上层隐藏这些差异。
 
-这套"可插拔后端"在 LiteRT-LM 里是七个具体的枚举值（`runtime/executor/executor_settings_base.h @ v0.13.1`）：`CPU` / `GPU` / `NPU` 三条走 LiteRT 通用路径，`CPU_ARTISAN` / `GPU_ARTISAN` / `GOOGLE_TENSOR_ARTISAN` 三条是针对特定硬件手写的内核路径，外加 `UNSPECIFIED`。LiteRT 后端与 artisan 手写路径的分野，正是异构后端约束在架构层的直接体现：前者通用可移植，覆盖面广；后者针对单一硬件手工优化，性能上限更高但只服务一种芯片。第 2、8 章会沿这个枚举展开后端切换。
+这套"可插拔后端"在 LiteRT-LM 里是七个具体的枚举值（`runtime/executor/executor_settings_base.h`）：`CPU` / `GPU` / `NPU` 三条走 LiteRT 通用路径，`CPU_ARTISAN` / `GPU_ARTISAN` / `GOOGLE_TENSOR_ARTISAN` 三条是针对特定硬件手写的内核路径，外加 `UNSPECIFIED`。LiteRT 后端与 artisan 手写路径的分野，正是异构后端约束在架构层的直接体现：前者通用可移植，覆盖面广；后者针对单一硬件手工优化，性能上限更高但只服务一种芯片。第 2、8 章会沿这个枚举展开后端切换。
 
 三类约束并非各自独立，而是咬合在一起。为了绕开内存容量约束用了量化，量化改变了在不同后端上的数值行为（异构后端约束）；为了缓解内存带宽约束上了推测解码，推测解码在某些 GPU 上反而更慢（第 9 章，`LiteRT-LM#2227`）。端侧推理的工程，就是在这三类约束围出的窄缝里找可行解。
 
@@ -126,7 +126,7 @@ $$ 2 \times 10^{9} \text{ 字节} \times 20 \times 10^{-12} \text{ 焦/字节} =
 
 LiteRT-LM 的位置可以一句话概括：它把 LiteRT（原 TFLite）这套已在数十亿设备上运行过的推理引擎，向上包了一层专为 LLM 打造的编排层。它的独特处不在某一项技术最快，而在"生产级"，即已经跑在 Chrome、Chromebook Plus、Pixel Watch 这些真实出货的产品里（【文档】级，官方博客，出处见文末）。这意味着它的许多设计不是为了 benchmark 好看，而是为了在千差万别的真实设备上不崩、不烫、不出错。这恰恰是一本讲实现与权衡的书最好的解剖标本。
 
-选它当标本还有一个务实的理由：它的代码开源、可读、投产，全书那些 `@ v0.13.1` 的行号锚点都因此可以被你亲手核对。
+选它当标本还有一个务实的理由：它的代码开源、可读、投产，全书锚定 `v0.13.1` 的行号引用都因此可以被你亲手核对。
 
 ## 通往全书
 
@@ -148,9 +148,11 @@ LiteRT-LM 的位置可以一句话概括：它把 LiteRT（原 TFLite）这套�
 
 ## 参考
 
+> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
+
 - LiteRT-LM 投产于 Chrome / Chromebook Plus / Pixel Watch：Google 开发者博客 *On-device GenAI in Chrome, Chromebook Plus and Pixel Watch*，https://developers.googleblog.com/on-device-genai-in-chrome-chromebook-plus-and-pixel-watch-with-litert-lm/（经 LiteRT-LM 仓库 README 索引，访问 2026-07-05）。
 - 端侧运行时版图各项定位：各项目官方仓库 README——llama.cpp（github.com/ggml-org/llama.cpp）、MLC-LLM（github.com/mlc-ai/mlc-llm）、ExecuTorch（github.com/pytorch/executorch）（访问 2026-07-05）。
-- KV cache 分块扩容与双缓冲、prefill 分块、权重 mmap、CPU 亲和性、后端枚举等实现锚点：`runtime/executor/llm_executor_settings.h:110,117`、`runtime/executor/litert/kv_cache.h:70`、`runtime/util/memory_mapped_file.h`、`runtime/components/model_resources.h:164`、`runtime/engine/cpu_affinity_utils.cc`、`runtime/executor/executor_settings_base.h` @ v0.13.1。本章只引用其存在与语义以修正内存/带宽/功耗账，逐行走读分别见第 6、4、8 章。
+- KV cache 分块扩容与双缓冲、prefill 分块、权重 mmap、CPU 亲和性、后端枚举等实现锚点：`runtime/executor/llm_executor_settings.h:110,117`、`runtime/executor/litert/kv_cache.h:70`、`runtime/util/memory_mapped_file.h`、`runtime/components/model_resources.h:164`、`runtime/engine/cpu_affinity_utils.cc`、`runtime/executor/executor_settings_base.h`。本章只引用其存在与语义以修正内存/带宽/功耗账，逐行走读分别见第 6、4、8 章。
 - 移动内存带宽：带宽 = 数据率 × 总线宽度（体系结构常识）；Dimensity 9400 支持 LPDDR5X-10667 为联发科官方博客宣称（mediatek.com «Top 11 Features of the Dimensity 9400»，访问于 2026-07）；Snapdragon 8 Elite 的 LPDDR5X 档位见高通产品简介（qualcomm.com Product Brief）。各 SoC 峰值带宽按数据率 × 64 bit 推导，非厂商实测。NPU TOPS 数字本书仍未收录（口径混乱，待后续版本）。
 - KV cache 分走带宽的实测（decode 随上下文变慢）：附录 D 基准数据集，Gemma 4 E4B、上下文 256 → 4096、CPU decode 24.8 → 20.7 tok/s。本章正文的 KV cache 字节公式与"每 token 搬运量随 $T$ 线性增长"由此对照。
 - DRAM 每字节访存能耗约为片上乘加的一到两个数量级（【常识】级，计算机体系结构公认量级；本章只用其数量级方向，不引具体工艺数字）。

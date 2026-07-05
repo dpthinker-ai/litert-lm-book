@@ -12,7 +12,7 @@
 
 ## 一个工厂，按 Backend 分派
 
-LiteRT-LM 用一个枚举把后端列全（`runtime/executor/executor_settings_base.h:34 @ v0.13.1`）：
+LiteRT-LM 用一个枚举把后端列全（`runtime/executor/executor_settings_base.h:34`）：
 
 ```cpp
 enum class Backend {
@@ -28,7 +28,7 @@ enum class Backend {
 
 `(1)` 这一组带 `ARTISAN` 后缀的是手写算子路径；`(2)` 不带后缀的 `CPU`、`GPU` 走 LiteRT 编译路径。同一类硬件被枚举成两个值，因为它们背后是两套算子实现——本章聚焦 `CPU`/`GPU`/`NPU` 这条编译路径。`(3)` `NPU` 单独一档，下文会看到它在工厂里也走一条独立分支。枚举里还有 `GOOGLE_TENSOR_ARTISAN`，对应 Pixel 的 Tensor 芯片，此处不展开。
 
-选哪个实现，交给一个工厂函数（`runtime/executor/llm_litert_compiled_model_executor_factory.cc:165 @ v0.13.1`）：
+选哪个实现，交给一个工厂函数（`runtime/executor/llm_litert_compiled_model_executor_factory.cc:165`）：
 
 ```cpp
 Backend backend = executor_settings.GetBackend();   // (1)
@@ -56,7 +56,7 @@ switch (backend) {
 
 ### 静态形状与动态形状：第二次分派
 
-CPU/GPU 那条路径内部还有一次分派，按模型导出时是静态形状还是动态形状再分（`llm_litert_compiled_model_executor_factory.cc:137 @ v0.13.1`）：
+CPU/GPU 那条路径内部还有一次分派，按模型导出时是静态形状还是动态形状再分（`llm_litert_compiled_model_executor_factory.cc:137`）：
 
 ```cpp
 ASSIGN_OR_RETURN(bool is_dynamic_model, IsDynamicModel(*litert_model));
@@ -69,7 +69,7 @@ if (is_dynamic_model) {
 }
 ```
 
-这个 `is_dynamic_model` 不是配置项，而是从模型文件里读出来的事实。`IsDynamicModel` 检查 prefill 子图里两组张量的形状是不是运行时可变（`llm_litert_compiled_model_executor_factory.cc:98 @ v0.13.1`）：
+这个 `is_dynamic_model` 不是配置项，而是从模型文件里读出来的事实。`IsDynamicModel` 检查 prefill 子图里两组张量的形状是不是运行时可变（`llm_litert_compiled_model_executor_factory.cc:98`）：
 
 ```cpp
 ASSIGN_OR_RETURN(bool is_k_dynamic, IsDynamicTensor(k_tensor));
@@ -87,7 +87,7 @@ return is_kv_cache_dynamic;
 
 `(1)` 判据取自 KV cache 的 K、V 两个张量的形状是否动态，并用 `RET_CHECK` 强制两者一致：一个模型不允许 K 动态而 V 静态。`(2)` 更强的一条约束在最后：KV cache 的动静态必须与序列长度（position 张量）的动静态一致，否则直接报错退出。换句话说，一个导出的模型要么整体是动态形状，要么整体是静态形状，不存在混合态。这条 `RET_CHECK` 把"半动态"的非法组合挡在加载阶段，而不是留到运行时崩溃。
 
-两条路径的性能含义不同。静态形状走 `Static` 执行器：prefill 与 decode 的张量形状在编译期就定死，KV cache 按最大上下文长度一次性分配，运行时形状不再变，delegate 只需编译一次。动态形状走 `Dynamic` 执行器：KV cache 随 decode 步逐步增长，每次增长 `kv_increment_size` 个位置（默认 16，`llm_executor_settings.h:110 @ v0.13.1`）。动态形状的好处是短对话不必按最大长度预分配缓冲区，峰值内存更省；代价是形状变化可能触发底层重新准备。正文后面会看到，`prefill_chunk_size` 这个参数的注释明确写着"only applicable to dynamically exported models"（`llm_executor_settings.h:113 @ v0.13.1`）——分块 prefill 只对动态模型有意义，因为静态模型的 prefill 形状已经固定。这层静态/动态的选择对上层同样不可见。
+两条路径的性能含义不同。静态形状走 `Static` 执行器：prefill 与 decode 的张量形状在编译期就定死，KV cache 按最大上下文长度一次性分配，运行时形状不再变，delegate 只需编译一次。动态形状走 `Dynamic` 执行器：KV cache 随 decode 步逐步增长，每次增长 `kv_increment_size` 个位置（默认 16，`llm_executor_settings.h:110`）。动态形状的好处是短对话不必按最大长度预分配缓冲区，峰值内存更省；代价是形状变化可能触发底层重新准备。正文后面会看到，`prefill_chunk_size` 这个参数的注释明确写着"only applicable to dynamically exported models"（`llm_executor_settings.h:113`）——分块 prefill 只对动态模型有意义，因为静态模型的 prefill 形状已经固定。这层静态/动态的选择对上层同样不可见。
 
 无论走哪条分支，工厂返回的都是 `absl::StatusOr<std::unique_ptr<LlmExecutor>>`。上层拿到的是同一个 `LlmExecutor` 抽象（第 5 章那个接口），不知道底下是 CPU 还是 NPU、是 Static 还是 Dynamic。这就是"可插拔后端"落到代码里的样子：一个枚举、一个工厂、一个共同接口。加一个新后端，就是加一个 `case`，上层一行不改。
 
@@ -102,7 +102,7 @@ CPU 的好处是随时都在、什么算子都能跑。它的挑战落在功耗�
 
 ### CPU 亲和性：只认 Pixel Tensor 的一张硬编码表
 
-手机 CPU 是大小核混合的：几个高性能核，几个高能效核。推理这种计算密集的任务跑在性能核上才快；但若不加干预，系统调度器可能把线程迁到能效核上，吞吐随之下降。LiteRT-LM 为此提供了 CPU 亲和性工具（`runtime/engine/cpu_affinity_utils.h @ v0.13.1`），对外三个函数：判定是不是 Pixel Tensor 设备（`:25`）、查出性能核编号（`:29`）、把当前线程绑上去（`:35`）。性能核编号不是运行时算出来的，是按芯片型号硬编码的一张表（`cpu_affinity_utils.cc:57 @ v0.13.1`）：
+手机 CPU 是大小核混合的：几个高性能核，几个高能效核。推理这种计算密集的任务跑在性能核上才快；但若不加干预，系统调度器可能把线程迁到能效核上，吞吐随之下降。LiteRT-LM 为此提供了 CPU 亲和性工具（`runtime/engine/cpu_affinity_utils.h`），对外三个函数：判定是不是 Pixel Tensor 设备（`:25`）、查出性能核编号（`:29`）、把当前线程绑上去（`:35`）。性能核编号不是运行时算出来的，是按芯片型号硬编码的一张表（`cpu_affinity_utils.cc:57`）：
 
 ```cpp
 const TensorCoreAffinity kTensorAffinities[] = {
@@ -115,7 +115,7 @@ const TensorCoreAffinity kTensorAffinities[] = {
 
 `(1)` 每一行是一款 Pixel SoC 的中大核编号。核编号随代际变化：G3 用 4 到 8 号核，G4 收窄到 4 到 7 号，G5、G6 则从 2 号起。这套编号对应各代 Tensor SoC 的物理核布局，硬编码而非探测，因为 Android 没有一个可移植的接口能报告"哪些核是大核"。
 
-识别芯片型号的逻辑值得展开，正文早先只提了半句。判定走 `GetCurrentPixelSoc`（`cpu_affinity_utils.cc:66 @ v0.13.1`），它读两个系统属性并做双重校验：
+识别芯片型号的逻辑值得展开，正文早先只提了半句。判定走 `GetCurrentPixelSoc`（`cpu_affinity_utils.cc:66`），它读两个系统属性并做双重校验：
 
 ```cpp
 static const PixelSoc soc = []() {
@@ -136,9 +136,9 @@ return soc;
 
 `(1)` 读的是两个属性：制造商 `ro.soc.manufacturer` 与型号 `ro.soc.model`。`(2)` 先卡制造商——不是 Google 直接判为未知，这道校验能挡掉那些恰好把型号字符串取名 "Tensor" 的第三方设备。`(3)` 再逐一比对型号字符串。整段包在一个 `static` 局部变量的 lambda 初始化里，C++ 保证它只求值一次，此后每次调用直接返回缓存结果，避免反复读系统属性。认不出就返回 `kUnknown`，`IsPixelTensorDevice()` 随之返回 false。
 
-这张表和这道校验一起划定了工具的适用边界：只认 Google 自家的 Tensor 芯片。高通、联发科的设备走不到这里，`GetPixelPerformanceCores()` 对未知 SoC 返回空表。空表进 `SetCpuAffinity` 会被第一行直接短路（`cpu_affinity_utils.cc:104 @ v0.13.1`）：`cpu_affinity_cores.empty()` 为真时记一条 warning 就返回 `OkStatus`，绑核这一步在非 Pixel 设备上等于跳过。更彻底的是非 Android 编译分支——整个 `cpu_affinity_utils.cc` 的实现被 `#if defined(__ANDROID__)` 包住，在非 Android 平台上 `IsPixelTensorDevice` 恒为 false、`SetCpuAffinity` 是空实现直接返回成功（`cpu_affinity_utils.cc:130 @ v0.13.1`）。作者手上那台 Mac 走的正是这条空实现分支。
+这张表和这道校验一起划定了工具的适用边界：只认 Google 自家的 Tensor 芯片。高通、联发科的设备走不到这里，`GetPixelPerformanceCores()` 对未知 SoC 返回空表。空表进 `SetCpuAffinity` 会被第一行直接短路（`cpu_affinity_utils.cc:104`）：`cpu_affinity_cores.empty()` 为真时记一条 warning 就返回 `OkStatus`，绑核这一步在非 Pixel 设备上等于跳过。更彻底的是非 Android 编译分支——整个 `cpu_affinity_utils.cc` 的实现被 `#if defined(__ANDROID__)` 包住，在非 Android 平台上 `IsPixelTensorDevice` 恒为 false、`SetCpuAffinity` 是空实现直接返回成功（`cpu_affinity_utils.cc:130`）。作者手上那台 Mac 走的正是这条空实现分支。
 
-绑核的动作落在 `SetCpuAffinity`（`cpu_affinity_utils.cc:103 @ v0.13.1`），本质是一次 Linux 系统调用：
+绑核的动作落在 `SetCpuAffinity`（`cpu_affinity_utils.cc:103`），本质是一次 Linux 系统调用：
 
 ```cpp
 cpu_set_t mask;
@@ -154,13 +154,13 @@ if (sched_setaffinity(0, sizeof(mask), &mask) != 0) {  // (2)
 
 `(1)` 把每个性能核编号写进一个位掩码。`(2)` `sched_setaffinity` 的第一个参数是 0，代表当前线程。这是一个建议而非命令，头文件注释说得明白："The scheduler will then attempt to run the thread on these cores most of the time"（`cpu_affinity_utils.h:31`）。调度器多数时候会照办，但没有硬保证。绑核失败不致命：只记一条 warning，推理照跑，只是可能落到能效核上慢一点。
 
-这段代码在推理流水线里的位置很靠前。它不在 decode 循环里，而在引擎创建时执行一次（`engine_factory.h:136 @ v0.13.1`）：`if (IsPixelTensorDevice())` 为真才查核、绑核，且绑的是引擎创建线程本身。头文件注释说明这次绑核会波及该线程之后创建的子线程（"the current thread and any child threads it creates"，`cpu_affinity_utils.h:31`），推理线程池由此继承同一份亲和性。绑一次，此后整个会话的推理线程都倾向留在性能核上。
+这段代码在推理流水线里的位置很靠前。它不在 decode 循环里，而在引擎创建时执行一次（`engine_factory.h:136`）：`if (IsPixelTensorDevice())` 为真才查核、绑核，且绑的是引擎创建线程本身。头文件注释说明这次绑核会波及该线程之后创建的子线程（"the current thread and any child threads it creates"，`cpu_affinity_utils.h:31`），推理线程池由此继承同一份亲和性。绑一次，此后整个会话的推理线程都倾向留在性能核上。
 
 ### 线程数：为什么默认是 4
 
-线程本身由一个线程池管（`runtime/framework/threadpool.h:51 @ v0.13.1`），构造时给一个上限 `max_num_threads`（`:57`）。这里说的是算子内并行度——一个矩阵乘法拆给几个线程一起算。用几个线程是个权衡：线程多了未必更快，因为 decode 阶段的瓶颈是内存带宽而非算力（第 1 章的带宽约束），线程再多也快不过内存往核里喂权重的速度；而线程一多，功耗和发热却是实打实地涨。
+线程本身由一个线程池管（`runtime/framework/threadpool.h:51`），构造时给一个上限 `max_num_threads`（`:57`）。这里说的是算子内并行度——一个矩阵乘法拆给几个线程一起算。用几个线程是个权衡：线程多了未必更快，因为 decode 阶段的瓶颈是内存带宽而非算力（第 1 章的带宽约束），线程再多也快不过内存往核里喂权重的速度；而线程一多，功耗和发热却是实打实地涨。
 
-这个数默认是 4（`CpuConfig::number_of_threads`，`runtime/executor/llm_executor_settings.h:120 @ v0.13.1`），注释直接写"The default value is 4"。CLI 用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`）。覆盖路径落在 CPU 后端专属的配置分支里（`litert_lm_lib.cc:523 @ v0.13.1`）：
+这个数默认是 4（`CpuConfig::number_of_threads`，`runtime/executor/llm_executor_settings.h:120`），注释直接写"The default value is 4"。CLI 用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`）。覆盖路径落在 CPU 后端专属的配置分支里（`litert_lm_lib.cc:523`）：
 
 ```cpp
 if (backend == Backend::CPU) {
@@ -186,7 +186,7 @@ GPU 的强项是大规模并行，适合矩阵运算。它在端侧的一个优�
 
 回忆第 5 章的两条采样路径。设备上采样之所以快，是因为采样这一步不必把 logits 搬回 CPU。这次省掉的拷贝值多少，可以当面算一笔账。decode 每一步都会产出一整组 logits，长度等于词表大小。以 Gemma 系列约 26 万的词表、logits 按 FP16（2 字节）计，一步的 logits 就是 26 万 × 2 字节 ≈ 512 KiB。若采样在 CPU 做，这 512 KiB 每步都要从 GPU 显存拷回 CPU 内存（一次 device→host 传输）；在 GPU 上就地采样，这次拷贝省下。单看一步不大，但 decode 是整个生成里最频繁的操作，生成 512 个 token 就是 512 次这样的往返。第 1 章说过 decode 是内存带宽受限的：每一步真正的工作量是把几个 GiB 的权重读一遍，相比之下 512 KiB 的 logits 回传占比不高，所以这次省拷贝对整机吞吐的贡献是二阶的，很难从整机数字里单独剥离出来（本书未单测）。它更实在的价值在延迟链路上：省掉 device→host 同步，decode 每步少一次跨设备等待。
 
-采样器怎么建、跑在哪，都在 `InitializeSampler` 里定（`runtime/executor/llm_litert_compiled_model_executor.h:160 @ v0.13.1`，实现见 `.cc:1335`）：
+采样器怎么建、跑在哪，都在 `InitializeSampler` 里定（`runtime/executor/llm_litert_compiled_model_executor.h:160`，实现见 `.cc:1335`）：
 
 ```cpp
 ASSIGN_OR_RETURN(auto sampler_backend, GetSamplerBackend(executor_settings_));  // (1)
@@ -211,7 +211,7 @@ sampler_handles_input_ =
 
 开关为真只是前提，"省搬运"到底省在哪几步，要看采样器如何接管 decode 的输入张量。这条路径此前正文一句带过，这里摊开。
 
-`sampler_handles_input_` 为真时，`InitializeSampler` 先给采样器备好两块输入缓冲——decode 的 position 张量和 attention mask 张量的"上一步"副本（`decode_prev_input_pos_`、`decode_prev_mask_`），然后做一次"设一次再复位"的预热（`llm_litert_compiled_model_executor.cc:1383 @ v0.13.1`）：
+`sampler_handles_input_` 为真时，`InitializeSampler` 先给采样器备好两块输入缓冲——decode 的 position 张量和 attention mask 张量的"上一步"副本（`decode_prev_input_pos_`、`decode_prev_mask_`），然后做一次"设一次再复位"的预热（`llm_litert_compiled_model_executor.cc:1383`）：
 
 ```cpp
 RETURN_IF_ERROR(SetSamplerInputHandling(/*reset=*/false));
@@ -220,7 +220,7 @@ RETURN_IF_ERROR(SetSamplerInputHandling(/*reset=*/true));  // (1)
 
 `(1)` 先 `false` 再 `true` 这一对调用是有意的：注释写着"Set, then reset the input handling to get the underlying model ready, but not to bind the input tensors"。先设一遍让底层模型把输入形状准备好，再复位解绑，避免在初始化阶段就把张量绑死。真正的绑定发生在 decode 循环里。
 
-绑定的核心是 `SetSamplerInputHandling`（`llm_litert_compiled_model_executor.cc:1404 @ v0.13.1`），它把一组张量指针和一个回调函数一起交给采样器：
+绑定的核心是 `SetSamplerInputHandling`（`llm_litert_compiled_model_executor.cc:1404`），它把一组张量指针和一个回调函数一起交给采样器：
 
 ```cpp
 return sampler_->SetInputTensorsAndInferenceFunc(
@@ -232,7 +232,7 @@ return sampler_->SetInputTensorsAndInferenceFunc(
     BindTensorsAndRunDecodeStatic, this);  // (1)
 ```
 
-采样器拿到的第一个指针是 decode 的输入 token 张量（`input_tokens`）。含义是：采样器选出下一个 token 之后，直接把它写进这块输入张量——这块张量正是下一步 decode 的输入。token 从产生到被消费，全程留在设备缓冲里，不经过一次 device→host→device 的往返。`(1)` 最后传进去的 `BindTensorsAndRunDecodeStatic` 是一个静态回调，采样器在设备上定完 token 后回调它推进下一步 decode（`llm_litert_compiled_model_executor.cc:952 @ v0.13.1`）：
+采样器拿到的第一个指针是 decode 的输入 token 张量（`input_tokens`）。含义是：采样器选出下一个 token 之后，直接把它写进这块输入张量——这块张量正是下一步 decode 的输入。token 从产生到被消费，全程留在设备缓冲里，不经过一次 device→host→device 的往返。`(1)` 最后传进去的 `BindTensorsAndRunDecodeStatic` 是一个静态回调，采样器在设备上定完 token 后回调它推进下一步 decode（`llm_litert_compiled_model_executor.cc:952`）：
 
 ```cpp
 int LlmLiteRtCompiledModelExecutorBase::BindTensorsAndRunDecodeStatic(
@@ -246,7 +246,7 @@ int LlmLiteRtCompiledModelExecutorBase::BindTensorsAndRunDecodeStatic(
 
 `(1)` 回调里绑好张量就直接跑下一步 decode。控制权在设备侧循环，CPU 不必在每步之间介入把 token 搬来搬去。这就形成"token 不出显存"的完整回路：采样在 GPU 上完成，选出的 token 写回设备输入张量，回调在设备上触发下一次 decode。
 
-还有一处双缓冲的细节。position 和 mask 张量需要区分"这一步"和"上一步"，因为 decode 推进时当前步要读上一步的位置。`SwapSamplerInputTensors` 用 `std::swap` 把"当前"和"上一步"两块缓冲对调指针，再重新绑定（`llm_litert_compiled_model_executor.cc:1391 @ v0.13.1`）：读旧写新、交换指针，不额外分配也不拷贝内容。这与第 6 章 KV cache 的双缓冲是同一套思路，都用指针交换回避对同一块缓冲的读写冲突。
+还有一处双缓冲的细节。position 和 mask 张量需要区分"这一步"和"上一步"，因为 decode 推进时当前步要读上一步的位置。`SwapSamplerInputTensors` 用 `std::swap` 把"当前"和"上一步"两块缓冲对调指针，再重新绑定（`llm_litert_compiled_model_executor.cc:1391`）：读旧写新、交换指针，不额外分配也不拷贝内容。这与第 6 章 KV cache 的双缓冲是同一套思路，都用指针交换回避对同一块缓冲的读写冲突。
 
 这正是第 18 问的答案。两个后端的整体吞吐差距见附录 D：本书基准（Apple M5 Pro，Gemma 4 E4B，context 1024，decode 128 token）上 gpu 的 decode ≈ 50.6 tok/s、cpu ≈ 24.7 tok/s，gpu 约为 cpu 的 2 倍；prefill 在同条件下 gpu ≈ 999、cpu ≈ 259，gpu 约为 cpu 的 3.9 倍〔基准 D〕。片上采样只是这个整体差距里的一项，无法单独计价。
 
@@ -254,7 +254,7 @@ int LlmLiteRtCompiledModelExecutorBase::BindTensorsAndRunDecodeStatic(
 
 NPU 是三者里能效比最高的——同样的活，它最省电、最不发热，这在端侧是硬通货。代价是它最封闭：接口是厂商的（比如高通的 QNN），能跑的算子有限，灵活性最低。
 
-本节的内容基于对代码的阅读，没有真机验证（作者手上是一台 Mac，跑不了手机 NPU），所以只讲代码能佐证的部分。NPU 走的是工厂里那条独立路径（`CreateNpuLlmLiteRtCompiledModelExecutor`），产出一个专门的执行器（`runtime/executor/llm_litert_npu_compiled_model_executor.h:51 @ v0.13.1`）。这个执行器的类注释写着 "Component intended to be used with an NPU variant of Gemma3"（`:50`）——它不是通用执行器，是为 NPU 版 Gemma3 专门做的。
+本节的内容基于对代码的阅读，没有真机验证（作者手上是一台 Mac，跑不了手机 NPU），所以只讲代码能佐证的部分。NPU 走的是工厂里那条独立路径（`CreateNpuLlmLiteRtCompiledModelExecutor`），产出一个专门的执行器（`runtime/executor/llm_litert_npu_compiled_model_executor.h:51`）。这个执行器的类注释写着 "Component intended to be used with an NPU variant of Gemma3"（`:50`）——它不是通用执行器，是为 NPU 版 Gemma3 专门做的。
 
 最能说明结构差异的是它内部的一组子模型 struct。CPU/GPU 执行器持有一个 `CompiledModel`（主图），NPU 执行器却持有好几个，各管一段计算。其中之一是 embedder（`:266`）：
 
@@ -308,9 +308,11 @@ struct NpuAuxiliaryContext {                         // (3)
 
 ## 参考
 
-- 后端枚举与工厂：`runtime/executor/executor_settings_base.h:34 @ v0.13.1`（`Backend`，`CPU_ARTISAN`:39、CPU/GPU 于 `:45`/`:48`、`NPU`:54）；`runtime/executor/llm_litert_compiled_model_executor_factory.cc @ v0.13.1`（`CreateLlmLiteRtCompiledModelExecutor`:165；`GetBackend`:168；分派:170/174；default 拦截:177；CPU/GPU 内部动/静态分派:139；读取 prefill/decode 子图:135）。
-- 片上采样：`runtime/executor/llm_litert_compiled_model_executor.h @ v0.13.1`（`InitializeSampler`:160；`gpu_sampler_max_top_k_`:354）；实现于 `.cc:1335`（`GetSamplerBackend`、`sampler_handles_input_`、`runs_embedding_on_gpu`）。
-- 线程与亲和性：`runtime/framework/threadpool.h:51 @ v0.13.1`（`max_num_threads` 构造:57）；`runtime/engine/cpu_affinity_utils.h @ v0.13.1`（`IsPixelTensorDevice`:25、性能核:29、设亲和性:35）；实现于 `.cc`（`kTensorAffinities` 表:57、SoC 识别:80、`SetCpuAffinity`/`sched_setaffinity`:103）；调用点 `runtime/engine/engine_factory.h:136 @ v0.13.1`；线程数默认 `runtime/executor/llm_executor_settings.h:120 @ v0.13.1`、CLI 接线 `runtime/engine/litert_lm_lib.cc:528 @ v0.13.1`（`--num_cpu_threads`）。
-- NPU：`runtime/executor/llm_litert_npu_compiled_model_executor.h @ v0.13.1`（类:51、类注释:50；`LatencyStats` 逐段计时:60-82；`EmbedderContext`:266、`EmbedderPerLayerContext`:287、`NpuAuxiliaryContext`:316/注释:314）。
+> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
+
+- 后端枚举与工厂：`runtime/executor/executor_settings_base.h:34`（`Backend`，`CPU_ARTISAN`:39、CPU/GPU 于 `:45`/`:48`、`NPU`:54）；`runtime/executor/llm_litert_compiled_model_executor_factory.cc`（`CreateLlmLiteRtCompiledModelExecutor`:165；`GetBackend`:168；分派:170/174；default 拦截:177；CPU/GPU 内部动/静态分派:139；读取 prefill/decode 子图:135）。
+- 片上采样：`runtime/executor/llm_litert_compiled_model_executor.h`（`InitializeSampler`:160；`gpu_sampler_max_top_k_`:354）；实现于 `.cc:1335`（`GetSamplerBackend`、`sampler_handles_input_`、`runs_embedding_on_gpu`）。
+- 线程与亲和性：`runtime/framework/threadpool.h:51`（`max_num_threads` 构造:57）；`runtime/engine/cpu_affinity_utils.h`（`IsPixelTensorDevice`:25、性能核:29、设亲和性:35）；实现于 `.cc`（`kTensorAffinities` 表:57、SoC 识别:80、`SetCpuAffinity`/`sched_setaffinity`:103）；调用点 `runtime/engine/engine_factory.h:136`；线程数默认 `runtime/executor/llm_executor_settings.h:120`、CLI 接线 `runtime/engine/litert_lm_lib.cc:528`（`--num_cpu_threads`）。
+- NPU：`runtime/executor/llm_litert_npu_compiled_model_executor.h`（类:51、类注释:50；`LatencyStats` 逐段计时:60-82；`EmbedderContext`:266、`EmbedderPerLayerContext`:287、`NpuAuxiliaryContext`:316/注释:314）。
 
 <!-- NPU 无真机，全程标注"基于代码分析"。片上采样省多少、cpu 线程数扫描、cpu vs gpu 对比 待基准 D 回填〔基准 D〕。#2281 现象按【文档】级引用，成因为基于浮点常识的解释、未臆测 issue 内部。图 8-2(数据路径) 表 8-1(权衡) 规格见 notes.md，本轮出签名图 8-1。 -->

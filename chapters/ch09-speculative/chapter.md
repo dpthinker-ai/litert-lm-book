@@ -10,11 +10,11 @@
 
 推测解码的回答是能，前提是先做一次预测。用一个又小又快的模型先草拟接下来的若干 token，再让基础模型（base 模型）一次前向把这几个 token 一并验证。预测正确的部分直接采用，预测错误的位置用基础模型算出的正确 token 回退兜底。关键在于验证那几个草稿 token 只花基础模型一次前向，而不是逐个前向。开销最高的那次前向，被摊到了多个 token 上。
 
-推测解码有几种形态。草稿模型可以是完全独立的另一个模型，也可以是和主模型共享主干的多头结构，即 MTP（Multi-Token Prediction，多 token 预测），Gemma 4 走的就是后者。在 LiteRT-LM 的运行时里，drafter 装载为一个独立的小模型（成员 `mtp_drafter_model_`），验证则复用基础模型上一个专门的 `"verify"` signature（常量定义 `runtime/executor/llm_litert_mtp_drafter.cc:62`，取用见 `base_model.FindSignature(kVerifySignatureRunner)` 于 `:227 @ v0.13.1`）。所以无论训练时共不共享主干，运行时看到的都是同一套结构：小模型草拟、基础模型验证。
+推测解码有几种形态。草稿模型可以是完全独立的另一个模型，也可以是和主模型共享主干的多头结构，即 MTP（Multi-Token Prediction，多 token 预测），Gemma 4 走的就是后者。在 LiteRT-LM 的运行时里，drafter 装载为一个独立的小模型（成员 `mtp_drafter_model_`），验证则复用基础模型上一个专门的 `"verify"` signature（常量定义 `runtime/executor/llm_litert_mtp_drafter.cc:62`，取用见 `base_model.FindSignature(kVerifySignatureRunner)` 于 `:227`）。所以无论训练时共不共享主干，运行时看到的都是同一套结构：小模型草拟、基础模型验证。
 
 ## 机制：草拟，然后一次验一串
 
-一次 `Draft()`（`runtime/executor/llm_litert_mtp_drafter.cc:453 @ v0.13.1`）分三步，函数体本身就是这三步的骨架：
+一次 `Draft()`（`runtime/executor/llm_litert_mtp_drafter.cc:453`）分三步，函数体本身就是这三步的骨架：
 
 ```cpp
 ASSIGN_OR_RETURN(std::vector<int> drafted_tokens,
@@ -195,7 +195,7 @@ if (activations_ptr) {
 
 ## 集成：Draft 由谁调用，接受的 token 如何回写
 
-机制章讲到这里都在 drafter 内部。把它接回运行时的缝在执行器的 decode 里（`llm_litert_compiled_model_executor.cc:1003 @ v0.13.1` 起的 `Decode`）。有没有装载 drafter，决定走哪条路：`mtp_drafter_ == nullptr` 时走普通 decode（`:1007`），否则走推测路径。推测路径本身又分两个分支，区别在于这是不是 prefill 后的首个 decode：
+机制章讲到这里都在 drafter 内部。把它接回运行时的缝在执行器的 decode 里（`llm_litert_compiled_model_executor.cc:1003` 起的 `Decode`）。有没有装载 drafter，决定走哪条路：`mtp_drafter_ == nullptr` 时走普通 decode（`:1007`），否则走推测路径。推测路径本身又分两个分支，区别在于这是不是 prefill 后的首个 decode：
 
 ```cpp
 bool last_run_is_decode = llm_context_->runtime_state().ran_decode; // (1)
@@ -291,7 +291,7 @@ speedup ≈ E[产出] / (1 + G · c_draft / c_base)
 
 要开推测解码，得先过两道门槛：模型自己声明支持，以及草拟步数 G 早在导出时就定死。
 
-其一，一个模型支不支持推测解码，写在它的能力声明里。运行时用 `HasSpeculativeDecodingSupport`（`schema/capabilities/speculative_decoding.h:33`、`:44 @ v0.13.1`）判断——头文件给了两个重载，一个接受 `std::istream&`、一个接受文件路径，后者只是打开文件转调前者。真正的判断在 `.cc` 里，机制很朴素（`speculative_decoding.cc:40`–`:73`）：
+其一，一个模型支不支持推测解码，写在它的能力声明里。运行时用 `HasSpeculativeDecodingSupport`（`schema/capabilities/speculative_decoding.h:33`、`:44`）判断——头文件给了两个重载，一个接受 `std::istream&`、一个接受文件路径，后者只是打开文件转调前者。真正的判断在 `.cc` 里，机制很朴素（`speculative_decoding.cc:40`–`:73`）：
 
 ```cpp
 const std::vector<std::string> speculative_decoding_model_types = {
@@ -313,7 +313,7 @@ if (section_object->data_type() == AnySectionDataType_TFLiteModel) {  // (2)
 
 `(2)` 遍历 `.litertlm` 的所有 section，`(3)` 找每个 TFLite 模型 section 的 `model_type` 元数据，`(4)` 只要有一个等于 `(1)` 里那个字符串 `"tf_lite_mtp_drafter"` 就返回 true。换句话说，「支持推测解码」不是一个布尔开关，而是文件里有没有打包一个 `model_type` 标为 mtp drafter 的子模型。这正是第 7 章讲的 `.litertlm` 容器里那些 section 的用途之一：drafter 就是和基础模型打包在同一个文件里的另一个 section。
 
-这个 bool 从探测到装载的链路可以一路走通，正好实证「支持等于文件里打包了 drafter section」这句话。CLI 侧，`--enable-speculative-decoding` 取 `auto`、`true`、`false` 三选一（`python/litert_lm_cli/common.py:108 @ v0.13.1`），经 `parse_speculative_decoding`（`:21`）映射：`auto` 与缺省映射为 `None`（交给运行时按元数据自动判断）、`true` 映射为 `True`（强制开启，模型不支持则报错）、`false` 映射为 `False`。C++ 侧的默认是关（`ABSL_FLAG(bool, enable_speculative_decoding, false, ...)`，`runtime/engine/shared_flags.cc:149`）。这个标志经引擎注入执行器设置（`.enable_speculative_decoding = settings.enable_speculative_decoding`，`runtime/engine/litert_lm_lib.cc:592`）。执行器构造时看这个标志：
+这个 bool 从探测到装载的链路可以一路走通，正好实证「支持等于文件里打包了 drafter section」这句话。CLI 侧，`--enable-speculative-decoding` 取 `auto`、`true`、`false` 三选一（`python/litert_lm_cli/common.py:108`），经 `parse_speculative_decoding`（`:21`）映射：`auto` 与缺省映射为 `None`（交给运行时按元数据自动判断）、`true` 映射为 `True`（强制开启，模型不支持则报错）、`false` 映射为 `False`。C++ 侧的默认是关（`ABSL_FLAG(bool, enable_speculative_decoding, false, ...)`，`runtime/engine/shared_flags.cc:149`）。这个标志经引擎注入执行器设置（`.enable_speculative_decoding = settings.enable_speculative_decoding`，`runtime/engine/litert_lm_lib.cc:592`）。执行器构造时看这个标志：
 
 ```cpp
 if (advanced_settings.has_value() &&
@@ -366,9 +366,11 @@ num_draft_steps = input_pos_dims[0] - 1;                         // (1)
 
 ## 参考
 
-- MTP drafter 实现：`runtime/executor/llm_litert_mtp_drafter.cc @ v0.13.1`（`Draft` 三步骨架 :453、463-469；`RunDraftingLoop` 循环体 :328、336-370，activation 两条来源分支 :346-353、回喂 :369；`ConcatenateEmbeddingsAndActivations` :80 起；`PrepareVerifierInputBuffers` :374-423，`input_pos`/mask/`LookupPrefill`/`Duplicate`/`param_tensor` 分支 :380-472 各字段；`PrepareVerifierOutputBuffers` :424；`RunVerification` :437、440-450；接受循环 :471-484；输出 :492-493；接受率统计 :494-495、析构打印 :164-172；`CreateGreedySampler` :65-79，两处采样器构造 :263-272；接受判定严格相等 :475；`num_draft_steps` 由 verify signature 形状定 :250-256；`"verify"` signature 常量 :62、取用 :227；drafter section 装载 `GetTFLiteModel(kTfLiteMtpDrafter)` :196；drafter 独立小模型成员 `mtp_drafter_model_`）。
-- 执行器集成：`runtime/executor/llm_litert_compiled_model_executor.cc @ v0.13.1`（`Decode` MTP 分支 :1003-1082，稳态分支 Draft 调用 :1036、首个 decode 分支 :1073、`current_step` 累加 :1042/1077、真 token 回插 :1079；drafter 装载条件 :1810-1818；`ran_decode` 置位 :517/:969）。
-- 能力声明与 CLI 链路：`schema/capabilities/speculative_decoding.h @ v0.13.1`（`HasSpeculativeDecodingSupport` :33、44）；探测逻辑 `schema/capabilities/speculative_decoding.cc:40-73`（扫 section 的 `model_type` 是否为 `"tf_lite_mtp_drafter"`）；CLI 选项 `python/litert_lm_cli/common.py:108`、映射 `parse_speculative_decoding :21-41`；C++ 默认关 `runtime/engine/shared_flags.cc:149`；注入执行器设置 `runtime/engine/litert_lm_lib.cc:592`。
+> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
+
+- MTP drafter 实现：`runtime/executor/llm_litert_mtp_drafter.cc`（`Draft` 三步骨架 :453、463-469；`RunDraftingLoop` 循环体 :328、336-370，activation 两条来源分支 :346-353、回喂 :369；`ConcatenateEmbeddingsAndActivations` :80 起；`PrepareVerifierInputBuffers` :374-423，`input_pos`/mask/`LookupPrefill`/`Duplicate`/`param_tensor` 分支 :380-472 各字段；`PrepareVerifierOutputBuffers` :424；`RunVerification` :437、440-450；接受循环 :471-484；输出 :492-493；接受率统计 :494-495、析构打印 :164-172；`CreateGreedySampler` :65-79，两处采样器构造 :263-272；接受判定严格相等 :475；`num_draft_steps` 由 verify signature 形状定 :250-256；`"verify"` signature 常量 :62、取用 :227；drafter section 装载 `GetTFLiteModel(kTfLiteMtpDrafter)` :196；drafter 独立小模型成员 `mtp_drafter_model_`）。
+- 执行器集成：`runtime/executor/llm_litert_compiled_model_executor.cc`（`Decode` MTP 分支 :1003-1082，稳态分支 Draft 调用 :1036、首个 decode 分支 :1073、`current_step` 累加 :1042/1077、真 token 回插 :1079；drafter 装载条件 :1810-1818；`ran_decode` 置位 :517/:969）。
+- 能力声明与 CLI 链路：`schema/capabilities/speculative_decoding.h`（`HasSpeculativeDecodingSupport` :33、44）；探测逻辑 `schema/capabilities/speculative_decoding.cc:40-73`（扫 section 的 `model_type` 是否为 `"tf_lite_mtp_drafter"`）；CLI 选项 `python/litert_lm_cli/common.py:108`、映射 `parse_speculative_decoding :21-41`；C++ 默认关 `runtime/engine/shared_flags.cc:149`；注入执行器设置 `runtime/engine/litert_lm_lib.cc:592`。
 - 推测采样的分布无损性（文献对照）：Y. Leviathan, M. Kalman, Y. Matias, *Fast Inference from Transformers via Speculative Decoding*, ICML 2023；C. Chen 等, *Accelerating Large Language Model Decoding with Speculative Sampling*, 2023（【文档】级，说明经典推测采样的概率接受与本章贪心接受路径的差别）。
 - 「约 3 倍」：Google 官方博客 *Accelerating Gemma 4: faster inference with multi-token prediction drafters*，https://blog.google/innovation-and-ai/technology/developers-tools/multi-token-prediction-gemma-4/（经 LiteRT-LM 仓库 README 索引，访问 2026-07-05）。本书实测未复现，见〔基准 D〕。
 

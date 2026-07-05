@@ -15,7 +15,7 @@
 1. 1024 ÷ 999.1 + 1 ÷ 50.6 ≈ 1.025 + 0.020 = 1.045 s，与实测 1.04 s 一致（差异在计时粒度内）。
 2. 有效带宽 50.6 × 2.26 ≈ 114 GB/s；4096 档每步 114 ÷ 45.6 ≈ 2.51 GB，比权重多约 0.25 GB，除以 4096 ≈ 60 KiB/token。高于 28 KiB 的原因：恒定带宽假设把注意力计算随上下文增长的耗时也折算成了"字节"。
 3. Init 1.8 s 属 GPU 缓存已热的正常量级（附录 D 为 1.77 s）；TTFT 4.4 s 需先看上下文长度，若约 4096 则与 gpu 档实测吻合、属 prefill 的正常账；decode 45 tok/s 与上下文加倍降 8% 均在基准区间内。四项均无异常，不必调优。
-4. 否则计时终点落在异步提交返回处，测得的是提交耗时而非硬件完成耗时。实现是 `params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value())`（`runtime/core/tasks.cc:435 @ v0.13.1`）。
+4. 否则计时终点落在异步提交返回处，测得的是提交耗时而非硬件完成耗时。实现是 `params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value())`（`runtime/core/tasks.cc:435`）。
 5. `MaskLogits` 在第 4 层（组件层）实现、被第 2 层（编排层）的 `DecodeAndSample` 外部路径调用；它修改的 logits 来自第 3 层执行器的 `DecodeLogits`。
 
 ## 第 3 章
@@ -46,7 +46,7 @@
 
 1. 28 KiB × 8192 = 224 MiB；静态槽位 32003 全预留 = 28672 B × 32003 ≈ 918 MB。
 2. Clone 拷贝 4096 × 28 KiB ≈ 117 MB（`CloneKVCacheBuffers` 逐块 `CopyTensorBuffer`）；Rewind 只把 `current_step` 游标改回检查点值，KV 数据原地留用。一个搬字节，一个改整数。
-3. 数据不动、指针换向：读旧写新之后 `std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_)`；prefill 路径在 `llm_litert_compiled_model_executor.cc:738`、decode 路径在 `:947`（均 @ v0.13.1）。
+3. 数据不动、指针换向：读旧写新之后 `std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_)`；prefill 路径在 `llm_litert_compiled_model_executor.cc:738`、decode 路径在 `:947`。
 4. 内存：预留缓冲随之翻倍（int8 下每 token 28 KiB）。速度：固定形状路径上注意力按预留长度计算，mask 屏蔽的位置也参与读写，decode 变慢——预留多大，每步为多大付账。
 5. 本书基准模型：权重 int4、激活 fp16（GPU 默认）、KV int8。另一合法组合如：权重 int8、激活 fp32、KV fp16——三者各自独立可选。
 
@@ -70,7 +70,7 @@
 
 1. 一轮成本 ≈ 1.3 个 base 前向，期望产出 1 + p + p² + p³。令其等于 1.3，解得 p ≈ 0.27。接受率低于约四分之一时，这套机制开始亏。
 2. verify 对 G+1 个位置都给出正确答案：即使首个草拟就错，也能收下位置 0 的 bonus token——一次 base 前向至少换一个 token，与普通 decode 打平。
-3. verify signature 的 `input_pos` 维度是编译期固定的形状，G = 该维度 − 1（`llm_litert_mtp_drafter.cc:256 @ v0.13.1`）。改 G 意味着重新导出模型。
+3. verify signature 的 `input_pos` 维度是编译期固定的形状，G = 该维度 − 1（`llm_litert_mtp_drafter.cc:256`）。改 G 意味着重新导出模型。
 4. 推测：benchmark 的合成负载没有真实语言的可预测结构，drafter 接受率低，收益被 drafter 开销抵消。无法实证归因是因为 CLI 不输出接受率计数（它只在析构日志里打印）。
 5. 前半是当前 token 的词嵌入（2560 维，来自 embedder 查表），后半是主干上一步的隐藏态 activation（2560 维，来自 decode/verify 的输出缓冲）。
 

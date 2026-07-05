@@ -16,7 +16,7 @@ litert-lm run \
   --prompt="What is the capital of France?"
 ```
 
-`litert-lm` 是一层轻量的 Python 封装：它通过 FFI 绑定 C++ 运行时，再用 click 注册八个子命令（`python/litert_lm_cli/main.py:52 @ v0.13.1`）。日常常用五个：`run` 交互对话、`benchmark` 采集性能指标、`import` 把模型收进本地目录、`list` 查看已有模型、`serve` 起一个 OpenAI 兼容的本地服务。
+`litert-lm` 是一层轻量的 Python 封装：它通过 FFI 绑定 C++ 运行时，再用 click 注册八个子命令（`python/litert_lm_cli/main.py:52`）。日常常用五个：`run` 交互对话、`benchmark` 采集性能指标、`import` 把模型收进本地目录、`list` 查看已有模型、`serve` 起一个 OpenAI 兼容的本地服务。
 
 ```python
 _serve_module.register(cli)      // (1)
@@ -29,7 +29,7 @@ _benchmark_module.register(cli)
 _run_module.register(cli)
 ```
 
-每个子命令是一个独立模块，各自调用 `register(cli)` 挂进同一个 click group。新增子命令不牵动其他模块，这是全书第一条设计原则「接口隔离」在 CLI 层的一次缩影。(2) 处的 `import` 子命令要靠 `importlib.import_module` 动态加载，因为 `import` 是 Python 关键字，不能直接写成 `from ... import import`（`main.py:33 @ v0.13.1`）。
+每个子命令是一个独立模块，各自调用 `register(cli)` 挂进同一个 click group。新增子命令不牵动其他模块，这是全书第一条设计原则「接口隔离」在 CLI 层的一次缩影。(2) 处的 `import` 子命令要靠 `importlib.import_module` 动态加载，因为 `import` 是 Python 关键字，不能直接写成 `from ... import import`（`main.py:33`）。
 
 `run` 子命令的核心，是拿到模型路径后如何把一次对话跑起来。略去参数解析，核心逻辑如下：
 
@@ -49,9 +49,9 @@ _run_module.register(cli)
 
 (1) `Engine` 只接受一个模型路径和几个后端开关。它是第 3 章要拆解的两层结构里的外层，负责加载权重、装配后端。(2) `create_session` 才返回真正承载对话的 `session`。一个 Engine 可以派生多个 Session，这是第 5 问「Engine 和 Session 为什么分两层」的入口：权重加载一次，会话状态各自独立。`run` 用 `with` 托管 Engine 的生命周期，退出时释放显存与 KV cache。
 
-第一次运行会从 Hugging Face 拉取模型：`from_huggingface_repo` 触发 `common.download_from_huggingface`（`run.py:571 @ v0.13.1`）。litert-community 的 Gemma 4 版可直接下载，google/ 官方版是受限发布，需先接受许可条款。模型文件通常数 GiB，需预留磁盘空间，首次下载耗时较长。跑通之后，答案会逐 token 刷出：每个 decode step 产出一个增量 token，边生成边输出，这就是第 1 章内存带宽约束（后文有时称带宽墙）在终端里的直接表现。
+第一次运行会从 Hugging Face 拉取模型：`from_huggingface_repo` 触发 `common.download_from_huggingface`（`run.py:571`）。litert-community 的 Gemma 4 版可直接下载，google/ 官方版是受限发布，需先接受许可条款。模型文件通常数 GiB，需预留磁盘空间，首次下载耗时较长。跑通之后，答案会逐 token 刷出：每个 decode step 产出一个增量 token，边生成边输出，这就是第 1 章内存带宽约束（后文有时称带宽墙）在终端里的直接表现。
 
-逐 token 的流式输出，在 `run` 的输出循环里看得最清楚：它对 `send_message_async` 返回的 stream 逐块迭代，每块是一小段文本，边收边打印，不等整段生成完（`run.py:100 @ v0.13.1`）：
+逐 token 的流式输出，在 `run` 的输出循环里看得最清楚：它对 `send_message_async` 返回的 stream 逐块迭代，每块是一小段文本，边收边打印，不等整段生成完（`run.py:100`）：
 
 ```python
   stream = conversation.send_message_async(prompt)
@@ -71,8 +71,8 @@ _run_module.register(cli)
 
 如果要读源码、改代码，就得从源码编译 C++ 演示程序 `litert_lm_main`（完整构建见第 11 章与附录 C，这里先直接用它）。它最核心的两个开关：
 
-- `--backend`：选执行后端，默认是 `gpu`（`runtime/engine/litert_lm_main.cc:52 @ v0.13.1`）。想用 CPU 就传 `--backend=cpu`。
-- `--model_path`：指向一个 `.litertlm` 模型文件（`litert_lm_main.cc:54 @ v0.13.1`）。
+- `--backend`：选执行后端，默认是 `gpu`（`runtime/engine/litert_lm_main.cc:52`）。想用 CPU 就传 `--backend=cpu`。
+- `--model_path`：指向一个 `.litertlm` 模型文件（`litert_lm_main.cc:54`）。
 
 一个纯 CPU 的最小跑法：
 
@@ -80,7 +80,7 @@ _run_module.register(cli)
 litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 ```
 
-这个 C++ 程序把「一次对话」压缩成十来行，正好当作五层架构的第一张导览图（`runtime/engine/litert_lm_main.cc:113 @ v0.13.1`）。下面这段是 `MainHelper` 的主干（省略了错误处理与 conversation 的装配）：
+这个 C++ 程序把「一次对话」压缩成十来行，正好当作五层架构的第一张导览图（`runtime/engine/litert_lm_main.cc:113`）。下面这段是 `MainHelper` 的主干（省略了错误处理与 conversation 的装配）：
 
 ```cpp
   ASSIGN_OR_RETURN(ModelAssets model_assets,  // NOLINT
@@ -107,7 +107,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 
 ## 读懂第一批数字
 
-`litert-lm benchmark` 专门输出性能指标（本书附录 D 的基准数据集即由此采集）。它跑一个纯性能循环，不做真实对话，只按指定的 token 数各跑一轮 prefill 和 decode，再输出四个数字（`python/litert_lm_cli/commands/benchmark.py:102 @ v0.13.1`）：
+`litert-lm benchmark` 专门输出性能指标（本书附录 D 的基准数据集即由此采集）。它跑一个纯性能循环，不做真实对话，只按指定的 token 数各跑一轮 prefill 和 decode，再输出四个数字（`python/litert_lm_cli/commands/benchmark.py:102`）：
 
 ```python
     result = benchmark_obj.run()                            // (1)
@@ -142,7 +142,7 @@ Time to first token:  3.9400 s
 
 这四个数字背后是一个叫 `BenchmarkInfo` 的结构，C API 把每一项都单独暴露了出来。四个最该盯住的：
 
-| 指标 | 含义 | 属于哪堵墙 | C API（`c/engine.h @ v0.13.1`） |
+| 指标 | 含义 | 属于哪堵墙 | C API（`c/engine.h`） |
 |---|---|---|---|
 | **TTFT**（首 token 时延，ms） | 从发起到第一个字出来的时间 | prefill（算力） | `..._get_time_to_first_token`（:583） |
 | **prefill 吞吐**（tokens/s） | 提示词被吞进去的速度 | prefill（算力） | `..._get_prefill_tokens_per_sec_at`（:634） |
@@ -159,7 +159,7 @@ Time to first token:  3.9400 s
 
 ## 这些数字怎么来的：计时器与测量语义
 
-会读数字之后，还要知道数字是怎么得到的，否则无从判断它可不可信。四个指标全部出自 `BenchmarkInfo`（`runtime/engine/io_types.h:420 @ v0.13.1`），它的计时模型很简单：每一轮 prefill 或 decode 记为一个 turn，起点打一个时间戳，终点用当前时间减起点，连同这一轮处理的 token 数存进列表（`runtime/engine/io_types.cc:307 @ v0.13.1`）：
+会读数字之后，还要知道数字是怎么得到的，否则无从判断它可不可信。四个指标全部出自 `BenchmarkInfo`（`runtime/engine/io_types.h:420`），它的计时模型很简单：每一轮 prefill 或 decode 记为一个 turn，起点打一个时间戳，终点用当前时间减起点，连同这一轮处理的 token 数存进列表（`runtime/engine/io_types.cc:307`）：
 
 ```cpp
 absl::Status BenchmarkInfo::TimePrefillTurnEnd(uint64_t num_prefill_tokens) {
@@ -172,9 +172,9 @@ absl::Status BenchmarkInfo::TimePrefillTurnEnd(uint64_t num_prefill_tokens) {
 }
 ```
 
-(1) 一个 turn 就是一条 `(token 数, 耗时)` 记录。吞吐的定义随之而来：某一轮的 tokens/s 就是这条记录的 `num_tokens / duration`（`GetDecodeTokensPerSec`，`io_types.cc:434 @ v0.13.1`，函数里对零时长与越界各有防护）。前面表 2-1 里的 `last_*_per_second`，取的是最后一轮的这个商。
+(1) 一个 turn 就是一条 `(token 数, 耗时)` 记录。吞吐的定义随之而来：某一轮的 tokens/s 就是这条记录的 `num_tokens / duration`（`GetDecodeTokensPerSec`，`io_types.cc:434`，函数里对零时长与越界各有防护）。前面表 2-1 里的 `last_*_per_second`，取的是最后一轮的这个商。
 
-TTFT 的口径也写在代码里（`GetTimeToFirstToken`，`io_types.cc:455 @ v0.13.1`）：
+TTFT 的口径也写在代码里（`GetTimeToFirstToken`，`io_types.cc:455`）：
 
 ```cpp
 double first_decode_token_seconds = absl::ToDoubleSeconds(
@@ -186,14 +186,14 @@ return first_decode_token_seconds + first_prefill_token_seconds;
 
 (2) 是首轮 prefill 的完整耗时，(1) 是首轮 decode 平摊到单 token 的时长，两者相加。上一节那笔 256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s 的验算不是本书发明的口径，就是这个函数的算式本身。也因此 Init 不在里面：模型加载在任何 turn 开始之前就结束了。
 
-数字可信还依赖两处刻意改变执行语义的设计。其一，benchmark 模式强制 prefill 同步完成（`runtime/core/tasks.cc:435 @ v0.13.1`）：
+数字可信还依赖两处刻意改变执行语义的设计。其一，benchmark 模式强制 prefill 同步完成（`runtime/core/tasks.cc:435`）：
 
 ```cpp
 // Wait for prefill to complete if benchmark mode is enabled.
 params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 ```
 
-正常路径上 prefill 可以异步提交、不等硬件真正跑完就返回（第 4 章）；计时若落在这样的路径上，测到的只是「提交耗时」。这一行把 benchmark 模式下的计时终点钉在硬件完成之后。其二，`ShouldStop` 对 benchmark 有专门分支（`tasks.cc:86 @ v0.13.1`，第 5 章贴过全文）：指定了 decode 步数就跑满 N 步、忽略停止词。原因也是测量语义：若模型第 20 步碰巧生成了停止词，一次 128 步的吞吐测量就会缩水成 20 步的样本，抖动大且不可比。
+正常路径上 prefill 可以异步提交、不等硬件真正跑完就返回（第 4 章）；计时若落在这样的路径上，测到的只是「提交耗时」。这一行把 benchmark 模式下的计时终点钉在硬件完成之后。其二，`ShouldStop` 对 benchmark 有专门分支（`tasks.cc:86`，第 5 章贴过全文）：指定了 decode 步数就跑满 N 步、忽略停止词。原因也是测量语义：若模型第 20 步碰巧生成了停止词，一次 128 步的吞吐测量就会缩水成 20 步的样本，抖动大且不可比。
 
 这两处合起来是一条测量原则：**基准模式可以改变执行语义，但改变的方向必须让数字更接近想测的那件事**（硬件真实耗时、固定长度的稳态吞吐），并且写在代码里可以被核对。
 
@@ -269,7 +269,7 @@ Roofline 框架立刻能做一次有内容的练习。附录 D 里，cpu 后端 
 
 这五层不是 PPT 上的方框，每一层都落在具体文件上。往下看三层，越贴近硬件抽象越薄。
 
-第 1 层的门面是 `SessionInterface`（`runtime/engine/engine.h:70 @ v0.13.1`）。它把「跑一次生成」暴露成一个纯虚接口，使用者只面对方法名，看不见后端：
+第 1 层的门面是 `SessionInterface`（`runtime/engine/engine.h:70`）。它把「跑一次生成」暴露成一个纯虚接口，使用者只面对方法名，看不见后端：
 
 ```cpp
 class SessionInterface {
@@ -288,7 +288,7 @@ class SessionInterface {
 
 (1) `GenerateContent` 是高层的一步到位；(2)(3) 把它拆成 `RunPrefill` 和 `RunDecode` 两个可分别调用的原语。推理流水线在接口层就已经分成两段：先 prefill 并行处理提示词，再 decode 逐 token 生成。第 3 章讲 Engine/Session 分层，就从这个 `= 0` 的纯虚签名开始。
 
-第 2 层的编排落在 `runtime/core/tasks.cc`。`RunPrefill`/`RunDecode` 往下调，就到这里的 `Prefill` 和 `Decode` 两个自由函数。`Prefill` 的开头先检查上下文长度上限（KV cache 容量，第 1 章内存容量约束的一个具体面）（`runtime/core/tasks.cc:413 @ v0.13.1`）：
+第 2 层的编排落在 `runtime/core/tasks.cc`。`RunPrefill`/`RunDecode` 往下调，就到这里的 `Prefill` 和 `Decode` 两个自由函数。`Prefill` 的开头先检查上下文长度上限（KV cache 容量，第 1 章内存容量约束的一个具体面）（`runtime/core/tasks.cc:413`）：
 
 ```cpp
   auto num_tokens = token_id_tensor_type.Layout().Dimensions().back();
@@ -302,9 +302,9 @@ class SessionInterface {
   RETURN_IF_ERROR(executor.Prefill(inputs, params));         // (2)
 ```
 
-(1) 提示词的 token 数一旦顶到 `max_num_tokens`（KV cache 的容量上限，即第 13 问里的 `--max-num-tokens`），直接报错——这堵「上下文墙」在真正调用执行器之前就拦下。(2) 校验过了才把 `inputs` 交给下一层的 `executor.Prefill`。decode 侧则是一个 `while (true)` 循环，每转一圈调一次 `DecodeOneStep`，再问一句「该停了吗」（`runtime/core/tasks.cc:571 @ v0.13.1` 调 `ShouldStop`）：吐到停止词、达到 benchmark 指定步数、撞上 `max_num_tokens`、或超过 `max_output_tokens`，四者任一为真就跳出（`ShouldStop` 定义在 `tasks.cc:86 @ v0.13.1`）。第 4、5 章顺着这个循环讲取消、停止词、流式的半个字。
+(1) 提示词的 token 数一旦顶到 `max_num_tokens`（KV cache 的容量上限，即第 13 问里的 `--max-num-tokens`），直接报错——这堵「上下文墙」在真正调用执行器之前就拦下。(2) 校验过了才把 `inputs` 交给下一层的 `executor.Prefill`。decode 侧则是一个 `while (true)` 循环，每转一圈调一次 `DecodeOneStep`，再问一句「该停了吗」（`runtime/core/tasks.cc:571` 调 `ShouldStop`）：吐到停止词、达到 benchmark 指定步数、撞上 `max_num_tokens`、或超过 `max_output_tokens`，四者任一为真就跳出（`ShouldStop` 定义在 `tasks.cc:86`）。第 4、5 章顺着这个循环讲取消、停止词、流式的半个字。
 
-第 3 层是执行器，一个纯虚基类把「用什么硬件跑」这件事彻底藏起来（`runtime/executor/llm_executor_base.h:40 @ v0.13.1`）：
+第 3 层是执行器，一个纯虚基类把「用什么硬件跑」这件事彻底藏起来（`runtime/executor/llm_executor_base.h:40`）：
 
 ```cpp
 class LlmExecutorBase {
@@ -333,7 +333,7 @@ class LlmExecutorBase {
 
 ## 一个 .litertlm 里装了什么
 
-地图的最底层是模型文件本身。LiteRT-LM 用一个自定义的单文件格式 `.litertlm`，把权重、tokenizer、元数据、能力声明全打包进去。仓库自带一个解剖工具（`schema/core/litertlm_print.cc @ v0.13.1`），能把一个模型文件的分段结构打印出来。它的主循环很直白：先读文件头里的版本号和系统元数据，再遍历每个 section，把偏移和数据类型逐段打出来（`schema/core/litertlm_print.cc:155 @ v0.13.1`）：
+地图的最底层是模型文件本身。LiteRT-LM 用一个自定义的单文件格式 `.litertlm`，把权重、tokenizer、元数据、能力声明全打包进去。仓库自带一个解剖工具（`schema/core/litertlm_print.cc`），能把一个模型文件的分段结构打印出来。它的主循环很直白：先读文件头里的版本号和系统元数据，再遍历每个 section，把偏移和数据类型逐段打出来（`schema/core/litertlm_print.cc:155`）：
 
 ```cpp
     for (size_t i = 0; i < section_objects->size(); ++i) {
@@ -350,7 +350,7 @@ class LlmExecutorBase {
     }
 ```
 
-(1) 每个 section 只是一对字节偏移 `[begin, end)`——文件本身是连续排布的一块，section 表就是一张目录。这正是第 7 章说 mmap 能帮上冷启动的物理前提：权重那一段可以直接映射进地址空间，不必先拷进堆。(2) `data_type` 是个枚举，取值只有那么几种：`AnySectionDataType_TFLiteModel`（权重与图）、`AnySectionDataType_SP_Tokenizer` 或 `HF_Tokenizer_Zlib`（两种 tokenizer）、`AnySectionDataType_LlmMetadataProto`（元数据）（`schema/core/litertlm_utils.cc:31 @ v0.13.1`）。碰到 `LlmMetadataProto` 那一段，工具还会把 proto 展开成文本打进来。一份真实 dump 的骨架长这样：
+(1) 每个 section 只是一对字节偏移 `[begin, end)`——文件本身是连续排布的一块，section 表就是一张目录。这正是第 7 章说 mmap 能帮上冷启动的物理前提：权重那一段可以直接映射进地址空间，不必先拷进堆。(2) `data_type` 是个枚举，取值只有那么几种：`AnySectionDataType_TFLiteModel`（权重与图）、`AnySectionDataType_SP_Tokenizer` 或 `HF_Tokenizer_Zlib`（两种 tokenizer）、`AnySectionDataType_LlmMetadataProto`（元数据）（`schema/core/litertlm_utils.cc:31`）。碰到 `LlmMetadataProto` 那一段，工具还会把 proto 展开成文本打进来。一份真实 dump 的骨架长这样：
 
 ```text
 LiteRT-LM Version: 1.5.0
@@ -390,6 +390,12 @@ Section 2:
 
 ---
 
+<div class="aside-version">
+
+本书写作期间上游发布了 v0.14.0（2026-07，共 144 个提交，见 GitHub Releases）。抽样核对：全书锚定的核心机制叙述（取消标志的消费位置、`BenchmarkInfo` 的定义位置等）在 v0.14.0 中未发生结构性变化；变动集中在依赖更新、NPU 质量修复与 C/Python API 扩充。全书引用维持锚定 `v0.13.1` 不变，理由见前言的锁版本约定；整体迁移留待下一次修订版统一进行。
+
+</div>
+
 ## 练习与自查
 
 1. **TTFT 验算。** 用附录 D 的 gpu/1024 档数据（prefill 999.1 tok/s、decode 50.6 tok/s）按 `GetTimeToFirstToken` 的算式验算 TTFT，并与实测 1.04 s 对照。
@@ -402,11 +408,13 @@ Section 2:
 
 ## 参考
 
-- `litert-lm` CLI 子命令注册：`python/litert_lm_cli/main.py:52 @ v0.13.1`；`run` 的 Engine/Session 创建与流式循环：`python/litert_lm_cli/commands/run.py:240,100 @ v0.13.1`；`benchmark` 输出：`python/litert_lm_cli/commands/benchmark.py:102 @ v0.13.1`。
-- C++ 演示程序 `litert_lm_main` 的一次推理主干：`runtime/engine/litert_lm_main.cc:113 @ v0.13.1`；flag 定义在 `:52`（`--backend`）、`:54`（`--model_path`）；构建见附录 C。
-- benchmark 指标定义：`c/engine.h @ v0.13.1` 的 `litert_lm_benchmark_info_*` 系列（TTFT `:583`、Init `:591`、prefill/decode 吞吐 `:634`/`:643`）；文本输出格式见 `runtime/engine/io_types.cc:473 @ v0.13.1`。
-- 测量语义：`BenchmarkInfo` 类声明 `runtime/engine/io_types.h:420 @ v0.13.1`；turn 计时器 `io_types.cc:307`、吞吐算式 `:434`、TTFT 算式 `:455`；benchmark 强制同步 `runtime/core/tasks.cc:435`；`ShouldStop` 的 benchmark 分支 `:86`（全文见第 5 章）——均 @ v0.13.1。KV cache 反解练习的数据：附录 D（cpu/gpu，256 与 4096 上下文档）。
-- 五层落到具体文件：接口层 `runtime/engine/engine.h:70`（`SessionInterface`）；编排层 `runtime/core/tasks.cc:413`（`Prefill`）、`:86`（`ShouldStop`）、`:571`（decode 循环）；执行层 `runtime/executor/llm_executor_base.h:40`（`LlmExecutorBase`）——均 @ v0.13.1。架构分层与设计原则改编自本书伴生的代码地图（附录 B）。
-- `.litertlm` 分段结构与打印工具：`schema/core/litertlm_print.cc:155 @ v0.13.1`；section 数据类型枚举 `schema/core/litertlm_utils.cc:31 @ v0.13.1`；元数据字段 `runtime/proto/llm_metadata.proto @ v0.13.1`。
+> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
+
+- `litert-lm` CLI 子命令注册：`python/litert_lm_cli/main.py:52`；`run` 的 Engine/Session 创建与流式循环：`python/litert_lm_cli/commands/run.py:240,100`；`benchmark` 输出：`python/litert_lm_cli/commands/benchmark.py:102`。
+- C++ 演示程序 `litert_lm_main` 的一次推理主干：`runtime/engine/litert_lm_main.cc:113`；flag 定义在 `:52`（`--backend`）、`:54`（`--model_path`）；构建见附录 C。
+- benchmark 指标定义：`c/engine.h` 的 `litert_lm_benchmark_info_*` 系列（TTFT `:583`、Init `:591`、prefill/decode 吞吐 `:634`/`:643`）；文本输出格式见 `runtime/engine/io_types.cc:473`。
+- 测量语义：`BenchmarkInfo` 类声明 `runtime/engine/io_types.h:420`；turn 计时器 `io_types.cc:307`、吞吐算式 `:434`、TTFT 算式 `:455`；benchmark 强制同步 `runtime/core/tasks.cc:435`；`ShouldStop` 的 benchmark 分支 `:86`（全文见第 5 章）。KV cache 反解练习的数据：附录 D（cpu/gpu，256 与 4096 上下文档）。
+- 五层落到具体文件：接口层 `runtime/engine/engine.h:70`（`SessionInterface`）；编排层 `runtime/core/tasks.cc:413`（`Prefill`）、`:86`（`ShouldStop`）、`:571`（decode 循环）；执行层 `runtime/executor/llm_executor_base.h:40`（`LlmExecutorBase`）。架构分层与设计原则改编自本书伴生的代码地图（附录 B）。
+- `.litertlm` 分段结构与打印工具：`schema/core/litertlm_print.cc:155`；section 数据类型枚举 `schema/core/litertlm_utils.cc:31`；元数据字段 `runtime/proto/llm_metadata.proto`。
 
 <!-- 基准数字已回填（附录 D）；表 2-2 已定稿为完整 20 问。 -->

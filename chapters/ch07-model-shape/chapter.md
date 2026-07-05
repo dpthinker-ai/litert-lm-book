@@ -22,7 +22,7 @@
 
 「量化」常被理解成一个二选一的开关。在端侧，精度更接近一条连续谱系，而且要分清两个彼此独立的维度：权重量化到 int4 是一个维度，模型运行时中间激活值的计算精度是另一个维度。
 
-LiteRT-LM 把激活精度做成一个配置项 `ActivationDataType`（`runtime/executor/executor_settings_base.h:62 @ v0.13.1`）：
+LiteRT-LM 把激活精度做成一个配置项 `ActivationDataType`（`runtime/executor/executor_settings_base.h:62`）：
 
 ```cpp
 enum class ActivationDataType {
@@ -43,7 +43,7 @@ enum class ActivationDataType {
 
 ### 混合精度的一处实证：不同层量化到不同位宽
 
-前面说「对数值范围敏感的层可能损失精度」是一个抽象论断。代码里有一处地方把它落到了具体的量化方案上。同一个文件往下几行，有一个 `FakeWeightsMode` 枚举（`runtime/executor/executor_settings_base.h:82 @ v0.13.1`）：
+前面说「对数值范围敏感的层可能损失精度」是一个抽象论断。代码里有一处地方把它落到了具体的量化方案上。同一个文件往下几行，有一个 `FakeWeightsMode` 枚举（`runtime/executor/executor_settings_base.h:82`）：
 
 ```cpp
 // Fake weights mode.
@@ -70,7 +70,7 @@ enum class FakeWeightsMode {
 
 因为端侧要打包的内容不止权重。要在设备上运行一个模型，至少需要权重、tokenizer、聊天模板、停止符、以及能力声明（例如是否支持 speculative decoding，见第 9 章）。这些内容若散成一堆独立文件，分发、版本对齐、加载都会变得繁琐。`.litertlm` 把它们容纳进一个文件。
 
-它的结构是「头 + 分段」。头是一个 FlatBuffer，用类型化的键值对（`KeyValuePair`，`schema/core/litertlm_header_schema.fbs:56 @ v0.13.1`）记录元数据。类型化是这里的要点：键是字符串，值是一个 `union`，可容纳十二种基本类型：
+它的结构是「头 + 分段」。头是一个 FlatBuffer，用类型化的键值对（`KeyValuePair`，`schema/core/litertlm_header_schema.fbs:56`）记录元数据。类型化是这里的要点：键是字符串，值是一个 `union`，可容纳十二种基本类型：
 
 ```cpp
 // Union for the value in KeyValuePair
@@ -88,7 +88,7 @@ table KeyValuePair {
 }
 ```
 
-union 里每个成员都是一个各含单字段的 `table`（例如 `table UInt8 { value: ubyte; }`）。(1) 连字符串也包成 `StringValue`，于是 union 里存的是带类型标签的对象，读取方可以查询「这个值是什么类型」而不必自行推断。(2) `key` 与 `value` 都标了 `(required)`，FlatBuffer 在校验期强制它们非空，一个缺值的元数据项无法通过校验进入合法文件。相比直接嵌入一段无 schema 的 JSON，这套 schema 在编译期固定了元数据的结构：新增字段要修改 `.fbs` 并调整版本号。schema 头部注释写明了版本规则——纯粹追加新段构成 minor 版本变更，段的重排或删除必须提升 major 版本（`schema/core/litertlm_header_schema.fbs:69 @ v0.13.1`）。这条规则把「向后兼容」写进了格式本身：老版本读取新文件时，只要没有段被重排或删除，就仍能按已知偏移定位到自己认识的段。
+union 里每个成员都是一个各含单字段的 `table`（例如 `table UInt8 { value: ubyte; }`）。(1) 连字符串也包成 `StringValue`，于是 union 里存的是带类型标签的对象，读取方可以查询「这个值是什么类型」而不必自行推断。(2) `key` 与 `value` 都标了 `(required)`，FlatBuffer 在校验期强制它们非空，一个缺值的元数据项无法通过校验进入合法文件。相比直接嵌入一段无 schema 的 JSON，这套 schema 在编译期固定了元数据的结构：新增字段要修改 `.fbs` 并调整版本号。schema 头部注释写明了版本规则——纯粹追加新段构成 minor 版本变更，段的重排或删除必须提升 major 版本（`schema/core/litertlm_header_schema.fbs:69`）。这条规则把「向后兼容」写进了格式本身：老版本读取新文件时，只要没有段被重排或删除，就仍能按已知偏移定位到自己认识的段。
 
 正文是若干段（section），每段容纳一类内容：一段权重、一段 tokenizer、一段元数据。段的类型由 `AnySectionDataType` 枚举声明（`:72`）：`TFLiteModel`、`SP_Tokenizer`、`LlmMetadataProto`、`HF_Tokenizer_Zlib`（zlib 压缩的 HuggingFace tokenizer）、`TFLiteWeights`（与 `TFLiteModel` 配对的外挂权重）。每段在文件里的位置由 `SectionObject` 记录（`:91`）：
 
@@ -105,7 +105,7 @@ table SectionObject {
 
 每段是文件里 `[begin_offset, end_offset)` 范围内的一段字节。注释里那条约束支撑着整套加载设计：下一段的起点被对齐到 `BLOCK_SIZE = 16 KiB` 的整数倍。对齐到 16 KiB 的原因在下一节的 mmap：段边界落在页边界的整数倍上，才能对单独一段做零拷贝映射而不牵连相邻段。这条对齐约束在读路径上不是一句注释，而是一个硬断言，下一节会看到它落到 `offset % getpagesize() == 0` 的运行时检查。
 
-写文件的一侧用几个流类把不同来源的数据写入段：文件字节（`FileBackedSectionStream`，`schema/core/litertlm_section.h:98 @ v0.13.1`）、protobuf（`ProtoBufSectionStream`，`:189`）、zlib 压缩流（`ZlibBackendedSectionStream`，`:252`）。这几个是写路径的构件，`FileBackedSectionStream::Prepare()` 把整个文件读进内存缓冲再输出。读路径不走这些流类，走的是下一节的 mmap。
+写文件的一侧用几个流类把不同来源的数据写入段：文件字节（`FileBackedSectionStream`，`schema/core/litertlm_section.h:98`）、protobuf（`ProtoBufSectionStream`，`:189`）、zlib 压缩流（`ZlibBackendedSectionStream`，`:252`）。这几个是写路径的构件，`FileBackedSectionStream::Prepare()` 把整个文件读进内存缓冲再输出。读路径不走这些流类，走的是下一节的 mmap。
 
 <figure>
 {{#include figs/fig-7-1.svg}}
@@ -124,7 +124,7 @@ table SectionObject {
 
 模型文件常有几 GB。如果加载时把整个文件读进内存，冷启动会等待很久。这是一个直接影响用户体验的冷启动延迟（cold-start latency）问题：从点击到模型可用之间的等待时间，与前面讨论的内存容量、带宽、功耗几类约束并列，是端侧另一项要优化的成本。
 
-`.litertlm` 的分段结构在加载阶段再次发挥作用。读文件分两步：先读头，再按需读段。读头很廉价，`ReadHeaderFromLiteRTLM` 只读文件开头那一小段 FlatBuffer 元数据（`schema/core/litertlm_read.h:116 @ v0.13.1`），取得每段的 `begin_offset`、`end_offset`、`data_type`，此时几 GB 的权重一个字节都没有读入。这个头结构禁止拷贝与移动，调用方持有它就持有了整份文件的段索引。省时间的关键在读段这一步。LiteRT-LM 有两条读段路径，先看用自研内存映射类的那条（`schema/core/litertlm_read.cc:238 @ v0.13.1`）：
+`.litertlm` 的分段结构在加载阶段再次发挥作用。读文件分两步：先读头，再按需读段。读头很廉价，`ReadHeaderFromLiteRTLM` 只读文件开头那一小段 FlatBuffer 元数据（`schema/core/litertlm_read.h:116`），取得每段的 `begin_offset`、`end_offset`、`data_type`，此时几 GB 的权重一个字节都没有读入。这个头结构禁止拷贝与移动，调用方持有它就持有了整份文件的段索引。省时间的关键在读段这一步。LiteRT-LM 有两条读段路径，先看用自研内存映射类的那条（`schema/core/litertlm_read.cc:238`）：
 
 ```cpp
 absl::Status ReadSectionIntoTFLiteMappedFile(
@@ -143,11 +143,11 @@ absl::Status ReadSectionIntoTFLiteMappedFile(
 }
 ```
 
-(1) 段的大小是两个 offset 之差，上一节 schema 里那对 `ulong` 在这里被消费。(2) `MemoryMappedFile::Create` 从 `begin_offset` 起映射 `model_size` 字节，正是上一节 16 KiB 对齐所保证的：这段能独立映射而不牵连邻段。映射建立时并不真正读盘，操作系统只是在页表里登记了这段虚拟地址到文件的对应关系，物理页要等 CPU 首次访问时经缺页中断逐页填入。(3) `BuildFromBuffer` 直接用映射出来的指针构建 TFLite 模型，没有把权重整体拷进堆内存的操作。冷启动省下的正是这次拷贝：几 GB 的权重不进读缓冲、不占堆，访问到哪一页才载入哪一页。接口注释点明了配套约定：调用方拿到的 `mapped_file` 持有这块 mmapped buffer，其生命周期必须延续到模型不再使用为止（`schema/core/litertlm_read.h:151 @ v0.13.1`）。这个「生命周期交回调用方」的约定，正是下面要对比的两条读段路径的分野所在。
+(1) 段的大小是两个 offset 之差，上一节 schema 里那对 `ulong` 在这里被消费。(2) `MemoryMappedFile::Create` 从 `begin_offset` 起映射 `model_size` 字节，正是上一节 16 KiB 对齐所保证的：这段能独立映射而不牵连邻段。映射建立时并不真正读盘，操作系统只是在页表里登记了这段虚拟地址到文件的对应关系，物理页要等 CPU 首次访问时经缺页中断逐页填入。(3) `BuildFromBuffer` 直接用映射出来的指针构建 TFLite 模型，没有把权重整体拷进堆内存的操作。冷启动省下的正是这次拷贝：几 GB 的权重不进读缓冲、不占堆，访问到哪一页才载入哪一页。接口注释点明了配套约定：调用方拿到的 `mapped_file` 持有这块 mmapped buffer，其生命周期必须延续到模型不再使用为止（`schema/core/litertlm_read.h:151`）。这个「生命周期交回调用方」的约定，正是下面要对比的两条读段路径的分野所在。
 
 ### mmap 背后：页对齐的硬断言与平台相反的预取策略
 
-上一节说 16 KiB 对齐是为了让段能独立映射，这一节看它在运行时如何被强制。`MemoryMappedFile::Create` 的开头就是一个断言（`runtime/util/memory_mapped_file_posix.cc:101 @ v0.13.1`）：
+上一节说 16 KiB 对齐是为了让段能独立映射，这一节看它在运行时如何被强制。`MemoryMappedFile::Create` 的开头就是一个断言（`runtime/util/memory_mapped_file_posix.cc:101`）：
 
 ```cpp
 absl::StatusOr<std::unique_ptr<MemoryMappedFile>> MemoryMappedFile::Create(
@@ -181,7 +181,7 @@ absl::StatusOr<std::unique_ptr<MemoryMappedFile>> MemoryMappedFile::Create(
 
 ### 两条读段路径：谁持有 mmap 句柄，谁负责释放
 
-前面走读的 `ReadSectionIntoTFLiteMappedFile` 不是默认路径。同一个文件里还有一条更常用的 `ReadSectionIntoTFLite`（`schema/core/litertlm_read.cc:219 @ v0.13.1`）：
+前面走读的 `ReadSectionIntoTFLiteMappedFile` 不是默认路径。同一个文件里还有一条更常用的 `ReadSectionIntoTFLite`（`schema/core/litertlm_read.cc:219`）：
 
 ```cpp
 absl::Status ReadSectionIntoTFLite(
@@ -205,11 +205,11 @@ absl::Status ReadSectionIntoTFLite(
 
 两条路径都用 mmap 实现零拷贝，区别在于谁持有映射句柄。(1) 这条路径用的是 TFLite 自带的 `tflite::MMAPAllocation`，它内部完成映射。(2) `BuildFromAllocation` 把这个 allocation 移动进 `FlatBufferModel`，映射的生命周期随 `FlatBufferModel` 一同管理：模型析构时映射自动解除，调用方不必额外持有任何句柄。相比之下，前一节 `ReadSectionIntoTFLiteMappedFile` 用 `BuildFromBuffer` 从裸指针建模型，`FlatBufferModel` 并不知道这块内存是 mmap 出来的，也不负责解除映射，于是映射句柄以 `mapped_file` 出参的形式交回调用方，由调用方保证它活得比模型久。
 
-为什么要有这个把生命周期交回调用方的变体？因为有些调用场景需要在模型之外长期持有这块 buffer，或需要对映射做模型层看不到的额外控制（例如统一记账、按段缓存）。默认权重路径走 `MMAPAllocation`，省去调用方的心智负担；需要更强所有权控制的路径走 `MemoryMappedFile` 变体。两条路径在 `ReadTFLiteFileFromSection` 的重载里按调用方是否传入 `mapped_file` 出参分派（`schema/core/litertlm_read.h:151 @ v0.13.1`）。
+为什么要有这个把生命周期交回调用方的变体？因为有些调用场景需要在模型之外长期持有这块 buffer，或需要对映射做模型层看不到的额外控制（例如统一记账、按段缓存）。默认权重路径走 `MMAPAllocation`，省去调用方的心智负担；需要更强所有权控制的路径走 `MemoryMappedFile` 变体。两条路径在 `ReadTFLiteFileFromSection` 的重载里按调用方是否传入 `mapped_file` 出参分派（`schema/core/litertlm_read.h:151`）。
 
 ### 并行加载到底并行了什么
 
-分段结构常被认为「各段可以同时读盘」，实际实现要具体得多。这由一个开关控制（`litert_lm_engine_settings_set_parallel_file_section_loading`，`c/engine.h:295 @ v0.13.1`，默认开）。这个 C-API 设置一路传到 `EngineSettings`，其成员默认为真（`runtime/engine/engine_settings.h:173 @ v0.13.1`：`bool parallel_file_section_loading_ = true;`）。真正读取这个开关做分支的地方在加载流程里（`runtime/core/engine_advanced_impl.cc:249 @ v0.13.1`）：
+分段结构常被认为「各段可以同时读盘」，实际实现要具体得多。这由一个开关控制（`litert_lm_engine_settings_set_parallel_file_section_loading`，`c/engine.h:295`，默认开）。这个 C-API 设置一路传到 `EngineSettings`，其成员默认为真（`runtime/engine/engine_settings.h:173`：`bool parallel_file_section_loading_ = true;`）。真正读取这个开关做分支的地方在加载流程里（`runtime/core/engine_advanced_impl.cc:249`）：
 
 ```cpp
     if (engine_settings.GetParallelFileSectionLoading()) {
@@ -228,7 +228,7 @@ absl::Status ReadSectionIntoTFLite(
 
 ### loader 层：按段缓存、双检锁与对齐补偿
 
-前面两条读段路径的更下面，还有一层本章尚未揭开的实现：`LitertLmLoader`（`runtime/util/litert_lm_loader.h:100 @ v0.13.1`）。它在初始化时只记录每个段的 `(begin_offset, end_offset)` 位置表，真正的映射推迟到第一次有人要这个段的数据。取段入口 `GetSectionBuffer` 是一个标准的双检锁（`runtime/util/litert_lm_loader.cc:270 @ v0.13.1`）：
+前面两条读段路径的更下面，还有一层本章尚未揭开的实现：`LitertLmLoader`（`runtime/util/litert_lm_loader.h:100`）。它在初始化时只记录每个段的 `(begin_offset, end_offset)` 位置表，真正的映射推迟到第一次有人要这个段的数据。取段入口 `GetSectionBuffer` 是一个标准的双检锁（`runtime/util/litert_lm_loader.cc:270`）：
 
 ```cpp
   {
@@ -251,7 +251,7 @@ absl::Status ReadSectionIntoTFLite(
 
 (1) 快路径持读锁查缓存，段已映射过就直接返回，多个线程可以并发走这条路。(2) 未命中才升级为写锁，并且再查一次：上一节的并行加载意味着 tokenizer 线程与模型加载线程可能同时来要各自的段，第二次检查防止两个线程都没查到、各映射一遍。(3) 确认没人抢先后才真正 `MapSection`。每段只映射一次、按需映射、映射后共享，这一层把「分段」从文件布局变成了运行时行为。
 
-`MapSection` 里还藏着一道跨平台的缝。`.litertlm` 的段按 16 KiB 对齐（本章前文），POSIX 的 mmap 要求偏移对齐到页（macOS 上 16 KiB，恰好整除），但 Windows 的映射偏移必须是分配粒度的整数倍，通常是 64 KiB（`runtime/util/memory_mapped_file_win.cc:95 @ v0.13.1`）。16 KiB 对齐的段偏移未必是 64 KiB 的倍数，loader 的补偿是往前多映一段（`litert_lm_loader.cc:141 @ v0.13.1`）：
+`MapSection` 里还藏着一道跨平台的缝。`.litertlm` 的段按 16 KiB 对齐（本章前文），POSIX 的 mmap 要求偏移对齐到页（macOS 上 16 KiB，恰好整除），但 Windows 的映射偏移必须是分配粒度的整数倍，通常是 64 KiB（`runtime/util/memory_mapped_file_win.cc:95`）。16 KiB 对齐的段偏移未必是 64 KiB 的倍数，loader 的补偿是往前多映一段（`litert_lm_loader.cc:141`）：
 
 ```cpp
     size_t alignment = MemoryMappedFile::GetOffsetAlignment();
@@ -265,20 +265,20 @@ absl::Status ReadSectionIntoTFLite(
 
 ### 一笔内存账：mmap 之下，「占了多少内存」怎么读
 
-mmap 让「模型占多少内存」这个问题变得需要口径。CLI 在退出时打印的内存报告就分了好几行（`LogMemoryUsage`，`runtime/engine/litert_lm_lib.cc:427 @ v0.13.1`）：峰值系统内存、physical footprint（物理驻留）、非 mmap 的堆分配总量、in-use 堆、private footprint（私有驻留）。区分的原因正是 mmap：3.4 GB 的权重文件映射进地址空间后，虚拟内存立即增加 3.4 GB，但物理内存只在页被真正访问后才占用，且这些页是文件后备的，内存紧张时操作系统可以直接丢弃、下次访问再从文件读回，不占交换空间。于是「模型放得下吗」（第 1 章内存容量约束）在 mmap 语义下的精确问法是：**私有驻留（权重之外的堆、KV cache、激活）加上权重的常驻工作集，是否放得进物理内存**。decode 每步都要读全部权重，权重的工作集就是全量，mmap 省不掉这部分物理占用，省掉的是加载时的一次性拷贝和内存紧张时的换出成本。第 1 章的内存预算表按这个口径读才准确。
+mmap 让「模型占多少内存」这个问题变得需要口径。CLI 在退出时打印的内存报告就分了好几行（`LogMemoryUsage`，`runtime/engine/litert_lm_lib.cc:427`）：峰值系统内存、physical footprint（物理驻留）、非 mmap 的堆分配总量、in-use 堆、private footprint（私有驻留）。区分的原因正是 mmap：3.4 GB 的权重文件映射进地址空间后，虚拟内存立即增加 3.4 GB，但物理内存只在页被真正访问后才占用，且这些页是文件后备的，内存紧张时操作系统可以直接丢弃、下次访问再从文件读回，不占交换空间。于是「模型放得下吗」（第 1 章内存容量约束）在 mmap 语义下的精确问法是：**私有驻留（权重之外的堆、KV cache、激活）加上权重的常驻工作集，是否放得进物理内存**。decode 每步都要读全部权重，权重的工作集就是全量，mmap 省不掉这部分物理占用，省掉的是加载时的一次性拷贝和内存紧张时的换出成本。第 1 章的内存预算表按这个口径读才准确。
 
 ## LoRA：不动基座，换个人格
 
 最后一块拼图：变体。你有一个通用基座模型，想让它在某个专门任务上更好——写代码、医疗问答、特定语气。重新训练或全量微调一个几 GB 的模型，端侧存不下也换不起。
 
-LoRA 的思路是：**基座权重一个字节都不动，另外挂一小份"增量权重"**。推理时把增量叠加到基座上，模型行为就偏向新任务。增量很小（相比基座是零头），存得下、也能热加载。LiteRT-LM 用两个类支撑它：`LoRA`（`runtime/components/lora.h:40 @ v0.13.1`）持有一份增量权重的后端资源，`LoraManager`（`runtime/components/lora_manager.h:39 @ v0.13.1`）按 id 管理多份。多份靠两张以 id 为键的表并存（`:75`–`:76`）：
+LoRA 的思路是：**基座权重一个字节都不动，另外挂一小份"增量权重"**。推理时把增量叠加到基座上，模型行为就偏向新任务。增量很小（相比基座是零头），存得下、也能热加载。LiteRT-LM 用两个类支撑它：`LoRA`（`runtime/components/lora.h:40`）持有一份增量权重的后端资源，`LoraManager`（`runtime/components/lora_manager.h:39`）按 id 管理多份。多份靠两张以 id 为键的表并存（`:75`–`:76`）：
 
 ```cpp
 absl::flat_hash_map<uint32_t, std::unique_ptr<LoraData>> lora_data_;   // (1)
 absl::flat_hash_map<uint32_t, std::unique_ptr<LoRA>> loras_;           // (2)
 ```
 
-(1) 存"从磁盘读进来的原始 LoRA 权重"，(2) 存"在后端上建好的 LoRA 对象"。分成两张表，是因为加载被拆成了两拍。`LoadLoRA` 只做第一拍（`runtime/components/lora_manager.cc:46 @ v0.13.1`）：
+(1) 存"从磁盘读进来的原始 LoRA 权重"，(2) 存"在后端上建好的 LoRA 对象"。分成两张表，是因为加载被拆成了两拍。`LoadLoRA` 只做第一拍（`runtime/components/lora_manager.cc:46`）：
 
 ```cpp
 absl::Status LoraManager::LoadLoRA(uint32_t lora_id,
@@ -295,9 +295,9 @@ absl::Status LoraManager::LoadLoRA(uint32_t lora_id,
 
 (1) 同一个 id 不许重复加载，防止静默覆盖。(2) 它只把权重读进 `lora_data_`，没碰后端——真正在 GPU 上建资源的第二拍留给 `UseLoRA(lora_id)`，那时才 `LoRA::Create` 并填进 `loras_`（`:57`–`:62`，类注释写明这是 "lazily, only when UseLoRA() is called"）。这个拆分对端侧的意义很直接：可以一次把多份 LoRA 的权重都读进内存待命，但只为当前真正激活的那一份付出建后端资源、占显存的代价，切换任务时换 id 即可，不必重新读盘。
 
-「增量是零头」可以算出来。LoRA 对一个 `d_in × d_out` 的投影矩阵不训练全量增量，而是训练两个窄矩阵 A（`d_in × r`）与 B（`r × d_out`），r 就是 rank（秩），增量参数量为 `r × (d_in + d_out)`，与全量的比值约为 `2r / d`（方阵情形，教科书级结论）。代入 r = 16、d = 2048，比值约 1.6%：几 GB 的基座，增量在几十 MB 量级。真实的 r 不用猜，从 LoRA 文件自己的元数据读出（`LoraData::GetLoRARank`，`runtime/util/lora_data.h:54 @ v0.13.1`）；`LoraData` 的类注释也点明它「以最小拷贝方式读取（如 mmap）、以只读视图提供数据」（`:28`），与主模型的加载哲学一致。
+「增量是零头」可以算出来。LoRA 对一个 `d_in × d_out` 的投影矩阵不训练全量增量，而是训练两个窄矩阵 A（`d_in × r`）与 B（`r × d_out`），r 就是 rank（秩），增量参数量为 `r × (d_in + d_out)`，与全量的比值约为 `2r / d`（方阵情形，教科书级结论）。代入 r = 16、d = 2048，比值约 1.6%：几 GB 的基座，增量在几十 MB 量级。真实的 r 不用猜，从 LoRA 文件自己的元数据读出（`LoraData::GetLoRARank`，`runtime/util/lora_data.h:54`）；`LoraData` 的类注释也点明它「以最小拷贝方式读取（如 mmap）、以只读视图提供数据」（`:28`），与主模型的加载哲学一致。
 
-第二拍在后端上建资源的动作，具体是一次逐张量的拷贝（`LoRA::Init`，`runtime/components/lora.cc:70 @ v0.13.1`）：
+第二拍在后端上建资源的动作，具体是一次逐张量的拷贝（`LoRA::Init`，`runtime/components/lora.cc:70`）：
 
 ```cpp
   for (const auto& input_name : input_names) {
@@ -322,13 +322,13 @@ absl::Status LoraManager::LoadLoRA(uint32_t lora_id,
     }
 ```
 
-(1) 只处理名字标记为 LoRA 输入的张量：支持 LoRA 的模型在编译期就为增量权重预留了具名输入位，运行时按名对号入座。(2) 尺寸必须与模型预留的输入位完全一致，不一致直接报错，这里没有任何形状适配。(3) 增量权重从 `LoraData` 的只读视图逐字节拷进后端 buffer，「占显存」发生在这一行。(4) 是一处安静的兜底：LoRA 文件里缺某个张量时填零，而零增量恰好等价于「这一层不加改动」，模型退回基座行为，不会崩也不会错。加载完成后，取用侧的 `GetLoRABuffers` 用 `Duplicate()` 发出的是引用计数增量而非再拷贝一份（`lora.cc:106 @ v0.13.1`），多处使用同一份 LoRA 不叠加显存。
+(1) 只处理名字标记为 LoRA 输入的张量：支持 LoRA 的模型在编译期就为增量权重预留了具名输入位，运行时按名对号入座。(2) 尺寸必须与模型预留的输入位完全一致，不一致直接报错，这里没有任何形状适配。(3) 增量权重从 `LoraData` 的只读视图逐字节拷进后端 buffer，「占显存」发生在这一行。(4) 是一处安静的兜底：LoRA 文件里缺某个张量时填零，而零增量恰好等价于「这一层不加改动」，模型退回基座行为，不会崩也不会错。加载完成后，取用侧的 `GetLoRABuffers` 用 `Duplicate()` 发出的是引用计数增量而非再拷贝一份（`lora.cc:106`），多处使用同一份 LoRA 不叠加显存。
 
 LoRA 的价值恰好呼应本章主题：它是"变体"的最省成本形态——一个基座 + 若干小增量，就能覆盖多个任务，而不必为每个任务存一个完整模型。放到端侧的存储约束下，这个省法尤其值钱。
 
 ## litertlm_print：把格式知识变成一次实剖
 
-本章开头承诺走读 `litertlm_print` 的实现，现在格式的各个部件都讲过了，正好收尾。这个工具做的事只有两件：打印头部的键值元数据，再逐段打印段目录。第一件事落在 `PrintKeyValuePair`（`schema/core/litertlm_print.cc:61 @ v0.13.1`），它就是对本章前文那个 `VData` union 的 tag 逐类分派：
+本章开头承诺走读 `litertlm_print` 的实现，现在格式的各个部件都讲过了，正好收尾。这个工具做的事只有两件：打印头部的键值元数据，再逐段打印段目录。第一件事落在 `PrintKeyValuePair`（`schema/core/litertlm_print.cc:61`），它就是对本章前文那个 `VData` union 的 tag 逐类分派：
 
 ```cpp
   switch (kvp->value_type()) {
@@ -347,7 +347,7 @@ LoRA 的价值恰好呼应本章主题：它是"变体"的最省成本形态—�
 
 每个分支用 `value_as_<类型>()` 取出对应的 table 再读 `value()`。前文说 schema 把元数据的类型「钉死在编译期」，这个 switch 是它在读取侧的镜像：能打印的类型就是 union 里声明过的那几种，多一种都编译不出来。
 
-第二件事是段目录遍历（`litertlm_print.cc:155 @ v0.13.1`）：对每个 `SectionObject` 打印它的键值项、`begin_offset` 与 `end_offset`（本章 16 KiB 对齐一节里那对偏移）、段类型名。其中有一个特判：段类型是 `LlmMetadataProto` 时，不满足于打印偏移，而是当场调 `ReadLlmMetadataFromSection` 把这段解析成 proto、以 `DebugString` 逐行打出（`:181`）。所以第 2 章看到的那份 dump 里，别的段只有一行类型加一对偏移，唯独元数据段展开成了几十行的 start_token、stop_tokens、聊天模板：不是格式对它特殊，是打印工具对它多走了一步解析。
+第二件事是段目录遍历（`litertlm_print.cc:155`）：对每个 `SectionObject` 打印它的键值项、`begin_offset` 与 `end_offset`（本章 16 KiB 对齐一节里那对偏移）、段类型名。其中有一个特判：段类型是 `LlmMetadataProto` 时，不满足于打印偏移，而是当场调 `ReadLlmMetadataFromSection` 把这段解析成 proto、以 `DebugString` 逐行打出（`:181`）。所以第 2 章看到的那份 dump 里，别的段只有一行类型加一对偏移，唯独元数据段展开成了几十行的 start_token、stop_tokens、聊天模板：不是格式对它特殊，是打印工具对它多走了一步解析。
 
 读懂这个工具的意义在于验证：拿到任何一个 `.litertlm` 文件，`litertlm_print` 的每一行输出现在都能对回本章的某一节——键值对回到 `VData` union，偏移回到 16 KiB 对齐，段类型回到 `AnySectionDataType` 枚举，元数据段回到 proto。格式的每一项知识由此都有了可动手核对的出口。
 
@@ -371,14 +371,16 @@ LoRA 的价值恰好呼应本章主题：它是"变体"的最省成本形态—�
 
 ## 参考
 
-- loader 层：`runtime/util/litert_lm_loader.h:100 @ v0.13.1`（`LitertLmLoader`）；`GetSectionBuffer` 双检锁 `litert_lm_loader.cc:270`、`MapSection` 对齐补偿 `:141`；Windows 分配粒度 `runtime/util/memory_mapped_file_win.cc:95`。内存口径：`LogMemoryUsage`，`runtime/engine/litert_lm_lib.cc:427`。
-- LoRA 机制：`LoraData` 类注释与 `GetLoRARank`，`runtime/util/lora_data.h:28,54 @ v0.13.1`；`LoRA::Init` 逐张量拷贝 `runtime/components/lora.cc:70`、`GetLoRABuffer` 引用计数 `:106`。
-- `litertlm_print` 实现：`PrintKeyValuePair` 的 VData 分派 `schema/core/litertlm_print.cc:61 @ v0.13.1`；段遍历与 `LlmMetadataProto` 特判 `:155`、`:181`。
+> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
 
-- 激活精度与后端：`runtime/executor/executor_settings_base.h @ v0.13.1`（`ActivationDataType`:62，FLOAT32/16、INT16/8 于 `:64`–`:73`；`Backend`:34，`GPU_ARTISAN`/`CPU`/`GPU`/`GOOGLE_TENSOR_ARTISAN`/`NPU` 于 `:42`–`:54`）。
-- `.litertlm` 格式：`schema/core/litertlm_header_schema.fbs @ v0.13.1`（`union VData`:39；`KeyValuePair`:56；`AnySectionDataType`:72；`SectionObject`:91，`begin_offset`/`end_offset` 于 `:93`–`:94`，`BLOCK_SIZE=16*1024` 见 `:90` 注释）；`schema/core/litertlm_section.h @ v0.13.1`（写路径流类：`FileBackedSectionStream`:98；`ProtoBufSectionStream`:189；`ZlibBackendedSectionStream`:252）。
-- mmap 加载：`schema/core/litertlm_read.h @ v0.13.1`（`ReadHeaderFromLiteRTLM`:116；按段读的 mmapped buffer 约定:151）；`schema/core/litertlm_read.cc @ v0.13.1`（`ReadSectionIntoTFLite`:219 用 `MMAPAllocation`；`ReadSectionIntoTFLiteMappedFile`:238 用 `MemoryMappedFile::Create`）。
-- 并行加载：`c/engine.h:295 @ v0.13.1`（`litert_lm_engine_settings_set_parallel_file_section_loading`，默认 true）。
-- LoRA：`runtime/components/lora.h:40 @ v0.13.1`（`LoRA`）；`runtime/components/lora_manager.h @ v0.13.1`（`LoraManager`:39；`LoadLoRA`:57；`lora_data_`/`loras_` 两张表:75–76）；`runtime/components/lora_manager.cc:46 @ v0.13.1`（`LoadLoRA` 只填 `lora_data_`，后端资源由 `UseLoRA` 于 `:57` 惰性创建）。
+- loader 层：`runtime/util/litert_lm_loader.h:100`（`LitertLmLoader`）；`GetSectionBuffer` 双检锁 `litert_lm_loader.cc:270`、`MapSection` 对齐补偿 `:141`；Windows 分配粒度 `runtime/util/memory_mapped_file_win.cc:95`。内存口径：`LogMemoryUsage`，`runtime/engine/litert_lm_lib.cc:427`。
+- LoRA 机制：`LoraData` 类注释与 `GetLoRARank`，`runtime/util/lora_data.h:28,54`；`LoRA::Init` 逐张量拷贝 `runtime/components/lora.cc:70`、`GetLoRABuffer` 引用计数 `:106`。
+- `litertlm_print` 实现：`PrintKeyValuePair` 的 VData 分派 `schema/core/litertlm_print.cc:61`；段遍历与 `LlmMetadataProto` 特判 `:155`、`:181`。
+
+- 激活精度与后端：`runtime/executor/executor_settings_base.h`（`ActivationDataType`:62，FLOAT32/16、INT16/8 于 `:64`–`:73`；`Backend`:34，`GPU_ARTISAN`/`CPU`/`GPU`/`GOOGLE_TENSOR_ARTISAN`/`NPU` 于 `:42`–`:54`）。
+- `.litertlm` 格式：`schema/core/litertlm_header_schema.fbs`（`union VData`:39；`KeyValuePair`:56；`AnySectionDataType`:72；`SectionObject`:91，`begin_offset`/`end_offset` 于 `:93`–`:94`，`BLOCK_SIZE=16*1024` 见 `:90` 注释）；`schema/core/litertlm_section.h`（写路径流类：`FileBackedSectionStream`:98；`ProtoBufSectionStream`:189；`ZlibBackendedSectionStream`:252）。
+- mmap 加载：`schema/core/litertlm_read.h`（`ReadHeaderFromLiteRTLM`:116；按段读的 mmapped buffer 约定:151）；`schema/core/litertlm_read.cc`（`ReadSectionIntoTFLite`:219 用 `MMAPAllocation`；`ReadSectionIntoTFLiteMappedFile`:238 用 `MemoryMappedFile::Create`）。
+- 并行加载：`c/engine.h:295`（`litert_lm_engine_settings_set_parallel_file_section_loading`，默认 true）。
+- LoRA：`runtime/components/lora.h:40`（`LoRA`）；`runtime/components/lora_manager.h`（`LoraManager`:39；`LoadLoRA`:57；`lora_data_`/`loras_` 两张表:75–76）；`runtime/components/lora_manager.cc:46`（`LoadLoRA` 只填 `lora_data_`，后端资源由 `UseLoRA` 于 `:57` 惰性创建）。
 
 <!-- 实测（int4 vs int8 三角、并行加载 on/off 冷启动、litertlm_print 实剖）待基准 D 回填〔基准 D〕；量化内部(分组/scale)未展开，仅到"权重压 4bit + 激活精度谱系"层面，未臆测未核验的细节。图 7-2(mmap/并行加载) 与表 7-1(量化三角) 规格见 notes.md，本轮出签名图 7-1。 -->

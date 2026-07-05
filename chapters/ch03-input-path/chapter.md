@@ -6,7 +6,7 @@
 
 ## 公共 API 分层：Engine 与 Session
 
-LiteRT-LM 的对外接口以两个类为核心：`Engine` 与 `Session`。头文件顶部的 Example usage 注释（`runtime/engine/engine.h:44 @ v0.13.1`）给出了典型用法的最小示例：
+LiteRT-LM 的对外接口以两个类为核心：`Engine` 与 `Session`。头文件顶部的 Example usage 注释（`runtime/engine/engine.h:44`）给出了典型用法的最小示例：
 
 ```cpp
 // Create the engine.
@@ -27,7 +27,7 @@ building in the world?")});                              // (3)
 
 分层的依据是两者的生命周期与成本不同。Engine 持有以 GiB 计的模型权重，加载一次耗时数秒、常驻数 GiB 内存，应当创建一次并长期复用。Session 代表一次对话，只持有该对话的状态：KV cache、采样配置、当前步数。它的创建与销毁开销小，一个 Engine 可以派生多个 Session。
 
-这一划分对应第 2 章的原则：把不变且加载昂贵的权重，与多变且创建廉价的对话状态，分到两级各自管理生命周期。`SessionInterface` 抽象（`runtime/engine/engine.h:70 @ v0.13.1`）定义了一次会话能执行的操作，同时暴露高层与低层两套接口。高层的两个入口签名如下（`engine.h:112,128 @ v0.13.1`）：
+这一划分对应第 2 章的原则：把不变且加载昂贵的权重，与多变且创建廉价的对话状态，分到两级各自管理生命周期。`SessionInterface` 抽象（`runtime/engine/engine.h:70`）定义了一次会话能执行的操作，同时暴露高层与低层两套接口。高层的两个入口签名如下（`engine.h:112,128`）：
 
 ```cpp
 virtual absl::StatusOr<Responses> GenerateContent(
@@ -40,7 +40,7 @@ virtual absl::Status GenerateContentStream(
 
 (1) `GenerateContent` 阻塞至生成结束，一次返回完整的 `Responses`。(2) `GenerateContentStream` 立即返回，结果通过 `callback` 逐段流式返回。注释约定了三种终止语义：生成正常结束时，回调收到一个空 `Responses`；出错时收到错误状态且不再有后续回调；被取消时收到 Cancellation 错误。两者的输入都是 `std::vector<InputData>` 而非裸字符串，`InputData` 是文本、图像、音频的统一载体，多模态在接口层已预留位置（见第 10 章）。
 
-低层接口把 prefill 与 decode 拆成两个独立方法（`engine.h:174,188 @ v0.13.1`）：
+低层接口把 prefill 与 decode 拆成两个独立方法（`engine.h:174,188`）：
 
 ```cpp
 // Adds the input prompt/query to the model for starting the prefilling
@@ -55,7 +55,7 @@ virtual absl::StatusOr<Responses> RunDecode() = 0;       // (2)
 
 ### 共享前缀：Clone 将一次 prefill 分叉为多条对话
 
-拆分接口的一处直接收益，是 `SessionInterface::Clone`（`runtime/engine/engine.h:245 @ v0.13.1`）。它的注释给出了一个共享前缀的例子：
+拆分接口的一处直接收益，是 `SessionInterface::Clone`（`runtime/engine/engine.h:245`）。它的注释给出了一个共享前缀的例子：
 
 ```cpp
 // Example usage:
@@ -74,7 +74,7 @@ virtual absl::StatusOr<Responses> RunDecode() = 0;       // (2)
 
 #### Clone 的实现：一次排入任务队列的异步克隆
 
-接口注释把 `Clone` 说成"继承到调用点为止的全部状态"，容易让人以为它是一次就地的状态拷贝。实现层并非如此。`engine.h` 里的 `Clone` 只是一个返回 `UnimplementedError` 的默认桩（`runtime/engine/engine.h:245 @ v0.13.1`）：
+接口注释把 `Clone` 说成"继承到调用点为止的全部状态"，容易让人以为它是一次就地的状态拷贝。实现层并非如此。`engine.h` 里的 `Clone` 只是一个返回 `UnimplementedError` 的默认桩（`runtime/engine/engine.h:245`）：
 
 ```cpp
 virtual absl::StatusOr<std::unique_ptr<SessionInterface>> Clone() {
@@ -82,7 +82,7 @@ virtual absl::StatusOr<std::unique_ptr<SessionInterface>> Clone() {
 };
 ```
 
-(1) 基类不提供任何克隆逻辑，未覆写该方法的 Session 实现调用 `Clone` 会直接得到 `UnimplementedError`。真正实现克隆的是 `SessionAdvanced::Clone`（`runtime/core/session_advanced.cc:389 @ v0.13.1`）。它本身只是异步版本的同步封装：
+(1) 基类不提供任何克隆逻辑，未覆写该方法的 Session 实现调用 `Clone` 会直接得到 `UnimplementedError`。真正实现克隆的是 `SessionAdvanced::Clone`（`runtime/core/session_advanced.cc:389`）。它本身只是异步版本的同步封装：
 
 ```cpp
 absl::StatusOr<std::unique_ptr<SessionInterface>> SessionAdvanced::Clone() {
@@ -104,7 +104,7 @@ absl::StatusOr<std::unique_ptr<SessionInterface>> SessionAdvanced::Clone() {
 
 (1) 同步 `Clone` 先在持锁状态下调用 `CloneAsyncLocked` 排入克隆任务，并立即拿到指向新 session 的句柄。(2) 随后 `WaitUntilDone` 阻塞，直到该任务在后台执行完成。换言之，返回的 `SessionInterface` 在函数返回时其克隆动作已经落地，但克隆本身是走异步任务队列完成的，不是在调用线程里同步 memcpy 一份状态。
 
-克隆任务的登记发生在 `CloneAsyncLocked`（`runtime/core/session_advanced.cc:412 @ v0.13.1`）：
+克隆任务的登记发生在 `CloneAsyncLocked`（`runtime/core/session_advanced.cc:412`）：
 
 ```cpp
 ASSIGN_OR_RETURN(auto task_id, execution_manager_lock->GetNewTaskId());
@@ -135,9 +135,9 @@ return absl::WrapUnique(new SessionAdvanced(session_id, execution_manager_,  // 
 
 多数调用方不直接操作 token，而是发送消息：一条 user 角色的输入，期待一条 model 角色的回复。把消息组织成模型能处理的格式，是 `Conversation` 层的职责（对应第 2 章五层架构中的对话与编排层）。它内部持有一个 `Engine::Session`，负责维护对话历史、应用聊天模板并调度 prefill/decode。
 
-模型不理解 user 与 model 这样的角色概念，它的输入是一段连续文本，角色边界由特殊标记（special token）界定。把结构化的消息渲染为这样一段带标记的文本，靠的是聊天模板（chat template / prompt template）。消息本身是一个有序 JSON，`Message` 是 `nlohmann::ordered_json` 的别名（`runtime/conversation/io_types.h:26 @ v0.13.1`），形如 `{"role":"user","content":"..."}`。用 JSON 而非固定 struct，是为了让多模型、多模态、工具调用、思考通道这些可变字段共用同一类型，对话层主体不必为每种模型改动数据结构。
+模型不理解 user 与 model 这样的角色概念，它的输入是一段连续文本，角色边界由特殊标记（special token）界定。把结构化的消息渲染为这样一段带标记的文本，靠的是聊天模板（chat template / prompt template）。消息本身是一个有序 JSON，`Message` 是 `nlohmann::ordered_json` 的别名（`runtime/conversation/io_types.h:26`），形如 `{"role":"user","content":"..."}`。用 JSON 而非固定 struct，是为了让多模型、多模态、工具调用、思考通道这些可变字段共用同一类型，对话层主体不必为每种模型改动数据结构。
 
-不同模型的模板语法不同，Gemma 与 Qwen 各有各的角色标记与拼接方式。LiteRT-LM 为此准备了按模型类型分派的处理器（`model_data_processor`，工具调用见第 10 章）。`ConversationConfig`（`runtime/conversation/conversation.h:56 @ v0.13.1`）配置这一层的行为。它暴露的只读入口反映了这一层管辖的范围：
+不同模型的模板语法不同，Gemma 与 Qwen 各有各的角色标记与拼接方式。LiteRT-LM 为此准备了按模型类型分派的处理器（`model_data_processor`，工具调用见第 10 章）。`ConversationConfig`（`runtime/conversation/conversation.h:56`）配置这一层的行为。它暴露的只读入口反映了这一层管辖的范围：
 
 ```cpp
 const Preface& GetPreface() const { return preface_; }              // (1)
@@ -153,7 +153,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 ### 模板引擎的真身：MiniJinja 与一层正则改写
 
-「渲染」由谁执行值得专门交代，因为它跨了一次语言边界。`PromptTemplate::Apply` 底层调用的不是 C++ 实现的 Jinja，而是 Rust 库 MiniJinja，经生成的 FFI 头接入（`runtime/components/prompt_template.cc:26 @ v0.13.1` 的 `#include "runtime/components/rust/minijinja_template.rs.h"`）。MiniJinja 是 Jinja2 的 Rust 重实现，但与 Python 版并非完全兼容：它不支持在模板里调用任意 Python 方法，而 HuggingFace 模型的 `tokenizer_config.json` 里的聊天模板恰恰常写 `s.startswith("foo")` 这类 Python 习语。LiteRT-LM 的办法是渲染前先用一组 RE2 正则把模板改写成 MiniJinja 认识的语法（`EditTemplateForMinijinja`，`prompt_template.cc:40 @ v0.13.1`）：
+「渲染」由谁执行值得专门交代，因为它跨了一次语言边界。`PromptTemplate::Apply` 底层调用的不是 C++ 实现的 Jinja，而是 Rust 库 MiniJinja，经生成的 FFI 头接入（`runtime/components/prompt_template.cc:26` 的 `#include "runtime/components/rust/minijinja_template.rs.h"`）。MiniJinja 是 Jinja2 的 Rust 重实现，但与 Python 版并非完全兼容：它不支持在模板里调用任意 Python 方法，而 HuggingFace 模型的 `tokenizer_config.json` 里的聊天模板恰恰常写 `s.startswith("foo")` 这类 Python 习语。LiteRT-LM 的办法是渲染前先用一组 RE2 正则把模板改写成 MiniJinja 认识的语法（`EditTemplateForMinijinja`，`prompt_template.cc:40`）：
 
 ```cpp
   RE2::GlobalReplace(&modified_template, R"regex(\.startswith\((.*?)\))regex",
@@ -183,7 +183,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 问题如下。多轮对话中，第 n 轮的输入在逻辑上是"历史全文 + 新消息"。若每一轮都把整段历史重新渲染、重新 prefill，则对话越长每轮开销越大，第 10 轮要把前 9 轮重算一遍。这是重复计算：历史对应的 KV cache 已经驻留在内存中，却每轮重新支付一遍 prefill 的算力，TTFT（首 token 时延）随对话轮数线性增长。
 
-LiteRT-LM 采用的方法是只 prefill 新增的那一段。实现落在 `Conversation::GetPrefillTextForMessages`（`runtime/conversation/conversation.cc:751 @ v0.13.1`）。它把同一套模板渲染两遍：一遍只含旧消息，一遍含旧消息加新消息，再相减：
+LiteRT-LM 采用的方法是只 prefill 新增的那一段。实现落在 `Conversation::GetPrefillTextForMessages`（`runtime/conversation/conversation.cc:751`）。它把同一套模板渲染两遍：一遍只含旧消息，一遍含旧消息加新消息，再相减：
 
 ```cpp
 // Render the `old` string.
@@ -201,9 +201,9 @@ ASSIGN_OR_RETURN(std::string new_string,
 
 (1) `old_string` 是 Preface 加旧消息完整渲染后的字符串。(2) `new_context` 从 `old_context` 拷贝而来再追加新消息，`new_string` 是加入新消息后重新渲染的结果。由于 `new_context` 拷贝自 `old_context`，两次渲染的前半段基于同一份上下文，这保证了 `new_string` 应当以 `old_string` 为前缀。
 
-这里的 `include_preface` 参数控制第一轮的相减语义，值得单独说明。当 `old_messages` 为空（首轮对话）时，是否渲染 `old_string` 取决于 `include_preface`（`conversation.cc:786 @ v0.13.1` 的条件 `if (!old_messages.empty() || !include_preface)`）。若 `include_preface` 为 true，`old_string` 保持为空，于是 Preface 会被算进返回的增量文本、随首条消息一并 prefill；若为 false，`old_string` 含 Preface，Preface 会被从增量里减去。这对应上一节 `prefill_preface_on_init` 的两种取值：Preface 已在初始化时预先 prefill，则首轮增量不应再包含它。
+这里的 `include_preface` 参数控制第一轮的相减语义，值得单独说明。当 `old_messages` 为空（首轮对话）时，是否渲染 `old_string` 取决于 `include_preface`（`conversation.cc:786` 的条件 `if (!old_messages.empty() || !include_preface)`）。若 `include_preface` 为 true，`old_string` 保持为空，于是 Preface 会被算进返回的增量文本、随首条消息一并 prefill；若为 false，`old_string` 含 Preface，Preface 会被从增量里减去。这对应上一节 `prefill_preface_on_init` 的两种取值：Preface 已在初始化时预先 prefill，则首轮增量不应再包含它。
 
-相减的逻辑在函数末尾（`conversation.cc:806,813,820 @ v0.13.1`）：
+相减的逻辑在函数末尾（`conversation.cc:806,813,820`）：
 
 ```cpp
 if (old_string.length() > new_string.length()) {                     // (1)
@@ -227,11 +227,11 @@ return new_string.substr(old_string.length());                       // (3)
 
 如果要进一步压掉渲染侧的 O(n²)，理论上可以缓存上一轮的 `new_string` 作为下一轮的 `old_string`，省去重复渲染旧消息。v0.13.1 未做这一步，每轮都从 Preface 起重新渲染。据此推断，这一取舍的依据是渲染开销相对 prefill 可忽略，缓存渲染文本引入的一致性维护（模板、Preface、extra_context 任一变化都需失效缓存）不值得。
 
-diff 出的增量文本随后交给 `GetInputDataVectorForMessages`（`conversation.cc:824 @ v0.13.1`）转为 `InputData` 向量，送入 `Session::RunPrefill`。它把"逻辑上每轮都是全量历史"翻译成"物理上每轮只处理增量"。表面是字符串相减，背后是整个 KV cache 复用的收益，与上一节 `Clone` 共享前缀是同一优化动机的两种实现形态：一个复制会话状态，一个比对渲染文本。
+diff 出的增量文本随后交给 `GetInputDataVectorForMessages`（`conversation.cc:824`）转为 `InputData` 向量，送入 `Session::RunPrefill`。它把"逻辑上每轮都是全量历史"翻译成"物理上每轮只处理增量"。表面是字符串相减，背后是整个 KV cache 复用的收益，与上一节 `Clone` 共享前缀是同一优化动机的两种实现形态：一个复制会话状态，一个比对渲染文本。
 
 ## 从文本到数字：两种 tokenizer
 
-增量文本有了，最后一步是把它切成 token id——模型只吃数字。做这件事的叫 tokenizer，它们都实现同一个抽象接口 `Tokenizer`（`runtime/components/tokenizer.h:41 @ v0.13.1`）：
+增量文本有了，最后一步是把它切成 token id——模型只吃数字。做这件事的叫 tokenizer，它们都实现同一个抽象接口 `Tokenizer`（`runtime/components/tokenizer.h:41`）：
 
 ```cpp
 class Tokenizer {
@@ -250,7 +250,7 @@ class Tokenizer {
 
 (1) 输入侧只用得到 `TextToTokenIds`：文本进、id 序列出。(2) 反方向的 `TokenIdsToText` 是输出侧（第 5 章）用的，注释里那句"incomplete BPE sequence 会返回 `DataLossError`"，正是第 5 章末尾"吐半个字"现象的接口层伏笔。解码到半个 BPE 序列时，tokenizer 会明确拒绝，而不是吐出乱码。
 
-LiteRT-LM 提供两种实现，都继承这个接口。SentencePiece 版（Gemma 等模型用）的编码实现薄得几乎透明（`runtime/components/sentencepiece_tokenizer.cc:65 @ v0.13.1`）：
+LiteRT-LM 提供两种实现，都继承这个接口。SentencePiece 版（Gemma 等模型用）的编码实现薄得几乎透明（`runtime/components/sentencepiece_tokenizer.cc:65`）：
 
 ```cpp
 absl::StatusOr<std::vector<int>> SentencePieceTokenizer::TextToTokenIds(
@@ -264,7 +264,7 @@ absl::StatusOr<std::vector<int>> SentencePieceTokenizer::TextToTokenIds(
 }
 ```
 
-(1) 真正干活的是 `processor_`——一个 `sentencepiece::SentencePieceProcessor`。LiteRT-LM 这一层只做了薄薄一层包装：把第三方库的 `Encode` 转接到统一接口上，错误原样透传。HuggingFace 版（`runtime/components/huggingface_tokenizer.cc:55 @ v0.13.1`）同样是转接，但多了一个耐人寻味的细节：
+(1) 真正干活的是 `processor_`——一个 `sentencepiece::SentencePieceProcessor`。LiteRT-LM 这一层只做了薄薄一层包装：把第三方库的 `Encode` 转接到统一接口上，错误原样透传。HuggingFace 版（`runtime/components/huggingface_tokenizer.cc:55`）同样是转接，但多了一个耐人寻味的细节：
 
 ```cpp
 absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
@@ -281,11 +281,11 @@ absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
 
 (2) 底层 `tokenizer_` 是 HuggingFace 的 Rust 分词器，通过 FFI 调用。(1) 那行 `LeakCheckDisabler` 泄漏了实现真相：这是个跨语言边界的封装，Rust 的 `lazy_static` 初始化会被 Google 的泄漏检查器误报，只能临时关掉检查。两种 tokenizer 都实现同一个 `Tokenizer` 抽象——又一次"接口隔离"原则：上层只管"把这段文本变成 id 序列"，不关心底下是 C++ 的 SentencePiece 还是 Rust 的 HuggingFace，更不关心后者还要跟泄漏检查器打架。
 
-这个抽象还解释了第 5 章末尾那个"吐半个字"现象的一半来由：SentencePiece 的解码路径（`sentencepiece_tokenizer.cc:84 @ v0.13.1`）会把 byte token 攒进一个 `chunk_byte_token_ids` 缓冲、等凑齐一个完整字符再吐。子词分词意味着一个 token 未必是一个完整的字，跨 token 的边界必须小心处理。编码是这条边界的正向，解码是反向，同一条规则的两面。
+这个抽象还解释了第 5 章末尾那个"吐半个字"现象的一半来由：SentencePiece 的解码路径（`sentencepiece_tokenizer.cc:84`）会把 byte token 攒进一个 `chunk_byte_token_ids` 缓冲、等凑齐一个完整字符再吐。子词分词意味着一个 token 未必是一个完整的字，跨 token 的边界必须小心处理。编码是这条边界的正向，解码是反向，同一条规则的两面。
 
 ## 还差半步：token id 变成 embedding
 
-token id 只是编号，进模型前会先经查表变成一个高维向量——**embedding**（嵌入）。这一步由 `EmbeddingLookup` 接口负责（`runtime/components/embedding_lookup/embedding_lookup.h:63 @ v0.13.1`）：
+token id 只是编号，进模型前会先经查表变成一个高维向量——**embedding**（嵌入）。这一步由 `EmbeddingLookup` 接口负责（`runtime/components/embedding_lookup/embedding_lookup.h:63`）：
 
 ```cpp
 // For a given list of tokens, looks up the embeddings, concatenates them and
@@ -303,7 +303,7 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
 
 ### 查表其实是跑一个编译子图
 
-「查表」这个说法需要修正一处直觉。文本实现 `EmbeddingLookupText` 的单 token 路径长这样（`LookupInternal`，`runtime/components/embedding_lookup/embedding_lookup_text.cc:50 @ v0.13.1`）：
+「查表」这个说法需要修正一处直觉。文本实现 `EmbeddingLookupText` 的单 token 路径长这样（`LookupInternal`，`runtime/components/embedding_lookup/embedding_lookup_text.cc:50`）：
 
 ```cpp
   if (token < 0) {
@@ -372,8 +372,10 @@ id 是名字，embedding 才是模型真正计算的对象。这半步平时不�
 
 ## 参考
 
-- Engine / Session 接口：`runtime/engine/engine.h @ v0.13.1`（Example usage:44；SessionInterface:70；GenerateContent:112；GenerateContentStream:128；RunPrefill:174；RunDecode:188；Clone 共享前缀示例:231）。
-- 对话配置与 diff：`runtime/conversation/conversation.h:56 @ v0.13.1`（ConversationConfig）；`runtime/conversation/conversation.cc @ v0.13.1`（GetPrefillTextForMessages:751；前缀相减:806/813/820；GetInputDataVectorForMessages:824）。
-- 消息类型：`runtime/conversation/io_types.h:26 @ v0.13.1`（Message = nlohmann::ordered_json）。
-- 分词：`runtime/components/tokenizer.h:41 @ v0.13.1`（Tokenizer 抽象）；`runtime/components/sentencepiece_tokenizer.cc:65 @ v0.13.1`（TextToTokenIds）；`runtime/components/huggingface_tokenizer.cc:55 @ v0.13.1`（TextToTokenIds）；SentencePiece 解码的 byte-token 处理:84。
-- token id 到 embedding：`runtime/components/embedding_lookup/embedding_lookup.h:63 @ v0.13.1`（LookupPrefill 批量重载）。
+> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
+
+- Engine / Session 接口：`runtime/engine/engine.h`（Example usage:44；SessionInterface:70；GenerateContent:112；GenerateContentStream:128；RunPrefill:174；RunDecode:188；Clone 共享前缀示例:231）。
+- 对话配置与 diff：`runtime/conversation/conversation.h:56`（ConversationConfig）；`runtime/conversation/conversation.cc`（GetPrefillTextForMessages:751；前缀相减:806/813/820；GetInputDataVectorForMessages:824）。
+- 消息类型：`runtime/conversation/io_types.h:26`（Message = nlohmann::ordered_json）。
+- 分词：`runtime/components/tokenizer.h:41`（Tokenizer 抽象）；`runtime/components/sentencepiece_tokenizer.cc:65`（TextToTokenIds）；`runtime/components/huggingface_tokenizer.cc:55`（TextToTokenIds）；SentencePiece 解码的 byte-token 处理:84。
+- token id 到 embedding：`runtime/components/embedding_lookup/embedding_lookup.h:63`（LookupPrefill 批量重载）。

@@ -10,7 +10,7 @@
 
 这一差距在本书基准上是实测可见的。附录 D 的主基准（Gemma 4 E4B，公开权重，`litert-lm benchmark` 中位数）里，gpu 后端上下文 1024 时 prefill 吞吐 999.1 tokens/s、decode 仅 50.6 tokens/s，相差约 20 倍；cpu 后端上下文 1024 时 prefill 259.2 tokens/s、decode 24.7 tokens/s，相差约 10 倍〔基准 D〕。同一模型、同一后端，两个数字差一到两个数量级，因为一个吃算力、一个吃带宽。本章从第 2 层的编排入口（`Tasks::Prefill`）下探到第 3 层的 executor，把这条路径上的每一处开销摊开。
 
-编排入口很短。它先取模型能接受的最大 token 数，做一次越界校验，再把整段 token 交给 executor（`runtime/core/tasks.cc:412 @ v0.13.1`）：
+编排入口很短。它先取模型能接受的最大 token 数，做一次越界校验，再把整段 token 交给 executor（`runtime/core/tasks.cc:412`）：
 
 ```cpp
 absl::StatusOr<Responses> Prefill(
@@ -39,7 +39,7 @@ absl::StatusOr<Responses> Prefill(
 
 四处值得说明。(1) 越界判断用 `>=` 而非 `>`。模型的上下文窗口要留一个位置给随后的 pending token（下一节展开这个 token 的来历），所以 prefill 能写入的 token 数必须严格小于 `max_num_tokens`。(2) `wait_for_completion` 与 benchmark 开关做了一次按位或：只要在跑基准就强制同步等待，否则计时会把还在异步执行的 prefill 提前算完，拿到偏短的数字。(3)(4) 计时探针 `TimePrefillTurnStart` / `TimePrefillTurnEnd` 把 `executor.Prefill` 夹在中间，`TimePrefillTurnEnd` 收到本轮 token 数用于算吞吐。真正的计算下沉给 `executor.Prefill`：这个函数不碰模型、不选形状、不管 KV cache。第 2 层只做校验、计时与编排，形状怎么选、算子怎么跑是第 3 层 executor 的事。
 
-这两个探针的实现极薄。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键记一个 `absl::Now()` 起点，`TimePrefillTurnEnd` 再取一次 `absl::Now()` 求差，连同 token 数存进 `prefill_turns_`（`runtime/engine/io_types.cc:296` 与 `:306 @ v0.13.1`）。它量的是整个 `executor.Prefill` 的墙钟时间，包含下面要讲的分块循环、掩码填充、embedding 装配与 KV cache 缓冲交换的全部开销。附录 D 那张 prefill 吞吐表，每个数字都出自这一对探针。
+这两个探针的实现极薄。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键记一个 `absl::Now()` 起点，`TimePrefillTurnEnd` 再取一次 `absl::Now()` 求差，连同 token 数存进 `prefill_turns_`（`runtime/engine/io_types.cc:296` 与 `:306`）。它量的是整个 `executor.Prefill` 的墙钟时间，包含下面要讲的分块循环、掩码填充、embedding 装配与 KV cache 缓冲交换的全部开销。附录 D 那张 prefill 吞吐表，每个数字都出自这一对探针。
 
 ### 用探针复算一次 prefill 曲线
 
@@ -57,14 +57,14 @@ executor 如何处理这段 token，是一处端侧特有的设计权衡。
 
 模型编译成能在硬件上运行的形式后，它接受的输入形状（序列长度）往往是固定的。而提示词长度千变万化，有时 20 个 token，有时 2000 个。LiteRT-LM 给出两条路径，对应两个 executor 子类：`LlmLiteRtCompiledModelExecutorStatic` 与 `LlmLiteRtCompiledModelExecutorDynamic`。
 
-静态形状路径预先编译好若干个固定长度的 prefill 入口（signature），比如 128、512、1024 各一个。这组入口按长度排序存放（`SortedPrefillSignatureMap`，`runtime/executor/litert_compiled_model_executor_utils.h:43 @ v0.13.1`）：
+静态形状路径预先编译好若干个固定长度的 prefill 入口（signature），比如 128、512、1024 各一个。这组入口按长度排序存放（`SortedPrefillSignatureMap`，`runtime/executor/litert_compiled_model_executor_utils.h:43`）：
 
 ```cpp
 using SortedPrefillSignatureMap =
     absl::btree_map<int, std::string, std::greater<int>>;                // (1)
 ```
 
-键是序列长度，值是 signature 名，比较器 `std::greater<int>` 让它从大到小排列，`begin()` 即最长的入口 (1)。选路策略是一个贪心切分（`GetOptimizedPrefillWorkGroups`，`runtime/executor/litert_compiled_model_executor_utils.cc:248 @ v0.13.1`）：
+键是序列长度，值是 signature 名，比较器 `std::greater<int>` 让它从大到小排列，`begin()` 即最长的入口 (1)。选路策略是一个贪心切分（`GetOptimizedPrefillWorkGroups`，`runtime/executor/litert_compiled_model_executor_utils.cc:248`）：
 
 ```cpp
 int max_seq_len = prefill_runner_set.begin()->first;                    // (1)
@@ -99,9 +99,9 @@ llama.cpp 在同一个问题上走了另一条路：不预编译固定长度入�
 
 **填充浪费定量。** 这个策略的浪费量随输入长度呈锯齿状波动，可以对固定入口集算一条曲线。仍用 {1024, 512, 128}。设输入长度 L，贪心切分先用若干个 1024 铺满，剩余 r = L mod 1024，再用恰好覆盖 r 的最小入口收尾；浪费量等于该收尾入口的长度减去 r。当 r 落在 (512, 1024) 区间时，收尾用 1024，最坏浪费接近 512（例如 L = 1025，r = 1，用 1024 收尾，浪费 1023，占该段的 99.9%）；r 恰等于某个入口长度时浪费为 0（例如 L = 1536，工单 [1024, 512]，零填充）。对整段而言，L = 1300 的例子填了 236 个零、总位置 1536，填充率约 15%；而 L 取 (1024, 1536] 区间的下沿时，例如 L = 1025，整段填充率高达约 40%（1024 + 512 = 1536 个位置里只有 1025 个是真实 token）。这条锯齿曲线的最坏点，恰好落在每一档入口长度刚被跨过的位置。
 
-源码在这个函数上留了一条 TODO：`b/378772479 - Improve this strategy once we have benchmarked costs`（`runtime/executor/litert_compiled_model_executor_utils.cc:255 @ v0.13.1`）。它承认当前策略只是「先用最大入口铺、剩余用最小可容入口收尾」的朴素贪心，尚未按实测成本调优。据此推断，更优的切分会权衡两件事：大入口的算术强度更高、单位 token 更省时，但一旦最后一段填充率高，被填充的零位置也要走一遍前向计算，白付算力。在填充率高的区间，用两个较小入口拼可能比一个大入口更省——但这需要 benchmark 各入口的实际 kernel 成本才能定夺，也正是 TODO 想做的事。这属于基于代码与注释的推断，v0.13.1 尚未实现。
+源码在这个函数上留了一条 TODO：`b/378772479 - Improve this strategy once we have benchmarked costs`（`runtime/executor/litert_compiled_model_executor_utils.cc:255`）。它承认当前策略只是「先用最大入口铺、剩余用最小可容入口收尾」的朴素贪心，尚未按实测成本调优。据此推断，更优的切分会权衡两件事：大入口的算术强度更高、单位 token 更省时，但一旦最后一段填充率高，被填充的零位置也要走一遍前向计算，白付算力。在填充率高的区间，用两个较小入口拼可能比一个大入口更省——但这需要 benchmark 各入口的实际 kernel 成本才能定夺，也正是 TODO 想做的事。这属于基于代码与注释的推断，v0.13.1 尚未实现。
 
-`Static::Prefill` 拿到工单后逐段调用底层（`runtime/executor/llm_litert_compiled_model_executor.cc:1537 @ v0.13.1`）：
+`Static::Prefill` 拿到工单后逐段调用底层（`runtime/executor/llm_litert_compiled_model_executor.cc:1537`）：
 
 ```cpp
 ASSIGN_OR_RETURN(auto work_groups, GetOptimizedPrefillWorkGroups(
@@ -121,7 +121,7 @@ for (int i = 0; i < work_groups.size(); ++i) {
 
 (1) 这行决定每一段是异步派发还是同步等：除最后一段外的所有工单都可以异步（因为后面还要接着提交，不必等），只有最后一段在调用方要求 `wait_for_completion` 时才同步落地。这就是编排层那个 `wait_for_completion` 参数真正生效的地方。(2) 每铺完一段就把 span 往前推，循环结束时全部消化完，函数末尾有一句 `RET_CHECK_EQ(ids.size(), 0)` 兜底，确保工单不多不少覆盖整段输入。
 
-**动态形状**：输入长度可变，KV cache 也按需增长。长提示词被切成固定大小的块，一块一块 prefill（`runtime/executor/llm_litert_compiled_model_executor.cc:1855 @ v0.13.1`）：
+**动态形状**：输入长度可变，KV cache 也按需增长。长提示词被切成固定大小的块，一块一块 prefill（`runtime/executor/llm_litert_compiled_model_executor.cc:1855`）：
 
 ```cpp
 if (prefill_chunk_size_ <= 0) {
@@ -137,7 +137,7 @@ while (!ids.empty()) {
 
 (1) 若没配 chunk size，就一把梭：整段直接进内部实现，全靠动态形状消化任意长度。(2)(3) 否则按 `prefill_chunk_size_` 切块，每块单独一次 `PrefillInternal`。与静态路径的关键区别是：静态的段长必须命中预编译入口之一，动态的块长只受一个上限约束，最后一块由 `std::min` 自然取到不足一个 chunk 的余数——不需要填充。这更灵活，桌面和服务端常见，代价是失去了固定形状带来的一部分编译期优化。
 
-两条路径都通过基类的同一个内部函数落地（`PrefillInternal`，`runtime/executor/llm_litert_compiled_model_executor.cc:543 @ v0.13.1`）。它把 token 写进输入缓冲、推进 `current_step`、更新已处理 token 记录，再交给 LiteRT 跑 signature，注意力中间结果就此写进 KV cache，为 decode 铺好底：
+两条路径都通过基类的同一个内部函数落地（`PrefillInternal`，`runtime/executor/llm_litert_compiled_model_executor.cc:543`）。它把 token 写进输入缓冲、推进 `current_step`、更新已处理 token 记录，再交给 LiteRT 跑 signature，注意力中间结果就此写进 KV cache，为 decode 铺好底：
 
 ```cpp
 // We always hold one pending token in the input ids for the next
@@ -164,11 +164,11 @@ std::transform(prefill_input_pos_ptr, prefill_input_pos_ptr + prefill_length,
 
 第 2 章那份"二十个问题"里有一问：生成中途取消，为什么能立刻停下（第 9 问）？答案的一半在 prefill 这一层——但要说清楚，得先分清"API 上有"和"路径上真正生效"两件事。
 
-`ExecutorPrefillParams` 上确实挂着两个为取消准备的开关（`runtime/executor/llm_executor_io_types.h:376 @ v0.13.1`）：一个取消标志 `GetCancelFlag()`（一个 `const std::atomic_bool*`），一个限长开关 `GetMaxPrefillSequenceLength()`。前者让调用方传进一个原子布尔量的指针，后者限制单次能用多长的 prefill signature。设计意图很清楚：一次跑太长的 signature 就是一段不可打断的时间，把单次长度限住，取消标志才有足够密的机会被检查到。
+`ExecutorPrefillParams` 上确实挂着两个为取消准备的开关（`runtime/executor/llm_executor_io_types.h:376`）：一个取消标志 `GetCancelFlag()`（一个 `const std::atomic_bool*`），一个限长开关 `GetMaxPrefillSequenceLength()`。前者让调用方传进一个原子布尔量的指针，后者限制单次能用多长的 prefill signature。设计意图很清楚：一次跑太长的 signature 就是一段不可打断的时间，把单次长度限住，取消标志才有足够密的机会被检查到。
 
 不过在 v0.13.1 里要诚实：这两个字段在整个 prefill 运行路径上还只是**声明和存取器**，`llm_litert_compiled_model_executor.cc` 里既没读 `GetCancelFlag()`、也没读 `GetMaxPrefillSequenceLength()`（在源码里 grep 这两个符号，命中的只有 `llm_executor_io_types.*` 自身与其测试）。换句话说，prefill 内部目前不会在算到一半时主动瞄取消标志。这是我们据代码得出的判断，不是文档说法。
 
-那"立刻停"靠什么？靠两处真正落地的机制。其一，**分块本身就是取消点**：动态路径每块、静态路径每个工单之间，控制权都回到循环里，长 prefill 被拆成若干段短调用，天然给了打断的缝隙。其二，取消真正生效的地方在 decode 循环——生成每一步开头都在看这个标志（`runtime/core/tasks.cc:487 @ v0.13.1`）：
+那"立刻停"靠什么？靠两处真正落地的机制。其一，**分块本身就是取消点**：动态路径每块、静态路径每个工单之间，控制权都回到循环里，长 prefill 被拆成若干段短调用，天然给了打断的缝隙。其二，取消真正生效的地方在 decode 循环——生成每一步开头都在看这个标志（`runtime/core/tasks.cc:487`）：
 
 ```cpp
 while (true) {
@@ -180,11 +180,11 @@ while (true) {
 }
 ```
 
-(1) 每次循环先读原子标志，(2) 一旦为真就立刻返回 `CancelledError`。注意编排层的 `Prefill`（tasks.cc:413）签名里根本没有 `cancelled` 参数，只有 `Decode` 有，这印证了前面的判断：v0.13.1 里 prefill 的可打断性来自"被切成小段"，decode 的可打断性才来自"每步查标志"。第 9 问答案的这一半，落在 decode 的 `ShouldStop` 路径（第 5 章展开）。会话层把两者串起来：`SessionAdvanced::Cancel()` 只做一件事——`cancelled_->store(true)`（`runtime/core/session_advanced.h:68 @ v0.13.1`），把这个共享原子量置真，正在跑的 decode 循环下一步就会读到。
+(1) 每次循环先读原子标志，(2) 一旦为真就立刻返回 `CancelledError`。注意编排层的 `Prefill`（tasks.cc:413）签名里根本没有 `cancelled` 参数，只有 `Decode` 有，这印证了前面的判断：v0.13.1 里 prefill 的可打断性来自"被切成小段"，decode 的可打断性才来自"每步查标志"。第 9 问答案的这一半，落在 decode 的 `ShouldStop` 路径（第 5 章展开）。会话层把两者串起来：`SessionAdvanced::Cancel()` 只做一件事——`cancelled_->store(true)`（`runtime/core/session_advanced.h:68`），把这个共享原子量置真，正在跑的 decode 循环下一步就会读到。
 
 ## 异步底座：把 prefill 挪出主线程
 
-prefill 任务并不总在主线程同步跑。framework 层提供了一个最小的异步原语——一个单工作线程的顺序队列（`ExecutionQueue`，`runtime/framework/execution_queue.cc @ v0.13.1`）。它的 `Enqueue` 把任务塞进两个结构：
+prefill 任务并不总在主线程同步跑。framework 层提供了一个最小的异步原语——一个单工作线程的顺序队列（`ExecutionQueue`，`runtime/framework/execution_queue.cc`）。它的 `Enqueue` 把任务塞进两个结构：
 
 ```cpp
 int id = next_id_++;
@@ -193,7 +193,7 @@ task_order_.push(id);                                                  // (2)
 return id;
 ```
 
-(1) `pending_tasks_` 存任务体、(2) `task_order_` 存 FIFO 顺序，两者分开是为了让取消变简单：`Remove(id)` 只需从 `pending_tasks_` 里 `erase` 掉任务体，不用去队列里翻找。工作线程取任务时若发现 id 已不在表里，就知道这个任务被取消了，直接跳过。工作线程循环里有一处关键决定（`runtime/framework/execution_queue.cc:97 @ v0.13.1`）：
+(1) `pending_tasks_` 存任务体、(2) `task_order_` 存 FIFO 顺序，两者分开是为了让取消变简单：`Remove(id)` 只需从 `pending_tasks_` 里 `erase` 掉任务体，不用去队列里翻找。工作线程取任务时若发现 id 已不在表里，就知道这个任务被取消了，直接跳过。工作线程循环里有一处关键决定（`runtime/framework/execution_queue.cc:97`）：
 
 ```cpp
 // Execute the task OUTSIDE the mutex lock.
@@ -209,7 +209,7 @@ if (current_task) {
 
 ### 会自己扩容的 ThreadPool
 
-底层原语是一个按需扩容的线程池。`Schedule` 提交任务时顺带决定要不要加人手（`runtime/framework/threadpool.cc:78 @ v0.13.1`）：
+底层原语是一个按需扩容的线程池。`Schedule` 提交任务时顺带决定要不要加人手（`runtime/framework/threadpool.cc:78`）：
 
 ```cpp
   // If all worker threads are (supposed to be) busy, instantiates a new worker
@@ -236,7 +236,7 @@ if (current_task) {
 
 ### 两个只有一个线程的池
 
-`ThreadedExecutionManager` 的构造函数把这套线程池用得很反直觉（`runtime/framework/resource_management/threaded_execution_manager.cc:74 @ v0.13.1`）：
+`ThreadedExecutionManager` 的构造函数把这套线程池用得很反直觉（`runtime/framework/resource_management/threaded_execution_manager.cc:74`）：
 
 ```cpp
   execution_thread_pool_ =
@@ -251,7 +251,7 @@ if (current_task) {
 
 ### 回调走另一条线程，别堵住执行
 
-任务完成后要通知调用方（流式回调、完成回调）。回调是用户代码，跑多久、干什么都不可控。若在执行线程上直接调它，一个慢回调就会卡住后面所有排队的 decode step。`ThreadedExecutionManager` 的处理是把回调改投到回调池（`threaded_execution_manager.cc:438 @ v0.13.1`）：
+任务完成后要通知调用方（流式回调、完成回调）。回调是用户代码，跑多久、干什么都不可控。若在执行线程上直接调它，一个慢回调就会卡住后面所有排队的 decode step。`ThreadedExecutionManager` 的处理是把回调改投到回调池（`threaded_execution_manager.cc:438`）：
 
 ```cpp
     if (callback_thread_pool_ != nullptr) {
@@ -290,11 +290,13 @@ prefill 是算力受限的一步，快，且有静态/动态两条实现路径�
 
 ## 参考
 
-- prefill 编排入口：`runtime/core/tasks.cc:413 @ v0.13.1`（`Prefill`，含 `>=` 越界校验与 `wait_for_completion` 处理）。
-- 静态路径：`runtime/executor/llm_litert_compiled_model_executor.cc:1503 @ v0.13.1`（`Static::Prefill`，工单循环与 async 判定在 :1537）。
-- 动态路径分块：`runtime/executor/llm_litert_compiled_model_executor.cc:1841 @ v0.13.1`（`Dynamic::Prefill`，:1855 起为分块循环）。
-- 内部实现与 pending token / current_step：`runtime/executor/llm_litert_compiled_model_executor.cc:543 @ v0.13.1`（基类 `PrefillInternal`）。
-- signature 排序与选路：`runtime/executor/litert_compiled_model_executor_utils.h:43 @ v0.13.1`（`SortedPrefillSignatureMap`）；`runtime/executor/litert_compiled_model_executor_utils.cc:248 @ v0.13.1`（`GetOptimizedPrefillWorkGroups`）。
-- 取消与限长参数：`runtime/executor/llm_executor_io_types.h:376 @ v0.13.1`（`ExecutorPrefillParams`；`GetCancelFlag` / `GetMaxPrefillSequenceLength` 在 v0.13.1 尚未被 executor 消费）。取消实际生效在 decode 循环 `runtime/core/tasks.cc:487 @ v0.13.1`，会话侧置标志在 `runtime/core/session_advanced.h:68 @ v0.13.1`。
-- 异步队列原语：`runtime/framework/execution_queue.cc @ v0.13.1`（`ExecutionQueue`，锁外执行在 :97）。
-- 任务层调度：`ThreadPool::Schedule` 弹性扩容 `runtime/framework/threadpool.cc:78`、`RunWorker` 锁外执行 `:180`；`ThreadedExecutionManager` 双单线程池构造 `runtime/framework/resource_management/threaded_execution_manager.cc:74`、回调改投回调池 `:438`（含 TODO b/476205457）、`Schedule` 到执行池 `:311`、`QueueTask` 依赖检查 `:301`——均 @ v0.13.1。
+> 本章代码引用均基于 LiteRT-LM `v0.13.1`（引用体例见前言）；对其他项目的引用显式标注其版本。
+
+- prefill 编排入口：`runtime/core/tasks.cc:413`（`Prefill`，含 `>=` 越界校验与 `wait_for_completion` 处理）。
+- 静态路径：`runtime/executor/llm_litert_compiled_model_executor.cc:1503`（`Static::Prefill`，工单循环与 async 判定在 :1537）。
+- 动态路径分块：`runtime/executor/llm_litert_compiled_model_executor.cc:1841`（`Dynamic::Prefill`，:1855 起为分块循环）。
+- 内部实现与 pending token / current_step：`runtime/executor/llm_litert_compiled_model_executor.cc:543`（基类 `PrefillInternal`）。
+- signature 排序与选路：`runtime/executor/litert_compiled_model_executor_utils.h:43`（`SortedPrefillSignatureMap`）；`runtime/executor/litert_compiled_model_executor_utils.cc:248`（`GetOptimizedPrefillWorkGroups`）。
+- 取消与限长参数：`runtime/executor/llm_executor_io_types.h:376`（`ExecutorPrefillParams`；`GetCancelFlag` / `GetMaxPrefillSequenceLength` 在 v0.13.1 尚未被 executor 消费）。取消实际生效在 decode 循环 `runtime/core/tasks.cc:487`，会话侧置标志在 `runtime/core/session_advanced.h:68`。
+- 异步队列原语：`runtime/framework/execution_queue.cc`（`ExecutionQueue`，锁外执行在 :97）。
+- 任务层调度：`ThreadPool::Schedule` 弹性扩容 `runtime/framework/threadpool.cc:78`、`RunWorker` 锁外执行 `:180`；`ThreadedExecutionManager` 双单线程池构造 `runtime/framework/resource_management/threaded_execution_manager.cc:74`、回调改投回调池 `:438`（含 TODO b/476205457）、`Schedule` 到执行池 `:311`、`QueueTask` 依赖检查 `:301`。
