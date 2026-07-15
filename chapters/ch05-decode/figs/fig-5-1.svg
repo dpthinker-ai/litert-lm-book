@@ -1,4 +1,4 @@
-<svg viewBox="0 0 720 420" width="720" height="420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="decode 一次心跳的完整循环">
+<svg viewBox="0 0 720 420" width="720" height="420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="一次 decode step 的完整循环">
   <style>
     text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
     .box  { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }

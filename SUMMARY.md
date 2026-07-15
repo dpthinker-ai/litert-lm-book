@@ -9,7 +9,7 @@
 # 第一篇 · 起点
 
 - [第 1 章 端侧 LLM：约束与总览](chapters/ch01-three-walls/chapter.md)
-- [第 2 章 跑起来与鸟瞰：从 benchmark 数字到五层架构](chapters/ch02-run-and-overview/chapter.md)
+- [第 2 章 从运行到架构：benchmark 指标解读与五层概览](chapters/ch02-run-and-overview/chapter.md)
 
 # 第二篇 · 推理流水线
 

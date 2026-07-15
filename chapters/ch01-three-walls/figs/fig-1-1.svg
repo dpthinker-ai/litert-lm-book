@@ -1,4 +1,4 @@
-<svg viewBox="0 0 720 360" width="720" height="360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="端侧 LLM 的三堵墙">
+<svg viewBox="0 0 720 360" width="720" height="360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="端侧 LLM 的三类物理约束">
   <style>
     text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
     .wall { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
@@ -9,7 +9,7 @@
     .keybox { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; }
   </style>
   <text class="t" x="360" y="28" text-anchor="middle" style="font-size:16px;font-weight:700">端侧 LLM 的三类物理约束</text>
-  <!-- 三堵墙 -->
+  <!-- 三类物理约束 -->
   <g>
     <rect class="wall" x="40"  y="70" width="190" height="210" rx="4"/>
     <rect class="wall" x="265" y="70" width="190" height="210" rx="4"/>
