@@ -325,6 +325,13 @@ class LlmExecutorBase {
 <figcaption>图 2-2　LiteRT-LM 的五层架构。使用者只与最上层打交道；越往下越贴近硬件。括号里是本书对应的章节。</figcaption>
 </figure>
 
+分层图说的是「有哪些层」；把视角换成数据流，一次生成请求是这样自上而下穿过这些层的：
+
+<figure>
+{{#include figs/fig-2-3.svg}}
+<figcaption>图 2-3　一次生成请求的端到端数据流：自用户向下逐层抵达硬件，侧枝是各层的输入与加速件。</figcaption>
+</figure>
+
 支撑这五层的是三条设计原则，它们会在后续每一章反复出现，先记住名字：
 
 - **接口隔离**：每层用抽象接口挡住下层实现，换后端、换 tokenizer 都不震动别处；

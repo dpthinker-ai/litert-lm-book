@@ -18,6 +18,7 @@
 | Engine | — | 3 | 重量级、持有模型权重、可被多会话共享的资源持有者 |
 | Session | 会话 | 3 | 轻量、有状态的一次对话，持 KV cache 与采样配置 |
 | Conversation | 对话层 | 3 | 面向使用者的多轮对话 API，维护历史、套模板 |
+| Preface | 开场白 | 3 | 对话的开场背景：系统指令、few-shot 示例、可用工具声明；可在创建对话时预先 prefill |
 | tokenizer | 分词器 | 3 | 文本↔token id 的双向转换（SentencePiece / HuggingFace 两种） |
 | embedding | 嵌入 | 3 | token id 查表得到的高维向量；模型真正计算的对象（图像/音频也各自编码成它） |
 | 模板 diff 增量渲染 | — | 3 | 只 prefill 新旧渲染串的差值，多轮对话不重算历史 |
@@ -25,13 +26,17 @@
 | 静态/动态形状 | — | 4 | 预编译固定长度入口（静态）vs 序列可变、分块 prefill（动态） |
 | logits | — | 5 | 模型每步输出的、词表里每个 token 的分数 |
 | sampler | 采样器 | 5 | 从 logits 挑下一个 token 的策略：greedy / temperature / top-k / top-p |
+| 内部/外部采样 | — | 5 | 执行器内一步出 token（快、可片上）vs logits 回传上层处理再采（灵活，支持重复惩罚/约束解码） |
+| 重复惩罚 | repetition penalty | 5 | 压低近期已出现 token 的 logits 以减少复读；需改 logits，只能走外部采样路径 |
 | ShouldStop | — | 5 | 集中判定 decode 何时停（停止 token、超长、取消）的纯函数 |
 | KV cache | 键值缓存 | 6 | 缓存历史 token 的注意力 Key/Value，用内存换掉重复计算 |
 | GQA | 分组查询注意力 | 6 | grouped-query attention，多个查询头共享少量 KV 头，成倍缩小 KV cache |
 | 双缓冲 | — | 6 | 备两套 KV 缓冲、读旧写新再交换指针，避开 GPU 同缓冲读写限制 |
 | 状态即对象 | — | 6 | 把 KV cache + step + 配置打包成可搬运对象，支撑克隆/检查点/回退 |
 | LlmContext | — | 6 | 承载会话可迁移状态（KV cache、current_step、配置）的容器 |
+| channel | 通道 | 6 | 思考等内容走独立通道；思考 channel 对用户不必展示，其 KV 可用回退丢弃 |
 | .litertlm | — | 7 | 单文件模型容器：FlatBuffer 头 + 分段，打包权重/tokenizer/元数据/能力声明 |
+| FlatBuffer | — | 7 | Google 的零拷贝二进制序列化格式；.litertlm 头与 TFLite 模型都以它存储 |
 | ActivationDataType | 激活精度 | 7 | 激活值的数据类型（FP32/FP16/INT16/INT8），独立于权重量化 |
 | LoRA | — | 7 | 不动基座、挂一小份增量权重实现领域适配，可热加载 |
 | mmap | — | 7 | 把模型文件按需分页映射进地址空间，用哪段读哪段，缩短冷启动 |
@@ -46,7 +51,6 @@
 | patchify | — | 10 | 把图像切成正方 patch，供视觉执行器编码成 embedding |
 | 约束解码 | constrained decoding | 10 | 每步采样前把不合语法的 token 的 logit 设为 -inf，保证输出结构合法 |
 | Tool Use | 工具调用 | 10 | 让模型输出结构化函数调用，经 ANTLR 文法解析后执行、回填 |
-| Preface | 开场白 | 10 | 对话的初始背景：系统消息 + 可用工具声明，Tool Use 链路的第一步 |
 | llguidance | — | 10 | 约束解码的语法引擎（Rust 库，经 C bridge 即 llguidance.h 的纯 C 接口接入），逐步给出合法 token 位图 |
 | ANTLR | — | 10 | 文法解析器生成器；tool_use 用它的 .g4 文法把函数调用文本解析回结构 |
 | C ABI | — | 11 | 收敛成纯 C 的接口层，用不透明句柄 + C 函数当所有语言绑定的公约数 |

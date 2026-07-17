@@ -48,3 +48,15 @@
 - **性能为什么是这样**：`kv_cache_interface.h` 与执行器的双缓冲成员、`llm_litert_mtp_drafter.cc`、`executor_settings_base.h` 的 Backend。
 - **想加一个后端**：看 `..._factory.cc` 的 `switch(GetBackend())` 与 `LlmExecutor` 抽象。
 
+下面是几条 grep 式读码路径（符号均在 v0.13.1 核实），照着搜就能落到机制现场：
+
+- **KV cache 双缓冲与异步 prefill**：在 `llm_litert_compiled_model_executor.cc` 搜 `input_kv_cache_buffers_`（成员声明与注释）、`std::swap`（prefill/decode 两处交换）、`prefill_chunk_size_`、`RunAsync`。
+- **推测解码**：`llm_litert_mtp_drafter.cc` 的 `RunDraftingLoop` / `RunVerification`，配接受率计数器 `num_drafted_tokens_` / `num_verified_tokens_`。
+- **模板 diff 增量渲染**：`conversation.cc` 搜 `old_string` / `new_string`，相减逻辑在两者相邻处。
+- **采样策略**：`sampling_cpu_util.cc`（top-k/top-p/温度的 CPU 实现）与 `top_p_cpu_sampler.cc`；内外采样分岔在 `tasks.cc` 的 `DecodeAndSample`。
+- **约束解码**：`tasks.cc` 的 `MaskLogits` 调用点 → `components/constrained_decoding/` 的掩码实现与 llg_constraint FFI。
+- **停止词部分匹配**：`stop_token_detector.h/.cc`，配 `tasks.cc` 里 `bpe_partial_token_ids_` / `pending_stop_tokens_` 两个队列。
+- **多模态 embedding 注入**：`llm_executor_base.h` 的 `FillVisionEmbeddings` 接口 → vision/audio executor 的 `Encode` 实现。
+- **冷启动与 mmap**：`runtime/util/memory_mapped_file_posix.cc`（Linux/macOS 实现）与 `litert_lm_loader.cc` 的段缓存、双检锁、对齐补偿。
+- **想加一个采样策略/后端/绑定语言**：分别看 `sampler.h` 抽象、`..._factory.cc` 的 `switch(GetBackend())`、`c/engine.h` 的句柄配对。
+
