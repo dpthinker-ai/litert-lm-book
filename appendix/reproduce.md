@@ -50,7 +50,7 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 | 2、7 | 解剖 .litertlm 分段 | `litertlm_print`（源码工具） |
 | 4 | prefill 耗时随长度 | benchmark 扫 `-p 100…4000`（已做，脚本 `experiments/prefill_sweep.sh`，结果见附录 D 第七节）；异步开/关用 C++ 的 `litert_lm_main --async=true/false`（`litert-lm benchmark` 无此项） |
 | 5 | 采样对比 | `run` 改 `--temperature 0/1.0` 加 `--seed`（已做，实录见附录 D 第八节与 `experiments/data/temperature_test.md`） |
-| 6 | KV cache 内存/速度 | benchmark 扫 `--max-num-tokens`；`get_token_count` 观察多轮 |
+| 6 | KV cache 内存/速度 | benchmark 扫 `--max-num-tokens`（已做，脚本 `experiments/max_tokens_sweep.sh`，结果见附录 D 第九节）；`get_token_count` 观察多轮 |
 | 7 | 冷启动 | `--cache disk/no` 对比；分段并行加载开关仅 C API 暴露（`…set_parallel_file_section_loading`），CLI 未暴露、本书未单测 |
 | 8 | 后端对比 | `--backend cpu` vs `gpu`；扫 CPU 线程数 |
 | 9 | 推测解码 | `--enable-speculative-decoding true/false/auto`（需支持 MTP 的模型，如 Gemma 4；v0.13.1 中 auto 实为关，见第 9 章） |

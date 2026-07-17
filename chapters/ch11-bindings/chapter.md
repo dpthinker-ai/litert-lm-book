@@ -131,7 +131,7 @@ public actor Engine {                         // (1)
 
 **Web 把核心编成 WebAssembly**，用 TypeScript 包一层在浏览器里跑（`js/packages/core`）。它走的不是原始 C ABI，而是 Emscripten 的 Embind（C++ 与 JS 之间的绑定机制）对象，句柄以带 `.delete()` 方法的 JS 对象出现（如 `js/packages/core/src/engine.ts` 里对 wasm 对象反复调 `.delete()`），但手动配对释放这条约束没变，只是换了张脸。
 
-同一个 prompt，走 Python 和走 C++ 会得到一致的行为，因为它们最终进的是同一套 `runtime`（这也是本章开头那句「一套核心」的具体印证）。各语言的 SDK 看起来风格迥异，底下是同一个引擎；四种 FFI 机制的差别，全在如何抵达那层 C 函数、如何表示那个不透明句柄这一层。这层 C ABI 是各语言共同的调用基线，也是它们能共享同一套语义的原因。
+同一个 prompt，走 Python 和走 C++ 理应得到一致的行为，因为它们最终进的是同一套 `runtime`（这也是本章开头那句「一套核心」的具体印证；据此推断：共享引擎即共享语义，本书未做逐字对照实验）。各语言的 SDK 看起来风格迥异，底下是同一个引擎；四种 FFI 机制的差别，全在如何抵达那层 C 函数、如何表示那个不透明句柄这一层。这层 C ABI 是各语言共同的调用基线，也是它们能共享同一套语义的原因。
 
 ## JNI 的例外：Android 侧直连 C++ 核心
 
@@ -517,6 +517,8 @@ fake 还有一条容易被忽略的能力：它能模拟约束解码（第 10 �
 ## 让核心可构建
 
 这套代码要在 Android、iOS、Linux、macOS、Windows、Web 上都编得出来，还牵着一堆第三方依赖（sentencepiece、llguidance、skia 等）。它用两套构建系统来保障：主用 Bazel，另备一套 CMake 供嵌入式或不便用 Bazel 的场景。这部分属于纯工程实现，本书不展开（细节见附录 C），但值得记住一点：一个能投产到六个平台的运行时，构建系统的分量不亚于运行时本身。
+
+与构建同源的还有一件事：这个仓库是 Google 内部 monorepo 的对外发布。include 守卫里的 `THIRD_PARTY_ODML_LITERT_LM_` 路径（各头文件开头可见）是内部目录结构的痕迹；内外代码经 Google 的 Copybara 工具双向同步（Google 开源项目的通行做法，【文档】级）。对读者的实际影响只有一点：提 PR 时目录布局以内部为准，合入的改动会经同一管道在内仓生效。
 
 ## 小结
 

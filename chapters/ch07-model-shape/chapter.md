@@ -239,6 +239,8 @@ absl::Status ReadSectionIntoTFLite(
 
 除并行外，编译后的模型产物还能缓存到磁盘（`--cache disk`），二次启动直接复用、省去重新编译。按需分页、tokenizer 与模型并行、编译产物缓存，三者共同降低冷启动延迟。其中编译缓存的效果在本书基准里可见：GPU 后端首次运行（缓存未热）Init 5.29 s，其后稳定在约 1.77 s〔基准 D〕。并行加载开关开/关的冷启动差异本书未单独测量。
 
+这套缓存分后端落盘，命名规则集中在 `ExecutorSettingsBase::CacheSuffix`（`runtime/executor/executor_settings_base.h:172`）：CPU（XNNPACK）缓存权重重打包产物 `<模型路径>.xnnpack_cache_<唯一 id>`；GPU（MlDrift）分程序缓存 `<模型路径>_<id>_mldrift_program_cache.bin` 与权重缓存键；MTP drafter 另有 `.mtp_drafter` 后缀。文件名里的唯一 id 由模型文件的内容与元数据算出（`GetFileCacheIdentifier`），模型一变，旧缓存自动失效，不会吃到过期产物；多模态子模型（`vision_encoder`、`audio_adapter` 等）按 `module_name` 各自命名、各自缓存。统一入口是 `GetWeightCacheFile`（`executor_settings_base.cc:303`）：`:nocache` 显式关闭；设了 scoped cache file 则优先；否则按模型路径派生。冷启动省掉的就是 XNNPACK 的权重重打包与 GPU 的图重编译——5.29 s 到 1.77 s 的差距里，大头在这。
+
 ### loader 层：按段缓存、双检锁与对齐补偿
 
 前面两条读段路径的更下面，还有一层本章尚未揭开的实现：`LitertLmLoader`（`runtime/util/litert_lm_loader.h:100`）。它在初始化时只记录每个段的 `(begin_offset, end_offset)` 位置表，真正的映射推迟到第一次有人要这个段的数据。取段入口 `GetSectionBuffer` 是一个标准的双检锁（`runtime/util/litert_lm_loader.cc:270`）：

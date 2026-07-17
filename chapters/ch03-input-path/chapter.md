@@ -53,6 +53,10 @@ virtual absl::StatusOr<Responses> RunDecode() = 0;       // (2)
 
 (1) `RunPrefill` 只把输入写入 KV cache，不产出 token；注释指出可以分多次调用，把长 prompt 切块送入。(2) `RunDecode` 才开始逐 token 预测。高层的 `GenerateContent` 是这两步的顺序组合：先 prefill 后 decode。拆开之后，调用方可以在两步之间介入，最典型的用法是下文的 `Clone`。`RunPrefill` 内部的执行见第 4 章，`RunDecode` 见第 5 章。
 
+Engine 实例从哪来？不是 `new` 出来的，而是工厂按注册表造的。`EngineFactory` 是一个单例（`runtime/engine/engine_factory.h:155` 的 `Instance()`），内部两张表：`registry_` 把引擎类型映射到创建函数，`preferred_engines_` 把后端映射到候选类型的优先序。注册靠静态自注册：`LITERT_LM_REGISTER_ENGINE` 宏在实现文件里声明一个文件级静态对象，它的构造函数在 `main` 运行之前就把本类型的创建函数塞进注册表（宏定义在 `engine_factory.h:242`；用法见 `runtime/core/engine_advanced_impl.cc:370` 注册 `kAdvancedLiteRTCompiledModel`）。`CreateDefault` 则查后端对应的优先列表，取第一个已注册的类型创建（`engine_factory.h:88`）。
+
+这套机制的好处藏在头文件那句提醒里："Ensure the desired engine type is registered (i.e., add the implementation library as a dependency)"——注册表的内容由链接决定：把某个实现库链进二进制，它的静态对象就在、类型可用；不链，类型就安静缺席。加一种引擎实现不需要改工厂一行代码，插件化在链接期完成。这与第 8 章执行器工厂按 Backend 分派是同一思路的两层落地：引擎类型一层，后端一层。
+
 ### 共享前缀：Clone 将一次 prefill 分叉为多条对话
 
 拆分接口的一处直接收益，是 `SessionInterface::Clone`（`runtime/engine/engine.h:245`）。它的注释给出了一个共享前缀的例子：

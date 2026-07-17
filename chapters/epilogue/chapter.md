@@ -9,8 +9,20 @@
 你不必从源码编译起步。按你的场景，挑一条最短的：
 
 - **先跑起来、做实验**：用 Python CLI（第 2 章那个 `litert-lm`）。一条命令装好、一条命令跑模型，改参数看变化最快。想把模型接进 Python 程序，用它的 Python SDK。
-- **做 Android App**：用 Kotlin SDK（第 11 章）。它是预编译的，不用碰 Bazel；`Engine`/`Session`/`Conversation` 的用法就是本书前几章那套接口的 Kotlin 镜像。iOS/macOS 同理，用 Swift 包——记得第 11 章那个 `close()` 的教训，会话用完主动释放。
-- **做网页**：用 Web SDK，核心编成 WASM 在浏览器里跑，推理全程在本地。
+- **做 Android / JVM**：用 Kotlin SDK（第 11 章）。Gradle 一行依赖，预编译产物，不用碰 Bazel：
+
+  ```kotlin
+  dependencies {
+      // Android
+      implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
+      // 纯 JVM（Linux / macOS / Windows）
+      implementation("com.google.ai.edge.litertlm:litertlm-jvm:latest.release")
+  }
+  ```
+
+  `Engine`/`Session`/`Conversation` 的用法就是本书前几章那套接口的 Kotlin 镜像；版本号在 maven.google.com 的 `com.google.ai.edge.litertlm` 下查。
+- **做 iOS / macOS**：用 Swift package（仓库 README 标注同时支持 iOS 与 macOS；v0.13.1 时为 Early Preview，集成细节以官方 Swift 指南为准）。记得第 11 章那个 `close()` 的教训：会话用完主动释放，别等 ARC。
+- **做网页**：用 Web SDK，npm 安装 `@litert-lm/core`，或直接从 CDN 以 `+esm` 导入。核心编成 WASM 在浏览器里跑，推理全程在本地；数 GiB 的模型文件要随应用分发或首次启动时下载，预留好带宽与缓存策略。
 
 三条路的共同点：**都不需要你懂 C++ 核心**。但读完这本书，当某一条路出了问题（某个后端跑不动、某段生成变慢、某个模型加载失败），你会知道该往哪一层去看。这正是深入分析的回报。
 

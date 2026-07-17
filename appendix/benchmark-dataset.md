@@ -64,8 +64,12 @@
 - ✅ **编译缓存的冷启动收益**（第 7 章）：结清，见"结果解读"第 3 条。
 - ✅ **MTP 与官方口径对照**（第 9 章）：结清（结果为"未复现"，如实报告），见"结果解读"第 4 条。
 - ✅ **KV cache 公式代入**（第 6 章）：结清，见下「六、模型实剖」——真实参数 24 层 / H_kv=2 / D=256（20 层）与 512（4 层）/ **int8**，每 token 28 KiB，4096 上下文 112 MiB。
+- ✅ **`--max-num-tokens` 预留宽度与速度**（第 6 章，`LiteRT-LM#2568`）：结清，见下「九、预留宽度扫描」——8192 比 1024 慢约 37%；过小预留直接报错。
 - ⬜ **int4 vs int8 三角**（第 7 章）：需社区有同模型两种量化产物，未做。
-- ⬜ **分段并行加载开关对比**（第 7 章）：未单测。
+- ⬜ **分段并行加载开关对比**（第 7 章）：开关仅 C API 暴露，未单测。
+- ⬜ **CPU 线程数扫描**（第 8 章）：flag 仅 C++ `litert_lm_main` 暴露（`shared_flags.cc:74`），Python CLI 无此项，未做。
+- ⬜ **Python/C++ 行为一致性**（第 11 章）：需 Bazel 构建 `litert_lm_main`，未做（正文已降为推断级）。
+- ⬜ **接受率插桩实测**（第 9 章）：需改码重编译，方案见第 9 章，未做。
 
 ## 六、模型实剖（gemma-4-e4b model.litertlm）
 
@@ -109,3 +113,68 @@
 ## 八、采样确定性实验（cpu）
 
 同一提示词（"Write one sentence about the ocean."）：温度 0、同种子跑两次，输出逐字一致；温度 1.0 时输出随种子可变（seed 7 与 seed 1 产出不同句子），但默认参数下 seed 1 与 seed 2 产出了相同序列——分布尖锐时，多个种子会命中同一条高概率路径。**开采样不等于每次必不同**。实录 `experiments/data/temperature_test.md`。
+
+## 九、`--max-num-tokens` 预留宽度扫描（cpu，2026-07-17 补采）
+
+验证第 6 章的因果：预留宽度决定每步 decode 的 KV 访存宽度，进而影响速度（`LiteRT-LM#2568`）。脚本 `experiments/max_tokens_sweep.sh`，原始数据 `experiments/data/max_tokens_sweep.csv`（-d 128，disk 缓存热，各 2 次）。
+
+| max_num_tokens | prompt | decode tok/s | 备注 |
+|---:|---:|---:|---|
+| 1024 | 100 | 33.9 | 工单 [128] |
+| 2048 | 256 | 23.5 / 29.5 | 两次散布大，取区间 |
+| 4096 | 256 | 26.4 | 与默认值推导一致（(256+1023)/4096+1）×4096 |
+| 8192 | 256 | 21.5 | 同一 prompt，仅放宽预留 |
+| 1024 | 256 | **运行失败** | 工单 [1024] 恰好打满预留宽度，prefill 报 `dynamic_update_slice` 维度越界 |
+
+两条结论。其一，方向与量级都符合第 6 章的分析：预留越宽每步越慢，8192 比 1024 慢约 37%；2048 档的散布提醒短扫描同样有抖动。其二，过小预留的后果不是变慢而是失败：工单恰好打满预留宽度时，越界在 prefill 阶段以编译模型错误抛出（`DYNAMIC_UPDATE_SLICE`），不是静默截断——手动调小该参数时需要注意这个边界。
+
+## 十、原始记录存档
+
+以下两份为采集现场的原始记录，未加修饰，备查。
+
+### 模型实剖原始记录（`experiments/data/model_anatomy.md`）
+
+```text
+# gemma-4-e4b model.litertlm 实剖（自研 16KiB 对齐扫描 + TFLite flatbuffer 解析）
+# 文件 3.66 GB @ litert-community/gemma-4-E4B-it-litert-lm，运行时 v0.13.1
+# 方法：扫 16KiB 边界找 TFL3 魔数定段；tflite python 绑定读 SignatureDefs 与张量形状
+
+offset,size_mb,signatures,key_tensor
+4734976,170.9,embedder,token_ids[1;1]
+175669248,836.8,per_layer_embedder,token_ids[1;1]
+1012449280,94.1,serving_default(audio_encoder),mask[1;1;816]
+1106509824,15.7,audio_adapter,features[1;204;1536]
+1122254848,0.016,eoa,-
+1122271232,224.1,vision_70|vision_140|vision_280,images[1;1260;768]
+1346420736,7.9,vision_adapter_70|140|280,soft_tokens[1;140;768]
+1354317824,0.016,eoi,-
+1354334208,2260.1,decode|prefill_1024|prefill_128|verify,embeddings[1;1;2560]
+3614392320,45.1,mtp_drafter,activations[1;1;5120]
+
+# 主模型 decode signature 关键事实：
+# - KV cache 输入 48 个张量 = 24 层 × (K+V)，dtype 全部 INT8
+#   - 20 层形状 K:[1,2,32003,256] / V:[1,2,256,32003]（H_kv=2, D=256）
+#   -  4 层形状 K:[1,2,32003,512] / V:[1,2,512,32003]（H_kv=2, D=512）
+# - KV 每 token 字节 = 2(KV) × 2(H) × (20×256 + 4×512) × 1B = 28,672 B = 28 KiB/token
+# - 4096 上下文 KV 合计 = 112 MiB；静态槽位 32003 全预留 ≈ 875 MiB
+# - embeddings 输入 [1,1,2560] → model_dimension=2560
+# - per_layer_embeddings [1,1,42,256]（42 层 PLE × 256）
+# - logits [1,1,262144] → 词表 262,144（=2^18）
+# - param_tensor [1,1,1,7] INT32（单缓冲 KV 路径的位置参数，见 ch06）
+# - mask [1,1,1,32003] BOOL
+```
+
+### 采样确定性实验原始记录（`experiments/data/temperature_test.md`）
+
+```text
+# 温度/种子实验实录（cpu, gemma-4-e4b, 2026-07-05）
+# 命令: litert-lm run gemma-4-e4b --backend cpu --prompt "Write one sentence about the ocean." \
+#        --temperature T --seed S [--top-k 64 --top-p 0.95] --cache disk
+T=0 seed=42 (run1): The vast, mysterious ocean covers over seventy percent of the Earth's surface, teeming with diverse life and holding immense power.
+T=0 seed=42 (run2): 与 run1 逐字一致（确定性复现）
+T=1.0 默认k/p seed=1: The ocean is a vast, mysterious expanse covering more than seventy percent of the Earth's surface.
+T=1.0 默认k/p seed=2: 与 seed=1 逐字一致（分布尖锐，不同种子命中同一高概率序列）
+T=1.0 k=64 p=0.95 seed=7: The vast, restless ocean remains the Earth's mysterious cradle of life, shifting between tranquil serenity and powerful turbulence.
+# 结论：温度 0 确定可复现；温度 1.0 输出随种子可变，但分布尖锐时多个种子产出相同序列——
+# "开采样"不等于"每次必不同"。
+```

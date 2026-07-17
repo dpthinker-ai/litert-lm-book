@@ -160,7 +160,7 @@ if (sched_setaffinity(0, sizeof(mask), &mask) != 0) {  // (2)
 
 线程本身由一个线程池管（`runtime/framework/threadpool.h:51`），构造时给一个上限 `max_num_threads`（`:57`）。这里说的是算子内并行度——一个矩阵乘法拆给几个线程一起算。用几个线程是个权衡：线程多了未必更快，因为 decode 阶段的瓶颈是内存带宽而非算力（第 1 章的带宽约束），线程再多也快不过内存往核里喂权重的速度；而线程一多，功耗和发热却是实打实地涨。
 
-这个数默认是 4（`CpuConfig::number_of_threads`，`runtime/executor/llm_executor_settings.h:120`），注释直接写"The default value is 4"。CLI 用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`）。覆盖路径落在 CPU 后端专属的配置分支里（`runtime/engine/litert_lm_lib.cc:523`）：
+这个数默认是 4（`CpuConfig::number_of_threads`，`runtime/executor/llm_executor_settings.h:120`），注释直接写"The default value is 4"。C++ 演示程序用 `--num_cpu_threads` 覆盖（`shared_flags.cc:74`，对应上游需求 `LiteRT-LM#2505`；本书采集用的 Python CLI 未暴露该 flag）。覆盖路径落在 CPU 后端专属的配置分支里（`runtime/engine/litert_lm_lib.cc:523`）：
 
 ```cpp
 if (backend == Backend::CPU) {
