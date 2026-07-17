@@ -1,0 +1,50 @@
+<svg viewBox="0 0 760 320" width="760" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="接受率与加速比曲线">
+  <style>
+    text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
+    .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
+    .tw{fill:var(--fig-accent, #0b57d0);font-size:12px;font-weight:700}
+    .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
+    .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
+    .ax{stroke:var(--fig-text, #1f2328);stroke-width:1.5;fill:none}
+    .curve{stroke:var(--fig-accent, #0b57d0);stroke-width:2.5;fill:none}
+    .edged{stroke:var(--fig-text-dim, #8b949e);stroke-width:1.3;fill:none;stroke-dasharray:5 4}
+    .pt{fill:var(--fig-accent, #0b57d0)}
+  </style>
+  <defs>
+    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text, #1f2328)"/>
+    </marker>
+  </defs>
+  <text class="t" x="380" y="26" text-anchor="middle">接受率 α 决定加速比（G = 3，c_draft/c_base = 0.15）</text>
+  <!-- 轴 -->
+  <path class="ax" d="M90,262 H715" marker-end="url(#ar)"/>
+  <path class="ax" d="M90,262 V36" marker-end="url(#ar)"/>
+  <text class="ts" x="715" y="284" text-anchor="end">逐位接受率 α</text>
+  <text class="ts" x="96" y="40">speedup</text>
+  <!-- 刻度 -->
+  <text class="td" x="212" y="278" text-anchor="middle">0.2</text>
+  <text class="td" x="334" y="278" text-anchor="middle">0.4</text>
+  <text class="td" x="456" y="278" text-anchor="middle">0.6</text>
+  <text class="td" x="578" y="278" text-anchor="middle">0.8</text>
+  <text class="td" x="700" y="278" text-anchor="middle">1.0</text>
+  <text class="td" x="78" y="226" text-anchor="end">1.0</text>
+  <text class="td" x="78" y="130" text-anchor="end">2.0</text>
+  <!-- y=1 基准线 -->
+  <path class="edged" d="M90,222 H710"/>
+  <text class="td" x="706" y="216" text-anchor="end">speedup = 1（不赚不亏）</text>
+  <!-- 曲线 -->
+  <path class="curve" d="M90,251 L151,244 L212,235 L273,224 L334,210 L395,194 L456,174 L517,151 L578,123 L639,91 L700,54"/>
+  <!-- 盈亏平衡点 -->
+  <path class="edged" d="M240,229 V262"/>
+  <circle class="pt" cx="240" cy="229" r="4"/>
+  <text class="tw" x="248" y="240">α* ≈ 0.25 盈亏平衡</text>
+  <!-- 参考点 -->
+  <circle class="pt" cx="578" cy="123" r="4"/>
+  <text class="ts" x="586" y="118">α = 0.8 → 约 2 倍</text>
+  <text class="td" x="700" y="140" text-anchor="end">（高接受率文体，官方 3 倍口径所在区）</text>
+  <circle class="pt" cx="212" cy="235" r="4"/>
+  <text class="ts" x="140" y="208" text-anchor="middle">α = 0.2 → 0.86</text>
+  <text class="td" x="140" y="192" text-anchor="middle">低于 1，反而更慢</text>
+  <text class="td" x="140" y="308" text-anchor="middle"></text>
+  <text class="td" x="400" y="306" text-anchor="middle">按闭式公式 speedup ≈ E[产出] ÷ (1 + G·c_draft/c_base) 推算绘制，非实测；本书合成负载的 α 推测落在左下区</text>
+</svg>

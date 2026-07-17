@@ -1,0 +1,53 @@
+<svg viewBox="0 0 760 320" width="760" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="mmap 按需分页与分段并行加载">
+  <style>
+    text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
+    .b{fill:var(--fig-surface, #f6f8fa);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
+    .bl{fill:var(--fig-accent-soft, #e8f0fe);stroke:var(--fig-accent, #0b57d0);stroke-width:1.5}
+    .hw{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
+    .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
+    .tw{fill:var(--fig-accent, #0b57d0);font-size:12.5px;font-weight:700}
+    .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
+    .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
+    .edge{stroke:var(--fig-accent, #0b57d0);stroke-width:1.8;fill:none}
+    .edged{stroke:var(--fig-text-dim, #8b949e);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+  </style>
+  <defs>
+    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+    <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
+    </marker>
+  </defs>
+  <text class="t" x="380" y="26" text-anchor="middle">mmap 按需分页 + 两件重活并行</text>
+  <!-- 左：文件与 mmap -->
+  <text class="tw" x="28" y="64">磁盘上的 .litertlm</text>
+  <rect class="hw" x="28" y="76" width="150" height="34" rx="6"/><text class="ts" x="103" y="98" text-anchor="middle">FlatBuffer 头</text>
+  <rect class="bl" x="28" y="114" width="150" height="60" rx="6"/><text class="ts" x="103" y="140" text-anchor="middle">段：权重（数 GiB）</text>
+  <text class="td" x="103" y="160" text-anchor="middle">按页映射，不预先读入</text>
+  <rect class="b" x="28" y="178" width="150" height="34" rx="6"/><text class="ts" x="103" y="200" text-anchor="middle">段：tokenizer / 元数据</text>
+  <path class="edge" d="M186,96 H260" marker-end="url(#ar)"/>
+  <text class="td" x="223" y="88" text-anchor="middle">只读头</text>
+  <path class="edged" d="M186,144 H260" marker-end="url(#ard)"/>
+  <text class="td" x="223" y="136" text-anchor="middle">mmap</text>
+  <rect class="b" x="264" y="76" width="150" height="136" rx="8"/>
+  <text class="ts" x="339" y="98" text-anchor="middle">虚拟地址空间</text>
+  <text class="td" x="339" y="126" text-anchor="middle">页表建立映射</text>
+  <text class="td" x="339" y="146" text-anchor="middle">首次访问 → 缺页调入</text>
+  <text class="td" x="339" y="166" text-anchor="middle">内存压力 → 干净页可回收</text>
+  <text class="td" x="339" y="196" text-anchor="middle">工作集 ≈ 全量权重（decode 每步都读）</text>
+  <!-- 右：并行加载泳道 -->
+  <text class="tw" x="460" y="64">parallel_file_section_loading（默认开）</text>
+  <text class="td" x="460" y="84">并行的是两件重活，不是逐段读盘</text>
+  <text class="td" x="460" y="116">主线程</text>
+  <rect class="b" x="520" y="98" width="100" height="30" rx="6"/><text class="ts" x="570" y="118" text-anchor="middle">读头/建段表</text>
+  <rect class="bl" x="628" y="98" width="104" height="30" rx="6"/><text class="ts" x="680" y="118" text-anchor="middle">模型加载·编译准备</text>
+  <path class="edge" d="M620,113 H624" marker-end="url(#ar)"/>
+  <text class="td" x="460" y="164">工作线程</text>
+  <rect class="bl" x="520" y="146" width="150" height="30" rx="6"/><text class="ts" x="595" y="166" text-anchor="middle">tokenizer 构建（HF 含 zlib 解压）</text>
+  <path class="edged" d="M680,128 V190 H570 V210" marker-end="url(#ard)"/>
+  <path class="edged" d="M595,176 V210" marker-end="url(#ard)"/>
+  <rect class="bl" x="520" y="214" width="150" height="32" rx="6"/><text class="ts" x="595" y="235" text-anchor="middle">就绪：冷启动缩短</text>
+  <!-- 底部：madvise 注 -->
+  <text class="td" x="380" y="286" text-anchor="middle">平台分叉：映射后按平台给 madvise 建议（第 7 章），编译产物另可缓存到磁盘（--cache disk）</text>
+</svg>

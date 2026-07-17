@@ -1,0 +1,50 @@
+<svg viewBox="0 0 760 330" width="760" height="330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="约束解码逐步屏蔽非法 token">
+  <style>
+    text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
+    .b{fill:var(--fig-surface, #f6f8fa);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
+    .mask{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border, #d0d7de);stroke-width:1}
+    .ok{fill:var(--fig-accent, #0b57d0)}
+    .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
+    .tw{fill:var(--fig-accent, #0b57d0);font-size:12px;font-weight:700}
+    .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
+    .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
+    .edge{stroke:var(--fig-accent, #0b57d0);stroke-width:1.8;fill:none}
+  </style>
+  <defs>
+    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+  </defs>
+  <text class="t" x="380" y="26" text-anchor="middle">约束解码：每一步由文法状态算出合法 token 集合</text>
+  <text class="td" x="380" y="45" text-anchor="middle">生成 call:weather{city:&lt;escape&gt;巴黎&lt;escape&gt;} 的前四步；灰色 = logit 置 -inf（屏蔽），蓝色 = 可采</text>
+  <!-- 行 1 -->
+  <text class="td" x="28" y="84">前缀 ∅</text>
+  <text class="ts" x="28" y="104">start</text>
+  <rect class="mask" x="170" y="88" width="420" height="16" rx="3"/>
+  <rect class="ok" x="200" y="88" width="30" height="16" rx="3"/>
+  <text class="td" x="215" y="80" text-anchor="middle">call</text>
+  <text class="td" x="600" y="102">合法：仅 "call" 关键字</text>
+  <!-- 行 2 -->
+  <text class="td" x="28" y="144">前缀 call:</text>
+  <text class="ts" x="28" y="164">functionCall</text>
+  <rect class="mask" x="170" y="148" width="420" height="16" rx="3"/>
+  <rect class="ok" x="330" y="148" width="58" height="16" rx="3"/>
+  <text class="td" x="359" y="140" text-anchor="middle">weather / …</text>
+  <text class="td" x="600" y="162">合法：函数名（ID）</text>
+  <!-- 行 3 -->
+  <text class="td" x="28" y="204">前缀 …weather{</text>
+  <text class="ts" x="28" y="224">pair</text>
+  <rect class="mask" x="170" y="208" width="420" height="16" rx="3"/>
+  <rect class="ok" x="430" y="208" width="40" height="16" rx="3"/>
+  <text class="td" x="450" y="200" text-anchor="middle">city</text>
+  <text class="td" x="600" y="222">合法：参数名（ID）</text>
+  <!-- 行 4 -->
+  <text class="td" x="28" y="264">前缀 …city:</text>
+  <text class="ts" x="28" y="284">value</text>
+  <rect class="mask" x="170" y="268" width="420" height="16" rx="3"/>
+  <rect class="ok" x="240" y="268" width="46" height="16" rx="3"/>
+  <rect class="ok" x="500" y="268" width="24" height="16" rx="3"/>
+  <text class="td" x="263" y="260" text-anchor="middle">&lt;escape&gt;</text>
+  <text class="td" x="740" y="282" text-anchor="end">合法：字符串 / 数字 / 布尔 / null / { / [</text>
+  <text class="td" x="380" y="318" text-anchor="middle">llguidance 按文法推进状态并给出合法 token 位图，MaskLogits 逐位施加（每步对 262144 词表查一遍位图）</text>
+</svg>

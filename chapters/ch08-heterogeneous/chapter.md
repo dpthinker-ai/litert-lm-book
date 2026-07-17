@@ -186,6 +186,11 @@ GPU 的强项是大规模并行，适合矩阵运算。它在端侧的一个优�
 
 回忆第 5 章的两条采样路径。设备上采样之所以快，是因为采样这一步不必把 logits 搬回 CPU。这次省掉的拷贝值多少，可以当面算一笔账。decode 每一步都会产出一整组 logits，长度等于词表大小。按第 5 章的实剖口径：基准模型词表 262144、logits 以 FP32（4 字节）存储，一步的 logits 就是 262144 × 4 字节 = 1 MiB。若采样在 CPU 做，这 1 MiB 每步都要从 GPU 显存拷回 CPU 内存（一次 device→host 传输）；在 GPU 上就地采样，这次拷贝省下。单看一步不大，但 decode 是整个生成里最频繁的操作，生成 512 个 token 就是 512 次这样的往返。第 1 章说过 decode 是内存带宽受限的：每一步真正的工作量是把几个 GiB 的权重读一遍，相比之下 1 MiB 的 logits 回传占比不高，所以这次省拷贝对整机吞吐的贡献是二阶的，很难从整机数字里单独剥离出来（本书未单测）。它更实在的价值在延迟链路上：省掉 device→host 同步，decode 每步少一次跨设备等待。
 
+<figure>
+{{#include figs/fig-8-2.svg}}
+<figcaption>图 8-2　片上采样与回传采样的数据路径：片上采样让 token 不出显存，省掉每步一次 1 MiB 的 device→host 拷贝与同步。</figcaption>
+</figure>
+
 采样器怎么建、跑在哪，都在 `InitializeSampler` 里定（`runtime/executor/llm_litert_compiled_model_executor.h:160`，实现见 `.cc:1335`）：
 
 ```cpp
@@ -289,6 +294,14 @@ struct NpuAuxiliaryContext {                         // (3)
 这个现象有个实际含义：端侧的"可复现"要带上后端这个条件。本书附录 D 的基准数据集因此严格固定后端——换了后端，就是另一组数据，不能混着比（这也是第 2 章数字纪律的由来）。
 
 ## 小结
+
+| 后端 | 底层栈 | 强项 | 要做的功课 / 代价 | 本书实测（context 1024） |
+|---|---|---|---|---|
+| CPU | XNNPack delegate | 随时可用、行为稳定 | 线程数与亲和性：默认 4 线程、Pixel 绑性能核 | decode ≈ 24.7、prefill ≈ 259 tok/s |
+| GPU | GPU delegate（OpenCL / Metal / WebGPU） | 并行强，可片上采样省 logits 回传 | 部分平台需双缓冲绕同缓冲读写限制 | decode ≈ 50.6、prefill ≈ 999 tok/s |
+| NPU | QNN（HTP） | 最省电、为推理专用 | 最封闭：委托厂商 delegate，本书仅基于代码分析 | 无真机，未测 |
+
+> 表 8-1　三类后端的特性权衡。实测为 Gemma 4 E4B、decode 128 token〔基准 D〕；NPU 一列按代码与文档，未经真机验证。
 
 三类后端，各有强项也各有麻烦：CPU 随时可用但要做线程与亲和性的功课，GPU 并行强还能片上采样省搬运，NPU 最省电但最封闭。LiteRT-LM 用一个枚举加一个工厂把它们藏在同一个 `LlmExecutor` 接口后面，上层无感。而"换后端连输出都变"这个反直觉现象，根子是浮点在不同硬件路径上算不出逐比特一致的结果，又被自回归放大。它也提醒我们：端侧的性能与正确性讨论，都要带上"哪个后端"这个前提。
 

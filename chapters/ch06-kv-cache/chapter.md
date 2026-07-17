@@ -348,6 +348,11 @@ return execution_manager_lock->SetCurrentStep(*session_info_, target_step);   //
 
 回退没有拷贝、没有删除任何 KV 字节。它做的是 (3)：把游标 `current_step` 调回 `target_step`，也就是上一节 `RuntimeState` 里那个整数。`SaveCheckpoint`（`:455`）存的也不过是 `{current_step, session_state_}` 这一对（`CheckpointInfo`，`session_advanced.h:257-260`），一个步数加一个会话状态枚举，几个字节。之后继续 prefill 时，新 token 从 `target_step` 这个位置往后写，直接覆盖掉原来那段思考占的 KV 槽位。旧字节没被主动清除，而是被下一轮写入盖过。(2) 顺手把 `target_step` 之后的所有检查点从 map 里删掉，让检查点集合始终是当前时间线的一条前缀，避免退回后残留一个指向「未来」的悬空标记。
 
+<figure>
+{{#include figs/fig-6-3.svg}}
+<figcaption>图 6-3　Clone 与 Rewind 的状态分叉：克隆把前缀 KV 深拷一份、两会话独立续写；回退只拨游标，旧槽位由后续写入覆盖。</figcaption>
+</figure>
+
 一个只在 `RuntimeState` 上加减整数、连内存都不释放的回退，就解决了「别让思考污染上下文」的问题。代价与克隆恰成对照：`Clone` 要深拷一百多 MiB（4096 上下文，上一节那个循环），`RewindToCheckpoint` 只动一个 `int`。这也是表 6-1 那三行代价的两端。
 
 ## 小结

@@ -137,6 +137,18 @@ while (!ids.empty()) {
 
 (1) 若未配置 chunk size，则不做分块：整段直接进入内部实现，全靠动态形状消化任意长度。(2)(3) 否则按 `prefill_chunk_size_` 切块，每块单独一次 `PrefillInternal`。与静态路径的关键区别是：静态的段长必须命中预编译入口之一，动态的块长只受一个上限约束，最后一块由 `std::min` 自然取到不足一个 chunk 的余数——不需要填充。这更灵活，桌面和服务端常见，代价是失去了固定形状带来的一部分编译期优化。
 
+把两条路径的取舍摆在一起：
+
+| 维度 | 静态形状（`Static`） | 动态形状（`Dynamic`） |
+|---|---|---|
+| 形状 | 预编译固定长度入口（基准模型为 {1024, 128}） | 块长只受 `prefill_chunk_size` 上限约束 |
+| 填充 | 有：工单收尾档填充，浪费呈锯齿 | 无：最后一块取余数 |
+| KV cache | 按最大上下文一次性预留 | 随 decode 按 `kv_increment_size` 扩容 |
+| 编译期优化 | 充分：kernel 按定形特化 | 让渡一部分：形状运行时才定 |
+| 适用硬件 | 移动端 GPU/NPU（常要求编译期定形） | 桌面/服务端（对动态形状友好） |
+
+> 表 4-1　静态与动态两条 prefill 路径的权衡。第 8 章的静态/动态执行器分派与此同源。
+
 两条路径都通过基类的同一个内部函数落地（`PrefillInternal`，`runtime/executor/llm_litert_compiled_model_executor.cc:543`）。它把 token 写进输入缓冲、推进 `current_step`、更新已处理 token 记录，再交给 LiteRT 跑 signature，注意力中间结果就此写进 KV cache，为 decode 铺好底：
 
 ```cpp

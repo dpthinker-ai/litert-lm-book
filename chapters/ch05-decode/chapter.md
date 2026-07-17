@@ -331,6 +331,11 @@ if (max_length == 0) {                                                // (4)
 
 那停止序列真命中了怎么办？此时 `AllDone()` 会返回真、`GetStopTokensFound()[i]` 置位，队列里暂存的整段就再也不会走到 (3) 被输出，它们连同停止词一起被丢弃。这是"暂存—释放"的另一半：暂存的内容，确认是停止词就**整段作废**，不是就顺次放出。代价是命中前缀期间输出会滞后至多 `max_length` 个 token，换来的是绝不会把半截停止词漏给用户。
 
+<figure>
+{{#include figs/fig-5-2.svg}}
+<figcaption>图 5-2　停止词部分匹配的暂存—释放：前缀命中期间输出滞后至多 max_length 个 token；失配则顺次放出，命中则整段作废判停。</figcaption>
+</figure>
+
 再看"半个字"。子词分词（第 3 章）意味着一个 token 未必是一个完整的字，尤其是中文和 emoji，一个字可能由好几个 token 拼成。decode 一步只出一个 token，如果它是某个字的前半截，直接转文本就是乱码。`Run` 里处理这个的是同一套暂存逻辑，但用另一个成员队列（`runtime/core/tasks.cc:175`）：
 
 ```cpp

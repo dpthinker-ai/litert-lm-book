@@ -252,6 +252,11 @@ mask_vector.push_back(sample_mask[i / 32] & (1 << (i % 32)));  // (1)
 
 约束解码的意义是把"结构合法"从"祈祷模型别出错"变成"从机制上不可能出错"——只要语法写对了，输出就一定合法。这对下一节的工具调用是刚需。
 
+<figure>
+{{#include figs/fig-10-2.svg}}
+<figcaption>图 10-2　约束解码逐步屏蔽：每一步由文法状态算出合法 token 集合，其余 logit 置为最小值；结构合法从期望变成保证。</figcaption>
+</figure>
+
 ## Tool Use：让模型调用函数
 
 把感知输入和受控输出接起来，就是 Tool Use（工具调用/函数调用）——让模型不只是回话，而是能调外部函数：查天气、算数、搜数据库。
@@ -283,6 +288,15 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 
 这条链路把前面几章的零件串了起来：Preface（第 3 章）声明工具，约束解码（本章上一节）保证输出合法，ANTLR 文法把文本解析回结构。四步下来，一个只会输出文本的模型，就有了调用真实函数的能力。（各环节职责与完整时序，另见 `docs/api/cpp/tool-use.md`。）
 
+| 环节 | 职责 | 代码锚点 |
+|---|---|---|
+| 1. 声明工具 | `Preface.tools` 携带可用工具描述（保序 JSON） | `runtime/conversation/io_types.h:36` |
+| 2. 格式化进 prompt | 标准 JSON 转省 token 的 FC 格式（键去引号、字符串用 `<escape>`） | `runtime/components/tool_use/fc_tool_format_utils.h` |
+| 3. 生成调用 | 约束解码逐步屏蔽非法 token，保证结构合法 | `runtime/components/constrained_decoding/` |
+| 4. 解析回填 | ANTLR 文法把调用文本解析回结构，执行后喂回模型 | `AntlrFcParser.g4`、`fc_parser_utils.h:41` |
+
+> 表 10-1　Tool Use 全链路各环节职责。第 3 步是「结构合法」从期望变成保证的关键。
+
 > 版本注记
 > 工具调用的文法与解析细节（ANTLR 那几个 `.g4`、不同模型的函数调用格式差异）在版本间有演进，本节只讲稳定的四步骨架。某些模型在嵌套 JSON 参数上的解析边界曾有过问题（上游 `LiteRT-LM#2418`），属实现细节，不在本节的骨架之列。
 
@@ -303,4 +317,4 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 5. **路径约束。** 约束解码为什么只能工作在外部采样路径上？内部采样路径缺了哪一环？
 
 
-<!-- 补读完成：vision/audio executor 的 .cc（Encode 两级串联）、patchify（缩放对齐公式）、约束解码（MaskLogits + llg_constraint FFI）、tool_use（AntlrFcParser.g4 六条文法）均已贴码核验。图片端到端、visual token 计数、约束解码开/关成功率三项实测未做（附录 D 为纯文本矩阵，不含多模态负载）。图 10-2、表 10-1 未出，素材在正文齐备。2026-07-16 评审修订：音频节提为与图像平级；ANTLR 引文恢复逐字；52 MiB 口径修正。 -->
+<!-- 补读完成：vision/audio executor 的 .cc（Encode 两级串联）、patchify（缩放对齐公式）、约束解码（MaskLogits + llg_constraint FFI）、tool_use（AntlrFcParser.g4 六条文法）均已贴码核验。图片端到端、visual token 计数、约束解码开/关成功率三项实测未做（附录 D 为纯文本矩阵，不含多模态负载）。2026-07-17：图 10-2（约束屏蔽）、表 10-1（Tool Use 链路）已补出。2026-07-16 评审修订：音频节提级；ANTLR 引文逐字；52 MiB 口径。 -->

@@ -151,6 +151,19 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 (1) `Preface` 是开场部分：把系统指令、few-shot 示例、可用工具描述组织在一起，定义整段对话的背景。(2) `PromptTemplate` 默认从模型元数据中的 Jinja 模板读取，也可在此覆盖。(3) 约束解码（constrained decoding）开关，开启后模型被强制输出结构合法的函数调用（见第 10 章）。(4) `prefill_preface_on_init` 决定是否在创建对话时就把 Preface 预先 prefill 进 KV cache：代价是初始化耗时增加，收益是首条用户消息的响应更快。这四个开关中，最后一个会在下一节的增量渲染里用到。
 
+按模型类型分派的处理器，差异写在自己的 config 结构里（`runtime/conversation/model_data_processor/`）：
+
+| 处理器 | 适用模型 | 图像标记（boi/eoi） | 工具调用围栏 | 其他关键差异 |
+|---|---|---|---|---|
+| `Gemma3DataProcessor` | Gemma 3 / 3N | `<start_of_image>` / `<end_of_image>` | Markdown 代码块（info string 为 `tool_code`） | 固定 768×768 图像输入 |
+| `Gemma4DataProcessor` | Gemma 4 | `<\|image>` / `<image\|>` | 约束模式可选（文本与函数调用皆可 / 仅函数调用） | patch 16×16、至多 2520 patches、池化 3、视觉 token 预算 70–1120 五档 |
+| `Qwen3DataProcessor` | Qwen 3 | — | `<tool_call>…</tool_call>` | — |
+| `FunctionGemmaDataProcessor` | Function Gemma | — | `<start_function_call>` | 可限定只允许函数调用输出 |
+| `FastVlmDataProcessor` | FastVLM | — | — | 视觉模型专用 |
+| `GenericDataProcessor` | 兜底 | — | — | 无模型特定处理 |
+
+> 表 3-1　各模型 data processor 的差异（字段见各自 `*_config.h`）。角色标记本身来自模型的 Jinja 模板（上一节），这张表列的是处理器 config 层的差异。
+
 ### 模板引擎的真身：MiniJinja 与一层正则改写
 
 「渲染」由谁执行值得专门交代，因为它跨了一次语言边界。`PromptTemplate::Apply` 底层调用的不是 C++ 实现的 Jinja，而是 Rust 库 MiniJinja，经生成的 FFI 头接入（`runtime/components/prompt_template.cc:26` 的 `#include "runtime/components/rust/minijinja_template.rs.h"`）。MiniJinja 是 Jinja2 的 Rust 重实现，但与 Python 版并非完全兼容：它不支持在模板里调用任意 Python 方法，而 HuggingFace 模型的 `tokenizer_config.json` 里的聊天模板恰恰常写 `s.startswith("foo")` 这类 Python 习语。LiteRT-LM 的办法是渲染前先用一组 RE2 正则把模板改写成 MiniJinja 认识的语法（`EditTemplateForMinijinja`，`prompt_template.cc:40`）：

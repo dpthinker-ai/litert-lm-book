@@ -1,0 +1,58 @@
+<svg viewBox="0 0 760 320" width="760" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Clone 与 Rewind 的会话状态分叉">
+  <style>
+    text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
+    .b{fill:var(--fig-surface, #f6f8fa);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
+    .bl{fill:var(--fig-accent-soft, #e8f0fe);stroke:var(--fig-accent, #0b57d0);stroke-width:1.5}
+    .off{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border, #d0d7de);stroke-width:1.4;stroke-dasharray:4 3}
+    .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
+    .tw{fill:var(--fig-accent, #0b57d0);font-size:12.5px;font-weight:700}
+    .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
+    .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
+    .edge{stroke:var(--fig-accent, #0b57d0);stroke-width:1.8;fill:none}
+    .edged{stroke:var(--fig-text-dim, #8b949e);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+  </style>
+  <defs>
+    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+    <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
+    </marker>
+  </defs>
+  <text class="t" x="380" y="26" text-anchor="middle">Clone 与 Rewind：共享前缀，分岔与回退</text>
+  <!-- Clone 分叉 -->
+  <text class="tw" x="28" y="66">Clone · 深拷一次前缀 KV，两会话独立续写</text>
+  <text class="td" x="30" y="102">session1</text>
+  <rect class="b" x="100" y="84" width="70" height="30" rx="6"/><text class="ts" x="135" y="104" text-anchor="middle">step 0</text>
+  <rect class="b" x="180" y="84" width="70" height="30" rx="6"/><text class="ts" x="215" y="104" text-anchor="middle">…</text>
+  <rect class="bl" x="260" y="84" width="80" height="30" rx="6"/><text class="ts" x="300" y="104" text-anchor="middle">step k</text>
+  <rect class="b" x="360" y="84" width="90" height="30" rx="6"/><text class="ts" x="405" y="104" text-anchor="middle">in the</text>
+  <rect class="b" x="460" y="84" width="90" height="30" rx="6"/><text class="ts" x="505" y="104" text-anchor="middle">world?</text>
+  <path class="edge" d="M170,99 H176" marker-end="url(#ar)"/>
+  <path class="edge" d="M250,99 H256" marker-end="url(#ar)"/>
+  <path class="edge" d="M340,99 H356" marker-end="url(#ar)"/>
+  <path class="edge" d="M450,99 H456" marker-end="url(#ar)"/>
+  <text class="td" x="30" y="166">session2</text>
+  <rect class="bl" x="260" y="148" width="80" height="30" rx="6"/><text class="ts" x="300" y="168" text-anchor="middle">step k</text>
+  <rect class="b" x="360" y="148" width="90" height="30" rx="6"/><text class="ts" x="405" y="168" text-anchor="middle">in</text>
+  <rect class="b" x="460" y="148" width="90" height="30" rx="6"/><text class="ts" x="505" y="168" text-anchor="middle">France?</text>
+  <path class="edged" d="M300,114 V144" marker-end="url(#ard)"/>
+  <text class="td" x="312" y="133">克隆点：前缀 KV 深拷一份</text>
+  <path class="edge" d="M340,163 H356" marker-end="url(#ar)"/>
+  <path class="edge" d="M450,163 H456" marker-end="url(#ar)"/>
+  <text class="td" x="570" y="133">公共前缀只算一次（prefill 不重算）</text>
+  <!-- Rewind 回退 -->
+  <text class="tw" x="28" y="222">Rewind · 游标回拨，后续写入覆盖旧槽位</text>
+  <text class="td" x="30" y="258">session</text>
+  <rect class="b" x="100" y="240" width="70" height="30" rx="6"/><text class="ts" x="135" y="260" text-anchor="middle">step 0</text>
+  <rect class="b" x="180" y="240" width="70" height="30" rx="6"/><text class="ts" x="215" y="260" text-anchor="middle">…</text>
+  <rect class="bl" x="260" y="240" width="80" height="30" rx="6"/><text class="ts" x="300" y="260" text-anchor="middle">checkpoint</text>
+  <rect class="off" x="360" y="240" width="90" height="30" rx="6"/><text class="ts" x="405" y="260" text-anchor="middle">思考段</text>
+  <rect class="off" x="460" y="240" width="90" height="30" rx="6"/><text class="ts" x="505" y="260" text-anchor="middle">思考段</text>
+  <path class="edge" d="M170,255 H176" marker-end="url(#ar)"/>
+  <path class="edge" d="M250,255 H256" marker-end="url(#ar)"/>
+  <path class="edge" d="M340,255 H356" marker-end="url(#ar)"/>
+  <path class="edge" d="M450,255 H456" marker-end="url(#ar)"/>
+  <path class="edged" d="M505,278 C505,300 300,300 300,278" marker-end="url(#ard)"/>
+  <text class="td" x="403" y="305" text-anchor="middle">RewindToCheckpoint：只改 current_step，不动 KV 字节；旧槽位被后续写入覆盖</text>
+</svg>

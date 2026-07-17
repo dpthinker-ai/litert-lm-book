@@ -171,6 +171,15 @@ JNI_METHOD(nativeDeleteEngine)(JNIEnv* env, jclass thiz, jlong engine_pointer) {
 
 于是要修正上一节和图 11-1 的一处隐含说法。严格讲，不是四种语言都经 C ABI，而是 Python、Swift 经 C ABI，Kotlin 与 Web 都直连 C++（图 11-1 把四者画在同一层上，是为版式简化）。这个选择有它的道理。JNI 桥无论如何都要用 C++ 写、要编译，既然胶水本来就是 C++、和核心一起编进同一个 `.so`，那么让它直接调 `EngineFactory` 与 `Engine`，比先绕一道 C ABI 再由 C ABI 转调 C++ 少一层间接，也省掉不透明句柄的封装与拆封；Web 的 Embind 同理，wasm 胶水本来也是 C++ 编的，直接导出带方法的对象即可。Python 和 Swift 的情况相反：ctypes 在运行时按 C 签名找符号，C 互操作直接 import C 头，两者都以稳定的 C ABI 为前提，绕不开那层 C。据此推断，绑定层选 C ABI 还是直连 C++，取决于这门语言的 FFI 是否本就要编一层 C++ 胶水：要编，就没有再套一层 C 的必要；不编，C ABI 就是唯一可依赖的稳定边界。
 
+| 语言 | FFI 机制 | 经 C ABI？ | 句柄形态 | 资源释放落点 |
+|---|---|---|---|---|
+| Python | ctypes（运行时声明签名） | 是 | `c_void_p` | 上下文管理器 / `__del__` |
+| Kotlin | JNI（`external fun` 声明） | 否，直连 C++ | `jlong`（`Engine*` 位模式） | `AutoCloseable` |
+| Swift | C 互操作（import C 头） | 是 | `OpaquePointer` | `deinit`（ARC） |
+| Web | Emscripten Embind | 否，直连 C++ | 带 `.delete()` 的 JS 对象 | 手动 `.delete()` 配对 |
+
+> 表 11-1　四种语言的 FFI 机制对照。分野的判据：这门语言的 FFI 是否本就要编一层 C++ 胶水。
+
 ## 流式生成如何跨越 FFI 边界
 
 到目前为止讲的都是阻塞式调用：create 一次、prefill 一次、拿一个结果。但生成式模型的自然形态是流式，一个 token 一个 token 地产出，UI 要边生成边显示。流式意味着回调，而回调要跨过 FFI 边界，是绑定设计里更硬的一块。
