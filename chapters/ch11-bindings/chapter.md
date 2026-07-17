@@ -53,7 +53,7 @@ void litert_lm_engine_delete(LiteRtLmEngine* engine);                           
 
 <figure>
 {{#include figs/fig-11-1.svg}}
-<figcaption>图 11-1　一套核心，六种语言：C++ 核心先收敛成一层 C ABI（不透明句柄 + 纯 C 函数），各语言再用各自的 FFI 机制（ctypes / JNI / C 互操作 / WASM）接上去。所有语言最终都进入同一套 runtime。</figcaption>
+<figcaption>图 11-1　一套核心，六种语言：C++ 核心先收敛成一层 C ABI（不透明句柄 + 纯 C 函数），各语言再用各自的 FFI 机制（ctypes / JNI / C 互操作 / WASM）接上去。所有语言最终都进入同一套 runtime。（严格说 Kotlin 的 JNI 与 Web 的 Embind 直连 C++，见「JNI 的例外」一节；图中为版式简化画在同一层。）</figcaption>
 </figure>
 
 ## 谁创建，谁释放
@@ -93,7 +93,7 @@ void litert_lm_engine_delete(LiteRtLmEngine* engine) { delete engine; }  // (4)
 
 有了 C ABI，剩下的是每种语言用自己的方式接上去。机制不同，目标一致：都是调到那层 C 函数。
 
-**Python 用 `ctypes`**：运行时按签名声明 C 结构和函数，直接调共享库。声明写在 `python/litert_lm/_ffi.py` 里，`:170` 这几行把不透明句柄的处理暴露得很清楚：
+**Python 用 `ctypes`**：运行时按签名声明 C 结构和函数，直接调共享库。声明写在 `python/litert_lm/_ffi.py` 里，`:171` 这几行把不透明句柄的处理暴露得很清楚：
 
 ```python
 # Engine
@@ -129,13 +129,13 @@ public actor Engine {                         // (1)
 
 (1) 用 `actor` 而非 `class`：Swift 的 actor 保证同一时刻只有一个任务能碰它的可变状态，等于用并发原语替原生引擎串行化访问，不必手写锁（对照 Kotlin 侧是显式 `synchronized(lock)`）。(2) 把句柄存成 `OpaquePointer?`，Swift 自带的不透明指针类型，语义与 Python 的 `c_void_p`、Kotlin 的 `Long` 一致：一个不能解引用、只能转交的指针。三种语言，三种类型名，同一个概念。
 
-**Web 把核心编成 WebAssembly**，用 TypeScript 包一层在浏览器里跑（`js/packages/core`）。它走的不是原始 C ABI，而是 Emscripten 生成的 Embind 对象，句柄以带 `.delete()` 方法的 JS 对象出现（如 `js/packages/core/src/engine.ts` 里对 wasm 对象反复调 `.delete()`），但手动配对释放这条约束没变，只是换了张脸。
+**Web 把核心编成 WebAssembly**，用 TypeScript 包一层在浏览器里跑（`js/packages/core`）。它走的不是原始 C ABI，而是 Emscripten 的 Embind（C++ 与 JS 之间的绑定机制）对象，句柄以带 `.delete()` 方法的 JS 对象出现（如 `js/packages/core/src/engine.ts` 里对 wasm 对象反复调 `.delete()`），但手动配对释放这条约束没变，只是换了张脸。
 
 同一个 prompt，走 Python 和走 C++ 会得到一致的行为，因为它们最终进的是同一套 `runtime`（这也是本章开头那句「一套核心」的具体印证）。各语言的 SDK 看起来风格迥异，底下是同一个引擎；四种 FFI 机制的差别，全在如何抵达那层 C 函数、如何表示那个不透明句柄这一层。这层 C ABI 是各语言共同的调用基线，也是它们能共享同一套语义的原因。
 
 ## JNI 的例外：Android 侧直连 C++ 核心
 
-上一节把四种 FFI 机制并排讲，隐含一个整齐的叙述：各语言都经由 `c/engine.h` 那层 C ABI 抵达核心。图 11-1 也是这么画的。但 Kotlin 侧其实是个例外，它没走 C ABI。
+上一节把四种 FFI 机制并排讲，隐含一个整齐的叙述：各语言都经由 `c/engine.h` 那层 C ABI 抵达核心。图 11-1 也是这么画的。但 Kotlin 侧其实是个例外，它没走 C ABI（上一节交代过，Web 走的 Embind 也不是那层原始 C ABI——这一点在本节末尾一并修正）。
 
 翻开 JNI 的原生实现，第一处线索是它 include 的头文件。`kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:37`（下文简写 `litertlm.cc`）：
 
@@ -169,7 +169,7 @@ JNI_METHOD(nativeDeleteEngine)(JNIEnv* env, jclass thiz, jlong engine_pointer) {
 
 (1) 把 `jlong` 重解释回 `Engine*`，直接 `delete`。这与 C ABI 那层 `litert_lm_engine_delete` 里的 `delete engine`（`c/engine.cc:556`）殊途同归，但对象是不同的：C ABI delete 的是那个裹着 `unique_ptr` 的 `LiteRtLmEngine` 盒子，JNI 这里 delete 的是 `Engine` 本体。整条 Kotlin 通路，从 `nativeCreateEngine` 到 `nativeDeleteEngine`，压根没碰 `c/engine.h`。
 
-于是要修正上一节和图 11-1 的一处隐含说法。严格讲，不是四种语言都经 C ABI，而是 Python、Swift、Web 经 C ABI，Kotlin 直连 C++。这个选择有它的道理。JNI 桥无论如何都要用 C++ 写、要编译，既然胶水本来就是 C++、和核心一起编进同一个 `.so`，那么让它直接调 `EngineFactory` 与 `Engine`，比先绕一道 C ABI 再由 C ABI 转调 C++ 少一层间接，也省掉不透明句柄的封装与拆封。Python 和 Swift 的情况相反：ctypes 在运行时按 C 签名找符号，C 互操作直接 import C 头，两者都以稳定的 C ABI 为前提，绕不开那层 C。据此推断，绑定层选 C ABI 还是直连 C++，取决于这门语言的 FFI 是否本就要编一层 C++ 胶水：要编，就没有再套一层 C 的必要；不编，C ABI 就是唯一可依赖的稳定边界。
+于是要修正上一节和图 11-1 的一处隐含说法。严格讲，不是四种语言都经 C ABI，而是 Python、Swift 经 C ABI，Kotlin 与 Web 都直连 C++（图 11-1 把四者画在同一层上，是为版式简化）。这个选择有它的道理。JNI 桥无论如何都要用 C++ 写、要编译，既然胶水本来就是 C++、和核心一起编进同一个 `.so`，那么让它直接调 `EngineFactory` 与 `Engine`，比先绕一道 C ABI 再由 C ABI 转调 C++ 少一层间接，也省掉不透明句柄的封装与拆封；Web 的 Embind 同理，wasm 胶水本来也是 C++ 编的，直接导出带方法的对象即可。Python 和 Swift 的情况相反：ctypes 在运行时按 C 签名找符号，C 互操作直接 import C 头，两者都以稳定的 C ABI 为前提，绕不开那层 C。据此推断，绑定层选 C ABI 还是直连 C++，取决于这门语言的 FFI 是否本就要编一层 C++ 胶水：要编，就没有再套一层 C 的必要；不编，C ABI 就是唯一可依赖的稳定边界。
 
 ## 流式生成如何跨越 FFI 边界
 
@@ -242,7 +242,7 @@ int litert_lm_session_run_decode_async(LiteRtLmSession* session,
 
 ## 多模态输入在 C 边界的扁平化
 
-第 8 章讲过多模态的核心机制，图像和音频怎么进 KV cache。这里补一个绑定视角：一段图像字节、一段音频字节、一段文本，形态各异，怎么统一穿过那层只认 C 类型的 ABI。
+第 10 章讲过多模态的核心机制，图像和音频怎么进 KV cache。这里补一个绑定视角：一段图像字节、一段音频字节、一段文本，形态各异，怎么统一穿过那层只认 C 类型的 ABI。
 
 C 这侧的表示是一个打了标签的结构体，`c/engine.h:243`：
 
@@ -334,7 +334,7 @@ struct LiteRtLmConversation {
 };
 ```
 
-(1) 这个 `last_rendered_message` 成员就是宿主。渲染函数把结果存进它、再返回它的 `c_str()`，`c/engine.cc:1096` 收尾两行：
+(1) 这个 `last_rendered_message` 成员就是宿主。渲染函数把结果存进它、再返回它的 `c_str()`，`c/engine.cc:1115-1116` 收尾两行：
 
 ```cpp
   conversation->last_rendered_message = std::move(*rendered);  // (1)
@@ -413,7 +413,7 @@ class Engine(val engineConfig: EngineConfig) : AutoCloseable {  // (1)
 
 Swift 侧用 `actor`，`swift/Engine.swift:28`。actor 的语义是编译器保证同一时刻至多一个任务能访问它的可变状态，`handle: OpaquePointer?` 这个字段的并发安全由此免费获得，不用手写锁。代价藏在跨 actor 调用里：从 actor 外调 actor 的方法要 `await`，这是一个潜在的挂起点，调用可能被排队、被切到别的线程恢复。actor 之间的一次调用叫一次 hop，带上下文切换的开销。对单纯读写句柄这种极短临界区，hop 的开销可能比它保护的操作还大。
 
-但 actor 模型在这里有一处恰到好处的收益，和一个特殊操作有关。`initialize()` 加载模型，注释明确标了它可能耗时约 10 秒，`swift/Engine.swift:50` 的说明：
+但 actor 模型在这里有一处恰到好处的收益，和一个特殊操作有关。`initialize()` 加载模型，注释明确标了它可能耗时约 10 秒，`swift/Engine.swift:52` 的说明：
 
 ```swift
   /// **Note:** This operation can take a significant amount of time (e.g., 10 seconds) depending on
@@ -475,7 +475,7 @@ absl::Status FakeLlmExecutor::Prefill(const ExecutorInputs& inputs) {
 
 这段把 fake 的双重身份讲清了。它不只是返回假数据的桩，还是个**断言器**：(2) 用 `CheckEquivalent` 把上层这次真正喂进来的 token，和脚本里第 `prefill_times_` 条预期逐一比对，对不上就返回 `InvalidArgumentError`，于是测试不但能验证上层拿到了什么，还能验证上层喂进来的是不是对的。(1) 调用次数超出脚本长度直接报错，(3) 每调一次把游标 `prefill_times_` 往前推，让第几次调用对上脚本第几条。decode 侧的无约束分支对称：`decode_tokens_set_[decode_times_]` 按游标取出下一批 token 返回。整套逻辑没有一行涉及神经网络。prefill/decode 的编排、采样、停止条件，全都能在这张脚本上脱离真实模型和硬件跑单测，且每次结果完全确定。这是接口隔离带来的直接收益：上层只依赖 `LlmExecutor`，就能把真执行器整个换成这台脚本机。
 
-fake 还有一条容易被忽略的能力：它能模拟约束解码（第 9 章 llguidance 那套受限生成）。约束解码不是直接吐 token，而是先算 logits、再让约束器 mask 掉不合法的 token、然后从 mask 后的 logits 选 token，fake 要在无模型的前提下把这条链路也演出来。`Decode` 里的分支，`runtime/executor/fake_llm_executor.cc:177`：
+fake 还有一条容易被忽略的能力：它能模拟约束解码（第 10 章 llguidance 那套受限生成）。约束解码不是直接吐 token，而是先算 logits、再让约束器 mask 掉不合法的 token、然后从 mask 后的 logits 选 token，fake 要在无模型的前提下把这条链路也演出来。`Decode` 里的分支，`runtime/executor/fake_llm_executor.cc:177`：
 
 ```cpp
   std::vector<std::vector<int>> output_tokens;
@@ -503,7 +503,7 @@ fake 还有一条容易被忽略的能力：它能模拟约束解码（第 9 章
   last_op_ = LastOp::kDecode;                                  // (8)
 ```
 
-无约束分支 (7) 就是前面说的直接取脚本 token 返回。约束分支 (1) 起要多绕一圈，目的是让约束器真正参与、从而可被测试。(4) `DecodeIdsToLogits` 把脚本里的目标 token 反算成一组 logits（构造一组恰好在目标 token 上取最大值的假 logits），(5) 把这组 logits 交给真正的 `constraint_decoder->MaskLogits` 施加约束掩码，(6) `DecodeLogitsToIds` 再从掩码后的 logits 还原出 token。这样约束器的 `MaskLogits` 逻辑就在完全确定、无模型的环境里被真实执行和验证了。(2)、(3) 处理状态延续：如果上一步也是 decode，得先用上一步产出的 token 调 `UpdateConstraintState`，把约束器的内部状态推进到当前位置，否则约束器不知道已经生成到哪。(8) 的 `last_op_` 是一个记录「上一次操作是 prefill 还是 decode」的状态机变量，正是它让 (2) 能判断要不要补这次状态更新。整条约束路径没有一次真实前向，却把约束解码的接口交互（更新状态、mask、还原）全跑了一遍，第 9 章那套受限生成因此也能进确定性单测。
+无约束分支 (7) 就是前面说的直接取脚本 token 返回。约束分支 (1) 起要多绕一圈，目的是让约束器真正参与、从而可被测试。(4) `DecodeIdsToLogits` 把脚本里的目标 token 反算成一组 logits（构造一组恰好在目标 token 上取最大值的假 logits），(5) 把这组 logits 交给真正的 `constraint_decoder->MaskLogits` 施加约束掩码，(6) `DecodeLogitsToIds` 再从掩码后的 logits 还原出 token。这样约束器的 `MaskLogits` 逻辑就在完全确定、无模型的环境里被真实执行和验证了。(2)、(3) 处理状态延续：如果上一步也是 decode，得先用上一步产出的 token 调 `UpdateConstraintState`，把约束器的内部状态推进到当前位置，否则约束器不知道已经生成到哪。(8) 的 `last_op_` 是一个记录「上一次操作是 prefill 还是 decode」的状态机变量，正是它让 (2) 能判断要不要补这次状态更新。整条约束路径没有一次真实前向，却把约束解码的接口交互（更新状态、mask、还原）全跑了一遍，第 10 章那套受限生成因此也能进确定性单测。
 
 ## 让核心可构建
 
@@ -511,9 +511,9 @@ fake 还有一条容易被忽略的能力：它能模拟约束解码（第 9 章
 
 ## 小结
 
-一套 C++ 核心服务六种语言，靠的是一层收敛后的 C ABI：不透明句柄藏住 C++ 类型，纯 C 函数当各语言共同的调用基线，各绑定再用 ctypes、JNI、C 互操作、WASM 各自接上。这层桥的复杂度不在阻塞式的 create/delete，而在那些跨边界的动态数据：流式回调把 C++ 的 `AnyInvocable` 塌缩成四参数函数指针、`chunk` 只在回调期内有效；多模态输入拿一次拷贝换接口简单与内存安全；返回字符串把生命周期寄养到句柄、JNI 侧绕开 modified-UTF-8 保住 emoji。Kotlin 甚至没走 C ABI，直接以 `Long` 承载 `Engine*` 直连 C++，因为它本就要编一层 C++ 胶水。最难的不是接通，而是让两边的资源模型与并发模型对齐，那个 Swift ARC 撞单会话约束的缺陷、actor 与 synchronized 的两套并发取舍，都是明证。底下再有 FakeLlmExecutor 把无约束与约束解码都撑成确定性单测、双构建系统撑起跨平台，这套运行时才算真的能投产。
+一套 C++ 核心服务六种语言，靠的是一层收敛后的 C ABI：不透明句柄藏住 C++ 类型，纯 C 函数当各语言共同的调用基线，各绑定再用 ctypes、JNI、C 互操作、WASM 各自接上。这层桥的复杂度不在阻塞式的 create/delete，而在那些跨边界的动态数据：流式回调把 C++ 的 `AnyInvocable` 塌缩成四参数函数指针、`chunk` 只在回调期内有效；多模态输入拿一次拷贝换接口简单与内存安全；返回字符串把生命周期寄养到句柄、JNI 侧绕开 modified-UTF-8 保住 emoji。Kotlin 与 Web 甚至没走 C ABI：一个以 `Long` 承载 `Engine*` 直连 C++，一个走 Emscripten 的 Embind，因为它们本就要编一层 C++ 胶水。最难的不是接通，而是让两边的资源模型与并发模型对齐，那个 Swift ARC 撞单会话约束的缺陷、actor 与 synchronized 的两套并发取舍，都是明证。底下再有 FakeLlmExecutor 把无约束与约束解码都撑成确定性单测、双构建系统撑起跨平台，这套运行时才算真的能投产。
 
-第四篇到此结束。从内存容量、内存带宽、功耗与异构三类约束，到完整的推理流水线，再到多模态、工具调用与六种语言的绑定，LiteRT-LM 这台端侧推理机器，四个部分讲完了。剩下的尾声，聊聊你可以拿它做什么，以及这条路往前还通向哪里。
+第四篇到此结束。从三类物理约束与完整的推理流水线，到 KV cache、量化、异构后端与推测解码的各项优化，再到多模态、工具调用与六种语言的绑定，LiteRT-LM 这台端侧推理机器，四个部分讲完了。剩下的尾声，聊聊你可以拿它做什么，以及这条路往前还通向哪里。
 
 ---
 
@@ -526,4 +526,4 @@ fake 还有一条容易被忽略的能力：它能模拟约束解码（第 9 章
 5. **设计题。** 为 Go 语言写一个最小绑定，至少要包装哪几个 C 函数？按「创建-使用-销毁」三段列出。
 
 
-<!-- #2589/#2613 为 open issue，作缺陷案例研究、按【文档】级引，不宣称已修复。实测（Python 与 C++ 行为一致、给 FakeLlmExecutor 写新用例）待基准 D/环境。表 11-1(各语言 FFI 机制) 规格见 notes.md，本轮出签名图 11-1。 -->
+<!-- #2589/#2613 为 open issue，作缺陷案例研究、按【文档】级引，不宣称已修复。Python/C++ 行为一致性实验与 FakeLlmExecutor 新用例未做（复现命令见附录 C）；表 11-1（各语言 FFI 机制）未出，素材在正文齐备、可补。2026-07-16 评审修订：Kotlin/Web 直连 C++ 的口径已在正文与图注统一。 -->

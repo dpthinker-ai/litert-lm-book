@@ -27,7 +27,7 @@
 
 $$ 4 \times 10^{9} \text{ 参数} \times 0.5 \text{ 字节/参数} = 2 \times 10^{9} \text{ 字节} \approx 1.86 \text{ GiB} $$
 
-（换算：1 GiB = 2³⁰ 字节 ≈ 1.07 × 10⁹ 字节。全书内存一律用 GiB，见附录 A。）
+（换算：1 GiB = 2³⁰ 字节 ≈ 1.07 × 10⁹ 字节。全书内存一律用 GiB。）
 
 1.86 GiB 这个数字需要一个重要的补充说明。上面把权重当作整份常驻物理内存，但 LiteRT-LM 通过 `MemoryMappedFile` 把权重文件 mmap 进地址空间（`runtime/util/memory_mapped_file.h`）：映射建立的是虚拟地址，首次访问某一页才触发缺页调入，系统在内存压力下也可回收干净的只读页。因此"权重占 1.86 GiB"指的是虚拟映射大小，而非物理常驻量（RSS）。实际物理占用取决于访问模式：decode 每步都要读全部权重，所以工作集就是全量，mmap 省掉的是加载时的一次性拷贝和换出的代价，省不掉运行时驻留。模型资源加载路径里还进一步区分了应当 mmap 的权重与不应 mmap 的外部权重（`runtime/components/model_resources.h:164`），两类数据在加载阶段即被分流。这些机制让"装得下"的判据多了一分弹性：虚拟地址装得下不等于物理常驻时刻都在，但在内存吃紧时系统有了一条合法的泄压路径。第 7 章会展开 mmap 加载的完整机制。
 
@@ -39,7 +39,7 @@ $$ \text{KV cache 字节} = 2 \times L \times n_{kv} \times d_{head} \times T \t
 
 $$ 128 \text{ KiB} \times 4096 \approx 0.5 \text{ GiB} $$
 
-这 0.5 GiB 随对话长度线性增长。上下文翻倍到 8192，KV cache 就是 1 GiB，已逼近 int4 权重本身的一半。KV cache 的运行时分配并非按最大长度一步到位，而是随 decode 分块扩容：`CpuConfig::kv_increment_size`（默认 16，`runtime/executor/llm_executor_settings.h:110`）控制每次扩容追加多少个 token 的空间，每若干 decode step 触发一次重分配。增量取小则重分配频繁，容易产生内存碎片；增量取大则峰值内存偏高。这道扩容粒度与分配频率的权衡是第 6 章要展开的细节，这里只需记住 KV cache 随上下文的线性增长趋势。
+这 0.5 GiB 随对话长度线性增长。上下文翻倍到 8192，KV cache 就是 1 GiB，已逼近 int4 权重本身的一半。KV cache 的运行时分配有两条路：静态形状模型按最大长度一次性预留（本书基准模型即如此，见第 6 章与第 8 章），动态形状导出的模型则随 decode 分块扩容——`CpuConfig::kv_increment_size`（默认 16，`runtime/executor/llm_executor_settings.h:110`，参数注释明确它用于动态导出模型）控制每次扩容追加多少个 token 的空间，每若干 decode step 触发一次重分配。增量取小则重分配频繁，容易产生内存碎片；增量取大则峰值内存偏高。这条动态路径的权衡在第 8 章展开，这里只需记住 KV cache 随上下文的线性增长趋势。
 
 **激活值。** 前向计算中每一层产生的临时张量，在 decode 阶段只处理一个 token，峰值约在 \\(2 \times L \times d_{model} \times b\\) 的量级（相邻层中间结果，加上 FFN 的中间放大）。取 \\(d_{model}=3072\\)、\\(L=32\\)、FP16 代入，在几十 MB 以内，与权重和 KV cache 不在一个数量级，decode 阶段可近似忽略。激活值真正成为约束是在 prefill 阶段：一次并行处理几百上千个 token，激活值要乘上 token 数。
 
@@ -141,7 +141,7 @@ LiteRT-LM 的价值可以用一句话概括：它把 LiteRT（原 TFLite）这�
 1. **内存预算复算。** 一台 12 GiB 手机，系统与其它 App 占 5 GiB。用本章的公式与示例参数（KV cache 每 token 128 KiB、decode 激活 0.1 GiB）核算：int4 量化的 7B 模型加 8K 上下文，装得下吗？上下文拉到 32K 呢？
 2. **decode 上限复算。** 一款 SoC 用 LPDDR5X-9600 配 64 bit 内存总线，跑一个 int8 量化的 4B 模型。按本章公式算 decode 吞吐上限。
 3. **能耗账变体。** 沿用本章约 20 pJ/byte 的量级：模型换成 int4 的 2B（每 token 读约 1 GB），每 token 能耗与 15 Wh 电池的可生成 token 数各变为多少？
-4. **一句话自查。** 用「算术强度」一个词解释：为什么同一个模型 prefill 快、decode 慢？
+4. **一句话自查。** 用本章的带宽账解释：为什么同一个模型 prefill 快、decode 慢？（第 2 章会把这把尺子命名为「算术强度」。）
 5. **判断并说明。** 想把 decode 吞吐从 25 tok/s 提到 50 tok/s，换一颗算力翻倍、内存带宽不变的芯片，行不行？
 
 

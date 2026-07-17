@@ -29,4 +29,4 @@
 
 ## 上游 issue
 
-书中作缺陷或现象案例引用的 GitHub issue（`LiteRT-LM#2568`、`#2281`、`#2227`、`#2589`、`#2613` 等）见项目 issue 跟踪器 github.com/google-ai-edge/LiteRT-LM/issues，正文在讨论处标注编号。issue 反映的是写作时的上游状态，可能已被后续版本修复。
+书中作缺陷或现象案例引用的 GitHub issue（`LiteRT-LM#2568`、`#2281`、`#2227`、`#2589`、`#2613`、`#2418`、`#2505`）见项目 issue 跟踪器 github.com/google-ai-edge/LiteRT-LM/issues，正文在讨论处标注编号。issue 反映的是写作时的上游状态，可能已被后续版本修复。

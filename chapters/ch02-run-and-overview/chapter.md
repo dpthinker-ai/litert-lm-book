@@ -103,7 +103,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
   RETURN_IF_ERROR(engine->WaitUntilDone(absl::Minutes(10)));
 ```
 
-三步完成一次推理：(1) 把 `--backend` 字符串解析成 `Backend` 枚举，再交给工厂。CPU/GPU/NPU 的执行器实现从这里分岔，对应第二条设计原则「可插拔后端」（第 8 章）；本章末尾会走读这条分发路径的具体代码。(2) 这个演示程序默认打开 benchmark，因此每跑一次都会输出一份性能指标，附录 D 的数据即由此采集。(3) `SendMessageAsync` 是非阻塞调用，prefill 与 decode 在后台线程执行，主线程靠 `WaitUntilDone` 等待；文本通过 `CreateMessageCallback` 分段回调，`message->is_null()` 时输出一个换行表示结束。本书的主线是推理流水线——一段输入经 prefill 处理后逐 token 生成的完整链路，起点就是这一句 `SendMessageAsync`，第二篇会沿着这条链路深入展开。
+三步完成一次推理：(1) 把 `--backend` 字符串解析成 `Backend` 枚举，再交给工厂。CPU/GPU/NPU 的执行器实现从这里分岔，对应第二条设计原则「可插拔后端」（第 8 章）；本章末尾会讲到这套抽象如何让上层对后端无感。(2) 这个演示程序默认打开 benchmark，因此每跑一次都会输出一份性能指标，附录 D 的数据即由此采集。(3) `SendMessageAsync` 是非阻塞调用，prefill 与 decode 在后台线程执行，主线程靠 `WaitUntilDone` 等待；文本通过 `CreateMessageCallback` 分段回调，`message->is_null()` 时输出一个换行表示结束。本书的主线是推理流水线——一段输入经 prefill 处理后逐 token 生成的完整链路，起点就是这一句 `SendMessageAsync`，第二篇会沿着这条链路深入展开。
 
 ## 读懂第一批数字
 
@@ -153,7 +153,7 @@ Time to first token:  3.9400 s
 
 其中 TTFT 可以当场拆开（这就是第 4 问的答案）：它 ≈ 整段提示词的 prefill 耗时 + 第一步 decode，**不含**模型加载（Init 单列）。可以用基准数据验算：cpu、上下文 256 时，256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s，与实测 TTFT 3.94 s 精确吻合；上下文拉到 4096，TTFT 涨到 18.1 s，几乎全部来自 prefill 的耗时〔基准 D〕。所以想让第一个字更快，要么缩短提示词，要么加快 prefill——换个算力更强的后端效果直接可见。
 
-注意这张表最左和第三列的对应关系：**prefill 吞吐和 decode 吞吐不是一个东西，也不该被平均成"一个速度"。** 一个模型的 prefill 吞吐常常比 decode 高出一到两个数量级（本书基准机上是 10-20 倍〔基准 D〕；NPU 或更强的 GPU 上差距更大）。原因第 1 章已经埋下：prefill 受计算能力约束（可并行运算），decode 受内存带宽约束（每步搬运全部权重）。把它俩混在一起谈"这模型多少 tok/s"，是端侧性能讨论里一个常见的混淆。
+注意这张表最左和第三列的对应关系：**prefill 吞吐和 decode 吞吐不是一个东西，也不该被平均成"一个速度"。** 在本书基准机上，同模型同上下文下 prefill 吞吐是 decode 的约 3 到 20 倍（附录 D；后端算力越强、上下文越长，差距越大）。原因第 1 章已经埋下：prefill 受计算能力约束（可并行运算），decode 受内存带宽约束（每步搬运全部权重）。把它俩混在一起谈"这模型多少 tok/s"，是端侧性能讨论里一个常见的混淆。
 
 > 本书所有实测数据来自附录 D 的基准数据集（同一台 Mac、Gemma 4 E4B、公开可复现的采集脚本）。凡标注「〔基准 D〕」处，即由这套数据回填。
 
@@ -200,7 +200,7 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 有了定义与语义，瓶颈判定可以给出一个操作化流程，全书各章会反复用到：
 
 1. **Init 偏大**：与推理无关，是加载问题，查第 7 章（mmap、分段、并行加载）。
-2. **TTFT 偏大而 decode 正常**：几乎总是 prefill 的账（TTFT 算式里 prefill 项占大头），受算力约束，换更强的后端收益直接（本节上文 3.9 倍）。
+2. **TTFT 偏大而 decode 正常**：几乎总是 prefill 的账（TTFT 算式里 prefill 项占大头），受算力约束，换更强的后端收益直接（下一节 Roofline 的 3.9 倍实测）。
 3. **decode 吞吐低**：先用第 1 章的公式算纯权重上限（带宽 ÷ 权重字节），实测贴近上限说明已被内存带宽约束住，加算力无用；离上限还远则查采样、约束解码等每步的额外开销（第 5、10 章）。
 4. **decode 随上下文变长而变慢**：KV cache 的带宽占用在增长，见下一节的反解练习与第 6 章的正式对账。
 
@@ -216,8 +216,8 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 这里也对一下第 1 章的账。那条 25 tok/s 是为一部假想手机（50 GB/s、1.86 GiB 权重）算的；本书基准机是另一套参数，得按同一条公式重算。这里有一个容易算错的分母：3.66 GB 是整个 `.litertlm` 文件，其中还打包着视觉/音频编码器、词嵌入表等段；decode 每步真正要读一遍的是主干模型那一段，实剖为 2.26 GB（附录 D 的段表）。于是 gpu decode 50.6 tok/s × 2.26 GB ≈ 114 GB/s 的有效搬运速率，cpu 24.8 tok/s × 2.26 GB ≈ 56 GB/s，量级都落在桌面级统一内存芯片的合理区间。至于 cpu 实测贴着"25"，只是巧合——分子分母都不是同一套。**公式可以迁移，数字不能照搬**，这正是第 1 章说"这是把尺子"而不是"这是个答案"的原因。
 
 <figure>
-{{#include figs/fig-2-2.svg}}
-<figcaption>图 2-2　Roofline 模型：prefill 落在算力受限区，decode 落在带宽受限区。两者受完全不同的资源约束，这是全书性能分析的基准框架。</figcaption>
+{{#include figs/fig-2-1.svg}}
+<figcaption>图 2-1　Roofline 模型：prefill 落在算力受限区，decode 落在带宽受限区。两者受完全不同的资源约束，这是全书性能分析的基准框架。</figcaption>
 </figure>
 
 ### 差的那一段：从两个实测数据反解 KV cache
@@ -302,7 +302,7 @@ class SessionInterface {
   RETURN_IF_ERROR(executor.Prefill(inputs, params));         // (2)
 ```
 
-(1) 提示词的 token 数一旦顶到 `max_num_tokens`（KV cache 的容量上限，即第 13 问里的 `--max-num-tokens`），直接报错——这堵上下文长度上限在调用执行器之前就拦截。(2) 校验过了才把 `inputs` 交给下一层的 `executor.Prefill`。decode 侧则是一个 `while (true)` 循环，每转一圈调一次 `DecodeOneStep`，再调用 `ShouldStop` 判断是否需要终止（`runtime/core/tasks.cc:571` 调 `ShouldStop`）：遇到停止词、达到 benchmark 指定步数、达到 `max_num_tokens`、或超过 `max_output_tokens`，四者任一为真就跳出（`ShouldStop` 定义在 `tasks.cc:86`）。第 4、5 章顺着这个循环展开取消、停止词判断和输出不完整字符的处理。
+(1) 提示词的 token 数一旦顶到 `max_num_tokens`（KV cache 的容量上限，即第 13 问里的 `--max-num-tokens`），直接报错——这堵上下文长度上限在调用执行器之前就拦截。(2) 校验过了才把 `inputs` 交给下一层的 `executor.Prefill`。decode 侧则是一个 `while (true)` 循环：每圈开头先检查 `cancelled` 原子量（`tasks.cc:487`），置位立即退出，取消故意不进 `ShouldStop`，语义上与「这一步之后判停」分开；然后每转一圈调一次 `DecodeOneStep`，再调用 `ShouldStop` 判断是否需要终止（`runtime/core/tasks.cc:571` 调 `ShouldStop`）：遇到停止词、达到 benchmark 指定步数、达到 `max_num_tokens`、或超过 `max_output_tokens`，四者任一为真就跳出（`ShouldStop` 定义在 `tasks.cc:86`）。第 4、5 章顺着这个循环展开取消、停止词判断和输出不完整字符的处理。
 
 第 3 层是执行器，一个纯虚基类把「用什么硬件跑」这件事完全封装起来（`runtime/executor/llm_executor_base.h:40`）：
 
@@ -321,8 +321,8 @@ class LlmExecutorBase {
 (1)(2) 上一层调的 `executor.Prefill` / `Decode` 就是这两个纯虚方法；CPU、GPU、NPU 各有一个子类实现它们，同一套 `tasks.cc` 编排代码因此一字不改就能换后端。(3) `ExecutorBackendName` 让上层能问「我现在跑在哪个后端」，第 8 章讲换后端为什么连输出都会变，就从这里的多态分发切进去。第 4、5 层是可复用的 tokenizer / 采样器组件（`runtime/components/`）和 `.litertlm` 文件格式——留到第 5、7、10 章各自展开。
 
 <figure>
-{{#include figs/fig-2-1.svg}}
-<figcaption>图 2-1　LiteRT-LM 的五层架构。使用者只与最上层打交道；越往下越贴近硬件。括号里是本书对应的章节。</figcaption>
+{{#include figs/fig-2-2.svg}}
+<figcaption>图 2-2　LiteRT-LM 的五层架构。使用者只与最上层打交道；越往下越贴近硬件。括号里是本书对应的章节。</figcaption>
 </figure>
 
 支撑这五层的是三条设计原则，它们会在后续每一章反复出现，先记住名字：
@@ -350,7 +350,7 @@ class LlmExecutorBase {
     }
 ```
 
-(1) 每个 section 只是一对字节偏移 `[begin, end)`——文件本身是连续排布的一块，section 表就是一张目录。这正是第 7 章说 mmap 能帮上冷启动的物理前提：权重那一段可以直接映射进地址空间，不必先拷进堆。(2) `data_type` 是个枚举，取值只有那么几种：`AnySectionDataType_TFLiteModel`（权重与图）、`AnySectionDataType_SP_Tokenizer` 或 `HF_Tokenizer_Zlib`（两种 tokenizer）、`AnySectionDataType_LlmMetadataProto`（元数据）（`schema/core/litertlm_utils.cc:31`）。碰到 `LlmMetadataProto` 那一段，工具还会把 proto 展开成文本打进来。一份真实 dump 的骨架长这样：
+(1) 每个 section 只是一对字节偏移 `[begin, end)`——文件本身是连续排布的一块，section 表就是一张目录。这正是第 7 章说 mmap 能帮上冷启动的物理前提：权重那一段可以直接映射进地址空间，不必先拷进堆。(2) `data_type` 是个枚举，主要有以下几种：`AnySectionDataType_TFLiteModel`（权重与图）、`AnySectionDataType_SP_Tokenizer` 或 `HF_Tokenizer_Zlib`（两种 tokenizer）、`AnySectionDataType_LlmMetadataProto`（元数据）（`schema/core/litertlm_utils.cc:31`）。碰到 `LlmMetadataProto` 那一段，工具还会把 proto 展开成文本打进来。一份真实 dump 的骨架长这样（取自一个三段布局的示例模型文件，非基准模型 Gemma 4 E4B，E4B 有 10 个段，完整段表见附录 D 第六节）：
 
 ```text
 LiteRT-LM Version: 1.5.0
@@ -386,7 +386,7 @@ Section 2:
 
 ## 小结
 
-至此你掌握了：一个能在本机运行的模型、一个解读性能数据的 Roofline 分析框架、一张五层架构地图。接下来第二篇进入架构的第二层和第三层，跟随一个 token 经历从输入到输出的完整推理流水线。
+至此你掌握了：一个能在本机运行的模型、一个解读性能数据的 Roofline 分析框架、一张五层架构地图。接下来第二篇进入架构的对外接口层与对话编排层（第 3-5 章），跟随一个 token 经历从输入到输出的完整推理流水线。
 
 ---
 

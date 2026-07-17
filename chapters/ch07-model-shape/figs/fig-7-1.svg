@@ -36,5 +36,5 @@
   <text class="ts" x="60" y="176" text-anchor="middle" style="font-size:10px">按需分页</text>
   <text class="ts" x="60" y="190" text-anchor="middle" style="font-size:10px">用哪段读哪段</text>
   <path class="edge" d="M92,150 H148"/>
-  <text class="ts" x="320" y="308" text-anchor="middle" style="font-size:11px">单文件分发 · 可 mmap 按需加载 · 各段可并行读（parallel_file_section_loading，默认开）</text>
+  <text class="ts" x="320" y="308" text-anchor="middle" style="font-size:11px">单文件分发 · 可 mmap 按需加载 · tokenizer 构建与模型加载可并行（parallel_file_section_loading，默认开）</text>
 </svg>

@@ -2,7 +2,7 @@
 
 > 使命：讲透一件反直觉的事——先用一个便宜的草稿模型（drafter）推测接下来的若干 token，再让基础模型一次前向把这一串并行验完，加速比为何完全取决于接受率。这是第三篇的收尾，讲端侧如何在内存带宽约束下再取得成倍的吞吐。
 
-第 1 章分析 decode 的内存带宽约束（后文有时称带宽墙）时给过两条出路：提高带宽（端侧作者无从选择硬件），或减少每 token 要读的字节（量化，第 7 章做了）。这一章是第三条路：不改带宽、不改模型，用一次前向产出多个 token。这正是第 2 章「二十个问题」的第 19 问——推测解码（speculative decoding）靠预测，为什么反而更快，什么时候又更慢。
+第 1 章分析 decode 的内存带宽约束时给过两条出路：提高带宽（端侧作者无从选择硬件），或减少每 token 要读的字节（量化，第 7 章做了）。这一章是第三条路：不改带宽、不改模型，用一次前向产出多个 token。这正是第 2 章「二十个问题」的第 19 问——推测解码（speculative decoding）靠预测，为什么反而更快，什么时候又更慢。
 
 ## 用一次前向产出多个 token
 
@@ -158,9 +158,9 @@ for (const auto& [input_name, input_buffer] : input_kv_cache_buffers) {
 }
 ```
 
-`(1)` `input_pos` 连续填 `position` 到 `position+G`：这 G+1 个位置紧接在已生成序列之后，验证的是「若第 `position` 位是真 token、随后是草稿的 G 个，各位置基础模型给出什么」。`(2)` `FillAttentionMask` 以 `start_step=position`、`steps=G+1` 铺注意力 mask，形成因果结构：每个待验位置只能看到它之前的前缀（包括真 token 和更早的草稿位置），看不到自己之后的草稿。这一点保证验证的语义正确——第 `i` 个位置得到的 logits 只依赖前 `i` 个 token，与逐 token decode 到该位置时的条件一致，因此逐位比对才有意义。`(3)` 把 `[真 token, 草稿_1, …, 草稿_G]` 经 `LookupPrefill` 一次查成 embeddings，正是 prefill 那套批量查嵌入的接口（第 5 章）。`(4)` 对每个 KV cache 输入调 `Duplicate()`，把基础模型现有的 KV cache 句柄复制一份给 verify 用。
+`(1)` `input_pos` 连续填 `position` 到 `position+G`：这 G+1 个位置紧接在已生成序列之后，验证的是「若第 `position` 位是真 token、随后是草稿的 G 个，各位置基础模型给出什么」。`(2)` `FillAttentionMask` 以 `start_step=position`、`steps=G+1` 铺注意力 mask，形成因果结构：每个待验位置只能看到它之前的前缀（包括真 token 和更早的草稿位置），看不到自己之后的草稿。这一点保证验证的语义正确——第 `i` 个位置得到的 logits 只依赖前 `i` 个 token，与逐 token decode 到该位置时的条件一致，因此逐位比对才有意义。`(3)` 把 `[真 token, 草稿_1, …, 草稿_G]` 经 `LookupPrefill` 一次查成 embeddings，正是 prefill 那套批量查嵌入的接口（第 3 章）。`(4)` 对每个 KV cache 输入调 `Duplicate()`，把基础模型现有的 KV cache 句柄复制一份给 verify 用。
 
-`Duplicate()` 复制的是缓冲句柄而非底层数据（TensorBuffer 的浅复制语义，第 6 章）。之所以要这一层，是因为 verify 前向要在已有 KV cache 之上追加 G+1 个位置的写入，而运行时对同一块缓冲有读写分离的约束（第 6 章的双缓冲）。紧接着的分支处理单缓冲 KV cache 的情形：
+`Duplicate()` 复制的是缓冲句柄而非底层数据（TensorBuffer 的浅复制语义，第 7 章）。之所以要这一层，是因为 verify 前向要在已有 KV cache 之上追加 G+1 个位置的写入，而运行时对同一块缓冲有读写分离的约束（第 6 章的双缓冲）。紧接着的分支处理单缓冲 KV cache 的情形：
 
 ```cpp
 if (active_verifier_input_buffers_.contains("param_tensor")) {   // (1)
@@ -266,11 +266,11 @@ LlmLiteRtMtpDrafter::~LlmLiteRtMtpDrafter() {
 
 把这笔账做成定量模型，能看清盈亏平衡在哪。设逐位接受概率为 α（贪心接受下，α 是「drafter 的 argmax 等于 verifier 的 argmax」的概率，随文体与模型而变），各位置近似独立。一轮草拟 G 步，第 k 位被接受当且仅当前 k 位全接受，概率 α^k。加上那个必得的 bonus，一轮的期望产出为：
 
-E[产出] = 1 + Σ_{k=1}^{G} α^k
+$$ E[\text{产出}] = 1 + \sum_{k=1}^{G} \alpha^k $$
 
 再看成本。设基础模型一次前向的开销为 c_base、drafter 一步前向的开销为 c_draft，一轮总开销约 c_base + G·c_draft（verify 一次，drafter G 步）。普通 decode 每 token 开销 c_base。于是加速比约为：
 
-speedup ≈ E[产出] / (1 + G · c_draft / c_base)
+$$ \text{speedup} \approx \frac{E[\text{产出}]}{1 + G \cdot c_{\text{draft}} / c_{\text{base}}} $$
 
 分子随 α 单调增，分母是固定的额外开销比。令 speedup = 1 解出的 α 就是盈亏平衡接受率：α 高于它，推测解码更快；低于它，反而更慢。分母里 c_draft/c_base 越大（drafter 相对基础模型不够便宜，或在某后端上开销比失衡），盈亏平衡点越高，越难划算。这把定性的权衡变成了可代入数字的判据。
 
@@ -279,7 +279,7 @@ speedup ≈ E[产出] / (1 + G · c_draft / c_base)
 - 接受率高时：一次基础模型前向产出多个 token，而基础模型前向是开销最高的一项，于是每 token 摊到的成本大幅下降，明显更快。官方报告 Gemma 4 上可达约 3 倍（官方博客口径，参见附录 F）。
 - 接受率低时：草稿大多被丢弃，drafter 那几步的计算被丢弃、成为净开销，还多搭了 verify 相对普通 decode 的额外开销。当这些额外开销超过省下的前向，净收益为负，结果更慢。
 
-这里如实报告本书自己的实测〔基准 D〕。主基准 Gemma 4 E4B 在基准机上开关 MTP，CPU 后端 22.8 对 24.9 tokens/s、GPU 后端 50.0 对 50.2 tokens/s（CPU 那一批三次运行本身就散布在 20.1 到 24.9 之间，这些差异都落在批内抖动幅度里；强制开启 MTP 也能正常运行，得 49.0），没有复现 3 倍。这不推翻机制，反而与上面的公式相容：benchmark 喂的是合成负载，我们推测其接受率 α 很低（近似最难预测的文体），代入公式分子接近 1，speedup 接近 1/1.45，收益自然出不来。但 CLI 不输出接受率，无法实证归因；官方 3 倍口径来自其特定的模型、硬件与负载。收益取决于接受率，这句话对两头都成立。
+这里如实报告本书自己的实测〔基准 D〕。主基准 Gemma 4 E4B 在基准机（context 1024、decode 128 token）上采了三档：关、`auto`、强制 `true`。按上一节的代码链路，`auto` 在 v0.13.1 实为关，所以「关」与「auto」两行本质是同一行为的两次采样：CPU 后端 22.8 对 24.9 tokens/s、GPU 后端 50.0 对 50.2 tokens/s，差异落在批内抖动幅度里（CPU 那批三次运行本身就散布在 20.1 到 24.9 之间）。真正开启的是强制 `true` 的一组，GPU 得 49.0，与同条件「关」的 50.2 同样在抖动内——两条口径下都没有复现 3 倍。这不推翻机制，反而与上面的公式相容：benchmark 喂的是合成负载，我们推测其接受率 α 很低（近似最难预测的文体），代入公式分子接近 1，speedup 接近 1/1.45，收益自然出不来。但 CLI 不输出接受率，无法实证归因；官方 3 倍口径来自其特定的模型、硬件与负载。收益取决于接受率，这句话对两头都成立。
 
 无法实证归因这一点本身有解法，只是需要改代码。接受率已经在 `num_verified_tokens_ / num_drafted_tokens_` 里算好，卡在只于析构时打印、且计数器是 drafter 私有成员。可行的插桩方案：在 `Draft()` 每轮结束处（`:494` 之后）加一条按周期输出的日志，或把这两个计数器经执行器暴露到 benchmark 的统计输出里，与吞吐一并落盘。这样才能把「E4B 合成负载下 α 是多少」从推测升为实测，进而验证上面的盈亏平衡分析。本书未改上游代码，故此处 α 低仍标为推测。
 
@@ -311,9 +311,9 @@ if (section_object->data_type() == AnySectionDataType_TFLiteModel) {  // (2)
 }
 ```
 
-`(2)` 遍历 `.litertlm` 的所有 section，`(3)` 找每个 TFLite 模型 section 的 `model_type` 元数据，`(4)` 只要有一个等于 `(1)` 里那个字符串 `"tf_lite_mtp_drafter"` 就返回 true。换句话说，「支持推测解码」不是一个布尔开关，而是文件里有没有打包一个 `model_type` 标为 mtp drafter 的子模型。这正是第 7 章讲的 `.litertlm` 容器里那些 section 的用途之一：drafter 就是和基础模型打包在同一个文件里的另一个 section。
+`(2)` 遍历 `.litertlm` 的所有 section，`(3)` 找每个 TFLite 模型 section 的 `model_type` 元数据，`(4)` 只要有一个等于 `(1)` 里那个字符串 `"tf_lite_mtp_drafter"` 就返回 true。也就是说，「支持推测解码」不是一个布尔开关，而是文件里有没有打包一个 `model_type` 标为 mtp drafter 的子模型。这正是第 7 章讲的 `.litertlm` 容器里那些 section 的用途之一：drafter 就是和基础模型打包在同一个文件里的另一个 section。
 
-这个 bool 从探测到装载的链路可以一路走通，正好实证「支持等于文件里打包了 drafter section」这句话。CLI 侧，`--enable-speculative-decoding` 取 `auto`、`true`、`false` 三选一（`python/litert_lm_cli/common.py:108`），经 `parse_speculative_decoding`（`:21`）映射：`auto` 与缺省映射为 `None`（交给运行时按元数据自动判断）、`true` 映射为 `True`（强制开启，模型不支持则报错）、`false` 映射为 `False`。C++ 侧的默认是关（`ABSL_FLAG(bool, enable_speculative_decoding, false, ...)`，`runtime/engine/shared_flags.cc:149`）。这个标志经引擎注入执行器设置（`.enable_speculative_decoding = settings.enable_speculative_decoding`，`runtime/engine/litert_lm_lib.cc:592`）。执行器构造时看这个标志：
+从能力声明到 drafter 装载，链路各环都能落到代码，但中间有一环在 v0.13.1 还没接上。CLI 侧，`--enable-speculative-decoding` 取 `auto`、`true`、`false` 三选一（`python/litert_lm_cli/common.py:108`），经 `parse_speculative_decoding`（`:21`）映射：`auto` 与缺省映射为 `None`、`true` 映射为 `True`（强制开启，模型不支持则报错）、`false` 映射为 `False`。关键在 `None` 的走向：Python 绑定层只在值非 `None` 时才调 setter（`python/litert_lm/engine.py:113`），`auto` 因此不触碰 C++ 侧的默认值——而默认是关（`bool enable_speculative_decoding = false`，`runtime/executor/llm_executor_settings.h:258`）。所以 v0.13.1 里 `auto` 的实际行为是关：CLI help 宣称的「按模型元数据自动判断」（`common.py:115`）尚未接线，引擎创建路径并不调用 `HasSpeculativeDecodingSupport` 做探测。这个标志经引擎注入执行器设置（`.enable_speculative_decoding = settings.enable_speculative_decoding`，`runtime/engine/litert_lm_lib.cc:592`）。执行器构造时看这个标志：
 
 ```cpp
 if (advanced_settings.has_value() &&
@@ -326,7 +326,7 @@ if (advanced_settings.has_value() &&
 }
 ```
 
-`(1)` 标志为真才装载 drafter，`(2)` `Create` 内部用 `resources.GetTFLiteModel(ModelType::kTfLiteMtpDrafter)`（`:196`）取出那个 drafter section 编译成独立小模型。若文件里根本没打包 drafter section，这一步取不到模型、`Create` 失败——这就把「强制开启但模型不支持则报错」的 CLI 语义落到了实处。auto 模式则先用 `HasSpeculativeDecodingSupport` 探测，探到了才把标志置真。整条链路串起来：文件元数据、bool、引擎设置、装载 drafter，四步各有代码锚点。
+`(1)` 标志为真才装载 drafter，`(2)` `Create` 内部用 `resources.GetTFLiteModel(ModelType::kTfLiteMtpDrafter)`（`:194`）取出那个 drafter section 编译成独立小模型。若文件里根本没打包 drafter section，这一步取不到模型、`Create` 失败——这就把「强制开启但模型不支持则报错」的 CLI 语义落到了实处。至于能力探测，`HasSpeculativeDecodingSupport` 在 v0.13.1 只作为查询接口暴露给 SDK 调用方（C API 见 `schema/capabilities/capabilities_c.cc:50`，Kotlin JNI 见 `kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:1233`），引擎自己不调它：想按元数据自动开启的应用，得自己查、自己把标志置真。
 
 其二，草拟步数 G 不是运行时可调的旋钮。它由模型 verify signature 的形状固定（`:250`–`:256`）：
 
@@ -363,4 +363,4 @@ num_draft_steps = input_pos_dims[0] - 1;                         // (1)
 5. **实剖对照。** drafter 输入形状是 `[1, 1, 5120]`。这 5120 由哪两半拼成？各自从哪里来？
 
 
-<!-- MTP 开/关已实测（附录 D）：差异在抖动内、未复现 3x，正文已如实报告并以接受率经济学（含闭式加速比公式与盈亏平衡分析）解释。文体接受率对比未做（CLI 不输出接受率，已在正文给出插桩方案）。#2227 无真机，成因为经济账推断、按【文档】级引 issue。图 9-2(接受率-收益曲线) 表 9-1(开/关实测) 需实测数据，待基准 D；本轮出签名图 9-1(时序)。 -->
+<!-- MTP 已实测（附录 D）：auto 档在 v0.13.1 实为关（正文已按代码链路改写，2026-07-16），强制 true 与关在抖动内、未复现 3x，正文以接受率经济学解释。文体接受率对比未做（CLI 不输出接受率，正文给出插桩方案）。#2227 无真机，按【文档】级引 issue。表 9-1 数据已在附录 D 齐备、可补出；图 9-2 受限于 CLI 不透出接受率，如出图需改用闭式公式推算口径。 -->

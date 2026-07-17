@@ -217,7 +217,7 @@ return new_string.substr(old_string.length());                       // (3)
 
 (3) 就是这段增量文本：`new_string` 去掉 `old_string` 前缀后剩下的尾部，即本轮需要 prefill 的部分。旧的部分对应的 KV cache 已经驻留（第 6 章展开 KV cache 结构），无需重新计算。
 
-(1) 和 (2) 这两处前置校验（precondition check）暴露了增量渲染的前提假设：新渲染必须是旧渲染的字符串前缀。一旦模板不满足"追加消息只在尾部增加内容"这一性质，例如某些模型的模板在结尾固定放一个收尾标记、加新消息时要先移除它，则 `new_string` 可能比 `old_string` 短，或不以它开头。代码没有退而求最长公共前缀，而是直接返回 `InternalError` 并把两次渲染结果整个打印出来。这是一处明确的取舍：增量渲染只在"纯前缀增长"这一类模板上成立，不成立时选择直接返回错误而非降级处理，以免把错位的文本 prefill 进 KV cache、污染整段对话。第 4 章会说明，prefill 写入的内容无法轻易撤回，因此此处宁可报错也不将就一个可能错误的结果。
+(1) 和 (2) 这两处前置校验（precondition check）暴露了增量渲染的前提假设：新渲染必须是旧渲染的字符串前缀。一旦模板不满足"追加消息只在尾部增加内容"这一性质，例如某些模型的模板在结尾固定放一个收尾标记、加新消息时要先移除它，则 `new_string` 可能比 `old_string` 短，或不以它开头。代码没有退而求最长公共前缀，而是直接返回 `InternalError` 并把两次渲染结果整个打印出来。这是一处明确的取舍：增量渲染只在"纯前缀增长"这一类模板上成立，不成立时选择直接返回错误而非降级处理，以免把错位的文本 prefill 进 KV cache、污染整段对话。此处宁可报错也不将就一个可能错误的结果：被污染的 KV cache 不是免费能撤回的，它的写入与回退代价第 6 章展开。
 
 #### 增量渲染的成本账：省下的是 prefill，不是渲染
 
@@ -248,7 +248,7 @@ class Tokenizer {
       const TokenIds& token_ids) = 0;
 ```
 
-(1) 输入侧只用得到 `TextToTokenIds`：文本进、id 序列出。(2) 反方向的 `TokenIdsToText` 是输出侧（第 5 章）用的，注释里那句"incomplete BPE sequence 会返回 `DataLossError`"，正是第 5 章末尾"输出不完整 token 现象的接口层伏笔：解码到不完整的 BPE 序列时，tokenizer 会明确拒绝，而不是产生乱码。
+(1) 输入侧只用得到 `TextToTokenIds`：文本进、id 序列出。(2) 反方向的 `TokenIdsToText` 是输出侧（第 5 章）用的，注释里那句"incomplete BPE sequence 会返回 `DataLossError`"，正是第 5 章末尾「输出不完整 token」现象的接口层伏笔：解码到不完整的 BPE 序列时，tokenizer 会明确拒绝，而不是产生乱码。
 
 LiteRT-LM 提供两种实现，都继承这个接口。SentencePiece 版（Gemma 等模型用）的编码实现薄得几乎透明（`runtime/components/sentencepiece_tokenizer.cc:65`）：
 
@@ -281,7 +281,7 @@ absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
 
 (2) 底层 `tokenizer_` 是 HuggingFace 的 Rust 分词器，通过 FFI 调用。(1) 那行 `LeakCheckDisabler` 泄漏了实现真相：这是个跨语言边界的封装，Rust 的 `lazy_static` 初始化会被 Google 的泄漏检查器误报，只能临时关掉检查。两种 tokenizer 都实现同一个 `Tokenizer` 抽象——又一次"接口隔离"原则：上层只管"把这段文本变成 id 序列"，不关心底下是 C++ 的 SentencePiece 还是 Rust 的 HuggingFace，更不关心后者还需禁用泄漏检查器。
 
-这个抽象还解释了第 5 章末尾那个"输出不完整 token 现象的一半来由：SentencePiece 的解码路径（`sentencepiece_tokenizer.cc:84`）会把 byte token 累积进 `chunk_byte_token_ids` 缓冲，等凑齐一个完整字符再输出。子词分词意味着一个 token 未必是一个完整的字，跨 token 的边界必须小心处理。编码是这条边界的正向，解码是反向，同一条规则的两面。
+这个抽象还解释了第 5 章末尾那个「输出不完整 token」现象的一半来由：SentencePiece 的解码路径（`sentencepiece_tokenizer.cc:84`）会把 byte token 累积进 `chunk_byte_token_ids` 缓冲，等凑齐一个完整字符再输出。子词分词意味着一个 token 未必是一个完整的字，跨 token 的边界必须小心处理。编码是这条边界的正向，解码是反向，同一条规则的两面。
 
 ## 还差半步：token id 变成 embedding
 

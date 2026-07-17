@@ -30,7 +30,7 @@ int target_width =
 
 (1) 先算允许的总像素上限：`max_num_patches` 个 patch，每个 patch 占 `patch_width × patch_height` 像素。(2) 拿这个上限除以原图像素数、开方，得到一个各向同性的缩放系数 `factor`。这个系数乘在宽高上，缩放后的总面积恰好压到上限，同时保持长宽比不变。(3)(4) 处理网格对齐：缩放后的宽高必须是 `side_mult` 的整数倍，`side_mult` 等于池化核尺寸乘 patch 边长。代码先除以 `side_mult`、向下取整、再乘回去，把宽高对齐到网格。对齐的原因在于下游要按 `patch_width` 均匀切块、再按 `pooling_kernel_size` 做池化，宽高不是这个乘积的整数倍就无法整除切分。函数开头有一句前置检查：`patch_width != patch_height` 直接返回错误，patch 必须为正方形。向下取整可能把某一边压成 0（极端细长的图），代码对此单列了一个分支：把为 0 的那一边设成一个 `side_mult`，另一边按原始长宽比放大且不超过 `max_side_length`。
 
-这里可以当面把 visual token 数算清。给定 `max_num_patches`、`patch_width`、原图尺寸，\\(\text{target\_height} \times \text{target\_width} / (\text{patch\_width} \times \text{patch\_height})\\) 就是这张图切出的 patch 数，也就是它在序列里占用的 visual token 数——序列里要为此预留的 `kSpecialToken` 占位符槽位数量。这个数字并非无关紧要，本节末尾会把它连到 prefill 计算量与 KV cache 占用上，量化「看一张图」的真实代价。
+这里可以当面把 visual token 数算清。给定 `max_num_patches`、`patch_width`、原图尺寸，\\(\text{target\_height} \times \text{target\_width} / (\text{patch\_width} \times \text{patch\_height})\\) 就是这张图切出的 patch 数；池化核为 1 时，它也就是序列里要预留的 `kSpecialToken` 占位符槽位数（有池化时再除以缩减因子 `patch_num_shrink_factor`，见下文签名选择一节）。这个数字并非无关紧要，本节末尾会把它连到 prefill 计算量与 KV cache 占用上，量化「看一张图」的真实代价。
 
 上面这段只算目标尺寸，真正的重采样发生在另一处。`MaybeResizeImageWithSameAspectRatio`（`runtime/components/preprocessor/stb_image_preprocessor.cc:56`）拿到目标尺寸后，先判断是否需要缩放，再逐张调重采样：
 
@@ -172,11 +172,13 @@ for (int i = 0; i < model.GetNumSignatures(); ++i) {
 
 回到本节开头留下的账。patchify 公式算出的 visual token 数，不只决定序列里预留多少槽位，它直接放大 prefill 的计算量与 KV cache 的占用。视觉 token 一旦填进序列，对 prefill 而言与文本 token 无差别（第 4 章）：每个 token 都要过一遍完整的 Transformer 前向，都要在每一层写入一份 K/V 进 cache。
 
-把数字代进去。设某视觉编码器 `patch_width = patch_height = 14`，`max_num_patches = 256`，`pooling_kernel_size = 1`（不额外池化）。一张接近上限的图折算成约 256 个 visual token。这 256 个 token 等价于 256 个文本 token 的 prefill 成本：prefill 的计算量随 token 数近似线性（注意力那部分随序列长度平方增长，但在几百 token 尺度下线性项主导），KV cache 占用则严格线性：`num_layers × 2 × model_dimension × num_tokens × sizeof(dtype)`。以一个 26 层、`model_dimension = 2048`、fp16 KV 的配置粗算，256 个 token 的 KV cache 约为 \\(26 \times 2 \times 2048 \times 256 \times 2 \approx 54\,\text{MiB}\\)（按 \\(2^{20}\\) 计）。也就是说，「看一张图」在上下文里的占位，相当于一次几百 token 的额外 prefill，外加数十 MiB 的 KV cache 常驻。多图对话会成倍放大这两项：三张图就是约 768 个 visual token、约 160 MiB KV cache。这解释了 `max_num_patches` 为何是端侧多模态的关键预算旋钮——它是「图像细节」与「prefill 时延／显存」之间的直接兑换比。〔本节字面值为按公式的量级估算，真机端到端时延与显存占用待附录 D 基准回填〕
+把数字代进去。设某视觉编码器 `patch_width = patch_height = 14`，`max_num_patches = 256`，`pooling_kernel_size = 1`（不额外池化）。一张接近上限的图折算成约 256 个 visual token。这 256 个 token 等价于 256 个文本 token 的 prefill 成本：prefill 的计算量随 token 数近似线性（注意力那部分随序列长度平方增长，但在几百 token 尺度下线性项主导），KV cache 占用则严格线性：`num_layers × 2 × model_dimension × num_tokens × sizeof(dtype)`。以一个 26 层、`model_dimension = 2048`、fp16 KV 的配置粗算，256 个 token 的 KV cache 约为 \\(26 \times 2 \times 2048 \times 256 \times 2 \approx 52\,\text{MiB}\\)（按 \\(2^{20}\\) 计）。也就是说，「看一张图」在上下文里的占位，相当于一次几百 token 的额外 prefill，外加数十 MiB 的 KV cache 常驻。多图对话会成倍放大这两项：三张图就是约 768 个 visual token、约 160 MiB KV cache。这解释了 `max_num_patches` 为何是端侧多模态的关键预算旋钮——它是「图像细节」与「prefill 时延／显存」之间的直接兑换比。（本节数值为按公式的量级估算，未做真机端到端测量。）
+
+## 音频如何进入模型
 
 音频走同一条路，只是特殊 token 换成 -2（`ExecutorAudioData::kSpecialToken`，`llm_executor_io_types.h:281`；对齐约定在 `:263` 的注释里，与视觉逐字对应）。三个模态各用一个 `kSpecialToken` 值（文本无、视觉 -1、音频 -2）区分各自的占位符槽位，填充时各填各的。这就是多模态的统一之处：各模态各有编码器把输入编码成同一嵌入空间的向量，一旦成为 embedding，后续的 prefill、decode（第 4、5 章）无需任何改动——它们本就工作在 embedding 上，不关心这些向量原本来自文本、图像还是音频。第 2 章那套分层架构因此得以保持干净：多模态是在输入端多接一个编码器，而非改动整条流水线。
 
-### 音频链路：DSP 前端与分块编码
+### DSP（数字信号处理）前端与分块编码
 
 音频链路比视觉多两层结构。第一层在编码器之前：喂给音频编码器的不是波形，而是 log-mel 频谱图，这是语音处理的经典前端。预处理器（`runtime/components/preprocessor/audio_preprocessor_miniaudio.cc`）把波形切帧后逐帧做实数 FFT（`kiss_fftr`，`:265`，用的是 kissfft 库），取平方幅度谱，再交给 `MelFilterbank` 加权。这个类的注释一句话说清了它做的变换：把平方幅度谱的一个切片转换为三角 mel 加权的线性幅度滤波器组（`runtime/components/preprocessor/mel_filterbank.h:25`），初始化参数就是教科书上那几个：FFT bin 数、采样率、mel 通道数、频率上下限（`:38`）。滤波器组输出取对数前还加一个下限保护（`audio_preprocessor_miniaudio.cc:295` 一带，对数值加 floor 防止 log(0)），得到最终的 log-mel 频谱。到这里音频已经变成一个 `[帧数, mel 通道数]` 的浮点矩阵，后续才轮到神经网络。
 
@@ -259,7 +261,7 @@ mask_vector.push_back(sample_mask[i / 32] & (1 << (i % 32)));  // (1)
 1. **声明工具**。你在对话的开场白里告诉模型有哪些工具可用，就是第 3 章 `Preface` 里的 `tools` 字段。`Preface` 是个 `variant`，实际装的是 `JsonPreface`（`runtime/conversation/io_types.h:30`），里面三个 `nlohmann::ordered_json` 字段并排：`messages` 是对话历史，`tools` 是可用工具列表（`:36`），`extra_context` 留给模型特定的模板渲染。用 `ordered_json` 而非普通 `json` 是有意的——工具和参数的书写顺序要保住，格式化进 prompt 时不能被容器重排。
 2. **格式化进 prompt**。这些工具描述被按模型认得的格式写进提示词。`FormatValueAsFc`（`runtime/components/tool_use/fc_tool_format_utils.h`，`fc` 即 function call）把标准 JSON 转成一种更省 token 的 FC 格式，头文件里的例子把差异讲明白了：键不加引号（`"string_value"` 变 `string_value`），字符串用 `<escape>` 标签包起来而不是双引号（`"foo"` 变 `<escape>foo<escape>`）。去掉成对的引号，是为了让同样的工具声明少占 token——上下文窗口寸土寸金，工具声明又常年占在 prompt 开头。
 3. **生成调用**。模型决定要用某个工具时，输出一段结构化的函数调用文本，长这样：`call:tool_name{param_1:7,param_2:<escape>foo<escape>}`。这里约束解码派上用场：开着它，模型输出的调用就一定是结构合法的（第 3 章 `ConversationConfig` 那个开关的用途之一）。
-4. **解析回填**。运行时把这段文本解析回结构化的函数名和参数。解析用的是 ANTLR 语法，而不是拿正则去凑。FC 格式的整个文法只有六条规则（`runtime/components/tool_use/antlr/AntlrFcParser.g4`）：
+4. **解析回填**。运行时把这段文本解析回结构化的函数名和参数。解析用的是 ANTLR（文法解析器生成器）生成的解析器，而不是拿正则去凑。FC 格式的整个文法只有六条规则（`runtime/components/tool_use/antlr/AntlrFcParser.g4`）：
 
 ```antlr
 start : functionCall EOF;
@@ -267,7 +269,13 @@ functionCall: CALL COLON ID object?;            // (1)
 object : OPEN_BRACE ( pair (COMMA pair)* )? CLOSE_BRACE;
 pair : ID COLON value;
 value
-    : ESCAPED_STRING | NUMBER | BOOLEAN | NULL_LITERAL | object | array;  // (2)
+    : ESCAPED_STRING
+    | NUMBER
+    | BOOLEAN
+    | NULL_LITERAL
+    | object
+    | array
+    ;                                             // (2)
 array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 ```
 
@@ -280,7 +288,7 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 
 ## 小结
 
-这一章讲了两个方向的扩展，它们共享同一套地基。输入端，多模态靠"万物皆 embedding"——图片经 patchify、视觉执行器编码、再填进特殊 token 占的坑，之后的流水线一字不改。输出端，约束解码靠"每步掐掉非法 token"把结构合法从祈祷变成保证，Tool Use 再把它和 Preface、ANTLR 文法串成完整的函数调用链路。两个方向都印证了第 2 章那句"接口隔离"：新能力是在输入端多接一个编码器、在输出端多插一道约束长出来的，核心流水线一字未动。
+这一章讲了两个方向的扩展，它们共享同一套地基。输入端，多模态靠"万物皆 embedding"——图片经 patchify、视觉执行器编码、再填进特殊 token 的占位符槽位，之后的流水线一字不改。输出端，约束解码靠"每步掐掉非法 token"把结构合法从祈祷变成保证，Tool Use 再把它和 Preface、ANTLR 文法串成完整的函数调用链路。两个方向都印证了第 2 章那句"接口隔离"：新能力是在输入端多接一个编码器、在输出端多插一道约束长出来的，核心流水线一字未动。
 
 下一章是最后一块工程拼图：这套 C++ 核心，怎么服务从 Python 到 Web 的六种语言（这笔账，下一章开头数清）。
 
@@ -295,4 +303,4 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 5. **路径约束。** 约束解码为什么只能工作在外部采样路径上？内部采样路径缺了哪一环？
 
 
-<!-- 补读：vision/audio executor 已贴 .cc（Encode 两级串联 encoder→adapter），patchify 贴 .cc（GetAspectRatioPreservingSize 缩放对齐公式），约束解码贴 MaskLogits 双重循环 + llg_constraint FFI 三调用 + 掩码位解包，tool_use 贴 AntlrFcParser.g4 六条文法 + FC 格式差异 + ParseFcExpression。实测（图片端到端、visual token 计数、约束解码开/关工具调用成功率）待基准 D 回填〔基准 D〕。双主题章，两半已切干净。图 10-2(约束解码逐步屏蔽) 表 10-1(Tool Use 各环节) 规格见 notes.md，本轮出签名图 10-1。 -->
+<!-- 补读完成：vision/audio executor 的 .cc（Encode 两级串联）、patchify（缩放对齐公式）、约束解码（MaskLogits + llg_constraint FFI）、tool_use（AntlrFcParser.g4 六条文法）均已贴码核验。图片端到端、visual token 计数、约束解码开/关成功率三项实测未做（附录 D 为纯文本矩阵，不含多模态负载）。图 10-2、表 10-1 未出，素材在正文齐备。2026-07-16 评审修订：音频节提为与图像平级；ANTLR 引文恢复逐字；52 MiB 口径修正。 -->

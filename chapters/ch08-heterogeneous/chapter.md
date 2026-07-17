@@ -56,7 +56,7 @@ switch (backend) {
 
 ### 静态形状与动态形状：第二次分派
 
-CPU/GPU 那条路径内部还有一次分派，按模型导出时是静态形状还是动态形状再分（`llm_litert_compiled_model_executor_factory.cc:137`）：
+CPU/GPU 那条路径内部还有一次分派，按模型导出时是静态形状还是动态形状再分（`llm_litert_compiled_model_executor_factory.cc:138`）：
 
 ```cpp
 ASSIGN_OR_RETURN(bool is_dynamic_model, IsDynamicModel(*litert_model));
@@ -85,9 +85,9 @@ RET_CHECK(is_kv_cache_dynamic == is_seq_len_dynamic)
 return is_kv_cache_dynamic;
 ```
 
-`(1)` 判据取自 KV cache 的 K、V 两个张量的形状是否动态，并用 `RET_CHECK` 强制两者一致：一个模型不允许 K 动态而 V 静态。`(2)` 更强的一条约束在最后：KV cache 的动静态必须与序列长度（position 张量）的动静态一致，否则直接报错退出。换句话说，一个导出的模型要么整体是动态形状，要么整体是静态形状，不存在混合态。这条 `RET_CHECK` 把"半动态"的非法组合挡在加载阶段，而不是留到运行时崩溃。
+`(1)` 判据取自 KV cache 的 K、V 两个张量的形状是否动态，并用 `RET_CHECK` 强制两者一致：一个模型不允许 K 动态而 V 静态。`(2)` 更强的一条约束在最后：KV cache 的动静态必须与序列长度（position 张量）的动静态一致，否则直接报错退出。这条判据的含义是：一个导出的模型要么整体是动态形状，要么整体是静态形状，不存在混合态。这条 `RET_CHECK` 把"半动态"的非法组合挡在加载阶段，而不是留到运行时崩溃。
 
-两条路径的性能含义不同。静态形状走 `Static` 执行器：prefill 与 decode 的张量形状在编译期就定死，KV cache 按最大上下文长度一次性分配，运行时形状不再变，delegate 只需编译一次。动态形状走 `Dynamic` 执行器：KV cache 随 decode 步逐步增长，每次增长 `kv_increment_size` 个位置（默认 16，`llm_executor_settings.h:110`）。动态形状的好处是短对话不必按最大长度预分配缓冲区，峰值内存更省；代价是形状变化可能触发底层重新准备。正文后面会看到，`prefill_chunk_size` 这个参数的注释明确写着"only applicable to dynamically exported models"（`llm_executor_settings.h:113`）——分块 prefill 只对动态模型有意义，因为静态模型的 prefill 形状已经固定。这层静态/动态的选择对上层同样不可见。
+两条路径的性能含义不同。静态形状走 `Static` 执行器：prefill 与 decode 的张量形状在编译期就定死，KV cache 按最大上下文长度一次性分配，运行时形状不再变，delegate 只需编译一次。动态形状走 `Dynamic` 执行器：KV cache 随 decode 步逐步增长，每次增长 `kv_increment_size` 个位置（默认 16，`llm_executor_settings.h:110`）。动态形状的好处是短对话不必按最大长度预分配缓冲区，峰值内存更省；代价是形状变化可能触发底层重新准备。`prefill_chunk_size` 这个参数的注释明确写着"only applicable to dynamically exported models"（`llm_executor_settings.h:113`）——分块 prefill 只对动态模型有意义，因为静态模型的 prefill 形状已经固定。这层静态/动态的选择对上层同样不可见。
 
 无论走哪条分支，工厂返回的都是 `absl::StatusOr<std::unique_ptr<LlmExecutor>>`。上层拿到的是同一个 `LlmExecutor` 抽象（第 5 章那个接口），不知道底下是 CPU 还是 NPU、是 Static 还是 Dynamic。这就是"可插拔后端"落到代码里的样子：一个枚举、一个工厂、一个共同接口。加一个新后端，就是加一个 `case`，上层一行不改。
 
@@ -154,13 +154,13 @@ if (sched_setaffinity(0, sizeof(mask), &mask) != 0) {  // (2)
 
 `(1)` 把每个性能核编号写进一个位掩码。`(2)` `sched_setaffinity` 的第一个参数是 0，代表当前线程。这是一个建议而非命令，头文件注释说得明白："The scheduler will then attempt to run the thread on these cores most of the time"（`cpu_affinity_utils.h:31`）。调度器多数时候会照办，但没有硬保证。绑核失败不致命：只记一条 warning，推理照跑，只是可能落到能效核上慢一点。
 
-这段代码在推理流水线里的位置很靠前。它不在 decode 循环里，而在引擎创建时执行一次（`engine_factory.h:136`）：`if (IsPixelTensorDevice())` 为真才查核、绑核，且绑的是引擎创建线程本身。头文件注释说明这次绑核会波及该线程之后创建的子线程（"the current thread and any child threads it creates"，`cpu_affinity_utils.h:31`），推理线程池由此继承同一份亲和性。绑一次，此后整个会话的推理线程都倾向留在性能核上。
+这段代码在推理流水线里的位置很靠前。它不在 decode 循环里，而在引擎创建时执行一次（`runtime/engine/engine_factory.h:136`）：`if (IsPixelTensorDevice())` 为真才查核、绑核，且绑的是引擎创建线程本身。头文件注释说明这次绑核会波及该线程之后创建的子线程（"the current thread and any child threads it creates"，`cpu_affinity_utils.h:31`），推理线程池由此继承同一份亲和性。绑一次，此后整个会话的推理线程都倾向留在性能核上。
 
 ### 线程数：为什么默认是 4
 
 线程本身由一个线程池管（`runtime/framework/threadpool.h:51`），构造时给一个上限 `max_num_threads`（`:57`）。这里说的是算子内并行度——一个矩阵乘法拆给几个线程一起算。用几个线程是个权衡：线程多了未必更快，因为 decode 阶段的瓶颈是内存带宽而非算力（第 1 章的带宽约束），线程再多也快不过内存往核里喂权重的速度；而线程一多，功耗和发热却是实打实地涨。
 
-这个数默认是 4（`CpuConfig::number_of_threads`，`runtime/executor/llm_executor_settings.h:120`），注释直接写"The default value is 4"。CLI 用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`）。覆盖路径落在 CPU 后端专属的配置分支里（`litert_lm_lib.cc:523`）：
+这个数默认是 4（`CpuConfig::number_of_threads`，`runtime/executor/llm_executor_settings.h:120`），注释直接写"The default value is 4"。CLI 用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`）。覆盖路径落在 CPU 后端专属的配置分支里（`runtime/engine/litert_lm_lib.cc:523`）：
 
 ```cpp
 if (backend == Backend::CPU) {
@@ -184,7 +184,7 @@ if (backend == Backend::CPU) {
 
 GPU 的强项是大规模并行，适合矩阵运算。它在端侧的一个优化第 5 章已经埋过引子：片上采样（on-device sampling），把采样这一步直接放在 GPU 上做，省掉 decode 每步一次 logits 回传 CPU。
 
-回忆第 5 章的两条采样路径。设备上采样之所以快，是因为采样这一步不必把 logits 搬回 CPU。这次省掉的拷贝值多少，可以当面算一笔账。decode 每一步都会产出一整组 logits，长度等于词表大小。以 Gemma 系列约 26 万的词表、logits 按 FP16（2 字节）计，一步的 logits 就是 26 万 × 2 字节 ≈ 512 KiB。若采样在 CPU 做，这 512 KiB 每步都要从 GPU 显存拷回 CPU 内存（一次 device→host 传输）；在 GPU 上就地采样，这次拷贝省下。单看一步不大，但 decode 是整个生成里最频繁的操作，生成 512 个 token 就是 512 次这样的往返。第 1 章说过 decode 是内存带宽受限的：每一步真正的工作量是把几个 GiB 的权重读一遍，相比之下 512 KiB 的 logits 回传占比不高，所以这次省拷贝对整机吞吐的贡献是二阶的，很难从整机数字里单独剥离出来（本书未单测）。它更实在的价值在延迟链路上：省掉 device→host 同步，decode 每步少一次跨设备等待。
+回忆第 5 章的两条采样路径。设备上采样之所以快，是因为采样这一步不必把 logits 搬回 CPU。这次省掉的拷贝值多少，可以当面算一笔账。decode 每一步都会产出一整组 logits，长度等于词表大小。按第 5 章的实剖口径：基准模型词表 262144、logits 以 FP32（4 字节）存储，一步的 logits 就是 262144 × 4 字节 = 1 MiB。若采样在 CPU 做，这 1 MiB 每步都要从 GPU 显存拷回 CPU 内存（一次 device→host 传输）；在 GPU 上就地采样，这次拷贝省下。单看一步不大，但 decode 是整个生成里最频繁的操作，生成 512 个 token 就是 512 次这样的往返。第 1 章说过 decode 是内存带宽受限的：每一步真正的工作量是把几个 GiB 的权重读一遍，相比之下 1 MiB 的 logits 回传占比不高，所以这次省拷贝对整机吞吐的贡献是二阶的，很难从整机数字里单独剥离出来（本书未单测）。它更实在的价值在延迟链路上：省掉 device→host 同步，decode 每步少一次跨设备等待。
 
 采样器怎么建、跑在哪，都在 `InitializeSampler` 里定（`runtime/executor/llm_litert_compiled_model_executor.h:160`，实现见 `.cc:1335`）：
 
@@ -220,7 +220,7 @@ RETURN_IF_ERROR(SetSamplerInputHandling(/*reset=*/true));  // (1)
 
 `(1)` 先 `false` 再 `true` 这一对调用是有意的：注释写着"Set, then reset the input handling to get the underlying model ready, but not to bind the input tensors"。先设一遍让底层模型把输入形状准备好，再复位解绑，避免在初始化阶段就把张量绑死。真正的绑定发生在 decode 循环里。
 
-绑定的核心是 `SetSamplerInputHandling`（`llm_litert_compiled_model_executor.cc:1404`），它把一组张量指针和一个回调函数一起交给采样器：
+绑定的核心是 `SetSamplerInputHandling`（`llm_litert_compiled_model_executor.cc:1402`），它把一组张量指针和一个回调函数一起交给采样器：
 
 ```cpp
 return sampler_->SetInputTensorsAndInferenceFunc(
@@ -246,7 +246,7 @@ int LlmLiteRtCompiledModelExecutorBase::BindTensorsAndRunDecodeStatic(
 
 `(1)` 回调里绑好张量就直接跑下一步 decode。控制权在设备侧循环，CPU 不必在每步之间介入把 token 搬来搬去。这就形成"token 不出显存"的完整回路：采样在 GPU 上完成，选出的 token 写回设备输入张量，回调在设备上触发下一次 decode。
 
-还有一处双缓冲的细节。position 和 mask 张量需要区分"这一步"和"上一步"，因为 decode 推进时当前步要读上一步的位置。`SwapSamplerInputTensors` 用 `std::swap` 把"当前"和"上一步"两块缓冲对调指针，再重新绑定（`llm_litert_compiled_model_executor.cc:1391`）：读旧写新、交换指针，不额外分配也不拷贝内容。这与第 6 章 KV cache 的双缓冲是同一套思路，都用指针交换回避对同一块缓冲的读写冲突。
+还有一处双缓冲的细节。position 和 mask 张量需要区分"这一步"和"上一步"，因为 decode 推进时当前步要读上一步的位置。`SwapSamplerInputTensors` 用 `std::swap` 把"当前"和"上一步"两块缓冲对调指针，再重新绑定（`llm_litert_compiled_model_executor.cc:1390`）：读旧写新、交换指针，不额外分配也不拷贝内容。这与第 6 章 KV cache 的双缓冲是同一套思路，都用指针交换回避对同一块缓冲的读写冲突。
 
 这正是第 18 问的答案。两个后端的整体吞吐差距见附录 D：本书基准（Apple M5 Pro，Gemma 4 E4B，context 1024，decode 128 token）上 gpu 的 decode ≈ 50.6 tok/s、cpu ≈ 24.7 tok/s，gpu 约为 cpu 的 2 倍；prefill 在同条件下 gpu ≈ 999、cpu ≈ 259，gpu 约为 cpu 的 3.9 倍〔基准 D〕。片上采样只是这个整体差距里的一项，无法单独计价。
 
@@ -305,4 +305,4 @@ struct NpuAuxiliaryContext {                         // (3)
 5. **设计题。** 要给运行时接入一个新后端 XPU，从本章的分发路径出发，列出至少三处必须改动的位置。
 
 
-<!-- NPU 无真机，全程标注"基于代码分析"。片上采样省多少、cpu 线程数扫描、cpu vs gpu 对比 待基准 D 回填〔基准 D〕。#2281 现象按【文档】级引用，成因为基于浮点常识的解释、未臆测 issue 内部。图 8-2(数据路径) 表 8-1(权衡) 规格见 notes.md，本轮出签名图 8-1。 -->
+<!-- NPU 无真机，全程标注"基于代码分析"。cpu vs gpu 对比已回填（50.6/24.7、999/259 tok/s〔基准 D〕）；片上采样单独计价与 cpu_thread_count 扫描未做（方法已记录在正文）。#2281 现象按【文档】级引用，成因为基于浮点常识的解释。图 8-2（数据路径）、表 8-1（权衡）未出，素材在正文齐备。 -->

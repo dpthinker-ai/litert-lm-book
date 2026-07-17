@@ -38,7 +38,7 @@ bazel-bin/runtime/engine/litert_lm_main --backend=cpu --model_path=<你的模型
 采集脚本在书稿仓的 `experiments/`。基准数据集一次性采集：
 
 ```bash
-# 前置：litert-lm 已装、模型已 import（litert-lm list 可见）、已 hf 登录
+# 前置：litert-lm 已装、模型已 import（litert-lm list 可见；litert-community 公开模型无需登录）
 experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 次，输出存 experiments/data/
 ```
 
@@ -53,7 +53,7 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 | 6 | KV cache 内存/速度 | benchmark 扫 `--max-num-tokens`；`get_token_count` 观察多轮 |
 | 7 | 冷启动 | `--cache disk/no` 对比；分段并行加载开关仅 C API 暴露（`…set_parallel_file_section_loading`），CLI 未暴露、本书未单测 |
 | 8 | 后端对比 | `--backend cpu` vs `gpu`；扫 CPU 线程数 |
-| 9 | 推测解码 | `--enable-speculative-decoding true/false`（需支持 MTP 的模型，如 Gemma 4） |
+| 9 | 推测解码 | `--enable-speculative-decoding true/false/auto`（需支持 MTP 的模型，如 Gemma 4；v0.13.1 中 auto 实为关，见第 9 章） |
 | 10 | 多模态 / 约束 | 图片输入端到端；约束解码开/关看工具调用成功率 |
 | 11 | 多语言一致性 | 同一 prompt 走 Python 与 C++，对比输出 |
 

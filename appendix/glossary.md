@@ -14,7 +14,7 @@
 | quantization | 量化 | 1 | 把权重降到低比特（如 int4=0.5 字节/参数）以压体积、提带宽利用率 |
 | Roofline | 屋顶线 | 2 | 判断一段计算被算力还是带宽顶住的分析框架 |
 | TTFT | 首 token 时延 | 2 | time-to-first-token，从发起到第一个字出来的时间 |
-| tokens/s | — | 2 | 吞吐单位；prefill 常比 decode 高一到两个数量级，两者不可混谈 |
+| tokens/s | — | 2 | 吞吐单位；prefill 常比 decode 高数倍到一个数量级，两者不可混谈 |
 | Engine | — | 3 | 重量级、持有模型权重、可被多会话共享的资源持有者 |
 | Session | 会话 | 3 | 轻量、有状态的一次对话，持 KV cache 与采样配置 |
 | Conversation | 对话层 | 3 | 面向使用者的多轮对话 API，维护历史、套模板 |

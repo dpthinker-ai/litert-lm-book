@@ -1,35 +1,40 @@
-<svg viewBox="0 0 640 380" width="640" height="380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Roofline 屋顶线模型">
+<svg viewBox="0 0 680 340" width="680" height="340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiteRT-LM 五层架构">
   <style>
     text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    .axis { stroke: var(--fig-text, #1f2328); stroke-width: 1.5; }
-    .grid { stroke: var(--fig-border-2, #e6eaef); stroke-width: 1; }
-    .roof { stroke: var(--fig-accent, #0b57d0); stroke-width: 2.5; fill: none; }
+    .layer  { stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+    .l1 { fill: var(--fig-bg, #ffffff); }
+    .l2 { fill: var(--fig-surface, #f6f8fa); }
+    .l3 { fill: var(--fig-surface-2, #eef1f5); }
     .t  { fill: var(--fig-text, #1f2328); }
     .ts { fill: var(--fig-text-soft, #57606a); }
-    .dot { fill: var(--fig-accent-2, #6639ba); }
-    .band { fill: var(--fig-surface, #f6f8fa); }
+    .arrow { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; fill: none; }
   </style>
-  <text class="t" x="320" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">Roofline：性能被算力或带宽顶住</text>
-  <!-- 坐标轴 -->
-  <line class="axis" x1="70" y1="320" x2="600" y2="320"/>
-  <line class="axis" x1="70" y1="320" x2="70" y2="60"/>
-  <text class="ts" x="335" y="360" text-anchor="middle" style="font-size:12px">算术强度（每读一字节摊上多少次计算）→</text>
-  <text class="ts" x="24" y="190" text-anchor="middle" style="font-size:12px" transform="rotate(-90 24 190)">性能 →</text>
-  <!-- 屋顶线：先斜坡（带宽受限）后水平（算力受限） -->
-  <path class="roof" d="M70,300 L300,110 L600,110"/>
-  <text class="ts" x="470" y="100" text-anchor="middle" style="font-size:11px">算力屋顶（峰值 TOPS）</text>
-  <text class="ts" x="150" y="180" text-anchor="middle" style="font-size:11px" transform="rotate(-39 150 180)">带宽斜坡</text>
-  <!-- 拐点 -->
-  <line class="grid" x1="300" y1="110" x2="300" y2="320"/>
-  <text class="ts" x="300" y="336" text-anchor="middle" style="font-size:10px">拐点</text>
-  <!-- decode 点（低强度，贴带宽斜坡） -->
-  <circle class="dot" cx="130" cy="250" r="6"/>
-  <text class="t" x="130" y="238" text-anchor="middle" style="font-size:12px;font-weight:700">decode</text>
-  <text class="ts" x="130" y="278" text-anchor="middle" style="font-size:10px">每步读全部权重</text>
-  <text class="ts" x="130" y="291" text-anchor="middle" style="font-size:10px">→ 带宽受限</text>
-  <!-- prefill 点（高强度，近算力屋顶） -->
-  <circle class="dot" cx="470" cy="110" r="6"/>
-  <text class="t" x="470" y="140" text-anchor="middle" style="font-size:12px;font-weight:700">prefill</text>
-  <text class="ts" x="470" y="158" text-anchor="middle" style="font-size:10px">多 token 共用权重</text>
-  <text class="ts" x="470" y="171" text-anchor="middle" style="font-size:10px">→ 算力受限</text>
+  <text class="t" x="340" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">LiteRT-LM 五层架构（越往下越贴近硬件）</text>
+  <g>
+    <rect class="layer l1" x="120" y="44"  width="440" height="46" rx="5"/>
+    <rect class="layer l1" x="120" y="98"  width="440" height="46" rx="5"/>
+    <rect class="layer l2" x="120" y="152" width="440" height="46" rx="5"/>
+    <rect class="layer l2" x="120" y="206" width="440" height="46" rx="5"/>
+    <rect class="layer l3" x="120" y="260" width="440" height="46" rx="5"/>
+  </g>
+  <text class="t"  x="140" y="66"  style="font-size:13px;font-weight:700">① 对外接口层</text>
+  <text class="ts" x="140" y="83"  style="font-size:11px">Engine / Session · CLI · C API · 各语言绑定　〔第 3、11 章〕</text>
+  <text class="t"  x="140" y="120" style="font-size:13px;font-weight:700">② 对话与编排层</text>
+  <text class="ts" x="140" y="137" style="font-size:11px">对话/模板 · prefill→decode 编排　〔第 3、4、5 章〕</text>
+  <text class="t"  x="140" y="174" style="font-size:13px;font-weight:700">③ 推理执行层</text>
+  <text class="ts" x="140" y="191" style="font-size:11px">LiteRT 跑模型 · KV cache · 后端屏蔽　〔第 6、8、9 章〕</text>
+  <text class="t"  x="140" y="228" style="font-size:13px;font-weight:700">④ 组件层</text>
+  <text class="ts" x="140" y="245" style="font-size:11px">tokenizer · 采样 · 约束解码　〔第 5、10 章〕</text>
+  <text class="t"  x="140" y="282" style="font-size:13px;font-weight:700">⑤ 格式与基础设施层</text>
+  <text class="ts" x="140" y="299" style="font-size:11px">.litertlm 格式 · 线程池　〔第 7 章〕</text>
+  <!-- 使用者 -->
+  <text class="ts" x="60" y="70" text-anchor="middle" style="font-size:11px">使用者</text>
+  <path class="arrow" marker-end="url(#a)" d="M60,80 V240 M60,80 H115"/>
+  <text class="ts" x="60" y="255" text-anchor="middle" style="font-size:10px">只碰</text>
+  <text class="ts" x="60" y="267" text-anchor="middle" style="font-size:10px">最上层</text>
+  <!-- 硬件 -->
+  <text class="ts" x="615" y="287" text-anchor="middle" style="font-size:11px">CPU</text>
+  <text class="ts" x="615" y="300" text-anchor="middle" style="font-size:11px">GPU/NPU</text>
+  <path class="arrow" marker-end="url(#a)" d="M565,283 H600"/>
+  <defs><marker id="a" orient="auto" markerWidth="7" markerHeight="7" refX="5" refY="3"><path d="M0,0 L6,3 L0,6 z" fill="var(--fig-accent, #0b57d0)"/></marker></defs>
 </svg>

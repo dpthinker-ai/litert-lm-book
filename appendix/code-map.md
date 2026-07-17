@@ -9,7 +9,7 @@
 |---|---|---|
 | `runtime/engine/engine.h` | Engine / Session 对外接口 | 第 3 章 |
 | `runtime/engine/engine_settings.*`、`engine_factory.h` | 引擎配置、后端自注册工厂 | 第 3、8 章 |
-| `runtime/engine/litert_lm_main.cc` | CLI 演示程序 `litert_lm_main` | 第 2 章 |
+| `runtime/engine/litert_lm_main.cc`、`litert_lm_lib.cc` | CLI 演示程序、引擎装配（后端配置分支） | 第 2、8 章 |
 | `runtime/engine/cpu_affinity_utils.*` | CPU 亲和性（绑性能核） | 第 8 章 |
 | `runtime/conversation/` | 多轮对话、聊天模板、模板 diff、model_data_processor | 第 3 章 |
 | `runtime/conversation/io_types.h` | Message(JSON)、Preface、Channel | 第 3、6、10 章 |
@@ -31,6 +31,10 @@
 | `runtime/components/lora.*`、`lora_manager.*` | LoRA 适配器 | 第 7 章 |
 | `runtime/components/preprocessor/` | 图像预处理、patchify | 第 10 章 |
 | `runtime/framework/threadpool.*`、`execution_queue.*` | 线程池、异步任务队列 | 第 4、8 章 |
+| `runtime/framework/threaded_execution_manager.*` | 异步执行管理器（任务依赖链） | 第 4 章 |
+| `runtime/util/memory_mapped_file.*`、`litert_lm_loader.*`、`lora_data.h` | 跨平台 mmap、段加载器、LoRA 数据视图 | 第 7 章 |
+| `runtime/executor/llm_executor_settings.h`、`llm_executor_io_types.h` | 执行器配置（线程数/KV 增量/取消开关）与 IO 类型 | 第 4、6、8 章 |
+| `runtime/components/sampling_cpu_util.*` | CPU 采样实现（top-k/top-p/温度） | 第 5 章 |
 | `schema/core/`（`litertlm_header_schema.fbs`、`litertlm_read.*`、`litertlm_print.*`） | `.litertlm` 文件格式与读取 | 第 2、7 章 |
 | `schema/capabilities/speculative_decoding.*` | 推测解码能力声明 | 第 9 章 |
 | `c/engine.h`、`c/engine.cc` | C ABI（不透明句柄 + C 函数） | 第 11 章 |

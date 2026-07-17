@@ -21,7 +21,7 @@
 ## 第 3 章
 
 1. 任何在渲染末尾追加固定收尾标记（如 `<end_of_turn>` 之后再补一个总结符）的模板：追加新消息时收尾标记位置改变，新串不再以旧串为前缀。前缀检查 `new_string.substr(0, old_string.size()) != old_string` 拦截并返回 `InternalError`。
-2. Clone 复用的是已算好的 KV cache（跨会话），代价是一次深拷贝（4096 上下文约 117 MB）；diff 复用的是同一会话的历史 KV，代价是每轮把旧串、新串各渲染一遍（字符串开销，远小于 prefill）。
+2. Clone 复用的是已算好的 KV cache（跨会话），代价是一次深拷贝（4096 上下文 112 MiB）；diff 复用的是同一会话的历史 KV，代价是每轮把旧串、新串各渲染一遍（字符串开销，远小于 prefill）。
 3. 长度检查拦「新渲染反而变短」（收尾标记被挪走一类）；前缀检查拦「等长或更长但前部被改写」（历史消息被模板重排一类）。
 4. 其一，嵌入表是量化的，取数须伴随解量化，编译成子图后两步合并为算子；其二，与主模型解耦后，多模态编码器可以独立产出同空间的 embedding 接入。
 5. 例如模板里有字符串字面量 `"call .startswith(x) manually"`：正则按文本匹配 `\.startswith\\(...\\)`，会把说明文字改写成 ` is startingwith x`，语义被破坏。
@@ -44,8 +44,8 @@
 
 ## 第 6 章
 
-1. 28 KiB × 8192 = 224 MiB；静态槽位 32003 全预留 = 28672 B × 32003 ≈ 918 MB。
-2. Clone 拷贝 4096 × 28 KiB ≈ 117 MB（`CloneKVCacheBuffers` 逐块 `CopyTensorBuffer`）；Rewind 只把 `current_step` 游标改回检查点值，KV 数据原地留用。一个搬字节，一个改整数。
+1. 28 KiB × 8192 = 224 MiB；静态槽位 32003 全预留 = 28672 B × 32003 ≈ 875 MiB。
+2. Clone 拷贝 4096 × 28 KiB ≈ 112 MiB（`CloneKVCacheBuffers` 逐块 `CopyTensorBuffer`）；Rewind 只把 `current_step` 游标改回检查点值，KV 数据原地留用。一个搬字节，一个改整数。
 3. 数据不动、指针换向：读旧写新之后 `std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_)`；prefill 路径在 `llm_litert_compiled_model_executor.cc:738`、decode 路径在 `:947`。
 4. 内存：预留缓冲随之翻倍（int8 下每 token 28 KiB）。速度：固定形状路径上注意力按预留长度计算，mask 屏蔽的位置也参与读写，decode 变慢——预留多大，每步为多大付账。
 5. 本书基准模型：权重 int4、激活 fp16（GPU 默认）、KV int8。另一合法组合如：权重 int8、激活 fp32、KV fp16——三者各自独立可选。

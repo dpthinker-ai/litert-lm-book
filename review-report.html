@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>全书评审报告 · 《端侧大模型推理：原理与 LiteRT-LM 实现》</title>
+<style>
+  :root { --ink:#1c1e21; --muted:#65676b; --line:#ddd; --bg:#f7f7f8;
+          --p0:#c5221f; --p1:#e8710a; --p2:#188038; --p3:#5f6368; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+         color: var(--ink); max-width: 1080px; margin: 0 auto; padding: 32px 24px 96px; line-height: 1.65; }
+  h1 { font-size: 24px; border-bottom: 3px solid var(--ink); padding-bottom: 10px; }
+  h2 { font-size: 19px; margin-top: 48px; border-left: 6px solid var(--ink); padding-left: 12px; }
+  h2.p0 { border-color: var(--p0); } h2.p1 { border-color: var(--p1); }
+  h2.p2 { border-color: var(--p2); } h2.p3 { border-color: var(--p3); }
+  .meta { color: var(--muted); font-size: 14px; }
+  .verdict { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; vertical-align: top; text-align: left; }
+  th { background: var(--bg); white-space: nowrap; }
+  td.loc { white-space: nowrap; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
+  .sev { display: inline-block; font-size: 12px; font-weight: 600; color: #fff; border-radius: 4px; padding: 1px 8px; white-space: nowrap; }
+  .sev.p0 { background: var(--p0); } .sev.p1 { background: var(--p1); }
+  .sev.p2 { background: var(--p2); } .sev.p3 { background: var(--p3); }
+  .stats { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0; }
+  .stat { flex: 1 1 150px; border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; background: #fff; }
+  .stat b { font-size: 26px; display: block; }
+  .todo { color: var(--muted); white-space: nowrap; }
+  .done { color: var(--p2); font-weight: 600; white-space: nowrap; }
+  .defer { color: var(--p1); white-space: nowrap; }
+  .progress { border: 2px solid var(--p2); border-radius: 8px; padding: 16px 20px; margin: 24px 0; background: #f0f9f1; }
+  .good li { margin-bottom: 4px; }
+  @media print { body { max-width: none; } h2 { page-break-after: avoid; } tr { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>全书评审报告</h1>
+<p class="meta">《端侧大模型推理：原理与 LiteRT-LM 实现》 · 评审日期 2026-07-16 ·
+范围：11 章 + 尾声 + 附录 A–F（约 10 万字） ·
+方法：全文通读 + BOOK_PLAN 章卡对账 + v0.13.1 冻结 worktree 代码引用抽查（约 100 条）+ 可验算数字全部复算</p>
+
+<div class="verdict">
+<b>总体判断：</b>书稿底子很好——代码引用抽查命中率接近 100%，可验算的账绝大多数算得对，「未复现官方 3 倍」这类诚实报告是难得的数字纪律。
+问题集中在四类：<b>① 8 处源码可证伪的事实硬伤</b>（伤"每个数字可核对"的立身之本）；
+<b>② 约 15 处交叉引用张冠李戴或承诺悬空</b>；<b>③ 章卡承诺的 7 张表、7 张图、约 10 个实验未兑现</b>（系统性）；
+④ 留痕注释与 BOOK_PLAN 状态行过时。另有若干基础设施风险。
+</div>
+
+<div class="stats">
+  <div class="stat"><b style="color:var(--p0)">8</b>P0 事实硬伤</div>
+  <div class="stat"><b style="color:var(--p1)">15</b>P1 交叉引用/承诺</div>
+  <div class="stat"><b style="color:var(--p1)">17</b>P2 章卡承诺缺口</div>
+  <div class="stat"><b style="color:var(--p2)">18</b>P3 留痕/体例</div>
+  <div class="stat"><b style="color:var(--p3)">3</b>P4 基础设施</div>
+</div>
+
+<div class="progress" id="progress">
+<b>执行进度（2026-07-16 完成）</b>
+<p id="progress-body"><b>已完成：</b>P0 全部 8 项（每处均到 v0.13.1 worktree 逐条核验后改写；停止符一案以模型文件 strings 解剖定案：E4B 实为 <code>&lt;turn|&gt;</code>，ch02 dump 系另一模型，已加注）；P1 全部 15 项交叉引用与承诺；P2 第 26 项（图 7-1 底注、图 11-1 图注与正文对齐）；P3 第 29-39 项中除补表/补图外全部（6 章留痕注释重写、BOOK_PLAN 状态行、单位统一 112/875 MiB、附录 B/C/D/E/F、ch09 公式 MathJax 化、ch10 音频节提级与 ANTLR 引文逐字化、图 2-1/2-2 编号与阅读顺序对齐、行号校准 10 余处、引号与措辞）。<code>lint_prose.sh</code> 复归 0 命中。<br>
+<b>暂缓（需专项工时）：</b>P2 第 24/25/27/28 项——7 张权衡表、图 5-2 与 6-3 等补图、约 10 个未做实验、ch01 收益动机与小结；P4 基础设施三项（book/ 嵌套克隆挪位、llama.cpp 侧栏引用在有检出的环境复核、裸文件名体例）待作者决策。</p>
+</div>
+
+<h2 class="p0">P0 · 事实硬伤（源码/数据可证伪，最优先）</h2>
+<table>
+<tr><th>#</th><th>级别</th><th>位置</th><th>问题</th><th>修法</th><th>状态</th></tr>
+<tr><td>1</td><td><span class="sev p0">P0</span></td><td class="loc">ch09:316-329, 282</td><td>「auto 探测」机制链虚构：v0.13.1 中 auto→None→跳过 setter→默认 false，引擎从不调用 <code>HasSpeculativeDecodingSupport</code>（仅 C API/JNI 查询接口）。连带附录 D「MTP 开(auto)」行实际从未开启 MTP。</td><td>重写链路为真实路径；auto 定位为「不触碰默认 false」；<code>:282</code> 与附录 D 标签改为「auto（v0.13.1 实为关）」，开启对照只保留强制 true。</td><td class="todo">待办</td></tr>
+<tr><td>2</td><td><span class="sev p0">P0</span></td><td class="loc">ch06:234-251, 296</td><td><code>RestoreKVCacheBuffers</code> 是零调用方死代码；真实链路 <code>RestoreContext</code> 内 std::move 装载、零拷贝。同章 :253 自相矛盾；表 6-1 与「960 MiB」推断被带垮。</td><td>重写 234-251：真实代价 = CloneKVCacheBuffers 一次深拷 + move 零拷贝；死代码按「未接线的拷贝实现 + b/452977992」表述；表 6-1 同步。</td><td class="todo">待办</td></tr>
+<tr><td>3</td><td><span class="sev p0">P0</span></td><td class="loc">ch04:100</td><td>填充浪费两例都算错：L=1025 工单实为 [1024,128]、浪费 127（非 1023）；另一例 33% 写成 40%。</td><td>换用真实最坏点例子（如 L=1537 或按 {1024,128} 入口集 L=1153，浪费 895、填充率 44%），改后手工复算。</td><td class="todo">待办</td></tr>
+<tr><td>4</td><td><span class="sev p0">P0</span></td><td class="loc">ch02:156 + 术语表</td><td>「prefill 比 decode 高一到两个数量级（10-20 倍）」与同章 20 行前的 65.60 vs 24.80（2.6 倍）矛盾；附录 D 六档中两档 &lt;6 倍。</td><td>改为「约 3 到 20 倍，后端算力越强、上下文越长差距越大」；术语表 tokens/s 条联动。</td><td class="todo">待办</td></tr>
+<tr><td>5</td><td><span class="sev p0">P0</span></td><td class="loc">ch01:42-43</td><td>KV cache「随 decode 分块扩容」以偏概全（仅动态形状模型；基准模型为静态全预留）；指针「第 6 章」指错。</td><td>限定到动态路径并点出基准模型静态预留；「第 6 章」改「第 8 章」。</td><td class="todo">待办</td></tr>
+<tr><td>6</td><td><span class="sev p0">P0</span></td><td class="loc">ch05:353 ↔ ch02:380</td><td>停止符矛盾：ch02 实剖写 <code>&lt;end_of_turn&gt;</code>，ch05 写 <code>&lt;turn|&gt;</code> 且把不存在的证据指给附录 D。</td><td>以 litertlm_print 实际输出为准统一两章；删除虚假指针，证据如需则补入附录 D 第六节。</td><td class="todo">待办</td></tr>
+<tr><td>7</td><td><span class="sev p0">P0</span></td><td class="loc">ch08:187 ↔ ch05:105</td><td>logits 回搬字节数三方矛盾：512 KiB(FP16，无出处) vs 1 MiB(FP32，有实剖依据) vs ch08 练习 1 的 1 MiB。</td><td>ch08 正文改用 FP32/1 MiB 口径（或注明「FP32 为 1 MiB；FP16 减半」）。</td><td class="todo">待办</td></tr>
+<tr><td>8</td><td><span class="sev p0">P0</span></td><td class="loc">ch10:175</td><td>一行两硬伤：54 MiB 应为 52 MiB（2^20 口径可验算）；残留读者可见「待附录 D 基准回填」占位符（附录 D 为纯文本矩阵，永远等不到）。</td><td>54→52；删占位符，改写为纯估算声明。</td><td class="todo">待办</td></tr>
+</table>
+
+<h2 class="p1">P1 · 交叉引用与对读者承诺（专项 pass）</h2>
+<table>
+<tr><th>#</th><th>级别</th><th>位置</th><th>问题</th><th>修法</th><th>状态</th></tr>
+<tr><td>9</td><td><span class="sev p1">P1</span></td><td class="loc">ch11:245, 478, 506</td><td>「第 8 章讲过多模态」「第 9 章 llguidance」×2 —— 均应为第 10 章。</td><td>三处改指第 10 章。</td><td class="todo">待办</td></tr>
+<tr><td>10</td><td><span class="sev p1">P1</span></td><td class="loc">ch11:132 ↔ 172 + 图 11-1</td><td>Web 是否经 C ABI 自相矛盾（Embind 与 JNI 同属需编 C++ 胶水一类）；图 11-1 把四语言全画在 C ABI 上。</td><td>:172 改「Python、Swift 经 C ABI；Kotlin 与 Web 直连 C++」；图注补一句简化声明。</td><td class="todo">待办</td></tr>
+<tr><td>11</td><td><span class="sev p1">P1</span></td><td class="loc">ch09:161, 163</td><td>「LookupPrefill（第 5 章）」应为第 3 章；「浅复制语义（第 6 章）」应为第 7 章。</td><td>两处改章号。</td><td class="todo">待办</td></tr>
+<tr><td>12</td><td><span class="sev p1">P1</span></td><td class="loc">ch06:335</td><td>「第 10 章的 channel 机制会细讲」悬空——ch10 无此内容。</td><td>删括注或改为就地说明。</td><td class="todo">待办</td></tr>
+<tr><td>13</td><td><span class="sev p1">P1</span></td><td class="loc">ch03:220</td><td>「第 4 章会说明 prefill 写入无法轻易撤回」落空，且与第 6 章 Rewind 有张力。</td><td>改指第 6 章 Rewind 或删去前向承诺。</td><td class="todo">待办</td></tr>
+<tr><td>14</td><td><span class="sev p1">P1</span></td><td class="loc">ch02:70 → 305</td><td>承诺「稍后看到取消信号在 tasks.cc 被检查的确切位置」，走读未兑现。</td><td>L305 走读补一句 <code>tasks.cc:487</code> 的 cancelled 检查。</td><td class="todo">待办</td></tr>
+<tr><td>15</td><td><span class="sev p1">P1</span></td><td class="loc">ch02:203, 389</td><td>「本节上文 3.9 倍」实际在下一节；小结「第二篇进入第二层和第三层」与层→章映射矛盾。</td><td>改「下一节」；小结改「第二篇进入对外接口层与对话编排层（第 3–5 章）」。</td><td class="todo">待办</td></tr>
+<tr><td>16</td><td><span class="sev p1">P1</span></td><td class="loc">ch04:3, 50, 92, 183</td><td>章首承诺三项「隐性 CPU 开销」未展开；「下一节会看到掩码 O(L²)」落空；「上一段 TODO」指向错误；「落在 ShouldStop 路径」与 ch05 矛盾。</td><td>删章首三项列举与 :50 前向句；:92 改「下文」；:183 改「decode 主循环开头的取消探测（第 5 章）」。</td><td class="todo">待办</td></tr>
+<tr><td>17</td><td><span class="sev p1">P1</span></td><td class="loc">ch07:227, 268</td><td>「第 2 章用过的 --cache disk」ch02 无；「第 1 章的内存预算表」不存在。</td><td>改指附录 D；改「内存预算账」。</td><td class="todo">待办</td></tr>
+<tr><td>18</td><td><span class="sev p1">P1</span></td><td class="loc">ch06:7</td><td>「两者的定义见第 4 章」指错（decode step 正式展开在第 5 章）。</td><td>改「见第 1 章与第 5 章」。</td><td class="todo">待办</td></tr>
+<tr><td>19</td><td><span class="sev p1">P1</span></td><td class="loc">epilogue:5</td><td>第四篇内容（多模态/工具调用/绑定）被并入「第三篇」枚举。</td><td>拆为「第三篇……优化，与第四篇的……」。</td><td class="todo">待办</td></tr>
+<tr><td>20</td><td><span class="sev p1">P1</span></td><td class="loc">ch05:51</td><td>承诺「算清搬运占单步耗时多少」，兑现的是字节量占比（前提未点明）。</td><td>改措辞为「数据量占比」，或补「同走内存子系统，字节比≈耗时比」。</td><td class="todo">待办</td></tr>
+<tr><td>21</td><td><span class="sev p1">P1</span></td><td class="loc">ch01:30, 144</td><td>「见附录 A」指针悬空（术语表无 GiB 条）；练习 4 用了第 2 章才定义的「算术强度」。</td><td>删指针；练习改「用本章带宽账解释……（第 2 章命名为算术强度）」。</td><td class="todo">待办</td></tr>
+<tr><td>22</td><td><span class="sev p1">P1</span></td><td class="loc">preface:7</td><td>「已部署在手机、Chrome……」——所引官方博客只列 Chrome / Chromebook Plus / Pixel Watch。</td><td>改为与出处一致的三项。</td><td class="todo">待办</td></tr>
+<tr><td>23</td><td><span class="sev p1">P1</span></td><td class="loc">ch02:355-383</td><td>litertlm_print dump（3 段、3.58 GB）与附录 D 对 E4B 的实剖（10 段、3.66 GB）对不上，dump 未注明模型。</td><td>加注「此 dump 为格式示意，E4B 完整段清单见附录 D 第六节」（或日后换真实 dump）。</td><td class="todo">待办</td></tr>
+</table>
+
+<h2 class="p1">P2 · 章卡承诺缺口（系统性：图表 + 实验 + 内容块）</h2>
+<table>
+<tr><th>#</th><th>级别</th><th>位置</th><th>问题</th><th>修法</th><th>状态</th></tr>
+<tr><td>24</td><td><span class="sev p1">P2</span></td><td class="loc">ch03/04/07/08/10/11</td><td>六章零表格，违反 CLAUDE.md「第 3-9 章至少 1 张权衡表」；表 3-1/4-1/7-1/8-1/9-1/10-1/11-1 均章卡承诺未出。素材多在正文现成。</td><td>逐章补表（表 9-1 数据已在附录 D 齐备，成本最低）；或修订章卡。</td><td class="todo">待办</td></tr>
+<tr><td>25</td><td><span class="sev p1">P2</span></td><td class="loc">ch05/06/07/08/09/10 + ch03</td><td>章卡承诺的图 3-2、5-2、6-3、7-2、8-2、9-2、10-2 未出。最该补：ch05 停止词暂存状态变迁、ch06 Clone/Rewind 状态分叉。</td><td>补关键两张图起步；其余补画或回写章卡。</td><td class="todo">待办</td></tr>
+<tr><td>26</td><td><span class="sev p1">P2</span></td><td class="loc">fig-7-1.svg, fig-11-1.svg</td><td>图与正文打架：7-1 底注「各段可并行读」正是正文否定的说法；11-1 与 Kotlin/Web 直连 C++ 矛盾。</td><td>改 SVG 底注/图注文字。</td><td class="todo">待办</td></tr>
+<tr><td>27</td><td><span class="sev p1">P2</span></td><td class="loc">多章</td><td>约 10 个章卡实验未做：ch03 两项、ch04 async 开关、ch06 三个、ch07 两个、ch08 线程扫描、ch09 文体接受率、ch10 两个、ch11 两个。部分已诚实论证放弃但章卡未核销。</td><td>补做可行的（ch08 线程扫描成本最低）；其余在章卡/附录 D 开放项正式核销。</td><td class="todo">待办</td></tr>
+<tr><td>28</td><td><span class="sev p1">P2</span></td><td class="loc">ch01, 03, 07, 11</td><td>内容块缺失：ch01 隐私/成本收益动机；ch03 EngineFactory 自注册；ch07 weight cache；ch11 Copybara。ch01 还缺章末小结（其余章都有）。</td><td>补写或回写章卡；ch01 补小结。</td><td class="todo">待办</td></tr>
+</table>
+
+<h2 class="p2">P3 · 留痕、单位与体例（低成本批量修）</h2>
+<table>
+<tr><th>#</th><th>级别</th><th>位置</th><th>问题</th><th>修法</th><th>状态</th></tr>
+<tr><td>29</td><td><span class="sev p2">P3</span></td><td class="loc">ch06:370, ch07:371, ch08:308, ch09:366, ch10:298, ch11:529</td><td>章末 HTML 注释过时（「待基准 D 回填」但已回填等）。</td><td>按当前状态重写或删除。</td><td class="todo">待办</td></tr>
+<tr><td>30</td><td><span class="sev p2">P3</span></td><td class="loc">BOOK_PLAN.md 头部</td><td>状态行与事实不符：「lint 0 命中」（实际 4 处）、附录 A-D（实际 A-F）、已关闭 ⬜ 未更新。</td><td>更新状态行；顺手修掉 4 处「换句话说」使 lint 归 0。</td><td class="todo">待办</td></tr>
+<tr><td>31</td><td><span class="sev p2">P3</span></td><td class="loc">ch06:23/25/33 + 附录 D</td><td>MB/MiB 混用（117 MB = 112 MiB）；附录 D「3.4 GB / 3.66 GB」同一文件两个数。</td><td>全书统一二进制口径（112 MiB、3.66 GB（约 3.4 GiB））。</td><td class="todo">待办</td></tr>
+<tr><td>32</td><td><span class="sev p2">P3</span></td><td class="loc">附录 D MTP 节</td><td>强制 MTP 49.0 tok/s 数据点不在任何 CSV——全书最硬附录里唯一无凭证数字。</td><td>补记凭证位置或补 CSV 行。</td><td class="todo">待办</td></tr>
+<tr><td>33</td><td><span class="sev p2">P3</span></td><td class="loc">附录 F</td><td>正文引用的 #2418、#2505 未收录（靠「等」涵盖）。</td><td>枚举齐全、去「等」。</td><td class="todo">待办</td></tr>
+<tr><td>34</td><td><span class="sev p2">P3</span></td><td class="loc">附录 B, C</td><td>代码地图缺 <code>runtime/util/</code> 整目录与数个高频引用文件；附录 C「已 hf 登录」与公开模型口径矛盾、MTP 只有两档。</td><td>补行；删「已 hf 登录」、补 auto 档。</td><td class="todo">待办</td></tr>
+<tr><td>35</td><td><span class="sev p2">P3</span></td><td class="loc">ch09:269, 273</td><td>两条核心公式用纯文本伪 TeX（全书刚升级 MathJax 4）。</td><td>改 <code>$$…$$</code> 展示公式。</td><td class="todo">待办</td></tr>
+<tr><td>36</td><td><span class="sev p2">P3</span></td><td class="loc">ch10:179, 33, 116, 262, 264-272</td><td>音频节错挂在图像节下（标题层级）；patch 数=槽位数与 :153 矛盾；「内存下」措辞；ANTLR 无括注且引文被并行（违反逐字规范）。</td><td>音频提为 ##；:33 加池化限定；措辞修正；恢复 .g4 逐行原貌。</td><td class="todo">待办</td></tr>
+<tr><td>37</td><td><span class="sev p2">P3</span></td><td class="loc">ch02 图序</td><td>图 2-2 先于图 2-1 出现，编号与阅读顺序颠倒。</td><td>交换两 SVG 文件名与正文编号引用。</td><td class="todo">待办</td></tr>
+<tr><td>38</td><td><span class="sev p2">P3</span></td><td class="loc">ch05:7, ch06:315/156, ch07:12, ch08 多处, ch11 三处</td><td>行号小偏差（如 tasks.cc:111→:110、kv_cache.cc:216-219→:195-198、lora.cc:70→:64 等）。</td><td>逐条到 worktree 复核后校准。</td><td class="todo">待办</td></tr>
+<tr><td>39</td><td><span class="sev p2">P3</span></td><td class="loc">ch07:127/40/42/13, ch08:90/157/163, ch03:251/284, epilogue:13, ch06:349/25</td><td>小断言不准与体例：禁止拷贝（实放行移动）、递减（FP16/INT16 打平）、ARTISAN 枚举漏 CPU_ARTISAN、「内存墙」重复括注、裸文件名首现、两处引号未闭合、「不联网」措辞、SessionState「引用」措辞等。</td><td>逐条微调。</td><td class="todo">待办</td></tr>
+</table>
+
+<h2 class="p3">P4 · 基础设施（需作者决策，不动手）</h2>
+<table>
+<tr><th>#</th><th>位置</th><th>问题</th><th>建议</th></tr>
+<tr><td>40</td><td class="loc">book/</td><td>mdBook build-dir 内嵌套了一个带 GitHub remote 的完整 clone——<code>mdbook build</code> 会清空 build-dir，有销毁该克隆的风险。</td><td>把部署克隆挪到 <code>book/</code> 之外（涉及文件移动与 remote，待作者确认后执行）。</td></tr>
+<tr><td>41</td><td class="loc">~/workspace</td><td>核查用的 v0.13.1 worktree 此前不存在（评审时已补建于 <code>LiteRT-LM-v0.13.1</code>）；llama.cpp 侧栏引用（@ b9873，约 10 处）全书无法本地核验。</td><td>保留 worktree 并写入流程；统稿时在有 llama.cpp 检出的环境复核侧栏引用。</td></tr>
+<tr><td>42</td><td class="loc">全书 202 条引用</td><td>部分用裸文件名（<code>tasks.cc:86</code>、<code>engine.h:270</code>），重名文件（c/engine.h vs runtime/engine/engine.h）有歧义风险。</td><td>体例：首次出现一律全路径，同章后续可裸名。</td></tr>
+</table>
+
+<h2>附 · 抽查验证为良好的方面（无需改动）</h2>
+<ul class="good">
+<li>代码引用：约 100 条抽查几乎全部精确命中 v0.13.1，引文逐字一致（含保留源码注释拼写）。</li>
+<li>数字验算：ch01 三笔账、ch02 TTFT/Roofline、ch09 加速比三档、附录 D 主表 24 格与 CSV 中位数逐格吻合。</li>
+<li>附录 D/E 质量：练习 55 题与答案一一对应，复算题抽查 8 道全对；「未复现 3 倍」如实报告是数字纪律范本。</li>
+<li>SVG 规范：12 张图全部带 CSS 变量 fallback；SUMMARY.md 目录与文件全部一致。</li>
+</ul>
+
+</body>
+</html>
