@@ -164,6 +164,18 @@ std::transform(prefill_input_pos_ptr, prefill_input_pos_ptr + prefill_length,
 
 (1) 这里把要处理的长度减一：每次 prefill 都刻意留一个 token 不处理，把它当作"pending token"挂到下一次 prefill 或 decode 的第一步。这解释了上一节 `>=` 的越界判断——那个被留下的位置，正是给这个 pending token 的。(2) `current_step` 是一个随每个 token 自增的计数器，它填进 position 张量、也标记 KV cache 里这段 token 的落位。这个 step 计数器会一直用到 decode（第 5 章），是 prefill 与 decode 之间的衔接点。
 
+### prefill 的隐性 CPU 开销：掩码、装配与交换
+
+`PrefillInternal` 的核心是把输入交给 LiteRT 跑 signature，但围绕这次调用还有三件 host 侧的活。它们不占 FLOPs，却实实在在占时间，是 signature 之外的固定税。
+
+其一，**掩码填充**。每次 prefill 都要把 4D 注意力掩码张量重写一遍：`FillAttentionMask`（`runtime/executor/litert_compiled_model_executor_utils.cc:339`）锁缓冲后按 `[batch, …, steps, channel]` 的形状逐位填充，prefill 路径在 `:668` 调用、`steps` 取整段长度，decode 每步也以 `steps=1` 调一次（`:900`）。掩码规模与 prefill 长度乘总上下文成正比——长 prefill 时这是一笔 O(L×S) 的 host 侧写入，与第 1 节那条「注意力随长度平方增长」的吞吐回落同一来源，只是它落在 CPU 上、不进算子的账。
+
+其二，**embedding 装配**。除了 token 到 embedding 的查表（第 3 章），带 per-layer embeddings 的模型还要逐层装配：同一个准备循环里，`per_layer_embedding_lookup_->LookupPrefill` 按偏移把各层嵌入逐段查出（`llm_litert_compiled_model_executor.cc:662-665`）。查表是内存操作，装配的搬运量随 prefill 长度线性增长。
+
+其三，**KV 缓冲交换**。双缓冲路径在 prefill 结尾做一次 `std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_)`（`:737-738`）——只换指针、不搬字节；单缓冲路径则改为每个工单填一次 int32 参数张量（`FillSingleBufferCacheParamTensor`，第 6 章展开）。交换本身近乎免费，但它说明：连「免费」的设计，每次 prefill 也要付一次分支与可选的填充。
+
+三件事单看都小，合起来解释了短 prefill 的吞吐洼地。附录 D 第七节里 100 token 档只有 48.3 tok/s：除了权重读取摊不薄，这些 host 侧开销在短工单下占比同样可观；据此推断它们是次要因素（主因仍是权重读取），精确拆分需要插桩计时，本书未做。
+
 > 对照视野
 > "预编译多个固定长度入口"这个取舍在端侧很典型：宁可多占一点编译产物和填充浪费，换取运行时的确定性与峰值性能。云端更倾向动态形状（灵活、省显存），因为它不缺重新编译的算力，也不在乎多留几个 kernel。同一个问题，两端因约束不同给出相反的默认答案——这类"因地制宜"贯穿全书。
 

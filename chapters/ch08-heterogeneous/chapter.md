@@ -283,6 +283,8 @@ struct NpuAuxiliaryContext {                         // (3)
 
 这不是猜测，延迟统计字段（`:60`–`:82`）把这条流水线逐段列了出来：`prefill_embedder_inference_latency_us`、`prefill_mask_inference_latency_us`、`prefill_rope_inference_latency_us`、`prefill_llm_inference_latency_us`、`prefill_cache_update_inference_latency_us`——每一段都有独立计时。一个前向被切成这么多段独立计时，正说明它们是各自独立的推理调用。为什么这么切，涉及 NPU 算子约束下的工程取舍（NPU 能跑的算子有限，把不友好的部分单独拆出来是常见做法），没有真机不宜妄下结论，此处只把代码能确证的结构差异记录在案。
 
+子模型之间的衔接也值得一记，因为这是「拆成多个编译模型」最容易多付代价的地方。embedder 的输出缓冲不是新分配的，而是直接 `Duplicate()` 主模型输入侧的 embeddings 缓冲（`llm_litert_npu_compiled_model_executor.cc:514-516`，prefill；decode、verify 同构，`:520-535`）：embedder 把结果直接写进主模型的输入缓冲，两个编译模型之间没有一次字节拷贝。per-layer embedder（`:578-600`）与 mask 子图（`:662`、`:681`、`:702`）按同样方式挂接。第 7 章 LoRA 那节见过的 `Duplicate()` 语义在这里再次发挥作用：复制的是引用计数句柄，不是底层数据。把计算拆成多个编译模型、又用共享缓冲把接缝处的搬运压回零——「拆」与「不白付拆的代价」，是完整的一对。
+
 ## 为什么换后端连输出都变
 
 回到开头的困惑（第 17 问，`LiteRT-LM#2281`）。现在有了前面的铺垫，可以给一个合理的解释。

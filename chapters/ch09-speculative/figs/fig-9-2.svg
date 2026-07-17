@@ -46,5 +46,5 @@
   <text class="ts" x="140" y="208" text-anchor="middle">α = 0.2 → 0.86</text>
   <text class="td" x="140" y="192" text-anchor="middle">低于 1，反而更慢</text>
   <text class="td" x="140" y="308" text-anchor="middle"></text>
-  <text class="td" x="400" y="306" text-anchor="middle">按闭式公式 speedup ≈ E[产出] ÷ (1 + G·c_draft/c_base) 推算绘制，非实测；本书合成负载的 α 推测落在左下区</text>
+  <text class="td" x="400" y="306" text-anchor="middle">按闭式公式 speedup ≈ E[产出] ÷ (1 + G·c_draft/c_base) 推算绘制；本书实测：创造性文本 α≈0.26（左下），代码类 α≈0.995（右上）</text>
 </svg>

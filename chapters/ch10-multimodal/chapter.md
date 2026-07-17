@@ -252,6 +252,8 @@ mask_vector.push_back(sample_mask[i / 32] & (1 << (i % 32)));  // (1)
 
 约束解码的意义是把"结构合法"从"祈祷模型别出错"变成"从机制上不可能出错"——只要语法写对了，输出就一定合法。这对下一节的工具调用是刚需。
 
+本书实测过它的日常价值边界（Python SDK，`enable_constrained_decoding` 开/关，实录见附录 D）：在 Gemma 4 E4B 上，单工具单参数与三参数带类型的工具调用、温度 0 与 1.0，开/关约束解码 8/8 全部产出结构合法的调用——这个模型的函数调用训练已足够强，简单场景下约束解码是保险而非必需。它的价值场景在多工具混淆、嵌套自由 JSON、更弱的模型，或必须保证下游可执行的自动化链路。再回想 `MaskLogits` 每步要对整词表跑一遍位图的开销：在简单场景，你付的是一张用不上的保单。
+
 <figure>
 {{#include figs/fig-10-2.svg}}
 <figcaption>图 10-2　约束解码逐步屏蔽：每一步由文法状态算出合法 token 集合，其余 logit 置为最小值；结构合法从期望变成保证。</figcaption>
@@ -317,4 +319,4 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 5. **路径约束。** 约束解码为什么只能工作在外部采样路径上？内部采样路径缺了哪一环？
 
 
-<!-- 补读完成：vision/audio executor 的 .cc（Encode 两级串联）、patchify（缩放对齐公式）、约束解码（MaskLogits + llg_constraint FFI）、tool_use（AntlrFcParser.g4 六条文法）均已贴码核验。图片端到端、visual token 计数、约束解码开/关成功率三项实测未做（附录 D 为纯文本矩阵，不含多模态负载）。2026-07-17：图 10-2（约束屏蔽）、表 10-1（Tool Use 链路）已补出。2026-07-16 评审修订：音频节提级；ANTLR 引文逐字；52 MiB 口径。 -->
+<!-- 补读完成：vision/audio executor 的 .cc（Encode 两级串联）、patchify（缩放对齐公式）、约束解码（MaskLogits + llg_constraint FFI）、tool_use（AntlrFcParser.g4 六条文法）均已贴码核验。2026-07-17：图 10-2、表 10-1 已补；约束解码开/关实测完成（简单场景 8/8 无差异，保险定位，附录 D 第十二节）；图片端到端与 visual token 计数未做（附录 D 已立档）。2026-07-16 评审修订：音频节提级；ANTLR 引文逐字；52 MiB 口径。 -->
