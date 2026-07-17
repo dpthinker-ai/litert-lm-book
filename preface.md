@@ -4,7 +4,7 @@
 
 ## 这本书讲什么
 
-本书围绕 **LiteRT-LM** 展开。它是 Google 主推的端侧大模型运行时，已部署在 Chrome、Chromebook Plus、Pixel Watch 等出货产品中（官方博客，见附录 F）。作为 Google 在端侧 AI 方向的核心基础设施，它值得深入研究和持续关注——它有可能成为端侧大模型推理的重要参考实现。
+本书围绕 **LiteRT-LM** 展开。它是 Google 主推的端侧大模型运行时，已经跑在真实出货的产品里：官方点名的有 Chrome、Chromebook Plus、Pixel Watch（官方博客，见附录 F），仓库 README 在这份名单后还补了一句 "and more"；官方的 Google AI Edge Gallery 应用（Android 与 iOS）同样用它把模型直接跑在用户设备上。在 Android 生态里，它还与 ML Kit 的 GenAI API 构成两条互补路径：ML Kit 经 AI Core 提供开箱即用的 Gemini Nano，LiteRT-LM 承载自定义模型的部署（出处均见附录 F）。作为 Google 在端侧 AI 方向的核心基础设施，它值得深入研究和持续关注——它有可能成为端侧大模型推理的重要参考实现。
 
 具体说，它是 LiteRT（原 TFLite）之上专为 LLM 打造的编排层。向上是稳定的 Engine/Session API，再经一层 C ABI 长出 Python、Kotlin、Swift、Web 等多语言绑定；中间是把一次请求编排成 prefill/decode 的核心调度；向下经 LiteRT CompiledModel 调度到 CPU、GPU、NPU，用抽象接口屏蔽硬件差异。模型以单文件 `.litertlm` 分发——权重、tokenizer、聊天模板、能力声明，全在一个文件里。
 

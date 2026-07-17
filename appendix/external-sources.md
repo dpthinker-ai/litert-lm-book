@@ -5,6 +5,8 @@
 ## 官方文档与博客
 
 - LiteRT-LM 投产于 Chrome / Chromebook Plus / Pixel Watch：Google 开发者博客 *On-device GenAI in Chrome, Chromebook Plus and Pixel Watch*，https://developers.googleblog.com/on-device-genai-in-chrome-chromebook-plus-and-pixel-watch-with-litert-lm/ （经 LiteRT-LM 仓库 README 索引，访问 2026-07-05）。
+- 更完整的投产口径：LiteRT-LM 仓库 README（main 分支）——"LiteRT-LM powers on-device GenAI experiences in Chrome, Chromebook Plus, Pixel Watch, **and more**"，并附官方示例应用 Google AI Edge Gallery（Android/iOS）的安装指引，https://github.com/google-ai-edge/LiteRT-LM （访问 2026-07-18）。
+- Android 侧的互补路径：Android 开发者 ML Kit GenAI 材料——ML Kit GenAI 经 AI Core 提供开箱即用的 Gemini Nano，LiteRT-LM 承载自定义模型部署，developers.google.com/ml-kit 与 Android Developers 官方频道（访问 2026-07-18）。
 - 推测解码「约 3 倍」（第 9 章）：Google 官方博客 *Accelerating Gemma 4: faster inference with multi-token prediction drafters*，https://blog.google/innovation-and-ai/technology/developers-tools/multi-token-prediction-gemma-4/ （访问 2026-07-05）。本书基准实测未复现，见附录 D。
 
 ## 对照项目（第 3–10 章「对照视野」侧栏）
