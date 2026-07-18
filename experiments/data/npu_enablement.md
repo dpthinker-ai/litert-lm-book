@@ -45,3 +45,25 @@ v0.13.1 的 dispatch 路径无 JIT 兜底——SoC 不匹配即无法执行。
 NPU 的「封闭」至此有了完整的机制级证据：签名绑定（ROM 层）+ 架构绑定（模型包层）。
 未试：Qualcomm AI Hub 寻找匹配本机 SoC 的包（需账号，新平台可能尚未发布）、
 工程机/已 root 设备、sm8750 真机（其 ROM 据报可跑，如 S25 Ultra 案例）。
+
+---
+
+## 附：第二台设备（HONOR MEP-AN00，canoe→V79，2026-07-18 补测）
+
+换机重试，设备画像完全不同：
+- **SoC 为 V79 代**（/odm/lib64 有 libQnnHtpV79Stub/Skel）——与 E2B 包的目标 sm8750 **匹配**，第一台的架构绑定墙不存在。
+- **/odm 的 QNN 库 shell 可读**（libQnnHtp/System/V79Stub/V79Skel 均可 cp）——可用设备原厂签名 stub，而非未签名版。
+
+实际进展与卡点：
+1. `qnn-platform-validator --backend dsp --testBackend`：calculator 执行仍失败
+   "Please use testsig if using unsigned images"——与 nubia 同类的 ROM 级 DSP 限制
+   （换用 /odm 原厂 skel 原位路径亦同）。
+2. LiteRT-LM 链路：先解两个版本错配——/odm 的 libQnnSystem 1.4.0（需 ≥1.10）、
+   libQnnHtp 2.27.0（需 ≥2.35），换 QAIRT 2.46 宿主库后通过；
+   随后卡在 QNN manager 建 backend/device 一步（DSP 握手层），与 validator 同墙。
+3. 未决因素：QAIRT 2.46 宿主 ↔ 设备固件 2.27 的跨版本握手，
+   与 ROM 的 DSP 访问限制难以分离。可行下一步：从 Qualcomm AI Hub 下载与固件
+   匹配的 QAIRT（2.27 代）重试（需账号），或换 Samsung/Pixel 等据报 ROM 放开的设备。
+
+小结：第二台证明"封闭"还有第三层——OEM ROM 的 DSP 访问策略与固件版本差。
+同一模型包、同一工具链，在两家 OEM 的 ROM 上倒下的位置都不一样。
