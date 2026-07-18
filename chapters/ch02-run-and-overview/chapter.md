@@ -329,7 +329,7 @@ class LlmExecutorBase {
 
 <figure>
 {{#include figs/fig-2-3.svg}}
-<figcaption>图 2-3　一次生成请求的端到端数据流：自用户向下逐层抵达硬件，侧枝是各层的输入与加速件。</figcaption>
+<figcaption>图 2-3　一次生成请求的端到端数据流：自用户向下逐层抵达硬件，侧枝是各层的输入与加速件（各框与图 2-2 的五层一一对应）。</figcaption>
 </figure>
 
 支撑这五层的是三条设计原则，它们会在后续每一章反复出现，先记住名字：

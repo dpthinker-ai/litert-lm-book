@@ -45,19 +45,19 @@
   <rect class="b"  x="350" y="16"  width="180" height="40" rx="9"/>
   <text class="t"  x="440" y="41"  text-anchor="middle">用户 / App</text>
   <rect class="bl" x="290" y="80"  width="300" height="48" rx="10"/>
-  <text class="tw" x="440" y="100" text-anchor="middle">① 对外接口层 · Engine/Session</text>
+  <text class="tw" x="440" y="100" text-anchor="middle">对外接口层 · Engine/Session</text>
   <text class="ts" x="440" y="116" text-anchor="middle">C++ · C API · CLI · 多语言绑定</text>
   <rect class="b"  x="290" y="150" width="300" height="42" rx="10"/>
-  <text class="t"  x="440" y="168" text-anchor="middle">② 对话与编排层 · Conversation</text>
+  <text class="t"  x="440" y="168" text-anchor="middle">对话与编排层 · Conversation</text>
   <text class="ts" x="440" y="184" text-anchor="middle">多轮 · 模板 · 角色 · 工具调用</text>
   <rect class="bl" x="290" y="214" width="300" height="44" rx="10"/>
-  <text class="tw" x="440" y="232" text-anchor="middle">② 对话与编排层 · Core Pipeline</text>
+  <text class="tw" x="440" y="232" text-anchor="middle">对话与编排层 · Core Pipeline</text>
   <text class="ts" x="440" y="248" text-anchor="middle">SessionAdvanced + Tasks · prefill / decode</text>
   <rect class="b"  x="290" y="280" width="300" height="42" rx="10"/>
   <text class="t"  x="440" y="297" text-anchor="middle" style="font-size:12.5px">Tokenizer · Sampler/约束 · StopDetector</text>
-  <text class="ts" x="440" y="313" text-anchor="middle">④ 组件层 · 每个 decode step 调用</text>
+  <text class="ts" x="440" y="313" text-anchor="middle">组件层 · 每个 decode step 调用</text>
   <rect class="bl" x="290" y="344" width="300" height="48" rx="10"/>
-  <text class="tw" x="440" y="364" text-anchor="middle">③ 推理执行层 · LLM Executor</text>
+  <text class="tw" x="440" y="364" text-anchor="middle">推理执行层 · LLM Executor</text>
   <text class="ts" x="440" y="380" text-anchor="middle">Prefill / Decode · 屏蔽 CPU/GPU/NPU</text>
   <rect class="b"  x="320" y="414" width="240" height="40" rx="10"/>
   <text class="t"  x="440" y="439" text-anchor="middle">LiteRT CompiledModel</text>
