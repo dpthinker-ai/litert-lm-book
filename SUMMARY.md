@@ -41,4 +41,3 @@
 - [附录 E 练习提示与参考答案](appendix/exercises-answers.md)
 - [附录 F 外部来源与延伸阅读](appendix/external-sources.md)
 - [附录 G 二十个问题速查](appendix/quick-questions.md)
-- [附录 H 上游 issue 案例集](appendix/issue-cases.md)

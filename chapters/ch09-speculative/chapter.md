@@ -298,7 +298,7 @@ $$ \text{speedup} \approx \frac{E[\text{产出}]}{1 + G \cdot c_{\text{draft}} /
 
 这条实测路径值得记下来，因为它绕过了「CLI 不输出接受率」的限制，且不用改码重编：计数器本来就在 drafter 里累加（`num_drafted_tokens_` / `num_verified_tokens_`），析构时经 `ABSL_LOG(INFO)` 打印；Python SDK 暴露了 `set_min_log_severity`（`python/litert_lm/_ffi.py:450`），调到 VERBOSE 即可看到。若想做成按周期输出或落进 benchmark 统计，仍需把计数器经执行器暴露出去（`Draft()` 每轮结束处，`:494` 之后），本书未改上游代码。
 
-由此也能理解那个反直觉现象（第 19 问后半，`LiteRT-LM#2227`）：在某些 GPU（如 PowerVR）上，MTP 反而拖慢 decode。成因可以从公式推出——当 α 不够高、或 drafter 与 verify 在那块硬件上的 c_draft/c_base 偏大时，加速比跌破 1。该现象无真机可复现，按上游报告所述。
+由此也能理解那个反直觉现象（第 19 问后半，`LiteRT-LM#2227`）：在某些 GPU（如 PowerVR）上，MTP 反而拖慢 decode。成因可以从公式推出——当 α 不够高、或 drafter 与 verify 在那块硬件上的 c_draft/c_base 偏大时，加速比跌破 1。该现象无真机可复现，按上游报告所述。实践含义直接：在目标硬件上开推测解码之前先实测一次，加速依赖「drafter 够便宜」与「猜得够准」同时成立，两者都随硬件与文体而变。
 
 所以推测解码不是无条件的加速，是一个有条件的权衡：收益取决于接受率，接受率不足时净收益为负。文体也影响接受率——套路性强的文本（比如代码）容易预测、接受率高，天马行空的散文难预测、接受率低。
 

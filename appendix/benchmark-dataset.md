@@ -129,78 +129,8 @@
 | 8192 | 256 | 21.5 | 同一 prompt，仅放宽预留 |
 | 1024 | 256 | **运行失败** | 工单 [1024] 恰好打满预留宽度，prefill 报 `dynamic_update_slice` 维度越界 |
 
-两条结论。其一，方向与量级都符合第 6 章的分析：预留越宽每步越慢，8192 比 1024 慢约 37%；2048 档的散布提醒短扫描同样有抖动。其二，过小预留的后果不是变慢而是失败：工单恰好打满预留宽度时，越界在 prefill 阶段以编译模型错误抛出（`DYNAMIC_UPDATE_SLICE`），不是静默截断——手动调小该参数时需要注意这个边界。
+两条结论的完整分析已并入第 6 章（表 6-2 与其后的解读）：方向与量级符合「预留越宽每步越慢」（8192 比 1024 慢约 37%）；过小预留不是变慢而是直接失败（工单打满即越界）。2048 档的散布提醒短扫描同样有抖动。
 
-## 十、原始记录存档
+## 十、原始记录
 
-以下两份为采集现场的原始记录，未加修饰，备查。
-
-### 模型实剖原始记录（`experiments/data/model_anatomy.md`）
-
-```text
-# gemma-4-e4b model.litertlm 实剖（自研 16KiB 对齐扫描 + TFLite flatbuffer 解析）
-# 文件 3.66 GB @ litert-community/gemma-4-E4B-it-litert-lm，运行时 v0.13.1
-# 方法：扫 16KiB 边界找 TFL3 魔数定段；tflite python 绑定读 SignatureDefs 与张量形状
-
-offset,size_mb,signatures,key_tensor
-4734976,170.9,embedder,token_ids[1;1]
-175669248,836.8,per_layer_embedder,token_ids[1;1]
-1012449280,94.1,serving_default(audio_encoder),mask[1;1;816]
-1106509824,15.7,audio_adapter,features[1;204;1536]
-1122254848,0.016,eoa,-
-1122271232,224.1,vision_70|vision_140|vision_280,images[1;1260;768]
-1346420736,7.9,vision_adapter_70|140|280,soft_tokens[1;140;768]
-1354317824,0.016,eoi,-
-1354334208,2260.1,decode|prefill_1024|prefill_128|verify,embeddings[1;1;2560]
-3614392320,45.1,mtp_drafter,activations[1;1;5120]
-
-# 主模型 decode signature 关键事实：
-# - KV cache 输入 48 个张量 = 24 层 × (K+V)，dtype 全部 INT8
-#   - 20 层形状 K:[1,2,32003,256] / V:[1,2,256,32003]（H_kv=2, D=256）
-#   -  4 层形状 K:[1,2,32003,512] / V:[1,2,512,32003]（H_kv=2, D=512）
-# - KV 每 token 字节 = 2(KV) × 2(H) × (20×256 + 4×512) × 1B = 28,672 B = 28 KiB/token
-# - 4096 上下文 KV 合计 = 112 MiB；静态槽位 32003 全预留 ≈ 875 MiB
-# - embeddings 输入 [1,1,2560] → model_dimension=2560
-# - per_layer_embeddings [1,1,42,256]（42 层 PLE × 256）
-# - logits [1,1,262144] → 词表 262,144（=2^18）
-# - param_tensor [1,1,1,7] INT32（单缓冲 KV 路径的位置参数，见 ch06）
-# - mask [1,1,1,32003] BOOL
-```
-
-### 采样确定性实验原始记录（`experiments/data/temperature_test.md`）
-
-```text
-# 温度/种子实验实录（cpu, gemma-4-e4b, 2026-07-05）
-# 命令: litert-lm run gemma-4-e4b --backend cpu --prompt "Write one sentence about the ocean." \
-#        --temperature T --seed S [--top-k 64 --top-p 0.95] --cache disk
-T=0 seed=42 (run1): The vast, mysterious ocean covers over seventy percent of the Earth's surface, teeming with diverse life and holding immense power.
-T=0 seed=42 (run2): 与 run1 逐字一致（确定性复现）
-T=1.0 默认k/p seed=1: The ocean is a vast, mysterious expanse covering more than seventy percent of the Earth's surface.
-T=1.0 默认k/p seed=2: 与 seed=1 逐字一致（分布尖锐，不同种子命中同一高概率序列）
-T=1.0 k=64 p=0.95 seed=7: The vast, restless ocean remains the Earth's mysterious cradle of life, shifting between tranquil serenity and powerful turbulence.
-# 结论：温度 0 确定可复现；温度 1.0 输出随种子可变，但分布尖锐时多个种子产出相同序列——
-# "开采样"不等于"每次必不同"。
-```
-
-## 十一、MTP 接受率实测（gpu，2026-07-17 补采）
-
-第 9 章的接受率归因，原本受「CLI 不输出接受率」所限只能停在推测。后发现一条免改码路径：Python SDK 暴露 `set_min_log_severity`（`python/litert_lm/_ffi.py:450`），调到 VERBOSE 后，drafter 析构时的 `ABSL_LOG(INFO)` 计数器打印（`llm_litert_mtp_drafter.cc:166-169`）即可见。方法：`enable_speculative_decoding=True`，`run_prefill` + `run_decode_async` 生成至自然结束。实录 `experiments/data/mtp_acceptance.md`。
-
-| 文体 | drafted | verified | 接受率 α | 代入公式（G=3, c_draft/c_base=0.15） |
-|---|---:|---:|---:|---:|
-| 创造性故事（机器人学画画） | 213 | 56 | **≈ 26%** | speedup ≈ 0.93（无收益） |
-| 代码 + 解释（fibonacci） | 3069 | 3054 | **≈ 99.5%** | speedup ≈ 2.7（官方 3 倍口径区） |
-
-两条结论。其一，本书基准「MTP 开关无差异」得到实证归因：创造性文本的 α 恰在盈亏平衡（α* ≈ 0.25）边缘。其二，官方「约 3 倍」与本书结果不再矛盾——接受率是文体的函数，不是模型常数；高可预测文本（代码、格式化工单、模板化写作）才是推测解码的主场。
-
-## 十二、约束解码开/关工具调用成功率（gpu，2026-07-17 补采）
-
-第 10 章的约束解码实测。方法：Python SDK `create_conversation(tools=[...])` 声明真实函数工具，`enable_constrained_decoding` 开/关，`automatic_tool_calling=False`，实录 `experiments/data/constraint_test.md`。
-
-| 场景 | 温度 | 开 | 关 |
-|---|---|---|---|
-| 单工具单参数（get_weather(city)） | 0 | 2/2 合法 | 2/2 合法 |
-| 单工具三参数带类型（get_forecast(city, days:int, unit)） | 0 | 2/2 合法 | 2/2 合法（输出与开时逐字一致） |
-| 同上 | 1.0 | 2/2 合法 | 2/2 合法 |
-
-结论：Gemma 4 E4B 的函数调用训练已足够强，简单到中等难度场景下开/关无差异（8/8）。约束解码的价值在更难场景（多工具混淆、嵌套自由 JSON、更弱模型），本书未覆盖——它在那类场景是机制保证，在简单场景是有每步开销的保险。
+模型实剖与采样确定性的采集现场原始记录，以文件形式存于 `experiments/data/model_anatomy.md` 与 `experiments/data/temperature_test.md`，本附录不重复收录。
