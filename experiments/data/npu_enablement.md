@@ -61,9 +61,7 @@ NPU 的「封闭」至此有了完整的机制级证据：签名绑定（ROM 层
 2. LiteRT-LM 链路：先解两个版本错配——/odm 的 libQnnSystem 1.4.0（需 ≥1.10）、
    libQnnHtp 2.27.0（需 ≥2.35），换 QAIRT 2.46 宿主库后通过；
    随后卡在 QNN manager 建 backend/device 一步（DSP 握手层），与 validator 同墙。
-3. 未决因素：QAIRT 2.46 宿主 ↔ 设备固件 2.27 的跨版本握手，
-   与 ROM 的 DSP 访问限制难以分离。可行下一步：从 Qualcomm AI Hub 下载与固件
-   匹配的 QAIRT（2.27 代）重试（需账号），或换 Samsung/Pixel 等据报 ROM 放开的设备。
+3. 决定性对照：再换 **QAIRT 2.42 全套 V79 一致栈**（免登录公开下载，含 hexagon-v79 skel/stub）重测，validator 报同一错误——版本错位假设被排除，失败原因就是 ROM 的 DSP 访问策略。
 
 小结：第二台证明"封闭"还有第三层——OEM ROM 的 DSP 访问策略与固件版本差。
 同一模型包、同一工具链，在两家 OEM 的 ROM 上倒下的位置都不一样。
