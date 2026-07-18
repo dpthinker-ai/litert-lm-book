@@ -296,11 +296,15 @@ $$ \text{speedup} \approx \frac{E[\text{产出}]}{1 + G \cdot c_{\text{draft}} /
 
 这不推翻机制，反而与上面的公式相容。接受率现已实测：用 Python SDK 把日志级别调到 VERBOSE，drafter 析构时会打印 `Num drafted/verified tokens` 与 `Success rate`（`llm_litert_mtp_drafter.cc:166-169`，实录见附录 D）。两类文体的对照极有说服力：写一段机器人学画画的创造性故事，α ≈ 26%——恰好压在盈亏平衡（α* ≈ 0.25）上方边缘，代入公式 speedup ≈ 0.93，这就是本书 benchmark「开关无差异」的直接原因；写一段 fibonacci 函数加解释，α ≈ 99.5%，代入公式 speedup ≈ 2.7，落入官方「约 3 倍」的口径区间。接受率不是模型常数，是文体的函数：benchmark 的合成负载与创造性写作落在低 α 区，官方演示的高可预测文本落在高 α 区，两个看似矛盾的数字因此同时为真。
 
+还要交代 benchmark 负载本身的一个发现，它改变这组数字的解读方式。benchmark 模式的 prefill 输入不是一段真实文本：它把你的 prompt 分词后 `ids.resize(N)`，用 pad（token 0）填满到目标长度（`runtime/core/session_utils.cc:68-73`）。256/1024/4096 档的输入其实是「一句话 + 一堵 pad 墙」，模型在 pad 之后续写的内容退化、不可预测，drafter 的接受率在这种负载下天然塌掉。所以「benchmark 测不出 MTP 收益」是 harness 的固有属性，不是模型的属性——要测真实收益，必须上自然文本。
+
 这条实测路径值得记下来，因为它绕过了「CLI 不输出接受率」的限制，且不用改码重编：计数器本来就在 drafter 里累加（`num_drafted_tokens_` / `num_verified_tokens_`），析构时经 `ABSL_LOG(INFO)` 打印；Python SDK 暴露了 `set_min_log_severity`（`python/litert_lm/_ffi.py:450`），调到 VERBOSE 即可看到。若想做成按周期输出或落进 benchmark 统计，仍需把计数器经执行器暴露出去（`Draft()` 每轮结束处，`:494` 之后），本书未改上游代码。
 
 由此也能理解那个反直觉现象（第 19 问后半，`LiteRT-LM#2227`）：在某些 GPU（如 PowerVR）上，MTP 反而拖慢 decode。成因可以从公式推出——当 α 不够高、或 drafter 与 verify 在那块硬件上的 c_draft/c_base 偏大时，加速比跌破 1。该现象无真机可复现，按上游报告所述。实践含义直接：在目标硬件上开推测解码之前先实测一次，加速依赖「drafter 够便宜」与「猜得够准」同时成立，两者都随硬件与文体而变。
 
 本书后来在一台 Qualcomm 机型上真机复测了这件事（附录 D 第十三节）：强制开启 MTP 后，cpu decode 从 10.0 掉到 2.8 tok/s（慢 3.6 倍），gpu 从 18.0 掉到 12.6 tok/s（慢约 30%）——同一批 synthetic 负载，在 Mac 上是「无差异」，在这台手机上就是明确的负收益。这正是 `#2227` 的同类现象落到实测里：同一套代码、同一份模型，硬件换了，公式的分母与 α 一起变，结论就翻面。第 19 问「什么时候更慢」的答案，至此有了两台设备的完整数据。
+
+最后一个对照把圆环闭合：同一台手机、同一份模型，把负载换成本章开头那样的自然代码文本（`benchmark_prefill_tokens=0`，附录 D 第十三节），MTP 的符号立刻翻转——gpu decode 从 16.0 到 32.0 tok/s（整 2 倍），cpu 从 11.6 到 12.6 tok/s（+9%）。gpu 上 drafter 便宜、α 又高，收益近乎翻倍；手机 CPU 上 drafter 相对更贵，高 α 也只换来微利。所以「为什么有时更快、有时更慢」的完整答案是：加速比 = f（负载的可预测性，硬件的 drafter 相对成本），模型自始至终没有变过。
 
 所以推测解码不是无条件的加速，是一个有条件的权衡：收益取决于接受率，接受率不足时净收益为负。文体也影响接受率——套路性强的文本（比如代码）容易预测、接受率高，天马行空的散文难预测、接受率低。
 

@@ -160,6 +160,15 @@
 | 关 | 10.0 | 18.0 |
 | 强制开 | **2.8（慢 3.6 倍）** | **12.6（慢约 30%）** |
 
+注意：benchmark 的负载是「prompt + pad 填充」（`ids.resize`，`session_utils.cc:68-73`），不是自然文本，drafter 接受率在这类负载下天然塌掉——MTP 在此必亏，属 harness 固有属性。换用自然文本（`benchmark_prefill_tokens=0`）后，同一台手机符号翻转：
+
+| 负载 | cpu | gpu |
+|---|---|---|
+| 自然代码文本，关 | 11.6 | 16.0 |
+| 自然代码文本，强制开 | **12.6（+9%）** | **32.0（整 2 倍）** |
+
+实录 `experiments/data/mtp_natural_phone.md`。
+
 **CPU 线程数扫描（真机，context 1024，tok/s）：**
 
 | 线程数 | prefill | decode |
