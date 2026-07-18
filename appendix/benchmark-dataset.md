@@ -74,6 +74,7 @@
 - ✅ **CPU 线程数扫描**（第 8 章）：结清，见下「十三、扩展基准（Android 真机）」——真机 1/2/4/8 线程近线性扩展，默认 4 非最优。
 - ✅ **MTP 真机实测**（第 9 章）：结清，同上——真机强制 MTP 双端变慢（cpu 3.6 倍、gpu 30%），#2227 同类现象。
 - ✅/⬜ **NPU 验证**（第 8 章）：完整打通尝试立档（见「十三」NPU 探测与 `experiments/data/npu_enablement.md`）——组件全就位、加载链路全通、context 创建成功；执行被生产 ROM 签名约束与 sm8750 预编译架构绑定拦住。结构描述仍基于代码分析，约束形态已真机确认。
+- ⬜ **E4B 的 NPU 验证（遗留问题，待触发重启）**：E4B 当前无 NPU 打包变体（HF 仅标准版与 web 版），E2B 包（qualcomm_sm8750 / Google_Tensor_G5）与本书 E4B 基准不同模型，不替代。重启条件（任一）：① litert-community 发布 E4B 的 qualcomm/Tensor NPU 包（查 HF repo siblings）；② 手边出现 ROM 放开 DSP 的 Qualcomm 设备（Samsung S25 系/工程机）或有 Pixel 10（G5）可用。重启路径：dispatch 桥与 QAIRT 已备好（`experiments/` 与 `npu_enablement.md` 全程留档），下包 → push → 跑 `android_bench.sh` NPU 分支 → 数据写回本节与第 8 章。
 - ⬜ **多模态端到端**（第 10 章）：图片输入 + visual token 计数验证 patchify，未做（需多模态负载预算）。
 - ⬜ **双 tokenizer 对比**（第 3 章）：需另下一个 HF tokenizer 模型（基准模型为 SentencePiece），未做。
 

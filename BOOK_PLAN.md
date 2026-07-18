@@ -9,6 +9,7 @@
 > **v4.4（2026-07-18）：附录瘦身**。附录 H 拆解融入正文（#2568→第 6 章、#2281→第 8 章、#2227→第 9 章、#2418→第 10 章的诊断句；#2505/#2589 与正文重合不重复收），附录 D 第九节瘦身为数据存档、第十节原始存档改指针（文件仍在 experiments/data/）；投产口径补全（README「and more」+ AI Edge Gallery + ML Kit 路径）；图 2-3 术语对齐并去顺序号。
 > **v4.5（2026-07-18）：Android 真机扩展基准入库**。自编译 `litert_lm_advanced_main`（arm64，NDK r28b + `--macos_sdk_version` 修正 + Git LFS 拉取），Qualcomm 机型全矩阵采集：cpu/gpu 基准（Roofline 跨设备再验）、**真机 MTP 双端变慢**（cpu 3.6 倍、gpu 30%，#2227 同类）、**线程数近线性扩展到 8**（默认 4 非最优）、峰值内存 cpu 3.3 GB vs gpu 0.9 GB；NPU 探测失败并立档（QNN 库不在 prebuilt、需 TF_LITE_AUX 专用打包段）。附录 D 增第十三节；新发现：C++ advanced main 默认预留 = prompt+decode 长度，小 prompt 直接越界（第 6 章边界问题跨平台复现）。
 > **v4.6（2026-07-18）：MTP 负载真相与 NPU 打通攻坚**。① benchmark 负载坐实为 prompt+pad 填充（`ids.resize`，`session_utils.cc`），MTP 收益须用自然文本测；真机代码文本 gpu 2 倍、Mac 2.28×；G=3 从 verify signature 核实，加速比上限=4/(1+3c)，反解设备 c（Mac 0.24/手机 0.32），官方 3× 需 c≈0.11 的硬件路径。② NPU 打通攻坚：dispatch 桥源码自编译 + QAIRT（bazel 自带）+ E2B NPU 包，加载链路全通至 QNN context 创建；执行被**生产 ROM 未签名 skel 拒绝**（testsig）与 **sm8750 预编译架构绑定**拦住——「NPU 封闭」落到签名+架构双绑定的机制级证据（`experiments/data/npu_enablement.md`）。
+> **v4.7（2026-07-18）：遗留问题登记**。E4B 的 NPU 验证转为触发式开放项（条件与重启路径见附录 D 对账清单）：E4B 无 NPU 打包变体，E2B 包不替代；第二台（HONOR，V79 匹配）以 QAIRT 2.42 一致栈重测仍败，排除版本错位，定案为 OEM ROM 的 DSP 访问策略（与版本无关）。待官方 E4B NPU 包或 ROM 放开设备出现后重启。
 > 书名（已定）：《端侧大模型推理：原理与 LiteRT-LM 实现》
 > *On-Device LLM Inference: Principles and Practice with LiteRT-LM*
 > 素材基础：`/Users/dpthinker/workspace/litert-lm-guide/data.json`（12 模块深度分析，约 20 万字）
