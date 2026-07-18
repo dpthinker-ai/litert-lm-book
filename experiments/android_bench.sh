@@ -6,7 +6,7 @@ set -uo pipefail
 cd "$(dirname "$0")"
 
 DEVICE_DIR=/data/local/tmp/litertlm
-BIN="$DEVICE_DIR/litert_lm_main"
+BIN="$DEVICE_DIR/litert_lm_advanced_main"
 MODEL="$DEVICE_DIR/model.litertlm"
 DECODE=128
 CONTEXTS=(256 1024 4096)
@@ -30,15 +30,17 @@ field() { grep -i "$1" | head -1 | grep -oE '[0-9]+\.?[0-9]*' | head -1; }
 
 run_one() { # backend context extra_flags -> "prefill,decode,init,ttft,peak_mb"
   local b="$1" c="$2"; shift 2
-  local o; o="$(adb shell "cd $DEVICE_DIR && ./litert_lm_main --backend=$b --model_path=$MODEL \
-        --benchmark_prefill_tokens=$c --benchmark_decode_tokens=$DECODE --report_peak_memory_footprint=true \
-        --benchmark=true $* " 2>&1)"
+  local mt=4096; [ "$c" -ge 4096 ] && mt=8192
+  local o; o="$(adb shell "cd $DEVICE_DIR && LD_LIBRARY_PATH=$DEVICE_DIR ./litert_lm_advanced_main --backend=$b --model_path=$MODEL \
+        --benchmark=true --benchmark_prefill_tokens=$c --benchmark_decode_tokens=$DECODE \
+        --max_num_tokens=$mt --report_peak_memory_footprint=true \
+        --input_prompt='Write a short story about the ocean.' $* " 2>&1)"
   local p d i t m
   p="$(printf '%s\n' "$o" | field 'Prefill speed')"
   d="$(printf '%s\n' "$o" | field 'Decode speed')"
-  i="$(printf '%s\n' "$o" | field 'Init time')"
+  i="$(printf '%s\n' "$o" | field 'Init Total' | awk '{printf "%.3f", $1/1000}')"
   t="$(printf '%s\n' "$o" | field 'Time to first token')"
-  m="$(printf '%s\n' "$o" | field 'peak')"
+  m="$(printf '%s\n' "$o" | field 'Peak private footprint')"
   echo "${p:-NA},${d:-NA},${i:-NA},${t:-NA},${m:-NA}"
 }
 
@@ -82,8 +84,8 @@ done
 
 # NPU（Qualcomm 机型；不可用则记录错误，不中断）
 echo "backend,context,repeat,result" > "$OUT/android_npu.csv"
-if adb shell "cd $DEVICE_DIR && ./litert_lm_main --backend=npu --model_path=$MODEL \
-     --benchmark_prefill_tokens=16 --benchmark_decode_tokens=8 --benchmark=true" >/tmp/npu_probe.log 2>&1; then
+if adb shell "cd $DEVICE_DIR && LD_LIBRARY_PATH=$DEVICE_DIR ./litert_lm_advanced_main --backend=npu --model_path=$MODEL \
+     --benchmark=true --benchmark_prefill_tokens=16 --benchmark_decode_tokens=8 --max_num_tokens=1024" >/tmp/npu_probe.log 2>&1; then
   echo ">>> android npu probe OK，采矩阵"
   for c in "${CONTEXTS[@]}"; do
     for i in $(seq 1 "$REPEATS"); do
