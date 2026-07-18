@@ -169,6 +169,8 @@
 
 实录 `experiments/data/mtp_natural_phone.md`。
 
+**加速比天花板（2026-07-18 补测，实录 `experiments/data/mtp_ceiling.md`）**：G = 3 已从 verify signature 核实（`input_pos` 形状 [4]）。最优手法（温度 0、纯代码长生成）下：Mac GPU 58.7 → 133.9 tok/s（**2.28×**）、手机 GPU 18.6 → 37.4 tok/s（**2.01×**）。按 speedup 天花板 = 4 ÷ (1 + 3c) 反解：Mac c ≈ 0.24（天花板 2.31×）、手机 c ≈ 0.32（天花板 2.03×）——两台设备均已见顶。官方「约 3 倍」需 c ≈ 0.11，推测属 Pixel Tensor ARTISAN 路径或服务级 GPU。
+
 **CPU 线程数扫描（真机，context 1024，tok/s）：**
 
 | 线程数 | prefill | decode |
