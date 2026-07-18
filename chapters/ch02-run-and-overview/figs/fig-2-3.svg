@@ -1,8 +1,8 @@
 <svg viewBox="0 0 880 560" width="880" height="560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiteRT-LM 端到端流程：一次生成请求在各层之间的流动">
   <defs>
-    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="7" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--accent)"/></marker>
-    <marker id="ar2" orient="auto-start-reverse" markerWidth="8" markerHeight="7" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--accent-2)"/></marker>
-    <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="7" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--text-dim)"/></marker>
+    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="7" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent, #0b57d0)"/></marker>
+    <marker id="ar2" orient="auto-start-reverse" markerWidth="8" markerHeight="7" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent-2, #6639ba)"/></marker>
+    <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="7" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-dim, #8b949e)"/></marker>
   </defs>
   <style>
     text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
@@ -26,11 +26,11 @@
   <path class="edge" marker-end="url(#ar)" d="M440,392 V414"/>
   <path class="edge" marker-end="url(#ar)" d="M440,454 V476"/>
   <!-- return arrow (Responses) -->
-  <path class="edge" style="stroke:var(--accent-2)" marker-end="url(#ar2)" d="M590,104 C 662,92 658,40 534,37"/>
-  <text class="td" x="602" y="70" style="fill:var(--accent-2);font-weight:700">流式输出 ↑</text>
+  <path class="edge" style="stroke:var(--fig-accent-2, #6639ba)" marker-end="url(#ar2)" d="M590,104 C 662,92 658,40 534,37"/>
+  <text class="td" x="602" y="70" style="fill:var(--fig-accent-2, #6639ba);font-weight:700">流式输出 ↑</text>
   <!-- left side feeders -->
   <path class="edge" marker-end="url(#ar)" d="M250,236 H290"/>
-  <text class="td" x="270" y="230" text-anchor="middle">驱动</text>
+  <text class="td" x="270" y="230" text-anchor="middle">异步</text>
   <path class="edge" marker-end="url(#ar)" d="M133,367 H146"/>
   <path class="edge" marker-end="url(#ar)" d="M250,367 H290"/>
   <text class="td" x="270" y="361" text-anchor="middle">权重</text>
@@ -38,26 +38,26 @@
   <!-- right side -->
   <path class="edge" marker-end="url(#ar)" d="M705,330 V344"/>
   <path class="edge" marker-end="url(#ar)" d="M620,368 H590"/>
-  <text class="td" x="605" y="362" text-anchor="middle">嵌入</text>
+  <text class="td" x="605" y="362" text-anchor="middle">注入</text>
   <path class="edged" marker-start="url(#ard)" marker-end="url(#ard)" d="M620,434 H560"/>
   <text class="td" x="590" y="408" text-anchor="middle">草拟+验证</text>
   <!-- spine boxes -->
   <rect class="b"  x="350" y="16"  width="180" height="40" rx="9"/>
   <text class="t"  x="440" y="41"  text-anchor="middle">用户 / App</text>
   <rect class="bl" x="290" y="80"  width="300" height="48" rx="10"/>
-  <text class="tw" x="440" y="100" text-anchor="middle">① Engine / Session API</text>
+  <text class="tw" x="440" y="100" text-anchor="middle">① 对外接口层 · Engine/Session</text>
   <text class="ts" x="440" y="116" text-anchor="middle">C++ · C API · CLI · 多语言绑定</text>
   <rect class="b"  x="290" y="150" width="300" height="42" rx="10"/>
-  <text class="t"  x="440" y="168" text-anchor="middle">② Conversation 对话层</text>
+  <text class="t"  x="440" y="168" text-anchor="middle">② 对话与编排层 · Conversation</text>
   <text class="ts" x="440" y="184" text-anchor="middle">多轮 · 模板 · 角色 · 工具调用</text>
   <rect class="bl" x="290" y="214" width="300" height="44" rx="10"/>
-  <text class="tw" x="440" y="232" text-anchor="middle">② Core Pipeline 调度</text>
+  <text class="tw" x="440" y="232" text-anchor="middle">② 对话与编排层 · Core Pipeline</text>
   <text class="ts" x="440" y="248" text-anchor="middle">SessionAdvanced + Tasks · prefill / decode</text>
   <rect class="b"  x="290" y="280" width="300" height="42" rx="10"/>
   <text class="t"  x="440" y="297" text-anchor="middle" style="font-size:12.5px">Tokenizer · Sampler/约束 · StopDetector</text>
-  <text class="ts" x="440" y="313" text-anchor="middle">每个 decode step 调用的组件</text>
+  <text class="ts" x="440" y="313" text-anchor="middle">④ 组件层 · 每个 decode step 调用</text>
   <rect class="bl" x="290" y="344" width="300" height="48" rx="10"/>
-  <text class="tw" x="440" y="364" text-anchor="middle">③ LLM Executor</text>
+  <text class="tw" x="440" y="364" text-anchor="middle">③ 推理执行层 · LLM Executor</text>
   <text class="ts" x="440" y="380" text-anchor="middle">Prefill / Decode · 屏蔽 CPU/GPU/NPU</text>
   <rect class="b"  x="320" y="414" width="240" height="40" rx="10"/>
   <text class="t"  x="440" y="439" text-anchor="middle">LiteRT CompiledModel</text>
@@ -73,12 +73,12 @@
   <text class="ts" x="145" y="248" text-anchor="middle">线程池 / 任务队列</text>
   <rect class="note" x="40" y="344" width="92" height="46" rx="9"/>
   <text class="ts" x="86" y="364" text-anchor="middle">.litertlm</text>
-  <text class="ts" x="86" y="379" text-anchor="middle">文件</text>
+  <text class="ts" x="86" y="379" text-anchor="middle">模型文件</text>
   <rect class="note" x="146" y="344" width="104" height="46" rx="9"/>
   <text class="ts" x="198" y="364" text-anchor="middle">Model</text>
   <text class="ts" x="198" y="379" text-anchor="middle">Resources</text>
   <rect class="note" x="40" y="414" width="210" height="40" rx="9"/>
-  <text class="t"  x="145" y="439" text-anchor="middle" style="font-size:13px">KV Cache 双缓冲</text>
+  <text class="t"  x="145" y="439" text-anchor="middle" style="font-size:13px">KV cache 双缓冲</text>
   <!-- right notes -->
   <rect class="note" x="620" y="300" width="170" height="30" rx="8"/>
   <text class="ts" x="705" y="320" text-anchor="middle">图像 / 音频</text>
