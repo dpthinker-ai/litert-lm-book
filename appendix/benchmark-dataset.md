@@ -73,7 +73,7 @@
 - ✅ **约束解码开/关成功率**（第 10 章）：结清，见下「十二、约束解码开/关工具调用成功率」——简单场景 8/8 无差异，保险定位。
 - ✅ **CPU 线程数扫描**（第 8 章）：结清，见下「十三、扩展基准（Android 真机）」——真机 1/2/4/8 线程近线性扩展，默认 4 非最优。
 - ✅ **MTP 真机实测**（第 9 章）：结清，同上——真机强制 MTP 双端变慢（cpu 3.6 倍、gpu 30%），#2227 同类现象。
-- ✅/⬜ **NPU 验证**（第 8 章）：探测失败并立档——QNN 库不在仓库 prebuilt、执行器要求 TF_LITE_AUX 专用打包段（见「十三」NPU 探测）；结构描述仍基于代码分析，失败形态已真机确认。
+- ✅/⬜ **NPU 验证**（第 8 章）：完整打通尝试立档（见「十三」NPU 探测与 `experiments/data/npu_enablement.md`）——组件全就位、加载链路全通、context 创建成功；执行被生产 ROM 签名约束与 sm8750 预编译架构绑定拦住。结构描述仍基于代码分析，约束形态已真机确认。
 - ⬜ **多模态端到端**（第 10 章）：图片输入 + visual token 计数验证 patchify，未做（需多模态负载预算）。
 - ⬜ **双 tokenizer 对比**（第 3 章）：需另下一个 HF tokenizer 模型（基准模型为 SentencePiece），未做。
 
@@ -182,7 +182,7 @@
 
 **峰值内存（context 1024，预留 4096，Peak private footprint）：** cpu **3268 MB**，gpu **918 MB**——同一模型同一条件，两个后端的峰值内存差约 3.5 倍（cpu 侧 XNNPACK 权重重打包在 RAM 里多一份副本，gpu 侧权重进 GPU 缓冲）。
 
-**NPU 探测（如实记录失败）**：`--backend npu` 无法运行。失败分两层：QNN accelerator 库不在仓库 `prebuilt/` 内（"could not be loaded and registered"）；NPU 执行器要求模型带 `TF_LITE_AUX` 辅助段（`llm_litert_npu_compiled_model_executor.cc:3000`），而标准 Gemma 4 E4B 的 `.litertlm` 没有该段（第六节实剖的 10 段里无 AUX）。这正是第 8 章「NPU 最封闭」的具体形态：NPU 要的不是标准模型文件，而是面向厂商 delegate 的专用打包。
+**NPU 探测（如实记录）**：`--backend=npu` 未能执行推理，但一次完整打通尝试把约束钉到了机制上（全程实录 `experiments/data/npu_enablement.md`）。三层组件全部就位并逐级打通：设备自带 QNN 运行时（/vendor/lib64）、dispatch 桥源码自编译、公开发布的 E2B NPU 打包模型（含 `tf_lite_aux` 段），一直到 QNN context 创建成功。执行最终卡在两层：其一，生产 ROM 拒绝未签名 DSP skel（`qnn-platform-validator` 实测，"Please use testsig if using unsigned images"）；其二，模型内嵌 context 面向 sm8750 预编译，与本机（canoe，HTP V81）架构不匹配，dispatch 路径无 JIT 兜底。这佐证并具体化了第 8 章「NPU 最封闭」：签名绑定 + 架构绑定，以及按 SoC 分别发包的根因。
 
 **解读（与正文对账）：**
 
