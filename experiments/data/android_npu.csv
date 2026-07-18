@@ -1,0 +1,2 @@
+backend,context,repeat,result
+npu,probe,1,FAILED（见 /tmp/npu_probe.log）

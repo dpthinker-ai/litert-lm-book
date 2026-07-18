@@ -71,6 +71,9 @@
 - ⬜ **Python/C++ 行为一致性**（第 11 章）：需 Bazel 构建 `litert_lm_main`，未做（正文已降为推断级）。
 - ✅ **接受率实证归因**（第 9 章）：结清，见下「十一、MTP 接受率实测」——无需改码，SDK VERBOSE 日志读出计数器。
 - ✅ **约束解码开/关成功率**（第 10 章）：结清，见下「十二、约束解码开/关工具调用成功率」——简单场景 8/8 无差异，保险定位。
+- ✅ **CPU 线程数扫描**（第 8 章）：结清，见下「十三、扩展基准（Android 真机）」——真机 1/2/4/8 线程近线性扩展，默认 4 非最优。
+- ✅ **MTP 真机实测**（第 9 章）：结清，同上——真机强制 MTP 双端变慢（cpu 3.6 倍、gpu 30%），#2227 同类现象。
+- ✅/⬜ **NPU 验证**（第 8 章）：探测失败并立档——QNN 库不在仓库 prebuilt、执行器要求 TF_LITE_AUX 专用打包段（见「十三」NPU 探测）；结构描述仍基于代码分析，失败形态已真机确认。
 - ⬜ **多模态端到端**（第 10 章）：图片输入 + visual token 计数验证 patchify，未做（需多模态负载预算）。
 - ⬜ **双 tokenizer 对比**（第 3 章）：需另下一个 HF tokenizer 模型（基准模型为 SentencePiece），未做。
 
@@ -134,3 +137,47 @@
 ## 十、原始记录
 
 模型实剖与采样确定性的采集现场原始记录，以文件形式存于 `experiments/data/model_anatomy.md` 与 `experiments/data/temperature_test.md`，本附录不重复收录。
+
+## 十三、扩展基准（Android 真机，2026-07-18 采集）
+
+> 与主基准（Mac M5 Pro）**分开标注、不混算**。设备：P0210（qcom，Android 16）；二进制：自编译 `litert_lm_advanced_main`（arm64，v0.13.1）；模型同主基准；`--max_num_tokens` 按上下文对齐（256/1024 → 4096，4096 → 8192），-d 128，各 3 次取中位数。脚本 `experiments/android_bench.sh`，原始数据 `experiments/data/android_*.csv`。
+
+**主基准（真机，中位数 tok/s）：**
+
+| backend | 上下文 | prefill tok/s | decode tok/s | TTFT (s) |
+|---|---|---|---|---|
+| cpu | 256 | 19.9 | 9.9 | 13.0 |
+| cpu | 1024 | 79.1 | 10.0 | 13.0 |
+| cpu | 4096 | 62.6 | 7.0 | 65.6 |
+| gpu | 256 | 258.3 | 18.8 | 1.04 |
+| gpu | 1024 | 957.2 | 18.8 | 1.12 |
+| gpu | 4096 | 858.6 | 17.4 | 4.83 |
+
+**MTP 开关（真机，context 1024，decode tok/s）：**
+
+| MTP | cpu | gpu |
+|---|---|---|
+| 关 | 10.0 | 18.0 |
+| 强制开 | **2.8（慢 3.6 倍）** | **12.6（慢约 30%）** |
+
+**CPU 线程数扫描（真机，context 1024，tok/s）：**
+
+| 线程数 | prefill | decode |
+|---:|---:|---:|
+| 1 | 21.6 | 4.5 |
+| 2 | 45.3 | 7.4 |
+| 4 | 77.9 | 10.1 |
+| 8 | 131.6 | 13.5 |
+
+**峰值内存（context 1024，预留 4096，Peak private footprint）：** cpu **3268 MB**，gpu **918 MB**——同一模型同一条件，两个后端的峰值内存差约 3.5 倍（cpu 侧 XNNPACK 权重重打包在 RAM 里多一份副本，gpu 侧权重进 GPU 缓冲）。
+
+**NPU 探测（如实记录失败）**：`--backend npu` 无法运行。失败分两层：QNN accelerator 库不在仓库 `prebuilt/` 内（"could not be loaded and registered"）；NPU 执行器要求模型带 `TF_LITE_AUX` 辅助段（`llm_litert_npu_compiled_model_executor.cc:3000`），而标准 Gemma 4 E4B 的 `.litertlm` 没有该段（第六节实剖的 10 段里无 AUX）。这正是第 8 章「NPU 最封闭」的具体形态：NPU 要的不是标准模型文件，而是面向厂商 delegate 的专用打包。
+
+**解读（与正文对账）：**
+
+1. **Roofline 在第二台设备上再验**：真机 gpu prefill 与 Mac 相当（957 vs 999 tok/s，算力差距小），decode 却只有 Mac 的约三分之一（18.8 vs 50.6，内存带宽差距大）。prefill 跟算力走、decode 跟带宽走，跨设备依然成立。
+2. **真机 MTP 双端变慢**：强制开启后 cpu 慢 3.6 倍、gpu 慢约 30%——接受率经济学（第 9 章）的现场版，也是 `LiteRT-LM#2227` 的同类现象：drafter 在此硬件的 c_draft/c_base 与接受率组合下，加速比跌破 1。
+3. **线程数近线性扩展到 8**：默认 4 线程在此机不是最优点；且 decode 在 8 线程仍未饱和——「带宽先封顶」的拐点比预想靠后，线程调优在真机上值得做（第 8 章）。
+4. **后端决定内存形态**：cpu 峰值内存是 gpu 的约 3.5 倍——第 1 章的内存账要按后端重算（权重重打包的副本开销）。
+
+**采集环境注记**：真机 benchmark 的 max_num_tokens 默认取 prompt+decode 长度（与 Python CLI 的 4096 阶梯推导不同），小 prompt 会直接触发 `dynamic_update_slice` 越界——预留宽度与工单形状的边界问题（第 6 章）在第二个平台上复现。

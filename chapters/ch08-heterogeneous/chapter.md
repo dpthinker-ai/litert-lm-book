@@ -178,7 +178,7 @@ if (backend == Backend::CPU) {
 
 `(1)` 只有传了正值才覆盖默认的 4，传 0 或不传就保留默认。`(2)` 同一分支里顺带把 `prefill_chunk_size` 也写进去——前面说过它只对动态导出的模型生效，静态模型忽略这个值。整个分支用 `backend == Backend::CPU` 守卫，GPU、NPU 各有自己的配置分支，`CpuConfig` 只在 CPU 路径上被读写。
 
-这两件事合起来才是 CPU 后端在功耗与带宽约束下的推荐配置：绑核让线程留在性能核上，线程数压在内存带宽上限附近而不是把核开满。要把"多线程未必更快"这句话从断言变成实测，可以扫描线程数：固定设备、模型、上下文，让 `--num_cpu_threads` 取 1、2、4、8，各跑三次取中位数，对比 prefill 与 decode 吞吐。可以预期 prefill 对线程数更敏感（它更接近算力受限，第 2 章），decode 增益会更早触顶（带宽先封顶）。本书基准数据集固定后端与线程默认值，未做这一维扫描（附录 D），此处把方法记录在案，结论待实测回填。
+这两件事合起来才是 CPU 后端在功耗与带宽约束下的推荐配置：绑核让线程留在性能核上，线程数压在内存带宽上限附近而不是把核开满。这套扫描本书在真机上做过了（Qualcomm 机型，context 1024，附录 D 第十三节）：1、2、4、8 线程的 decode 依次是 4.5、7.4、10.1、13.5 tok/s，prefill 是 21.6、45.3、77.9、131.6 tok/s——几乎线性扩展到 8 线程，预期的「decode 增益更早触顶」在这台机器上还没出现。两个直接结论：默认 4 线程在此机不是最优点；「带宽先封顶」的拐点位置因设备而异，不能按经验猜，必须实测。这正是 `#2505` 要求这个 flag 的原因。
 
 ## GPU：并行强，还能在设备上采样
 
@@ -259,7 +259,7 @@ int LlmLiteRtCompiledModelExecutorBase::BindTensorsAndRunDecodeStatic(
 
 NPU 是三者里能效比最高的——同样的活，它最省电、最不发热，这在端侧是硬通货。代价是它最封闭：接口是厂商的（比如高通的 QNN），能跑的算子有限，灵活性最低。
 
-本节的内容基于对代码的阅读，没有真机验证（作者手上是一台 Mac，跑不了手机 NPU），所以只讲代码能佐证的部分。NPU 走的是工厂里那条独立路径（`CreateNpuLlmLiteRtCompiledModelExecutor`），产出一个专门的执行器（`runtime/executor/llm_litert_npu_compiled_model_executor.h:51`）。这个执行器的类注释写着 "Component intended to be used with an NPU variant of Gemma3"（`:50`）——它不是通用执行器，是为 NPU 版 Gemma3 专门做的。
+本节的主体内容基于对代码的阅读（NPU 的结构描述无法在无专用模型的设备上验证）；不过本书后来借到一台 Qualcomm 机型做了真机探测，它的失败形态留在本节末尾——那部分是真机确认的。NPU 走的是工厂里那条独立路径（`CreateNpuLlmLiteRtCompiledModelExecutor`），产出一个专门的执行器（`runtime/executor/llm_litert_npu_compiled_model_executor.h:51`）。这个执行器的类注释写着 "Component intended to be used with an NPU variant of Gemma3"（`:50`）——它不是通用执行器，是为 NPU 版 Gemma3 专门做的。
 
 最能说明结构差异的是它内部的一组子模型 struct。CPU/GPU 执行器持有一个 `CompiledModel`（主图），NPU 执行器却持有好几个，各管一段计算。其中之一是 embedder（`:266`）：
 
@@ -281,7 +281,9 @@ struct NpuAuxiliaryContext {                         // (3)
 
 `(1)` embedder 是**一个独立的编译模型**——它有自己的 `Model` 和 `CompiledModel`，而不是主图里的一层。"把 token 变成 embedding"在 NPU 上被切成单独一个模型跑，CPU/GPU 那边这步是融在主图里的。`(2)` 还有一个 per-layer 的 embedder，`(3)` 一个 auxiliary context（`:316`）。注释说它"contains several signatures for Mask, RoPE and KV cache update computation"（`:314`）。也就是说，CPU/GPU 上一个前向就算完的东西，NPU 上被拆成了 embedder、per-layer embedder、mask/RoPE/KV-cache 更新、主 LLM 图等好几个独立编译模型串起来。
 
-这不是猜测，延迟统计字段（`:60`–`:82`）把这条流水线逐段列了出来：`prefill_embedder_inference_latency_us`、`prefill_mask_inference_latency_us`、`prefill_rope_inference_latency_us`、`prefill_llm_inference_latency_us`、`prefill_cache_update_inference_latency_us`——每一段都有独立计时。一个前向被切成这么多段独立计时，正说明它们是各自独立的推理调用。为什么这么切，涉及 NPU 算子约束下的工程取舍（NPU 能跑的算子有限，把不友好的部分单独拆出来是常见做法），没有真机不宜妄下结论，此处只把代码能确证的结构差异记录在案。
+这不是猜测，延迟统计字段（`:60`–`:82`）把这条流水线逐段列了出来：`prefill_embedder_inference_latency_us`、`prefill_mask_inference_latency_us`、`prefill_rope_inference_latency_us`、`prefill_llm_inference_latency_us`、`prefill_cache_update_inference_latency_us`——每一段都有独立计时。一个前向被切成这么多段独立计时，正说明它们是各自独立的推理调用。为什么这么切，涉及 NPU 算子约束下的工程取舍（NPU 能跑的算子有限，把不友好的部分单独拆出来是常见做法），此处只把代码能确证的结构差异记录在案。
+
+本书在一台 Qualcomm 机型上真机探测过这条路径（附录 D 第十三节），它走不通，而失败的形态恰好印证了「封闭」二字。第一层，QNN 的 accelerator 库不在仓库的 `prebuilt/` 里（加载直接报 "could not be loaded and registered"）——厂商 delegate 的二进制不随开源代码分发。第二层更根本：NPU 执行器要求模型带 `TF_LITE_AUX` 辅助段（`llm_litert_npu_compiled_model_executor.cc:3000`），而标准 Gemma 4 E4B 的 `.litertlm` 没有这一段（附录 D 第六节实剖的 10 个段里没有 AUX）。也就是说，NPU 要的不是标准模型文件，而是面向厂商 delegate 的专用打包——上面那套多编译子模型结构，就是为这种打包准备的。在没有专用模型的前提下，NPU 的行为描述仍只能基于代码分析，这一点如实保留。
 
 子模型之间的衔接也值得一记，因为这是「拆成多个编译模型」最容易多付代价的地方。embedder 的输出缓冲不是新分配的，而是直接 `Duplicate()` 主模型输入侧的 embeddings 缓冲（`llm_litert_npu_compiled_model_executor.cc:514-516`，prefill；decode、verify 同构，`:520-535`）：embedder 把结果直接写进主模型的输入缓冲，两个编译模型之间没有一次字节拷贝。per-layer embedder（`:578-600`）与 mask 子图（`:662`、`:681`、`:702`）按同样方式挂接。第 7 章 LoRA 那节见过的 `Duplicate()` 语义在这里再次发挥作用：复制的是引用计数句柄，不是底层数据。把计算拆成多个编译模型、又用共享缓冲把接缝处的搬运压回零——「拆」与「不白付拆的代价」，是完整的一对。
 
@@ -303,7 +305,7 @@ struct NpuAuxiliaryContext {                         // (3)
 | GPU | GPU delegate（OpenCL / Metal / WebGPU） | 并行强，可片上采样省 logits 回传 | 部分平台需双缓冲绕同缓冲读写限制 | decode ≈ 50.6、prefill ≈ 999 tok/s |
 | NPU | QNN（HTP） | 最省电、为推理专用 | 最封闭：委托厂商 delegate，本书仅基于代码分析 | 无真机，未测 |
 
-> 表 8-1　三类后端的特性权衡。实测为 Gemma 4 E4B、decode 128 token〔基准 D〕；NPU 一列按代码与文档，未经真机验证。
+> 表 8-1　三类后端的特性权衡。实测为 Gemma 4 E4B、decode 128 token〔基准 D〕；NPU 一列按代码与文档，未经真机验证。真机（Qualcomm 机型）cpu/gpu 对照与线程数扫描见附录 D 第十三节。
 
 三类后端，各有强项也各有麻烦：CPU 随时可用但要做线程与亲和性的功课，GPU 并行强还能片上采样省搬运，NPU 最省电但最封闭。LiteRT-LM 用一个枚举加一个工厂把它们藏在同一个 `LlmExecutor` 接口后面，上层无感。而"换后端连输出都变"这个反直觉现象，根子是浮点在不同硬件路径上算不出逐比特一致的结果，又被自回归放大。它也提醒我们：端侧的性能与正确性讨论，都要带上"哪个后端"这个前提。
 
@@ -320,4 +322,4 @@ struct NpuAuxiliaryContext {                         // (3)
 5. **设计题。** 要给运行时接入一个新后端 XPU，从本章的分发路径出发，列出至少三处必须改动的位置。
 
 
-<!-- NPU 无真机，全程标注"基于代码分析"。cpu vs gpu 对比已回填（50.6/24.7、999/259 tok/s〔基准 D〕）；片上采样单独计价与 cpu_thread_count 扫描未做（方法已记录在正文）。#2281 现象按【文档】级引用，成因为基于浮点常识的解释。图 8-2（数据路径）、表 8-1（权衡）未出，素材在正文齐备。 -->
+<!-- NPU 结构描述基于代码分析；2026-07-18 真机探测（Qualcomm）确认失败形态：QNN 库不在 prebuilt、需 TF_LITE_AUX 专用打包。cpu vs gpu 对比已回填〔基准 D〕；线程数扫描与峰值内存已在真机完成（附录 D 第十三节）。#2281 现象按【文档】级引用，成因为浮点常识解释。 -->
