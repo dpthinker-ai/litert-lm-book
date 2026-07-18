@@ -259,7 +259,7 @@ int LlmLiteRtCompiledModelExecutorBase::BindTensorsAndRunDecodeStatic(
 
 NPU 是三者里能效比最高的——同样的活，它最省电、最不发热，这在端侧是硬通货。代价是它最封闭：接口是厂商的（比如高通的 QNN），能跑的算子有限，灵活性最低。
 
-本节的主体内容基于对代码的阅读（NPU 的结构描述无法在无专用模型的设备上验证）；不过本书后来借到一台 Qualcomm 机型做了真机探测，它的失败形态留在本节末尾——那部分是真机确认的。NPU 走的是工厂里那条独立路径（`CreateNpuLlmLiteRtCompiledModelExecutor`），产出一个专门的执行器（`runtime/executor/llm_litert_npu_compiled_model_executor.h:51`）。这个执行器的类注释写着 "Component intended to be used with an NPU variant of Gemma3"（`:50`）——它不是通用执行器，是为 NPU 版 Gemma3 专门做的。
+本节的主体内容基于对代码的阅读（NPU 的结构描述无法在无专用模型的设备上验证）；不过本书后来借到一台 Qualcomm 机型做了真机探测，它的失败形态留在本节末尾，那部分是真机确认的。NPU 走的是工厂里那条独立路径（`CreateNpuLlmLiteRtCompiledModelExecutor`），产出一个专门的执行器（`runtime/executor/llm_litert_npu_compiled_model_executor.h:51`）。这个执行器的类注释写着 "Component intended to be used with an NPU variant of Gemma3"（`:50`）：它不是通用执行器，是为 NPU 版 Gemma3 专门做的。
 
 最能说明结构差异的是它内部的一组子模型 struct。CPU/GPU 执行器持有一个 `CompiledModel`（主图），NPU 执行器却持有好几个，各管一段计算。其中之一是 embedder（`:266`）：
 
@@ -283,7 +283,7 @@ struct NpuAuxiliaryContext {                         // (3)
 
 这不是猜测，延迟统计字段（`:60`–`:82`）把这条流水线逐段列了出来：`prefill_embedder_inference_latency_us`、`prefill_mask_inference_latency_us`、`prefill_rope_inference_latency_us`、`prefill_llm_inference_latency_us`、`prefill_cache_update_inference_latency_us`——每一段都有独立计时。一个前向被切成这么多段独立计时，正说明它们是各自独立的推理调用。为什么这么切，涉及 NPU 算子约束下的工程取舍（NPU 能跑的算子有限，把不友好的部分单独拆出来是常见做法），此处只把代码能确证的结构差异记录在案。
 
-本书在一台 Qualcomm 机型上真机探测过这条路径（附录 D 第十三节），它走不通，而失败的形态恰好印证了「封闭」二字。第一层，QNN 的 accelerator 库不在仓库的 `prebuilt/` 里（加载直接报 "could not be loaded and registered"）——厂商 delegate 的二进制不随开源代码分发。第二层更根本：NPU 执行器要求模型带 `TF_LITE_AUX` 辅助段（`llm_litert_npu_compiled_model_executor.cc:3000`），而标准 Gemma 4 E4B 的 `.litertlm` 没有这一段（附录 D 第六节实剖的 10 个段里没有 AUX）。也就是说，NPU 要的不是标准模型文件，而是面向厂商 delegate 的专用打包——上面那套多编译子模型结构，就是为这种打包准备的。在没有专用模型的前提下，NPU 的行为描述仍只能基于代码分析，这一点如实保留。
+本书在一台 Qualcomm 机型上真机探测过这条路径（附录 D 第十三节），它走不通，而失败的形态恰好印证了「封闭」二字。第一层，QNN 的 accelerator 库不在仓库的 `prebuilt/` 里（加载直接报 "could not be loaded and registered"），厂商 delegate 的二进制不随开源代码分发。第二层更根本：NPU 执行器要求模型带 `TF_LITE_AUX` 辅助段（`llm_litert_npu_compiled_model_executor.cc:3000`），而标准 Gemma 4 E4B 的 `.litertlm` 没有这一段（附录 D 第六节实剖的 10 个段里没有 AUX）。也就是说，NPU 要的不是标准模型文件，而是面向厂商 delegate 的专用打包，上面那套多编译子模型结构就是为这种打包准备的。在没有专用模型的前提下，NPU 的行为描述仍只能基于代码分析，这一点如实保留。
 
 子模型之间的衔接也值得一记，因为这是「拆成多个编译模型」最容易多付代价的地方。embedder 的输出缓冲不是新分配的，而是直接 `Duplicate()` 主模型输入侧的 embeddings 缓冲（`llm_litert_npu_compiled_model_executor.cc:514-516`，prefill；decode、verify 同构，`:520-535`）：embedder 把结果直接写进主模型的输入缓冲，两个编译模型之间没有一次字节拷贝。per-layer embedder（`:578-600`）与 mask 子图（`:662`、`:681`、`:702`）按同样方式挂接。第 7 章 LoRA 那节见过的 `Duplicate()` 语义在这里再次发挥作用：复制的是引用计数句柄，不是底层数据。把计算拆成多个编译模型、又用共享缓冲把接缝处的搬运压回零——「拆」与「不白付拆的代价」，是完整的一对。
 
