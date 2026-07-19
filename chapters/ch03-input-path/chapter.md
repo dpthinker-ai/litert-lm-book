@@ -2,7 +2,7 @@
 
 > 本章目标：说明模板如何从消息中取得增量文本，并由 tokenizer 编码。执行器按模型签名直接提交所得 token id，或先生成 prefill embedding。
 
-调用方提交文本或多模态数据，模型执行器最终接收 token id 或 embedding。中间还要处理对象生命周期、消息历史、模板渲染与分词。图 3-1 列出这条路径；其中，跨轮上下文复用与单次 prefill 缓冲区内的数据放置属于不同问题。
+调用方提交文本或多模态数据，模型执行器最终接收 token id 或 embedding。中间还需处理对象生命周期、消息历史、模板渲染与分词。图 3-1 列出这条路径；其中，跨轮上下文复用与单次 prefill 缓冲区内的数据放置属于不同问题。
 
 <figure>
 {{#include figs/fig-3-1.svg}}
@@ -13,9 +13,9 @@
 
 LiteRT-LM 的底层生成接口以 `Engine` 与 `Session` 为核心。`Engine` 初始化模型、tokenizer 与 embedder 等共享资源。它还负责创建 Session（`runtime/engine/engine.h:33`）。`SessionInterface` 保存一次交互的内部状态，并提供生成、prefill 与 decode 操作（`runtime/engine/engine.h:65`）。
 
-`EngineT::CreateSession` 接收 `SessionConfig`，返回一个由调用方持有的 Session（`runtime/engine/engine.h:308`）。同一 Engine 可以创建多个 Session。生成入口位于 Session，而不是 Engine。共享模型资源与每次交互的状态具有不同的所有权边界。
+`EngineT::CreateSession` 接收 `SessionConfig`，返回一个由调用方持有的 Session（`runtime/engine/engine.h:308`）。同一个 Engine 可以创建多个 Session。生成入口位于 Session，而不是 Engine。共享模型资源与每次交互的状态分属不同的所有权边界。
 
-接口没有给出两类对象的固定内存占用或创建时延。这些数值应随具体模型、后端与设备一起测量。
+接口本身不给两类对象的固定内存占用或创建时延。这些数值应随具体模型、后端与设备一起测量。
 
 `SessionInterface` 同时提供高层生成接口与拆分后的 prefill、decode 接口。高层的两个入口如下（`runtime/engine/engine.h:112`、`runtime/engine/engine.h:128`）：
 
@@ -43,9 +43,9 @@ virtual absl::StatusOr<Responses> RunDecode() = 0;       // (2)
 
 (1) `RunPrefill` 接收 prompt，可以分块调用。(2) `RunDecode` 根据 Session 中已有的上下文开始生成。`SessionAdvanced::GenerateContent` 先调用 `RunPrefill`，成功后再调用 `RunDecode`（`runtime/core/session_advanced.cc:328`）。拆分接口允许调用方在两步之间建立检查点或克隆 Session。prefill 的任务组织见第 4 章；decode 见第 5 章。
 
-Engine 的具体实现由 `EngineFactory` 选择。`Instance()` 返回单例工厂（`runtime/engine/engine_factory.h:154`）。工厂中的 `registry_` 保存引擎类型到创建函数的映射；`preferred_engines_` 保存各 Backend 的候选顺序（`runtime/engine/engine_factory.h:218`、`runtime/engine/engine_factory.h:224`）。`CreateDefault` 按 Backend 遍历候选项，选择第一个已经注册的类型（`runtime/engine/engine_factory.h:85-99`）。
+Engine 的具体实现由 `EngineFactory` 选择。以下逻辑都位于 `runtime/engine/engine_factory.h`：`Instance()` 返回单例工厂（:154）；`registry_` 保存引擎类型到创建函数的映射，`preferred_engines_` 保存各 Backend 的候选顺序（:218-224）；`CreateDefault` 按 Backend 遍历候选项，选择第一个已经注册的类型（:85-99）。
 
-注册宏 `LITERT_LM_REGISTER_ENGINE` 会生成文件级静态 `EngineRegisterer`（`runtime/engine/engine_factory.h:227`、`runtime/engine/engine_factory.h:242`）。`engine_advanced_impl.cc` 用这个宏注册 `kAdvancedLiteRTCompiledModel`（`runtime/core/engine_advanced_impl.cc:370`）。可用类型取决于相应实现是否链接进最终程序。头文件也要求调用方确保目标引擎已经注册（`runtime/engine/engine_factory.h:51`）。
+注册宏 `LITERT_LM_REGISTER_ENGINE` 会生成文件级静态 `EngineRegisterer`（`runtime/engine/engine_factory.h:227-242`）。`engine_advanced_impl.cc` 用这个宏注册 `kAdvancedLiteRTCompiledModel`（`runtime/core/engine_advanced_impl.cc:370`）。可用类型取决于相应实现是否链接进最终程序；头文件也要求调用方确保目标引擎已经注册（`runtime/engine/engine_factory.h:51`）。
 
 ### 共享前缀：基于同一上下文创建分支
 
@@ -75,9 +75,9 @@ absl::StatusOr<std::unique_ptr<SessionInterface>> SessionAdvanced::Clone() {
 }
 ```
 
-(1) `WaitUntilDone` 使同步入口在克隆任务完成后才返回。`CloneAsyncLocked` 注册新的 Session，并把克隆任务接到源 Session 的 `last_task_ids_` 之后。源 Session 与新 Session 的后续任务都依赖该任务（`runtime/core/session_advanced.cc:419`、`runtime/core/session_advanced.cc:425`、`runtime/core/session_advanced.cc:429`、`runtime/core/session_advanced.cc:434`）。这段代码只确定任务顺序，没有复制 KV cache。
+(1) `WaitUntilDone` 使同步入口在克隆任务完成后才返回。`CloneAsyncLocked` 注册新的 Session，并把克隆任务接到源 Session 的 `last_task_ids_` 之后。源 Session 与新 Session 的后续任务都依赖该任务（`runtime/core/session_advanced.cc:419-434`）。这段代码只确定任务顺序，没有复制 KV cache。
 
-线程执行管理器运行克隆任务时，调用 `ResourceManager::CloneContextHandler`（`runtime/framework/resource_management/threaded_execution_manager.cc:940`）。克隆任务定义在 `runtime/framework/resource_management/threaded_execution_manager.cc:898`。`CloneContextHandler` 的关键部分如下（`runtime/framework/resource_management/resource_manager.cc:610`）：
+线程执行管理器运行克隆任务时，调用 `ResourceManager::CloneContextHandler`。克隆任务的定义和调用位于 `runtime/framework/resource_management/threaded_execution_manager.cc:898-940`。`CloneContextHandler` 的关键部分如下（`runtime/framework/resource_management/resource_manager.cc:610`）：
 
 ```cpp
 auto processed_context = llm_context_handler->shared_processed_context();  // (1)
@@ -94,20 +94,20 @@ return ContextHandler::Bundle(
 
 在 LiteRT compiled model 执行器中，`CloneContext()` 调用 `CloneKVCacheBuffers()`（`runtime/executor/llm_litert_compiled_model_executor.cc:1288`）。后者遍历 KV cache 输入缓冲，逐个调用 `CopyTensorBuffer`（`runtime/executor/llm_litert_compiled_model_executor.cc:1243`、`runtime/executor/llm_litert_compiled_model_executor.cc:1246`）。KV cache 深拷贝发生在这里。
 
-NPU 执行器覆写了 `CloneContext()`。它在 prefill 输入缓冲中匹配 K、V、C cache 名称。匹配到的 buffer 交给 `CopyTensorBuffer`（`runtime/executor/llm_litert_npu_compiled_model_executor.cc:2818-2827`）。两条后端路径都在写时分离阶段复制；`CloneContextHandler` 初次共享上下文时不复制这些 buffer。
+NPU 执行器覆写了 `CloneContext()`。它在 prefill 输入缓冲中匹配 K、V、C cache 名称。匹配到的 buffer 传递给 `CopyTensorBuffer`（`runtime/executor/llm_litert_npu_compiled_model_executor.cc:2818-2827`）。两条后端路径都在写时分离阶段复制；`CloneContextHandler` 初次共享上下文时不复制这些 buffer。
 
 `Clone` 的初始成本不能按一次完整 KV cache 拷贝估算。后续分支的 prefill 行为决定 buffer 是否以及何时复制。
 
 ## 对话层：消息与模板文本
 
-`Conversation` 是面向多轮消息的高层接口。它负责模板渲染、角色消息、多模态输入、历史管理与模型特定处理（`runtime/conversation/conversation.h:366`）。`Conversation::Create` 先请求 Engine 创建一个 Session（`runtime/conversation/conversation.cc:299`、`runtime/conversation/conversation.cc:305`）。构造完成后，Conversation 保存对 Engine 的引用。该对象还独占创建出的 Session（`runtime/conversation/conversation.h:639`、`runtime/conversation/conversation.h:665`）。
+`Conversation` 是面向多轮消息的高层接口。它负责模板渲染、角色消息、多模态输入、历史管理与模型特定处理（`runtime/conversation/conversation.h:366`）。`Conversation::Create` 先请求 Engine 创建一个 Session（`runtime/conversation/conversation.cc:299`、`runtime/conversation/conversation.cc:305`）。构造完成后，Conversation 保存对 Engine 的引用，并独占它创建的 Session（`runtime/conversation/conversation.h:639`、`runtime/conversation/conversation.h:665`）。
 
 <figure>
 {{#include figs/fig-3-2.svg}}
 <figcaption>图 3-2　Engine 创建 Session；Conversation 保留 Engine 引用、独占一个 Session，并维护消息历史、模板与处理器。</figcaption>
 </figure>
 
-角色消息必须先转成模型模板约定的文本或多模态输入。`Message` 是 `nlohmann::ordered_json` 的别名（`runtime/conversation/io_types.h:26`）。它既可以表示 `{"role":"user","content":"..."}`，也可以携带工具调用或多模态字段。`PromptTemplate` 把消息序列、工具与额外上下文交给 Jinja 模板。模型对应的 `ModelDataProcessor` 再负责输入转换与输出解析。
+角色消息必须先转换为模型模板约定的文本或多模态输入。`Message` 是 `nlohmann::ordered_json` 的别名（`runtime/conversation/io_types.h:26`）。它既可以表示 `{"role":"user","content":"..."}`，也可以携带工具调用或多模态字段。`PromptTemplate` 把消息序列、工具与额外上下文传递给 Jinja 模板。模型对应的 `ModelDataProcessor` 再负责输入转换与输出解析。
 
 `ConversationConfig` 定义这层处理所需的配置（`runtime/conversation/conversation.h:56`）。下列只读入口对应 Preface、模板、约束解码开关与 Preface 预填充选项：
 
@@ -136,7 +136,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 | `FastVlmDataProcessorConfig` | 输入尺寸 1024×1024 | — | — |
 | `GenericDataProcessorConfig` | — | — | model 角色默认为 `assistant` |
 
-> 表 3-1　模型特定 data processor 配置的默认差异。Gemma 字段见 `runtime/conversation/model_data_processor/gemma3_data_processor_config.h:23-43` 与 `runtime/conversation/model_data_processor/gemma4_data_processor_config.h:24-79`。Qwen3 与 FunctionGemma 字段见 `runtime/conversation/model_data_processor/qwen3_data_processor_config.h:21-25` 与 `runtime/conversation/model_data_processor/function_gemma_data_processor_config.h:23-49`。FastVLM 与 Generic 字段见 `runtime/conversation/model_data_processor/fastvlm_data_processor_config.h:22-25` 与 `runtime/conversation/model_data_processor/generic_data_processor_config.h:22-26`。
+> 表 3-1　模型特定 data processor 配置的默认差异。各配置类的字段定义见 `runtime/conversation/model_data_processor/` 目录下对应的头文件。
 
 ### MiniJinja 与模板兼容性改写
 
@@ -156,7 +156,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 (1) 与 (2) 把若干 Python 风格的方法改写为 MiniJinja 测试或过滤器。(3) 删除 MiniJinja 不识别的 generation 标记。该函数只处理字符串，不分析 Jinja 语法树，因此只转换列出的模式。未覆盖的模板语法会原样进入 `Apply`，并可能在 MiniJinja 渲染时返回错误（`runtime/components/prompt_template.cc:112-127`）。
 
-`PromptTemplateInput` 还包含 `now`，默认值取对象构造时的当前时间（`runtime/components/prompt_template.h:89-91`）。不能因此假定模板渲染天然确定。LiteRT-LM 在同一次差分中复用模板输入对象的非消息字段，并对渲染结果做前缀校验。
+`PromptTemplateInput` 还包含 `now`，默认值取对象构造时的当前时间（`runtime/components/prompt_template.h:89-91`）。不能因此假定模板的渲染结果总是确定的。LiteRT-LM 在同一次差分中复用模板输入对象的非消息字段，并对渲染结果做前缀校验。
 
 ## 增量文本：单轮模板与全历史回退
 
@@ -223,13 +223,13 @@ if (new_string.substr(0, old_string.size()) != old_string) {         // (3)
 return new_string.substr(old_string.length());                       // (4)
 ```
 
-(1) 复制模板输入会让 `now`、工具和额外上下文在这一对渲染中保持相同。追加消息仍可能改变模板前部或尾部，这次复制不能保证新渲染保留旧前缀。(2) 至 (4) 才给出检查条件与返回逻辑（`runtime/conversation/conversation.cc:791`、`runtime/conversation/conversation.cc:803`、`runtime/conversation/conversation.cc:806`、`runtime/conversation/conversation.cc:813`、`runtime/conversation/conversation.cc:820`）。
+(1) 复制模板输入会让 `now`、工具和额外上下文在这一对渲染中保持相同。追加消息仍可能改变模板前部或尾部，这次复制不能保证新渲染保留旧前缀。(2) 至 (4) 才给出检查条件与返回逻辑（`runtime/conversation/conversation.cc:791-820`）。
 
-`include_preface` 只控制该辅助函数在旧消息为空时是否渲染 Preface。值为 true 时，`old_string` 留空，返回值包含 Preface。值为 false 时，代码先渲染 Preface，再从新字符串中减去它（`runtime/conversation/conversation.cc:778`、`runtime/conversation/conversation.cc:786`）。调用方根据 `prefill_preface_on_init` 传入相反条件（`runtime/conversation/conversation.cc:862`）。
+`include_preface` 只控制该辅助函数在旧消息为空时是否渲染 Preface。值为 true 时，`old_string` 留空，返回值包含 Preface。值为 false 时，代码先渲染 Preface，再从新字符串中减去它（`runtime/conversation/conversation.cc:778-786`）。调用方根据 `prefill_preface_on_init` 传入相反条件（`runtime/conversation/conversation.cc:862`）。
 
 全历史回退会向模板引擎重复提交旧消息。若每轮增加近似固定长度的消息，前 n 轮累计提交的历史文本量随轮数呈二次增长。这里只能推导待渲染输入量，不能由此给出具体时延。单轮路径不重复渲染全历史。是否为回退路径增加缓存，要在目标模板与设备上测量；缓存还需定义 Preface、模板或 `extra_context` 变化时的失效规则。
 
-`SendMessageAsync` 把本轮文本交给 `ModelDataProcessor::ToInputDataVector`（`runtime/conversation/conversation.cc:506`），再调用 `Session::RunPrefillAsync`（`runtime/conversation/conversation.cc:573`）。旧上下文能否复用，取决于单轮语义或前缀校验，而不是 `PromptTemplateInput` 的复制操作。
+`SendMessageAsync` 把本轮文本传递给 `ModelDataProcessor::ToInputDataVector`（`runtime/conversation/conversation.cc:506`），再调用 `Session::RunPrefillAsync`（`runtime/conversation/conversation.cc:573`）。旧上下文能否复用，取决于单轮语义或前缀校验，而不是 `PromptTemplateInput` 的复制操作。
 
 ## 文本编码：两种 tokenizer
 
@@ -255,7 +255,7 @@ class Tokenizer {
 
 (1) `TextToTokenIds` 完成输入侧编码。(2) `TokenIdsToText` 用于输出侧；接口要求不完整的 BPE 序列返回 `DataLossError`（`runtime/components/tokenizer.h:68`）。
 
-SentencePiece 实现把编码调用交给 `SentencePieceProcessor`（`runtime/components/sentencepiece_tokenizer.cc:65`）：
+SentencePiece 实现把编码调用转发给 `SentencePieceProcessor`（`runtime/components/sentencepiece_tokenizer.cc:65`）：
 
 ```cpp
 absl::StatusOr<std::vector<int>> SentencePieceTokenizer::TextToTokenIds(
@@ -269,7 +269,7 @@ absl::StatusOr<std::vector<int>> SentencePieceTokenizer::TextToTokenIds(
 }
 ```
 
-(1) 这一层把第三方库的 `Encode` 结果与错误状态转接到统一接口。HuggingFace 实现把编码交给 `tokenizers::Tokenizer`（`runtime/components/huggingface_tokenizer.h:61`、`runtime/components/huggingface_tokenizer.cc:55`）：
+(1) 这一层把第三方库的 `Encode` 结果与错误状态转接到统一接口。HuggingFace 实现把编码转发给 `tokenizers::Tokenizer`（`runtime/components/huggingface_tokenizer.h:61`、`runtime/components/huggingface_tokenizer.cc:55`）：
 
 ```cpp
 absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
@@ -290,7 +290,7 @@ absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
 
 ## prefill 输入：token id 与 embedding
 
-主模型可以在内部根据 token id 查找向量。运行时也可以先把 id 转成 embedding（嵌入）。`LlmLiteRtCompiledModelExecutorBase::Prefill` 根据 `use_token_as_lookup` 选择路径。该值为 true 时，代码把 id 写入 token 输入缓冲；否则调用 `EmbeddingLookupManager` 填充 embedding 输入缓冲（`runtime/executor/llm_litert_compiled_model_executor.cc:624`、`runtime/executor/llm_litert_compiled_model_executor.cc:647`）。主机侧 embedding lookup 不是所有模型都必经的步骤。
+主模型可以在内部根据 token id 查找向量。运行时也可以先把 id 转换为 embedding（嵌入）。`LlmLiteRtCompiledModelExecutorBase::Prefill` 根据 `use_token_as_lookup` 选择路径。该值为 true 时，代码把 id 写入 token 输入缓冲；否则调用 `EmbeddingLookupManager` 填充 embedding 输入缓冲（`runtime/executor/llm_litert_compiled_model_executor.cc:624`、`runtime/executor/llm_litert_compiled_model_executor.cc:647`）。主机侧 embedding lookup 不是所有模型都必经的步骤。
 
 `EmbeddingLookup` 的批量 prefill 接口如下（`runtime/components/embedding_lookup/embedding_lookup.h:63`）：
 

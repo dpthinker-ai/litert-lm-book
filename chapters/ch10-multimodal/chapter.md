@@ -1,4 +1,4 @@
-# 第 10 章 多模态输入、约束解码与工具调用
+# 第 10 章 多模态与工具调用：视觉/音频编码、约束解码与函数调用
 
 > 本章目标：说明图像、音频输入的 embedding 转换路径，以及约束解码的 token 屏蔽过程。前者扩展 prefill 输入，后者限制 decode 输出；文法只保证其中编码的结构条件，工具校验与执行仍由应用负责。
 
@@ -42,7 +42,7 @@ using InputData = std::variant<InputText, InputImage, InputAudio,
 
 `InputImage` 的 `std::string` 分支持有自己的字节；`absl::string_view` 分支只保存视图。后者的源缓冲必须至少存活到预处理完成。这一点来自成员类型和 `GetRawImageBytes` 的实现，而不是额外的生命周期管理（`runtime/engine/io_types.h:93-146`、`runtime/engine/io_types.cc:75-83`）。Gemma 4 的 `path/blob` 路径在调用预处理器前构造 `std::string`，因此不会把文件映射的裸视图继续传入异步 prefill（`runtime/conversation/model_data_processor/gemma4_data_processor.cc:414-440`）。
 
-预处理完成后，图像通常变为单个 `TensorBuffer` 或名为 `images`、`positions_xy` 的张量表；音频变为频谱 `TensorBuffer`。Conversation 把这组 `InputData` 交给 `RunPrefillAsync`（`runtime/conversation/conversation.cc:506-515`）。该接口接收 const 引用，并在返回前生成 `preprocessed_contents`。张量通过 `CreateCopy` 调用 `Duplicate`，随后这份内部向量被移动到执行任务（`runtime/core/session_utils.cc:168-218`、`runtime/core/session_advanced.cc:85-135`）。调用方不必让原始 `InputData` 存活到异步任务结束，但底层张量复制仍是句柄级浅拷贝。
+预处理完成后，图像通常变为单个 `TensorBuffer` 或名为 `images`、`positions_xy` 的张量表；音频变为频谱 `TensorBuffer`。Conversation 把这组 `InputData` 传递给 `RunPrefillAsync`（`runtime/conversation/conversation.cc:506-515`）。该接口接收 const 引用，并在返回前生成 `preprocessed_contents`。张量通过 `CreateCopy` 调用 `Duplicate`，随后这份内部向量被移动到执行任务（`runtime/core/session_utils.cc:168-218`、`runtime/core/session_advanced.cc:85-135`）。调用方不必让原始 `InputData` 存活到异步任务结束，但底层张量复制仍是句柄级浅拷贝。
 
 | 阶段 | 输入表示 | 输出表示 | 所有权或有效期 | 典型检查 |
 |---|---|---|---|---|
@@ -265,7 +265,7 @@ P_{limit}=\min(P_{cfg},9T_{budget}).
 
 这一区别影响三个判断。第一，多图不会自动变成可并行的图像 batch；当前组合函数先逐图编码，再拼接结果。第二，主干看到的是一条更长的上下文，而不是多条独立样本。第三，每幅图的边界要由模型约定的开始/结束 token 表达，不能从拼接后的 embedding 张量恢复。
 
-组合一个对象时，函数直接移动原有 `ExecutorVisionData`。组合多个对象时，它创建新的 host `TensorBuffer`，依次锁定每个源缓冲并复制其 packed bytes（`runtime/util/executor_data_util.cc:40-104`）。因此，单图和多图走过的内存路径不同。源码只能证明多图存在一次组合复制，不能据此估计它在端到端时延中的占比。
+组合一个对象时，函数直接移动原有 `ExecutorVisionData`。组合多个对象时，它创建新的 host `TensorBuffer`，依次锁定每个源缓冲并复制其 packed bytes（`runtime/util/executor_data_util.cc:40-104`）。因此，单图和多图经过的内存路径不同。源码只能证明多图存在一次组合复制，不能据此估计它在端到端时延中的占比。
 
 ### 视觉 token 折算成的 prefill 与 KV cache 开销
 
@@ -553,7 +553,7 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 }
 ```
 
-FunctionGemma 的 `FormatTools` 会把工具声明转换为模型使用的 FC 格式。启用约束后，`CreateConstraint` 把工具 JSON 与 fence、引号等格式选项交给 Gemma constraint provider（`runtime/conversation/model_data_processor/function_gemma_data_processor.cc:333-397`）。模型可能生成：
+FunctionGemma 的 `FormatTools` 会把工具声明转换为模型使用的 FC 格式。启用约束后，`CreateConstraint` 把工具 JSON 与 fence、引号等格式选项传递给 Gemma constraint provider（`runtime/conversation/model_data_processor/function_gemma_data_processor.cc:333-397`）。模型可能生成：
 
 ```text
 call:set_device_mode{
@@ -615,7 +615,7 @@ absl::StatusOr<ordered_json> ExecuteToolCall(
 
 > 表 10-5　parser 只跨过语法边界；真正的信任边界位于宿主的命令校验与授权入口。
 
-执行成功后，应用把最小结果作为 `role: "tool"` 的消息发回 Conversation。FunctionGemma 的格式化代码可从 `tool_name` 或 `name` 取工具名，再把其余字段转换为 FC 对象（`runtime/conversation/model_data_processor/function_gemma_data_processor.cc:91-127`）。返回数据同样会进入模型上下文，所以不应包含访问令牌、内部异常栈或不必要的设备属性。
+执行成功后，应用把最小结果作为 `role: "tool"` 的消息发回 Conversation。FunctionGemma 的格式化代码可从 `tool_name` 或 `name` 取工具名，再把其余字段转换为 FC 对象（`runtime/conversation/model_data_processor/function_gemma_data_processor.cc:91-127`）。返回数据同样会进入模型上下文，因此不应包含访问令牌、内部异常栈或不必要的设备属性。
 
 外部调用失败时，也应回填结构化错误，而不是伪造成功结果。例如 `{"tool_name":"set_device_mode","error":{"code":"DEVICE_OFFLINE"}}` 足以让模型解释当前状态。是否允许模型重试由宿主决定。对有副作用的操作，未确认上次请求是否生效前，不能仅凭模型再次生成同一调用就重放。
 

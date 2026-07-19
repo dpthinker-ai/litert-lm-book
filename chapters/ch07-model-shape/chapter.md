@@ -1,16 +1,16 @@
-# 第 7 章 模型的形态：量化、.litertlm 格式与 LoRA
+# 第 7 章 模型文件与权重：量化、容器格式与 LoRA
 
 > 本章目标：区分低比特表示的理论收益与实测收益，说明 `.litertlm` 的文件布局及 v0.13.1 主加载路径。还将分析权重缓存（weight cache）与 LoRA 的资源生命周期；相关口径用于第 8 章的后端内存讨论。
 
 KV cache 属于运行时状态，模型文件则由 Engine 加载；二者的生命周期不同。`.litertlm` 把模型、tokenizer 与运行参数组织在一个带分段目录的文件中。低秩适配（low-rank adaptation，LoRA）将增量权重与基座权重分开保存。
 
-权重位宽影响存储量和潜在的内存流量，但本章涉及的内存问题不能使用同一套口径。位宽比例可以静态计算，吞吐与质量需要实测，mmap（内存映射）还要区分虚拟地址空间与物理驻留。
+权重位宽影响存储量和潜在的内存流量，但本章涉及的内存问题适用的是不同口径。位宽比例可以静态计算，吞吐与质量需要实测，mmap（内存映射）还要区分虚拟地址空间与物理驻留。
 
 ## 量化收益取决于表示、算子与瓶颈
 
 权重有效载荷可以直接计算。若同一组参数原来以 fp16 保存，每个参数占 2 字节；改成紧密打包的 int4 后，理想占用是 0.5 字节，二者之比为 4。这个比例不包含分组 scale、zero point 和对齐填充。文件头与 tokenizer 也不在计算范围内。该比例不能直接套到整个 `.litertlm` 文件上。
 
-带宽收益还需要两个条件。第一，低比特权重从主存送往计算单元时仍要保持压缩形态。如果启动时已经展开为更高位宽，decode 的主存流量就不会按 4 倍缩小。第二，在给定设备、模型、上下文长度和后端下，decode 必须主要受权重带宽限制。
+带宽收益还需要两个条件。第一，低比特权重从主存传输至计算单元时仍要保持压缩形态。如果启动时已经展开为更高位宽，decode 的主存流量就不会按 4 倍缩小。第二，在给定设备、模型、上下文长度和后端下，decode 必须主要受权重带宽限制。
 
 两个条件都成立时，权重这一项的流量降幅才可能接近位宽比。KV cache、激活、量化参数和算子调度没有同比缩小，端到端吞吐不能由这个比例直接推出。
 
@@ -56,7 +56,7 @@ enum class ActivationDataType {
 
 判断一个 int4 模型能否在目标设备上运行，至少要区分四层。第一层是文件中的权重表示，包括位宽、分组、scale 和对齐。第二层是 TFLite 图如何描述这些常量与算子。第三层是编译时选定的后端及其选项。第四层才是后端生成或选择的 kernel，以及它是否保留压缩权重、何时转换布局。
 
-这四层不能互相替代。文件中存在 int4 常量，不代表图中的每个矩阵乘都能交给同一个低比特算子。图能表达某种量化形式，也不代表 CPU、GPU 与 NPU 都接受它。后端完成编译后，权重还可能转换成设备相关布局；此时文件大小不再等于运行时权重缓冲大小。
+这四层不能互相替代。文件中存在 int4 常量，不代表图中的每个矩阵乘都能由同一个低比特算子处理。图能表达某种量化形式，也不代表 CPU、GPU 与 NPU 都接受它。后端完成编译后，权重还可能转换成设备相关布局；此时文件大小不再等于运行时权重缓冲大小。
 
 v0.13.1 的 GPU 编译选项提供了两个可观察的例子。`convert_weights_on_gpu` 控制 OpenCL 与 WebGPU 路径是否在 GPU 上转换权重，其他后端会忽略该开关。`allow_src_quantized_fc_conv_ops` 决定是否允许源量化的 FC/Conv，默认设置会允许该路径（`runtime/executor/llm_executor_settings.h:197-212`、`runtime/executor/llm_executor_settings.h:231-238`、`runtime/executor/llm_executor_settings_utils.cc:164-172`）。这些开关说明“量化权重存在”和“量化算子被采用”是两个判断。源码没有给出它们在每款 GPU 上对应的 kernel 清单。
 
@@ -123,7 +123,7 @@ $$
 
 文件头使用 FlatBuffer 二进制序列化格式。`KeyValuePair` 的键是字符串，值是带类型标签的 `VData` union。union 允许 12 种标量或字符串包装类型（`schema/core/litertlm_header_schema.fbs:23-59`）。这个设计固定了值的表示类型，但没有固定键名集合。增加字符串键通常不需要修改 `.fbs`；增加 union 值类型或 section 类型才需要修改 schema。
 
-`key` 与 `value` 标记为 `(required)`，这是 schema 的结构约束。它不等于当前读取路径会对任意损坏文件做完整验证。`ReadHeaderFromLiteRTLM` 检查魔数、major 版本、头部结束偏移和读取结果，然后把缓冲交给生成的访问器；该函数没有调用生成的 FlatBuffers verifier（`schema/core/litertlm_read.cc:70-139`）。因此，本章只把 schema 当作文件结构定义，不把它描述成完整的安全校验器或语义校验器。
+`key` 与 `value` 标记为 `(required)`，这是 schema 的结构约束。它不等于当前读取路径会对任意损坏文件做完整验证。`ReadHeaderFromLiteRTLM` 检查魔数、major 版本、头部结束偏移和读取结果，然后把缓冲传递给生成的访问器；该函数没有调用生成的 FlatBuffers verifier（`schema/core/litertlm_read.cc:70-139`）。因此，本章只把 schema 当作文件结构定义，不把它描述成完整的安全校验器或语义校验器。
 
 段目录由 `SectionObject` 给出。每项记录可选的键值属性、`begin_offset`、`end_offset` 和 `data_type`，数据范围是 `[begin_offset, end_offset)`。注释规定，下一段不得早于计算出的 16 KiB 对齐边界（`schema/core/litertlm_header_schema.fbs:85-96`）。
 
@@ -141,7 +141,7 @@ builder 不能在写 section 前一次性确定所有结束偏移。它先用非
 
 第二次打包前后，元数据长度必须相同。代码以断言检查这一条件。偏移值本身是固定宽度的 `ulong`，因此从占位值改成真实值不会改变 FlatBuffer 的字段宽度。若以后把可变长内容加入这一回填过程，就需要重新审视这一假设。
 
-TFLite 模型段的 `items` 还有三项会影响加载行为。`model_type` 用来区分主干、视觉、音频或其他模型；`backend_constraint` 声明允许的后端集合；`prefer_activation_type` 给出首选激活类型。builder 会禁止覆盖 `model_type` 与 `backend_constraint`，并把后端字符串转成小写（`python/litert_lm_builder/litertlm_builder.py:434-505`）。
+TFLite 模型段的 `items` 还有三项会影响加载行为。`model_type` 用来区分主干、视觉、音频或其他模型；`backend_constraint` 声明允许的后端集合；`prefer_activation_type` 给出首选激活类型。builder 会禁止覆盖 `model_type` 与 `backend_constraint`，并把后端字符串转换为小写（`python/litert_lm_builder/litertlm_builder.py:434-505`）。
 
 loader 对键名做不区分大小写的比较。缺少 `model_type` 时，它为兼容旧文件回退到 `kTfLitePrefillDecode`；存在后端和激活提示时，则把它们存入 `section_hints_map_`（`runtime/util/litert_lm_loader.cc:71-117`、`runtime/util/litert_lm_loader.cc:233-266`）。因此，section 属性不是只供打印工具展示的注释。Engine 会在创建 executor 前检查后端约束，并在调用者没有显式指定激活类型时采用 `prefer_activation_type`（`runtime/engine/engine_settings.cc:73-136`、`runtime/engine/engine_settings.cc:415-433`）。
 
@@ -209,7 +209,7 @@ v0.13.1 的 Engine 创建流程先调用 `BuildLiteRtCompiledModelResources`（`
 
 这段补偿位于当前主 loader，而不是文件格式本身。向前多映射的范围扩大了虚拟映射区；哪些页实际进入物理内存仍由后续访问与操作系统策略决定。
 
-POSIX 实现用 `MAP_PRIVATE` 建立映射。随后，Apple 平台调用 `MADV_DONTNEED`，其他 POSIX 平台调用 `MADV_WILLNEED`（`runtime/util/memory_mapped_file_posix.cc:101-128`）。`madvise` 是给内核的建议，不是同步读盘完成或禁止预读的保证。因此不能笼统写成“mmap 后一律不预读”：不同平台的代码路径给出了相反的页使用建议。
+POSIX 实现用 `MAP_PRIVATE` 建立映射。随后，Apple 平台调用 `MADV_DONTNEED`，其他 POSIX 平台调用 `MADV_WILLNEED`（`runtime/util/memory_mapped_file_posix.cc:101-128`）。`madvise` 是给内核的建议，不是同步读盘完成或禁止预读的保证。因此不能简单地说”mmap 后一律不预读”：不同平台的代码路径给出了相反的页使用建议。
 
 ### 并行的是 tokenizer 创建与模型加载
 
@@ -228,7 +228,7 @@ POSIX 实现用 `MAP_PRIVATE` 建立映射。随后，Apple 平台调用 `MADV_D
 
 CPU 与 GPU 后端会为权重或程序缓存派生文件名。`CacheSuffix` 的注释列出 XNNPACK、MlDrift 程序缓存和 MlDrift weight cache。各自的命名形态见 `runtime/executor/executor_settings_base.h:168-186`。`GetWeightCacheFile` 处理 `:nocache`、scoped cache file、路径派生与旧缓存清理（`runtime/executor/executor_settings_base.cc:301-354`）。
 
-cache 文件不是 `.litertlm` 中某个 section 的原样副本。LiteRT-LM 先派生路径，或者取得调用者提供的文件描述符，再把配置交给后端。CPU 路径设置 XNNPACK weight cache 的路径或 fd。GPU 的路径模式传入序列化目录、模型 cache key 与外部张量序列化开关；只有文件描述符模式才显式传入 weight cache 与 program cache 的 fd（`runtime/executor/litert_compiled_model_executor_utils.cc:460-488`、`runtime/executor/litert_compiled_model_executor_utils.cc:491-554`）。路径模式下 GPU weight cache 的实际文件名、格式与命中判断属于下层 LiteRT 后端，不能从 LiteRT-LM 的候选路径单独确定。
+cache 文件不是 `.litertlm` 中某个 section 的原样副本。LiteRT-LM 先派生路径，或者取得调用者提供的文件描述符，再把配置传递给后端。CPU 路径设置 XNNPACK weight cache 的路径或 fd。GPU 的路径模式传入序列化目录、模型 cache key 与外部张量序列化开关；只有文件描述符模式才显式传入 weight cache 与 program cache 的 fd（`runtime/executor/litert_compiled_model_executor_utils.cc:460-488`、`runtime/executor/litert_compiled_model_executor_utils.cc:491-554`）。路径模式下 GPU weight cache 的实际文件名、格式与命中判断属于下层 LiteRT 后端，不能从 LiteRT-LM 的候选路径单独确定。
 
 主文本 executor 先创建带 cache 参数的 compilation options。若 `.litertlm` 有独立 `TFLiteWeights` 段，它还把该段的 offset 与 length 作为 `tflite_weights` 传给 GPU；非 GPU 后端遇到这类外挂权重段会返回错误。随后才调用 `CompiledModel::Create`（`runtime/executor/llm_litert_compiled_model_executor.cc:1624-1652`）。外挂权重、weight cache 与 compiled model 是三个对象。它们分别属于模型输入产物、后端派生物和本次进程中的可执行对象。
 
@@ -261,7 +261,7 @@ CPU 和 GPU 的 cache 内容也不能互换。主 CPU 路径使用 `.xnnpack_cac
 
 mmap 先增加虚拟地址映射，物理驻留随后受页面访问、`madvise` 和内核回收策略影响。它可以避免把整个模型再复制到一块普通堆缓冲，但不会自动缩小推理阶段需要访问的权重工作集。对稠密 decoder 而言，每个 decode step 通常会访问大部分权重；实际驻留规模还取决于后端预打包、缓存和系统内存压力。
 
-LiteRT-LM 的内存日志提供多种口径（`runtime/engine/litert_lm_lib.cc:427-451`）。日志记录 peak system RAM、physical footprint 与非 mmap 堆；还记录 in-use heap 和 private footprint。判断模型能否运行时，应同时看私有内存、KV cache、激活、后端工作区和文件映射的驻留工作集。虚拟映射大小不是峰值物理内存，二者之差也不能全部算成节省量。
+LiteRT-LM 的内存日志提供多种口径（`runtime/engine/litert_lm_lib.cc:427-451`）。日志记录 peak system RAM、physical footprint 与非 mmap 堆；还记录 in-use heap 和 private footprint。判断模型能否运行时，应同时看私有内存、KV cache、激活、后端工作区和文件映射的驻留工作集。虚拟映射大小不是峰值物理内存，二者之差也不能全部视为节省量。
 
 ## LoRA：基座权重与增量权重分离
 
@@ -275,7 +275,7 @@ LoRA 用两个低秩矩阵表示某个线性层的权重增量。对于 `d_in ×
 
 离线合并不需要运行时切换接口，但每个适配器都会产生一份新的完整模型。若基座权重已经量化，先合并还是先量化会改变数值结果，不能把 fp16 合并后的差分直接等同于量化模型上的差分。运行时适配只分发增量文件，却要求基座模型的 signature 预先暴露匹配的 LoRA 输入，后端还要能为这些输入创建 buffer。
 
-v0.13.1 可追踪到的 `LoRA` 组件属于运行时适配路径。主文本 compiled executor 会识别 LoRA 输入名，并跳过普通 decode buffer 的创建，把这些输入留给 `LoraManager`（`runtime/executor/llm_litert_compiled_model_executor.cc:1708-1719`）。不过，该文件没有创建或调用 `LoraManager` 的实现点。仓库内可直接追踪的 `LoadLoRA` 与 `UseLoRA` 调用位于音频编码器。因此，不能仅凭主文本图中存在 LoRA 输入，就宣称 v0.13.1 的文本生成 API 已完成同样的热切换链路。
+v0.13.1 可追踪到的 `LoRA` 组件属于运行时适配路径。主文本 compiled executor 会识别 LoRA 输入名，并跳过普通 decode buffer 的创建，把这些输入留给 `LoraManager`（`runtime/executor/llm_litert_compiled_model_executor.cc:1708-1719`）。不过，该文件没有创建或调用 `LoraManager` 的实现点。仓库内可直接追踪的 `LoadLoRA` 与 `UseLoRA` 调用位于音频编码器。因此，不能仅凭主文本图中存在 LoRA 输入，就断定 v0.13.1 的文本生成 API 已完成同样的热切换链路。
 
 仓库中也没有一条由上述运行时组件执行 \\(W^{\prime}=W+\Delta W\\) 的原位合并路径。若产品选择离线合并，应把它视为模型导出流程。量化、后端约束、cache 标识和质量都要重新验证，不能把 `LoadLoRA` 当作合并工具。
 
@@ -374,7 +374,7 @@ section 的资源角色由目录属性中的 `model_type` 区分，例如主文�
 
 固定前缀、FlatBuffer 头、section 目录和 section 内容是四层不同的结构。固定前缀正确，只能说明读取器找到了预期魔数和版本字段。当前读取器比较 major 版本，minor 与 patch 会被读出，但不参与兼容性拒绝；字节 20—23 也会被直接跳过（`schema/core/litertlm_read.cc:70-105`）。当前格式常量是 1.5.0（`schema/core/litertlm_header.h:31-38`）。
 
-字节 24—31 给出 FlatBuffer 头部的结束位置。普通读取器要求结束位置不小于 32，并检查相应字节能否读出（`schema/core/litertlm_read.cc:108-139`）。Engine 的主 loader 最多映射文件开头 16 KiB，再把这段交给读取器（`runtime/util/litert_lm_loader.h:42`、`runtime/util/litert_lm_loader.cc:196-224`）。流式 loader 另有显式的 32 字节至 16 KiB 范围检查（`runtime/util/litert_lm_streaming_loader.cc:35-80`）。两个入口的防护位置不同，损坏文件不一定返回同一种错误。
+字节 24—31 给出 FlatBuffer 头部的结束位置。普通读取器要求结束位置不小于 32，并检查相应字节能否读出（`schema/core/litertlm_read.cc:108-139`）。Engine 的主 loader 最多映射文件开头 16 KiB，再把这段传递给读取器（`runtime/util/litert_lm_loader.h:42`、`runtime/util/litert_lm_loader.cc:196-224`）。流式 loader 另有显式的 32 字节至 16 KiB 范围检查（`runtime/util/litert_lm_streaming_loader.cc:35-80`）。两个入口的防护位置不同，损坏文件不一定返回同一种错误。
 
 头部读完后，`LitertlmHeader::reset` 直接取得生成的根对象访问器（`schema/core/litertlm_read.h:89-97`）。这条路径没有建立 `flatbuffers::Verifier`。schema 中的 `(required)` 字段定义了合法文件应有的结构，但不能据此认为主 loader 已经验证了所有 vector 边界、必需字段和 union 类型。外部取得的模型文件若不受发布链信任，应在调用 Engine 前执行独立的 FlatBuffer 与 section 范围校验。这是由当前边界推导出的应用要求，不是 v0.13.1 已提供的验证接口。
 
@@ -456,7 +456,7 @@ GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模�
 
 | 入口 | LiteRT-LM 的处理 | 交给后端的值 | 目录与旧文件责任 |
 |---|---|---|---|
-| CPU，cache 目录 | 派生 XNNPACK 文件路径 | weight cache path | 应用先建目录；路径模式可触发匹配清理 |
+| CPU，cache 目录 | 派生 XNNPACK 文件路径 | weight cache path | 应用应先创建目录；路径模式可触发匹配清理 |
 | CPU，scoped file | 复制 fd | weight cache fd | 调用者创建、授权并回收文件 |
 | GPU，cache 目录 | 派生 program 候选路径与模型 key | serialization dir、model cache key | 实际 weight 文件由下层后端决定 |
 | GPU，scoped files | 分别复制两个 fd | weight/program cache fd | 调用者负责两个文件的代际 |
@@ -464,7 +464,7 @@ GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模�
 
 > 表 7-8　路径模式由 LiteRT-LM 派生名称，文件描述符模式由应用决定文件位置和生命周期。
 
-路径 helper 只拼接名称、检查文件并尝试清理旧项，不会创建 cache 目录。应用应在创建 Engine 前建立目录并验证写权限。scoped file 测试采用的顺序也是先创建空文件、以可写方式打开，再把 fd 交给 Engine（`runtime/core/engine_advanced_impl_test.cc:232-280`）。
+路径 helper 只拼接名称、检查文件并尝试清理旧项，不会创建 cache 目录。应用应在创建 Engine 前建立目录并验证写权限。scoped file 测试采用的顺序也是先创建空文件、以可写方式打开，再把 fd 传递给 Engine（`runtime/core/engine_advanced_impl_test.cc:232-280`）。
 
 清理规则还带来并发边界。`DeleteStaleCaches` 没有进程间锁；若两个进程使用相同 basename 和同一 cache 目录，却计算出不同标识，其中一个进程可能把另一个进程的文件识别为旧项。删除失败只记录警告，helper 仍会返回当前路径（`runtime/util/file_util.cc:192-239`）。不可变模型名配合独立版本目录可以避开这一竞争；代价是旧版本 cache 不会自动被新版本清理，需要发布系统按保留期回收。
 
@@ -624,7 +624,7 @@ $$
 
 同进程持有两个 Engine 不会消除运行内存峰值。销毁旧 Engine 也不会清空路径标识的进程内静态 map；若复用原路径，后续查询仍可能取得第一次保存的标识。因此，同进程方案仍应使用不可变模型路径。它能省去跨进程路由，却失去进程级故障隔离。是否采用这一方式，要看应用能否在一个进程内明确串行创建、切换和销毁 Engine，并完成目标平台的峰值验证。
 
-若磁盘连两个模型文件也放不下，就不能同时满足“旧产物本地可用”和“新产物完整落盘后再切换”。此时需要在发布前明确选择：缩减安装包中的可选模态资源、使用系统提供的增量分发能力，或者接受回滚时重新下载。`.litertlm` v0.13.1 是单文件容器；本章没有证据表明发布器能在两个版本之间自动复用相同 section 的磁盘块。
+若磁盘空间不足以同时存放两个模型文件，就不能同时满足”旧产物本地可用”和”新产物完整落盘后再切换”。此时需要在发布前明确选择：缩减安装包中的可选模态资源、使用系统提供的增量分发能力，或者接受回滚时重新下载。`.litertlm` v0.13.1 是单文件容器；本章没有证据表明发布器能在两个版本之间自动复用相同 section 的磁盘块。
 
 ### 验收证据包：保存可复核的发布记录
 

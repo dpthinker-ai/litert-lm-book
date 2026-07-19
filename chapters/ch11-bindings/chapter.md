@@ -117,7 +117,7 @@ external fun nativeCreateEngine(
 external fun nativeDeleteEngine(enginePointer: Long)  // (2)
 ```
 
-(1) 以 `Long` 承载原生指针的位模式，(2) 把同一数值交给删除函数。Kotlin 不解释该数值指向的对象。JNI 需要一层编译后的原生实现，将 `jlong` 转回 C++ 指针；这一点与运行时声明签名的 `ctypes` 不同。
+(1) 以 `Long` 承载原生指针的位模式，(2) 把同一数值传递给删除函数。Kotlin 不解释该数值指向的对象。JNI 需要一层编译后的原生实现，将 `jlong` 转回 C++ 指针；这一点与运行时声明签名的 `ctypes` 不同。
 
 Swift（iOS 与 macOS）使用 C 互操作，直接导入 C 头文件。`swift/Engine.swift:17` 执行 `import CLiteRTLM` 后，可直接调用 `litert_lm_engine_create`。其中的 `Engine` 是一个 `actor`（`swift/Engine.swift:28-38`）：
 
@@ -245,7 +245,7 @@ int litert_lm_session_run_decode_async(LiteRtLmSession* session,
 }
 ```
 
-该函数先把 C 回调和 `callback_data` 交给 `CreateCallback`，然后调用 `RunDecodeAsync`。(1) 在参数无效时返回 `-1`，(2) 在启动失败时返回 `absl::StatusCode` 的整数值，(3) 在成功启动时返回 0。返回码只描述启动结果。后续文本和终止状态均由回调传递。绑定层还需保证回调上下文至少存活到最终回调完成。
+该函数先把 C 回调和 `callback_data` 传递给 `CreateCallback`，然后调用 `RunDecodeAsync`。(1) 在参数无效时返回 `-1`，(2) 在启动失败时返回 `absl::StatusCode` 的整数值，(3) 在成功启动时返回 0。返回码只描述启动结果。后续文本和终止状态均由回调传递。绑定层还需保证回调上下文至少存活到最终回调完成。
 
 ## 多模态输入在 C 边界的扁平化
 

@@ -87,5 +87,5 @@
   <text class="ts" x="705" y="380" text-anchor="middle">Executor</text>
   <rect class="note" x="620" y="414" width="200" height="40" rx="9"/>
   <text class="t"  x="720" y="432" text-anchor="middle" style="font-size:13px">MTP Drafter</text>
-  <text class="ts" x="720" y="447" text-anchor="middle">推测解码</text>
+  <text class="ts" x="720" y="447" text-anchor="middle">投机解码</text>
 </svg>

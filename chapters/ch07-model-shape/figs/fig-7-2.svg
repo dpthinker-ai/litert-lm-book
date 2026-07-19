@@ -39,7 +39,7 @@
   <text class="ts" x="522" y="162" style="font-size:10px">值限定为 VData union 类型</text>
   <text class="ts" x="522" y="179" style="font-size:10px">后续 section 从 16 KiB 边界开始</text>
   <path class="edge" d="M492,161 H516"/>
-  <text class="ts" x="522" y="215" style="font-size:10px">推测解码支持并非独立段：</text>
+  <text class="ts" x="522" y="215" style="font-size:10px">投机解码支持并非独立段：</text>
   <text class="ts" x="522" y="232" style="font-size:10px">代码检查 TFLiteModel 的</text>
   <text class="ts" x="522" y="249" style="font-size:10px">model_type section item</text>
   <path class="edge" d="M492,138 H506 V215 H516"/>

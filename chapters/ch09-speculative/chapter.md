@@ -1,16 +1,16 @@
-# 第 9 章 一次前向，多个 token：推测解码与 MTP
+# 第 9 章 一次前向，多个 token：投机解码与 MTP
 
-> 使命：说明 MTP 如何让 drafter 草拟多个 token，再由基础模型一次验证。分析接受比例与每轮运行成本如何共同决定加速比。
+> 本章目标：说明 MTP 如何让 drafter 草拟多个 token，再由基础模型一次验证。分析接受比例与每轮运行成本如何共同决定加速比。
 
-第 1 章讨论了缓解 decode 内存带宽约束的两类方法。硬件可以提高带宽，量化可以减少每 token 读取的字节数。第三种方法是推测解码（speculative decoding）。基础模型每读取一次权重，尽量确认多个 token。本章据此定量分析第 2 章第 19 问：推测解码为什么可能加速，又会在什么条件下减速。
+第 1 章讨论了缓解 decode 内存带宽约束的两类方法。硬件可以提高带宽，量化可以减少每 token 读取的字节数。第三种方法是投机解码（speculative decoding）。基础模型每读取一次权重，尽可能确认多个 token。本章据此定量分析第 2 章第 19 问：投机解码为什么可能加速，又会在什么条件下减速。
 
-## 推测解码的目标：一次验证多个候选 token
+## 投机解码的目标：一次验证多个候选 token
 
-dense 模型在 decode 阶段通常每生成一个 token 就读取一次模型权重。普通 decode 前向只确定一个 token。推测解码试图增加每次基础模型权重读取所确认的 token 数。
+dense 模型在 decode 阶段通常每生成一个 token 就读取一次模型权重。普通 decode 前向只确定一个 token。投机解码试图增加每次基础模型权重读取所确认的 token 数。
 
-推测解码先由低成本的 drafter 草拟若干 token。基础模型（base 模型）再用一次前向验证这些候选。匹配的最长前缀被接受；第一个不匹配位置改用基础模型给出的 token。验证多个候选只执行一次基础模型前向，而不是对每个候选分别执行一次。若一轮接受多个 token，这次前向的成本便由这些 token 分担。
+投机解码先由低成本的 drafter 草拟若干 token。基础模型（base 模型）再用一次前向验证这些候选。匹配的最长前缀被接受；第一个不匹配位置改用基础模型给出的 token。验证多个候选只执行一次基础模型前向，而不是对每个候选分别执行一次。若一轮接受多个 token，这次前向的成本便由这些 token 分担。
 
-推测解码有多种实现。drafter 可以是独立模型，也可以来自与基础模型联合训练的预测头。这类预测头称为多 token 预测（Multi-Token Prediction，MTP）头。Google 发布的 Gemma 4 MTP drafter 使用目标模型的 activation，并与目标模型共享 KV cache。[^ch09-google-mtp] LiteRT-LM 在运行时把 drafter 装载为独立模型，对应成员是 `mtp_drafter_model_`。验证使用基础模型的 `"verify"` signature。常量定义见 `runtime/executor/llm_litert_mtp_drafter.cc:63`。`base_model.FindSignature(kVerifySignatureRunner)` 的调用见 `runtime/executor/llm_litert_mtp_drafter.cc:227-228`。
+投机解码有多种实现。drafter 可以是独立模型，也可以来自与基础模型联合训练的预测头。这类预测头称为多 token 预测（Multi-Token Prediction，MTP）头。Google 发布的 Gemma 4 MTP drafter 使用目标模型的 activation，并与目标模型共享 KV cache。[^ch09-google-mtp] LiteRT-LM 在运行时把 drafter 装载为独立模型，对应成员是 `mtp_drafter_model_`。验证使用基础模型的 `"verify"` signature。常量定义见 `runtime/executor/llm_litert_mtp_drafter.cc:63`。`base_model.FindSignature(kVerifySignatureRunner)` 的调用见 `runtime/executor/llm_litert_mtp_drafter.cc:227-228`。
 
 ## 机制：串行草拟，批量验证
 
@@ -52,7 +52,7 @@ for (int i = 0; i < num_draft_steps_; ++i) {                      // (1)
 
 `(1)` 循环 G 次，每次串行生成一个 token。`(3)` 每步运行独立装载的 `mtp_drafter_model_`，而非基础模型。`(2)` 的输入由词嵌入和上一步的隐藏态 activation 拼接而成。源码注释以 `[B=1, T=1, D=3072]` 为例，即 1536 维词嵌入加 1536 维 activation。具体维度随模型而定。本书基准模型的 drafter 输入为 `[1, 1, 5120]`，由 2560 维词嵌入和 2560 维 activation 组成。两部分都与主干的 `model_dimension = 2560` 一致，见附录 D。`(4)` 断言每步只产出一个 token。`(5)` 把本步输出作为下一步输入，drafter 仍按自回归方式生成。总成本包括 G 次 drafter 前向和一次 verify 前向。MTP 是否加速取决于这个总成本，不能只看 drafter 的模型尺寸。
 
-第二步执行批量验证。运行时把上一个已确认 token 和 G 个草稿交给基础模型的 verify signature。对应函数为 `RunVerification`，见 `runtime/executor/llm_litert_mtp_drafter.cc:437-450`：
+第二步执行批量验证。运行时把上一个已确认 token 和 G 个草稿传递给基础模型的 verify signature。对应函数为 `RunVerification`，见 `runtime/executor/llm_litert_mtp_drafter.cc:437-450`：
 
 ```cpp
 LITERT_RETURN_IF_ERROR(base_model_.RunAsync(                       // (1)
@@ -307,7 +307,7 @@ $$ \text{speedup}(p,c) \approx
 
 固定长度 benchmark 的输入由 `runtime/core/session_utils.cc:68-73` 构造。代码先对提示词分词，再调用 `ids.resize(N)`。N 大于原 token 数时，新增的 `int` 元素为 0；N 更小时，序列会被截断。该负载不是定长的自然文本，不能沿用前述两个提示词的 r̂。Mac 归档数据既没有强制开启组，也没有这组 benchmark 的 drafter 计数器。现有可核查的强制开启端到端对照只有 Android 记录。没有证据把其中的减速归因于低接受比例。
 
-这组计数不需要修改或重新编译运行时。drafter 已维护 `num_drafted_tokens_` 和 `num_verified_tokens_`，并在析构时通过 `ABSL_LOG(INFO)` 输出。Python SDK 的 `set_min_log_severity`（`python/litert_lm/_ffi.py:450`）可把日志级别调到 VERBOSE。若要得到分阶段或逐轮数据，则需新增遥测接口；当前日志只能提供整个 drafter 生命周期内的聚合比例。
+这组计数不需要修改或重新编译运行时。drafter 已维护 `num_drafted_tokens_` 和 `num_verified_tokens_`，并在析构时通过 `ABSL_LOG(INFO)` 输出。Python SDK 的 `set_min_log_severity`（`python/litert_lm/_ffi.py:450`）可把日志级别设置为 VERBOSE。若要得到分阶段或逐轮数据，则需新增遥测接口；当前日志只能提供整个 drafter 生命周期内的聚合比例。
 
 `LiteRT-LM#2227` 报告了 PowerVR GPU 上开启 MTP 后 decode 吞吐下降的案例。[^ch09-issue-2227] 该 issue 使用 LiteRT-LM 0.11.0、Gemma 4 E2B 和俄文分类负载；其中关于 GPU 路径的原因分析明确标为假设。本章的公式只说明两类可能条件：r 偏低，或归一化轮次成本 q 偏高。它不能从吞吐数据中区分二者，也不能据此确认 issue 的根因。
 
@@ -319,7 +319,7 @@ $$ \text{speedup}(p,c) \approx
 
 在 `r=1`、`q=1+3c` 的假设下，2.28 倍和 2.01 倍分别对应 c≈0.25 和 c≈0.33。这里的 c 是由端到端结果反推的有效参数。它包含 verify、drafter 和运行时操作，不是 drafter 模型的实测单步成本。若实际 r 小于 1，反推出的 c 也会更小。这些数值不能证明两台设备已经达到吞吐上限。在相同简化模型下，即使 r=1，3 倍加速也要求 c≤1/9≈0.11。现有数据不足以把官方结果[^ch09-google-mtp] 归因于某种硬件路径。drafter 文件约 45 MB 也不能推出 c≈0.02，因为模型存储大小不是端到端时延的比例尺。
 
-推测解码是否加速由 r 和 q 共同决定。聚合接受比例 r 决定每轮平均产出，归一化成本 q 表示取得这些输出所需的时间。两者都会随模型、输入内容、生成位置、设备和后端变化。评估目标负载时，需要在同一次测试中记录接受比例与吞吐。
+投机解码是否加速由 r 和 q 共同决定。聚合接受比例 r 决定每轮平均产出，归一化成本 q 表示取得这些输出所需的时间。两者都会随模型、输入内容、生成位置、设备和后端变化。评估目标负载时，需要在同一次测试中记录接受比例与吞吐。
 
 ## 多 token 返回后的停止检测与回退
 
@@ -394,9 +394,9 @@ compiled executor 的 `SetCurrentStep` 检查新位置不超过已处理 token �
 
 ## 开启条件：模型能力与固定草拟步数
 
-模型文件需要同时包含 MTP drafter 和相应的 verify signature；调用方还必须显式启用推测解码。草拟步数 G 由 verify signature 的形状固定。
+模型文件需要同时包含 MTP drafter 和相应的 verify signature；调用方还必须显式启用投机解码。草拟步数 G 由 verify signature 的形状固定。
 
-`HasSpeculativeDecodingSupport` 检查模型是否支持推测解码，声明见 `schema/capabilities/speculative_decoding.h:33-45`。头文件提供两个重载：一个接受 `std::istream&`，另一个接受文件路径并转调前者。转调代码见 `schema/capabilities/speculative_decoding.cc:81-88`。具体判断位于 `schema/capabilities/speculative_decoding.cc:40-78`：
+`HasSpeculativeDecodingSupport` 检查模型是否支持投机解码，声明见 `schema/capabilities/speculative_decoding.h:33-45`。头文件提供两个重载：一个接受 `std::istream&`，另一个接受文件路径并转调前者。转调代码见 `schema/capabilities/speculative_decoding.cc:81-88`。具体判断位于 `schema/capabilities/speculative_decoding.cc:40-78`：
 
 ```cpp
 const std::vector<std::string> speculative_decoding_model_types = {
@@ -418,7 +418,7 @@ if (section_object->data_type() == AnySectionDataType_TFLiteModel) {  // (2)
 
 `(2)` 遍历 `.litertlm` 的 section，`(3)` 读取 TFLite 模型 section 的 `model_type` 元数据。出现一项 `"tf_lite_mtp_drafter"`，`(4)` 即返回 true。能力判断取决于模型文件中是否包含相应 drafter section。第 7 章介绍的 `.litertlm` 容器可同时保存基础模型和这个子模型。
 
-模型能力查询与自动启用在 v0.13.1 尚未连通。CLI 参数 `--enable-speculative-decoding` 接受 `auto`、`true`、`false`（`python/litert_lm_cli/common.py:108-119`）。`parse_speculative_decoding` 把 `auto` 和缺省值映射为 `None`，见 `python/litert_lm_cli/common.py:21-41`。另外两项映射为相应的布尔值。Python 绑定只在值非 `None` 时调用 setter（`python/litert_lm/engine.py:113-116`）。所以 `auto` 保留 C++ 默认值 `false`（`runtime/executor/llm_executor_settings.h:257-258`）。CLI help 写明会根据模型元数据自动判断，位置在 `python/litert_lm_cli/common.py:114-117`。v0.13.1 的引擎创建路径没有调用 `HasSpeculativeDecodingSupport`。该标志经 `runtime/engine/litert_lm_lib.cc:592` 写入执行器设置。执行器构造时据此决定是否创建 drafter（`runtime/executor/llm_litert_compiled_model_executor.cc:1807-1822`）：
+模型能力查询与自动启用在 v0.13.1 尚未连通。CLI 参数 `--enable-speculative-decoding` 接受 `auto`、`true`、`false`（`python/litert_lm_cli/common.py:108-119`）。`parse_speculative_decoding` 把 `auto` 和缺省值映射为 `None`，见 `python/litert_lm_cli/common.py:21-41`。另外两项映射为相应的布尔值。Python 绑定只在值非 `None` 时调用 setter（`python/litert_lm/engine.py:113-116`）。因此 `auto` 保留 C++ 默认值 `false`（`runtime/executor/llm_executor_settings.h:257-258`）。CLI help 写明会根据模型元数据自动判断，位置在 `python/litert_lm_cli/common.py:114-117`。v0.13.1 的引擎创建路径没有调用 `HasSpeculativeDecodingSupport`。该标志经 `runtime/engine/litert_lm_lib.cc:592` 写入执行器设置。执行器构造时据此决定是否创建 drafter（`runtime/executor/llm_litert_compiled_model_executor.cc:1807-1822`）：
 
 ```cpp
 if (advanced_settings.has_value() &&

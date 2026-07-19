@@ -19,7 +19,7 @@
 | `runtime/executor/llm_litert_compiled_model_executor.*` | 核心执行器、KV cache 双缓冲、设备侧采样 | 第 4、6、8 章 |
 | `runtime/executor/llm_litert_compiled_model_executor_factory.cc` | 按 Backend 分派创建 | 第 8 章 |
 | `runtime/executor/kv_cache_interface.h` | KV cache 搬运接口，以及尚未由 LiteRT 实现的持久化接口 | 第 6 章 |
-| `runtime/executor/llm_litert_mtp_drafter.*` | MTP 推测解码 drafter / verify / 接受循环 | 第 9 章 |
+| `runtime/executor/llm_litert_mtp_drafter.*` | MTP 投机解码 drafter / verify / 接受循环 | 第 9 章 |
 | `runtime/executor/llm_litert_npu_compiled_model_executor.*` | NPU 执行器（QNN、embedder 子模型、KV 快照与恢复） | 第 6、8 章 |
 | `runtime/executor/vision_litert_compiled_model_executor.*`、`audio_litert_compiled_model_executor.*` | 视觉/音频编码器 → embedding | 第 10 章 |
 | `runtime/executor/executor_settings_base.h` | Backend、ActivationDataType 枚举 | 第 7、8 章 |
@@ -36,7 +36,7 @@
 | `runtime/util/memory_mapped_file.*`、`litert_lm_loader.*`、`lora_data.h` | 跨平台 mmap、段加载器、LoRA 数据视图 | 第 7 章 |
 | `runtime/executor/llm_executor_settings.h`、`llm_executor_io_types.h` | 执行器配置（线程数/KV 增量/取消开关）与 IO 类型 | 第 4、6、8 章 |
 | `schema/core/`（`litertlm_header_schema.fbs`、`litertlm_read.*`、`litertlm_print.*`） | `.litertlm` 文件格式与读取 | 第 2、7 章 |
-| `schema/capabilities/speculative_decoding.*` | 根据模型分段类型判断是否支持推测解码 | 第 9 章 |
+| `schema/capabilities/speculative_decoding.*` | 根据模型分段类型判断是否支持投机解码 | 第 9 章 |
 | `c/engine.h`、`c/engine.cc` | C ABI（不透明句柄 + C 函数） | 第 11 章 |
 | `python/`、`kotlin/`、`swift/`、`js/` | 各语言绑定 | 第 11 章 |
 | `runtime/executor/fake_llm_executor.h` | 测试用假执行器 | 第 11 章 |
@@ -50,7 +50,7 @@
 |---|---|
 | 一次生成的完整链路 | `runtime/engine/engine.h` → `runtime/core/session_advanced.cc` → `runtime/core/tasks.cc` → `runtime/executor/llm_litert_compiled_model_executor.cc`；依次查看 Session、prefill、decode 与执行器调用 |
 | KV cache 双缓冲与异步 prefill | `runtime/executor/llm_litert_compiled_model_executor.cc`：`input_kv_cache_buffers_`、`std::swap`、`prefill_chunk_size_`、`RunAsync` |
-| 推测解码 | `runtime/executor/llm_litert_mtp_drafter.cc`：`RunDraftingLoop`、`RunVerification`、`num_drafted_tokens_`、`num_verified_tokens_` |
+| 投机解码 | `runtime/executor/llm_litert_mtp_drafter.cc`：`RunDraftingLoop`、`RunVerification`、`num_drafted_tokens_`、`num_verified_tokens_` |
 | 对话文本增量生成 | `runtime/conversation/conversation.cc`：`Conversation::GetSingleTurnText`、`old_string`、`new_string` 及相邻的前缀检查与后缀提取 |
 | 采样策略 | `runtime/components/sampler.h`、`runtime/components/sampling_cpu_util.cc`、`runtime/components/top_p_cpu_sampler.cc`；内外采样分支见 `runtime/core/tasks.cc` 的 `DecodeAndSample` |
 | 约束解码 | 从 `runtime/core/tasks.cc` 的 `MaskLogits` 进入 `runtime/components/constrained_decoding/`，再查看 `llg_constraint` FFI |

@@ -1,8 +1,8 @@
 # 第 5 章 Decode：单步解码循环
 
-> 本章说明一个 decode step 如何从 logits 得到 token id，再形成可发送的文本，并核对取消、停止与回调的边界。
+> 本章目标：说明一个 decode step 如何从 logits 得到 token id，再形成可发送的文本，并核对取消、停止与回调的边界。
 
-prefill 已经把提示词写进 KV cache，第一段前向也完成了。接下来是 decode 阶段：模型逐 token 生成，直到满足停止条件。第 1 章在给定设备、模型和量化条件下估算的 25 tokens/s 是 decode 阶段的带宽侧上限。对于批大小为 1 的稠密模型，decode 通常受权重访存约束；实际瓶颈仍取决于后端实现和运行条件。
+prefill 已经把提示词写进 KV cache，第一次前向传播也完成了。接下来是 decode 阶段：模型逐 token 生成，直到满足停止条件。第 1 章在给定设备、模型和量化条件下估算的 25 tokens/s 是 decode 阶段的带宽侧上限。对于 batch=1 的稠密模型，decode 通常受权重访存约束；实际瓶颈仍取决于后端实现和运行条件。
 
 decode 阶段的单步操作在代码里叫 `DecodeOneStep`（`runtime/core/tasks.cc:111`）。`Decode` 在循环中反复调用它，直到满足停止条件（`runtime/core/tasks.cc:446`）。循环的主干如下：
 
@@ -36,7 +36,7 @@ while (true) {
 1. 把上一个 token 送入模型并执行一次前向，得到 logits。它是词表中每个 token 的未归一化分数，维度等于词表规模。
 2. 可选地处理 logits：压低近期已出现 token 的分数（重复惩罚），或屏蔽不符合语法约束的 token（约束解码，第 10 章）。
 3. 从 logits 中采样一个 token id。
-4. 把该 id 解码成文本片段，累积到结果或交给流式回调。
+4. 把该 id 解码成文本片段，累积到结果或传递给流式回调。
 5. 判断是否满足停止条件；若不满足，则把新 token 作为下一步的输入。
 
 第 1 步通常占单步开销的主要部分，其余步骤仍会影响输出语义与端到端时延。采样策略限定候选分布，停止判定需要处理多 token 序列。文本解码还要暂存尚未形成有效文本的 token id。
@@ -50,11 +50,11 @@ while (true) {
 
 采样分成内部与外部两条控制路径。`DecodeOneStep` 的注释明确列出了这两种情形（`runtime/core/tasks.cc:109-111`）。
 
-内部采样路径调用执行器的 `Decode()`，向 `Tasks` 层直接返回 token id，不暴露 logits。采样究竟在 CPU、GPU 还是其他后端完成，由具体执行器决定。若采样与 logits 都留在加速设备上，可称为设备侧采样（device-side sampling）；第 8 章分析其实现条件。仅从内部路径这一接口形态，不能直接推断它一定更快。
+内部采样路径调用执行器的 `Decode()`，向 `Tasks` 层直接返回 token id，不暴露 logits。采样具体在 CPU、GPU 还是其他后端完成，由具体执行器决定。若采样与 logits 都留在加速设备上，可称为设备侧采样（device-side sampling）；第 8 章分析其实现条件。仅从内部路径这一接口形态，不能直接推断它一定更快。
 
-外部采样路径调用 `DecodeLogits`，再把 logits 交给显式传入的 `Sampler`（`runtime/core/tasks.cc:319-364`）。这个采样器既可以是 CPU 实现，也可以是 GPU 实现。“外部”描述的是采样器由执行器外部调用，不等于 logits 必然从 GPU 回传 CPU。只有选择 CPU 采样器且 logits 不在宿主可直接访问的内存中时，才需要下载数据。
+外部采样路径调用 `DecodeLogits`，再把 logits 传递给显式传入的 `Sampler`（`runtime/core/tasks.cc:319-364`）。这个采样器既可以是 CPU 实现，也可以是 GPU 实现。“外部”描述的是采样器由执行器外部调用，不等于 logits 必然从 GPU 回传 CPU。只有选择 CPU 采样器且 logits 不在宿主可直接访问的内存中时，才需要下载数据。
 
-`DecodeAndSample` 用 `sampler_` 是否存在来选择路径（`runtime/core/tasks.cc:319-321`）。约束解码并非外部路径专属。外部路径在采样前调用 `MaskLogits`；内部路径把 `ConstrainedDecoder` 放入 `ExecutorDecodeParams` 后交给执行器（`runtime/core/tasks.cc:330-378`）。两条路径的具体能力仍受采样器和执行器实现约束。
+`DecodeAndSample` 用 `sampler_` 是否存在来选择路径（`runtime/core/tasks.cc:319-321`）。约束解码并非外部路径专属。外部路径在采样前调用 `MaskLogits`；内部路径把 `ConstrainedDecoder` 放入 `ExecutorDecodeParams` 后传递给执行器（`runtime/core/tasks.cc:330-378`）。两条路径的具体能力仍受采样器和执行器实现约束。
 
 ```cpp
 absl::StatusOr<std::vector<std::vector<int>>> DecodeAndSample(
@@ -78,7 +78,7 @@ absl::StatusOr<std::vector<std::vector<int>>> DecodeAndSample(
 }
 ```
 
-构造 `DecodeOneStep` 时是否传入采样器，决定 (1) 的分支。外部路径由 (2) 取得 logits，(3) 可按约束修改 logits，(4) 再调用采样器并填写可选的得分张量。内部路径由 (6) 调用执行器的组合接口。两条路径都返回 token id；代码只保证内部路径不把 logits 暴露给 `Tasks` 层，并未保证 logits 一定驻留在 GPU。
+构造 `DecodeOneStep` 时是否传入采样器，决定了进入 (1) 标记的哪条分支。外部路径由 (2) 取得 logits，(3) 可按约束修改 logits，(4) 再调用采样器并填写可选的得分张量。内部路径由 (6) 调用执行器的组合接口。两条路径都返回 token id；代码只保证内部路径不把 logits 暴露给 `Tasks` 层，并未保证 logits 一定驻留在 GPU。
 
 两条路径的返回类型都是 `std::vector<std::vector<int>>`：外层对应输出候选，内层是本次调用为该候选生成的 token id。`Run` 随后用同一套停止检测和文本解码逻辑处理它们（`runtime/core/tasks.cc:147-179`）。
 
@@ -104,11 +104,11 @@ RETURN_IF_ERROR(sampler_.value()->SampleToIdAndScoreBuffer(
 
 `TimeMarkDelta` 成对出现，用同一个标签标记一段耗时。(1)(3) 标记 `executor_decode`，(4) 与后续同名调用标记 `sampling`。基准工具据此分别报告执行器与采样器阶段的耗时（见附录 D）。
 
-`DecodeLogits` 返回的 `output_logits` 形状是 `[batch, seq, vocab]`。decode 阶段的常见单步形状中，`seq` 为 1；若 `batch` 也为 1，元素数就等于词表规模。本书基准模型的 decode signature 为 `[1, 1, 262144]`，输出类型为 float32（见附录 D），所以该模型一次完整 logits 传输的数据量为：
+`DecodeLogits` 返回的 `output_logits` 形状是 `[batch, seq, vocab]`。decode 阶段的常见单步形状中，`seq` 为 1；若 `batch` 也为 1，元素数就等于词表规模。本书基准模型的 decode signature 为 `[1, 1, 262144]`，输出类型为 float32（见附录 D），因此该模型一次完整 logits 传输的数据量为：
 
 262144 × 4 B = 1048576 B = 1 MiB
 
-这 1 MiB 只在 CPU 采样器需要把设备数据复制到宿主时构成额外传输。`TopPSampler` 会先尝试直接取得宿主可访问的 span。失败后才调用 `CopyFromTensorBuffer`；float16 输入则经 `Read` 后转成 float32（`runtime/components/top_p_cpu_sampler.cc:111-130`）。
+这 1 MiB 只在 CPU 采样器需要把设备数据复制到宿主时构成额外传输。`TopPSampler` 会先尝试直接取得宿主可访问的 span。失败后才调用 `CopyFromTensorBuffer`；float16 输入则经 `Read` 后转换为 float32（`runtime/components/top_p_cpu_sampler.cc:111-130`）。
 
 第 1 章的同一示例中，约 30 亿个 4 bit 权重对应约 1.4 GiB 权重数据；1 MiB 约为它的 0.7‰。这个比例只能比较字节量，不能换算成时延比例。权重读取、设备到宿主复制、同步和 CPU 采样经过不同的数据通路，也可能存在重叠。设备侧采样是否降低单步时延，必须在同一模型、后端和设备上对照测量。
 
@@ -249,7 +249,7 @@ if (sum_of_exps <= std::numeric_limits<float>::epsilon()) {              // (3)
 
 计算指数前，(2) 先减去候选中的最大 logit。对有限输入，指数自变量不大于 0，最大项为 `exp(0) = 1`。(1) 把非负温度钳到至少 `epsilon`，避免除以 0。温度为 0 时会使用这个最小正数，但接口并未因此把它定义为 greedy。greedy 分支由 `k == 1` 决定。
 
-(3)(4) 是防御性分支，不是有限 logits 下的正常执行路径。只要 k 为正且候选 logits 都是有限值，减最大值后至少有一项等于 1，其余项位于 `[0, 1]`。因此，`sum_of_exps` 位于 `[1, k]`：它不会小于 `epsilon`，也不会成为 `inf`。代码没有在这里显式拒绝 NaN 或无穷 logits，不能据这两个分支断言任意输入都会得到合法概率分布。
+(3)(4) 是防御性分支，不是有限 logits 下的正常执行路径。只要 k 为正且候选 logits 都是有限值，减最大值后至少有一项等于 1，其余项位于 `[0, 1]`。因此，`sum_of_exps` 位于 `[1, k]`：它不会小于 `epsilon`，也不会成为 `inf`。代码没有在这里显式拒绝 NaN 或无穷 logits，不能据此断言任意输入都会在通过这两个分支后得到合法概率分布。
 
 归一化之后是 top-p 截断与采样（`runtime/components/sampling_cpu_util.cc:210-284`）：
 
@@ -316,7 +316,7 @@ bool ShouldStop(bool hit_stop_tokens, int benchmark_decode_token_count,
 
 流式回调发生在 `ShouldStop` 之前。代码先收集本轮可发送的文本。至少一个候选产生非空文本时，才以 `TaskState::kProcessing` 调用回调（`runtime/core/tasks.cc:523-567`）。因此，未完整 BPE 序列或停止序列的部分匹配可能让某个 decode step 不产生回调。
 
-循环结束后，`DecodeStreaming` 再调用一次最终回调（`runtime/core/pipeline.cc:75-96`）。其中携带 `kDone`、`kMaxNumTokensReached` 或错误状态。
+循环结束后，`DecodeStreaming` 再调用一次最终回调（`runtime/core/pipeline.cc:75-96`）。其状态为 `kDone`、`kMaxNumTokensReached` 或错误状态。
 
 ## 未完整文本序列与停止序列暂存
 

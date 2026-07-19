@@ -4,7 +4,7 @@
 > 本轮修订重点：prefill 取消与回调等待、MTP 聚合接受比例、Swift 生命周期案例、受控实验口径、NPU 证据边界，以及 mdBook/PDF 发布安全。
 > 已完成或部分完成：Mac 主基准、Android CPU/GPU 扩展、CPU 线程扫描、MTP 多组负载、约束解码小样本，以及两台设备上的 NPU 部署探测；NPU 尚未完成 prefill 或 decode。
 > 尚未完成并与附录 D 对账：编译缓存开/关的外部墙钟受控对照、同模型 int4/int8 对照、分段并行加载开关对照、Python/C++ 行为一致性、多模态端到端、双 tokenizer 对照，以及使用匹配模型产物、SoC 代际和运行时的 NPU 推理。
-> `review-report.html` 仅为 2026-07-16 的历史快照；当前验收以 `archive/chapters/*/review.md`、附录 D 与构建检查为准。
+> 当前验收以 `archive/chapters/*/review.md`、附录 D 与构建检查为准。
 > 书名（已定）：《端侧大模型推理：原理与 LiteRT-LM 实现》
 > *On-Device LLM Inference: Principles and Practice with LiteRT-LM*
 > 素材基础：`/Users/dpthinker/workspace/litert-lm-guide/data.json`（12 模块深度分析，约 20 万字）

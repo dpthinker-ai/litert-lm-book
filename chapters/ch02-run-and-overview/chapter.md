@@ -1,12 +1,12 @@
-# 第 2 章 从运行到架构：benchmark 指标解读与五层概览
+# 第 2 章 从运行到架构：benchmark、Roofline 与五层视图
 
 > 本章目标：运行 LiteRT-LM，按源码定义解释 benchmark 的四项指标，并建立后续章节使用的五层架构视图。
 
-第 1 章在显式假设下推导了 decode 的带宽侧上限。本章把同一分析方法用于实测数据。第 1 章的 25 tokens/s 是示意点值，不能直接用来验证另一台设备。
+第 1 章在明确的假设下推导了 decode 的带宽侧上限。本章把同一分析方法用于实测数据。第 1 章的 25 tokens/s 是示意点值，不能直接用来验证另一台设备。
 
 ## 运行命令行工具
 
-使用官方 Python 包不需要本地编译 C++。v0.13.1 的 README 给出以下安装与运行方式。[^ch02-litertlm-readme]
+使用官方 Python 包就无需本地编译 C++。v0.13.1 的 README 给出以下安装与运行方式。[^ch02-litertlm-readme]
 
 ```bash
 uv tool install litert-lm
@@ -47,7 +47,7 @@ _run_module.register(cli)
     with engine_cm as engine:             // (2)
 ```
 
-(1) 把模型路径、后端与生成配置交给 `Engine`。(2) 进入上下文后，`run` 再调用 `engine.create_session`（`python/litert_lm_cli/commands/run.py:252`）。`SessionInterface` 的注释说明，Session 保存每次独立交互的内部状态（`runtime/engine/engine.h:65`）。Python `Engine.__exit__` 调用 `close`（`python/litert_lm/engine.py:137`），后者删除原生 Engine 句柄（`python/litert_lm/engine.py:129`）。各后端何时释放设备资源仍由其实现决定。
+(1) 把模型路径、后端与生成配置传入 `Engine`。(2) 进入上下文后，`run` 再调用 `engine.create_session`（`python/litert_lm_cli/commands/run.py:252`）。`SessionInterface` 的注释说明，Session 保存每次独立交互的内部状态（`runtime/engine/engine.h:65`）。Python `Engine.__exit__` 调用 `close`（`python/litert_lm/engine.py:137`），后者删除原生 Engine 句柄（`python/litert_lm/engine.py:129`）。各后端何时释放设备资源仍由其实现决定。
 
 指定 `--from-huggingface-repo` 时，`run` 调用 `common.download_from_huggingface`（`python/litert_lm_cli/commands/run.py:571`）。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，CLI 流式打印增量文本。
 
@@ -66,7 +66,7 @@ _run_module.register(cli)
           click.echo(click.style(item.get("text", ""), fg="yellow"), nl=False)
 ```
 
-(1) 每次迭代取得的是 Python 层生成的响应字典，不对应一个 token 或一次 decode step。`Conversation.send_message_async` 先把原生回调字符串解析为字典（`python/litert_lm/conversation.py:202`），随后按工具调用配置选择相应的 `yield` 分支（`python/litert_lm/conversation.py:218`、`python/litert_lm/conversation.py:220`）。当前 step 没有可输出文本时，C++ decode 循环还会跳过回调（`runtime/core/tasks.cc:533`）。因此，不能用 stream 迭代次数计算 token 数或吞吐；`nl=False` 只负责连续打印文本片段。
+(1) 每次迭代取得的是 Python 层生成的响应字典，不对应一个 token 或一次 decode step。`Conversation.send_message_async` 先把原生回调字符串解析为字典（`python/litert_lm/conversation.py:202`），随后按工具调用配置选择相应的 `yield` 分支（`python/litert_lm/conversation.py:218`、`python/litert_lm/conversation.py:220`）。当前 step 没有可输出文本时，C++ decode 循环也会跳过回调（`runtime/core/tasks.cc:533`）。因此，不能用 stream 迭代次数计算 token 数或吞吐；`nl=False` 只负责连续打印文本片段。
 
 按下 Ctrl-C 不会同步终止后台生成。`run` 捕获 `KeyboardInterrupt` 后调用 `cancel_process()`，随后继续消费 stream，直至后台处理结束（`python/litert_lm_cli/commands/run.py:123`）：
 
@@ -90,7 +90,7 @@ _run_module.register(cli)
 litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 ```
 
-`MainHelper` 依次创建模型资源、引擎设置、Engine 和 Conversation，再异步提交消息（`runtime/engine/litert_lm_main.cc:113`）。下面保留与调用链有关的语句，省略 Conversation 的装配：
+`MainHelper` 依次创建模型资源、引擎设置、Engine 和 Conversation，再异步提交消息（`runtime/engine/litert_lm_main.cc:113`）。下面只保留与调用链有关的语句，省略 Conversation 的装配细节：
 
 ```cpp
   ASSIGN_OR_RETURN(ModelAssets model_assets,  // NOLINT
@@ -166,7 +166,7 @@ Time to first token:  3.9400 s
 
 初始化时间必须按实现口径解释。C API 遍历 `GetInitPhases()`，把每条 duration 换算为毫秒后求和，最后除以 1000 返回秒（`c/engine.cc:821`）。`EngineAdvancedImpl::Create` 先开始记录 `kTotal`，紧接着开始 `kModelAssets` 子阶段（`runtime/core/engine_advanced_impl.cc:180`）。后续还记录 `kLlmMetadata` 子阶段（`runtime/core/engine_advanced_impl.cc:193`）。因此，这些 duration 并非互斥区间，CLI 的 `Init time` 不能直接视为一条无重叠的端到端墙钟计时。附录 D 保留 API 原始口径；分析单个初始化步骤时，应读取各 phase 或另设外部墙钟计时。
 
-v0.13.1 的 TTFT 是计算值，不是从请求开始直接计时到首个流式回调。cpu/256 档按同一批 turn 数据复算为 `256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s`。这与表中 3.94 s 一致，是对指标定义和数据记录的内部一致性检查，不是一次独立测量。cpu/4096 档同理：`4096 ÷ 226.5 + 1 ÷ 20.7 ≈ 18.13 s`〔基准 D〕。
+v0.13.1 的 TTFT 是计算值，并非从请求发起直接计时至首个流式回调。cpu/256 档按同一批 turn 数据复算为 `256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s`。这与表中 3.94 s 一致，是对指标定义和数据记录的内部一致性检查，不是一次独立测量。cpu/4096 档同理：`4096 ÷ 226.5 + 1 ÷ 20.7 ≈ 18.13 s`〔基准 D〕。
 
 prefill 与 decode 的吞吐对应不同阶段，不能合并为单一吞吐值。同模型、同设备、同后端时，两者仍会受序列长度、固定 prefill signature 的填充率和 kernel 实现影响。附录 D 的主矩阵来自 Apple M5 Pro；Android 真机数据作为扩展实验单列。引用基准数据时，正文会同时给出设备、模型、后端与上下文等条件。
 
@@ -208,7 +208,7 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 
 `SetWaitForCompletion` 使 benchmark 请求同步完成 prefill，避免只记录异步提交所需的 host 时间。具体后端如何落实等待，见第 4 章。第二处位于 `ShouldStop`：只要 benchmark 指定的 decode 步数大于 0，命中停止序列不会提前结束，循环在达到指定步数后停止（`runtime/core/tasks.cc:85`）。这样，各次吞吐记录使用相同的 decode step 数。
 
-因此，benchmark 数字描述的是启用等待和固定 decode 步数后的测量路径，不能直接代替真实对话的端到端时延。报告结果时，需要同时记录参数与执行模式。
+因此，benchmark 数字反映的是启用等待和固定 decode 步数后的测量路径，不能直接等同于真实对话的端到端时延。报告结果时，需要同时记录参数与执行模式。
 
 解读一组结果时，可按以下顺序检查：
 
@@ -280,7 +280,7 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{L}\left(\frac{R_s}{R_l}-1\right) $$
 本书按主要职责把生成路径整理为五层，供后续章节定位实现位置。这是分析视图，不是仓库声明的强制依赖规则。主调用路径大体自上而下；工厂、元数据、日志与工具代码仍可能跨越相邻层。
 
 1. 对外接口层。包括 Engine、Session、CLI、C API 与各语言绑定，应用通常从这里进入（第 3、11 章）。
-2. 对话与编排层。把多轮消息转成模型输入，并组织 prefill、decode、取消和回调（第 3 至 5 章）。
+2. 对话与编排层。把多轮消息转换为模型输入，并组织 prefill、decode、取消和回调（第 3 至 5 章）。
 3. 推理执行层。通过 executor 和 LiteRT 模型执行操作管理推理状态，并适配不同后端（第 6、8、9 章）。
 4. 组件层。包括 tokenizer、采样器和约束解码等可复用组件（第 5、10 章）。
 5. 格式与基础设施层。包括 `.litertlm` 文件格式、模型资源和通用运行设施（第 7 章）。
@@ -304,7 +304,7 @@ class SessionInterface {
 
 (1) `GenerateContent` 在一次调用中处理 prefill 与 decode（`runtime/engine/engine.h:107`）。(2)(3) 允许调用方分别执行两个阶段，见 `runtime/engine/engine.h:168` 与 `runtime/engine/engine.h:184`。`= 0` 表示这些方法由具体 Session 实现提供；接口本身不固定后端。
 
-对话与编排层的核心循环位于 `runtime/core/tasks.cc`。`Prefill` 先读取 executor 给出的最大 token 数，再要求输入 token 数严格小于该值（`runtime/core/tasks.cc:413`）：
+对话与编排层的核心循环位于 `runtime/core/tasks.cc`。`Prefill` 先读取 executor 给出的最大 token 数，再校验输入 token 数是否严格小于该值（`runtime/core/tasks.cc:413`）：
 
 ```cpp
   auto num_tokens = token_id_tensor_type.Layout().Dimensions().back();
@@ -320,7 +320,7 @@ class SessionInterface {
 
 (1) 在调用 executor 之前拒绝 `num_tokens >= max_num_tokens`；第 6 章解释该上限与 KV cache 容量的关系。(2) 校验通过后调用参数化的 `executor.Prefill`。
 
-decode 的循环顺序决定取消与输出语义。每轮开始先读取 `cancelled`（`runtime/core/tasks.cc:487`），随后执行一个 `DecodeOneStep`（`runtime/core/tasks.cc:518`）。如果本轮得到可输出文本，流式回调发生在 `runtime/core/tasks.cc:563`。本轮末尾，`ShouldStop` 检查停止序列、benchmark 步数、`max_num_tokens` 与 `max_output_tokens`（`runtime/core/tasks.cc:571`；定义见 `runtime/core/tasks.cc:85`）。取消请求不会中断已经进入 executor 的当前 step，只能在下一轮检查点生效。第 4、5 章分别展开取消、停止序列与 UTF-8 输出处理。
+decode 循环中各步骤的顺序决定了取消与输出的语义，核心实现位于 `runtime/core/tasks.cc`。每轮开始先读取 `cancelled`（:487），随后执行一个 `DecodeOneStep`（:518）。如果本轮得到可输出文本，流式回调发生在 :563。本轮末尾，`ShouldStop` 检查停止序列、benchmark 步数、`max_num_tokens` 与 `max_output_tokens`（:571，定义见 :85）。取消请求不会中断已经进入 executor 的当前 step，只能在下一轮检查点生效。第 4、5 章分别展开取消、停止序列与 UTF-8 输出处理。
 
 推理执行层的公共边界是 `LlmExecutorBase`（`runtime/executor/llm_executor_base.h:40`）：
 
@@ -350,7 +350,7 @@ class LlmExecutorBase {
 <figcaption>图 2-3　一次生成请求的主数据流；侧框列出各阶段使用的输入、组件和后端资源。</figcaption>
 </figure>
 
-`SessionInterface` 与 `LlmExecutorBase` 提供抽象边界，但不保证所有模块只依赖相邻层。工厂和设置对象把后端选择传给 executor 与 delegate；上层编排可以复用，具体能力仍要逐后端检查。会话相关状态由 Session 及其 executor 上下文持有。Clone、checkpoint 与 rewind 分别复制或调整哪些状态，需按第 6 章的具体实现判断。
+`SessionInterface` 与 `LlmExecutorBase` 提供抽象边界，但不保证所有模块只依赖相邻层。工厂和设置对象把后端选择传递给 executor 与 delegate；上层编排可以复用，具体能力仍要逐后端检查。会话相关状态由 Session 及其 executor 上下文持有。Clone、checkpoint 与 rewind 分别复制或调整哪些状态，需按第 6 章的具体实现判断。
 
 ## `.litertlm` 文件的组成
 

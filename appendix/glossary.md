@@ -42,8 +42,8 @@
 | zero-copy | 零拷贝 | 8 | 生产者与消费者复用同一底层存储；还需满足 buffer 类型、布局与完成事件相容，不能由一次 `Duplicate()` 单独证明 |
 | 设备侧采样 | device-side sampling | 5 | 由设备后端消费完整 logits 并选出 token；可避免把整个 logits 张量传回 host，仍会回传少量 token 结果 |
 | CPU 亲和性 | — | 8 | 限制线程允许运行的 CPU 集合；LiteRT-LM 的 Pixel 路径使用预置核编号 |
-| 推测解码 | speculative decoding | 9 | 由计算成本较低的 drafter 生成多个候选 token，再由 base 模型一次前向验证 |
-| MTP | 多 token 预测 | 9 | Multi-Token Prediction，推测解码的一种形态，Gemma 4 所用 |
+| 投机解码 | speculative decoding | 9 | 由计算成本较低的 drafter 生成多个候选 token，再由 base 模型一次前向验证 |
+| MTP | 多 token 预测 | 9 | Multi-Token Prediction，投机解码的一种形态，Gemma 4 所用 |
 | drafter / verify | 草稿模型 / 验证 | 9 | drafter 草拟候选 token，base 模型的 verify signature 一次验一串 |
 | 聚合接受比例 | aggregate acceptance ratio | 9 | 日志中的 verified/drafted；等于每轮接受前缀长度的期望除以草拟步数 G，不等同于逐位独立命中概率 |
 | bonus token | — | 9 | 首个不匹配处或草稿全部匹配时，base 模型给出的一个额外 token；它使每轮至少返回 1 个 token，不保证性能收益 |

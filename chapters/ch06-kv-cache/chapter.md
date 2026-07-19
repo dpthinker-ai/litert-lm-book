@@ -1,8 +1,8 @@
-# 第 6 章 KV cache 与会话状态
+# 第 6 章 KV cache：容量、带宽与会话生命周期
 
-> 使命：计算 KV cache 的容量与带宽成本。说明 LiteRT-LM 的双缓冲、会话克隆、检查点回退和序列化能力边界。
+> 本章目标：计算 KV cache 的容量与带宽成本。说明 LiteRT-LM 的双缓冲、会话克隆、检查点回退和序列化能力边界。
 
-第 5 章给出的 25 tokens/s 只计算了权重读取。KV cache、采样和其他算子均未计入。本章计算其中的 KV cache 成本，并回答第 2 章第 13、14 问。
+第 5 章给出的 25 tokens/s 只计算了权重读取。KV cache、采样和其他算子均未计入。本章补充 KV cache 部分的成本计算，并回答第 2 章第 13、14 问。
 
 术语约定：decode step 指一次「前向计算与采样」迭代，每步产出一个 token。prefill 指模型批量处理输入 prompt 并填充 KV cache 的阶段。两者的执行过程分别见第 4 章与第 5 章。
 
@@ -34,13 +34,13 @@ llama.cpp 与 LiteRT-LM 在不同阶段确定 KV cache 精度。llama.cpp 提供
 
 </div>
 
-第 1 章的内存估算不能只计权重。以本书基准模型为例，4096 个 token 的 KV cache 为 112 MiB；若 32003 个静态槽位全部预留，则约为 875 MiB。其他模型的形状和精度不同，应按本节公式分别计算。
+第 1 章的内存估算不能只计入权重。以本书基准模型为例，4096 个 token 的 KV cache 为 112 MiB；若 32003 个静态槽位全部预留，则约为 875 MiB。其他模型的形状和精度不同，应按本节公式分别计算。
 
 ## KV cache 对解码带宽的影响
 
 标准全注意力的每个 decode step 都要读取模型权重和此前位置的 KV cache。它还要写入新 token 的 key/value。上下文越长，这部分数据访问越多。
 
-25 tokens/s 的估算只包含权重读取，不能用它单独解释实测吞吐。本机 CPU 的 24.8 tokens/s 与该估算接近，但这不构成模型验证。两者的带宽条件和未计成本不同。附录 D 记录了同组基准。测试将上下文从 256 增至 4096。CPU decode 从 24.8 降到 20.7 tokens/s；GPU 从 50.6 降到 45.6 tokens/s。这组数据与 KV 访问量随上下文增长的机制一致，但没有分别测出 KV、采样和其他算子的贡献。
+第 1 章的 25 tokens/s 只包含权重读取，不能单独用它来解释实测吞吐。本机 CPU 的 24.8 tokens/s 与该估算接近，但这不构成对估算模型的验证。两者的带宽条件和未计成本不同。附录 D 记录了同组基准。测试将上下文从 256 增至 4096。CPU decode 从 24.8 降到 20.7 tokens/s；GPU 从 50.6 降到 45.6 tokens/s。这组数据与 KV 访问量随上下文增长的机制一致，但没有分别测出 KV、采样和其他算子的贡献。
 
 ### 从容量公式推导逻辑扫描量
 
@@ -65,7 +65,7 @@ $$ B_{KV,\mathrm{scan}} \approx E \times S \times T $$
 
 上下文从 4096 增至 8192，KV 容量和注意力侧的逻辑扫描量均翻倍。双缓冲不改变注意力需要访问的逻辑 K/V 集合，但它可能增加输出 cache 的写入量和常驻容量。表 6-1 不把这部分计入扫描速率。
 
-附录 D 识别出的主 decode 模型段 payload 为 2.26 GB。再假定每个 decode step 恰好读取该段一次。在 25 tokens/s 下，权重数据量为 56.5 GB/s。4096 上下文的 KV 逻辑扫描速率为 2.94 GB/s；到 32003 时增至约 22.9 GB/s。`.litertlm` 整文件约 3.4 GiB，但其中包含 10 个模型段，不能把整文件大小当作每步读取的权重 payload。
+附录 D 识别出的主 decode 模型段 payload 为 2.26 GB。若进一步假定每个 decode step 恰好读取该段一次，则 25 tokens/s 对应的权重数据量为 56.5 GB/s。4096 上下文的 KV 逻辑扫描速率为 2.94 GB/s；到 32003 时增至约 22.9 GB/s。`.litertlm` 整文件约 3.4 GiB，但其中包含 10 个模型段，不能把整文件大小当作每步读取的权重 payload。
 
 ### `--max-num-tokens` 如何决定预留大小
 
@@ -173,7 +173,7 @@ if (!gpu_optimized_single_buffer_cache_) {   // (1)
 
 `(2)` 只交换指针，不复制缓冲内容。本步写入的输出缓冲成为下一步的输入缓冲，原输入缓冲成为下一步的输出目标。`(1)` 在 `gpu_optimized_single_buffer_cache_` 为真时跳过交换。decode 路径在 `runtime/executor/llm_litert_compiled_model_executor.cc:946-947` 执行同样的操作。
 
-这两个 map 不一定对应两块独立分配。创建执行器时，CPU 路径用 `TensorBuffer::Duplicate()` 把输入缓冲放入输出 map。源码注释将其称为单缓冲，见 `runtime/executor/llm_litert_compiled_model_executor.cc:1664-1695`。GPU 在签名没有 int32 参数张量时分别创建输入和输出缓冲。签名包含该参数时则进入原地更新路径，见 `runtime/executor/llm_litert_compiled_model_executor.cc:1621-1622`。因此，不能只看成员名就把 KV 常驻容量固定乘以二。
+这两个 map 不一定对应两块独立分配。创建执行器时，CPU 路径用 `TensorBuffer::Duplicate()` 把输入缓冲放入输出 map。源码注释将其称为单缓冲，见 `runtime/executor/llm_litert_compiled_model_executor.cc:1664-1695`。GPU 在签名没有 int32 参数张量时分别创建输入和输出缓冲。签名包含该参数时则进入原地更新路径，见 `runtime/executor/llm_litert_compiled_model_executor.cc:1621-1622`。因此，不能仅凭成员名称就将 KV 常驻容量固定乘以二。
 
 ### 单缓冲路径的额外代价
 
@@ -214,7 +214,7 @@ std::memcpy(param_tensor_lock_and_addr.second, params, sizeof(params));
 
 ## `SharedProcessedContext` 与会话克隆
 
-`SessionInterface::Clone` 的接口语义是：新会话继承调用时的设置与上下文。头文件用两个问题复用同一公共前缀来说明这一点，见 `runtime/engine/engine.h:231-245`。接口语义不等于立即深拷贝 KV cache。`SessionAdvanced::Clone` 先登记克隆任务并等待任务完成，见 `runtime/core/session_advanced.cc:389-402`。异步路径在 `CloneAsyncLocked` 中注册新会话和任务依赖，见 `runtime/core/session_advanced.cc:412-436`。任务执行到 `ThreadedExecutionManager::AddCloneSessionTask` 后，才调用 `ResourceManager::CloneContextHandler`。两个调用位置分别是 `runtime/framework/resource_management/threaded_execution_manager.cc:898` 和 `runtime/framework/resource_management/threaded_execution_manager.cc:940`。
+`SessionInterface::Clone` 的接口语义是：新会话继承调用时的设置与上下文（`runtime/engine/engine.h:231-245`）。接口语义不等于立即深拷贝 KV cache。实际实现位于 `runtime/core/session_advanced.cc`：`SessionAdvanced::Clone` 先登记克隆任务并等待任务完成（:389-402），异步路径在 `CloneAsyncLocked` 中注册新会话和任务依赖（:412-436）。任务进入 `ThreadedExecutionManager` 后，在 `AddCloneSessionTask` 中调用 `ResourceManager::CloneContextHandler`（`runtime/framework/resource_management/threaded_execution_manager.cc:898-940`）。
 
 ### Clone 调用建立共享关系
 
@@ -272,7 +272,7 @@ RETURN_IF_ERROR(context_handler->UpdateSharedProcessedContext(
 
 ### 复制粒度与后端差异
 
-常规 LiteRT compiled executor 的 `CloneContext` 调用 `CloneKVCacheBuffers`。后者只遍历当前的 `input_kv_cache_buffers_`，不遍历双缓冲的两套 map。每个缓冲都交给 `CopyTensorBuffer`。两处调用分别见 `runtime/executor/llm_litert_compiled_model_executor.cc:1243-1250` 和 `runtime/executor/llm_litert_compiled_model_executor.cc:1288-1302`。底层复制函数读取 `PackedSize()`，分配同样大小的目标缓冲。该函数按同一字节数执行 `memcpy`，见 `runtime/util/tensor_buffer_util.cc:47-82`：
+常规 LiteRT compiled executor 的 `CloneContext` 调用 `CloneKVCacheBuffers`。后者只遍历当前的 `input_kv_cache_buffers_`，不遍历双缓冲的两套 map。每个缓冲都传递给 `CopyTensorBuffer`。两处调用分别见 `runtime/executor/llm_litert_compiled_model_executor.cc:1243-1250` 和 `runtime/executor/llm_litert_compiled_model_executor.cc:1288-1302`。底层复制函数读取 `PackedSize()`，分配同样大小的目标缓冲。该函数按同一字节数执行 `memcpy`，见 `runtime/util/tensor_buffer_util.cc:47-82`：
 
 ```cpp
 LITERT_ASSIGN_OR_RETURN(auto size, tensor_buffer.PackedSize());  // (1)
@@ -351,7 +351,7 @@ class KVCacheInterface {
 };
 ```
 
-这些方法都是纯虚函数，接口只规定调用形式，能力是否可用取决于具体实现。`Serialize` 与 `Load` 表达把 KV cache 转成字节串并重新载入的接口目标。`SelectAndCopyFrom` 从较大的 batch 中选择一条，`BroadcastAndCopyFrom` 把单条 cache 复制到较大的 batch。`DeepCopy` 则要求返回一个拥有独立 KV 缓冲的新对象。
+这些方法都是纯虚函数，接口只规定调用形式，能力是否可用取决于具体实现。`Serialize` 与 `Load` 表达把 KV cache 转换为字节串并重新载入的接口目标。`SelectAndCopyFrom` 从较大的 batch 中选择一条，`BroadcastAndCopyFrom` 把单条 cache 复制到较大的 batch。`DeepCopy` 则要求返回一个拥有独立 KV 缓冲的新对象。
 
 LiteRT 实现中的 `LitertKVCache::DeepCopy` 会复制 bank 1 的 key/value 缓冲。若 bank 2 存在，它也会复制 bank 2 的两组缓冲，并构造新的 `LitertKVCache`（`runtime/executor/litert/kv_cache.cc:380-421`）。这是接口层的一条独立实现路径。6.4 节的 compiled executor 使用另一套缓冲类型和 `CloneKVCacheBuffers`，没有调用该方法。NPU executor 也直接调用 `CopyTensorBuffer`（`runtime/executor/llm_litert_npu_compiled_model_executor.cc:2818-2827`）。
 
@@ -444,7 +444,7 @@ checkpoint_map_[label] = {current_step, session_state_};  // (1)
 
 这个语义影响错误恢复设计。若应用先保存 `safe`，随后在更晚位置再次使用同名 label，第一次恢复点便已丢失。若需要保留树状分支，应使用 `Session::Clone` 管理独立会话，而不是把 checkpoint map 当成持久版本库。若需要跨进程恢复，当前 `Serialize` / `Load` 又尚未实现；应用不能把 checkpoint label 当成可持久化状态。
 
-回退也不清零目标位置之后的 KV 缓冲。它只把逻辑位置设回保存点；后续 refill 或 decode 从该处继续写入。channel 过滤正是利用这一点：先回退到检查点，再用移除 channel 内容后的历史覆盖后续槽位。
+回退也不会将目标位置之后的 KV 缓冲置零。它只把逻辑位置设回保存点；后续 refill 或 decode 从该处继续写入。channel 过滤正是利用这一点：先回退到检查点，再用移除 channel 内容后的历史覆盖后续槽位。
 
 ## 按配置过滤 channel 内容
 

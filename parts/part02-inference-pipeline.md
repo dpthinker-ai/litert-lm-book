@@ -1,7 +1,10 @@
 # 第二部分 · 推理流水线
 
-> 本部分按实际调用顺序分析一次生成请求。第 3 章处理输入与会话，第 4 章分析 prefill，第 5 章分析逐 token 的 decode step。
+第一部分建立了约束条件和度量工具。本部分跟随一次完整的生成请求，从 API 调用走到 token 逐个输出，覆盖一条推理流水线的全部主路径。
 
-- [第 3 章　输入侧：从 Engine API 到 token 序列](../chapters/ch03-input-path/chapter.md)：消息、模板、tokenizer、embedding 与会话状态。
-- [第 4 章　Prefill：并行处理提示词](../chapters/ch04-prefill/chapter.md)：固定 signature、动态分块、异步提交与取消边界。
-- [第 5 章　Decode：单步解码循环](../chapters/ch05-decode/chapter.md)：logits、采样、停止检测、回调与逐步计时。
+第 3 章处理输入侧。它解释 Engine 与 Session 为什么分成两层、Conversation 如何把多轮消息渲染成模板文本、tokenizer 又如何将文本编码为 token id。这一章还分析了 Session Clone 的写时复制机制和模板渲染的前缀校验逻辑——它们共同决定了跨轮对话的上下文复用方式。prefill 阶段的输入缓冲区布局和 embedding 查找也在这一章交代清楚。
+
+第 4 章分析 prefill 阶段。它解释为什么同一段提示词的 prefill 吞吐会随输入长度呈阶梯状变化——这背后是固定 signature 的贪心分组算法和填充率口径。静态与动态两条形状路径的权衡、prefill 的工作组调度、取消请求的检查点位置，以及回调线程与单线程执行池之间的背压，都在这一章逐一展开。
+
+第 5 章进入 decode 阶段。它逐项分析单步解码的五个子步骤：前向得到 logits、可选地屏蔽 logits、采样得到 token id、文本解码和停止判断。内部采样与外部采样两条路径的分叉点、CPU 采样实现中的数值边界处理、BPE 与停止序列的双层暂存逻辑——每一层都直接关系到流式输出的正确性和时延。
+
