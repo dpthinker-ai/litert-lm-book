@@ -1,12 +1,12 @@
 # 第 2 章 从运行到架构：benchmark 指标解读与五层概览
 
-> 本章目标：在本机把模型跑起来，读懂它输出的第一批性能指标，并建立一张贯穿全书的架构地图。
+> 本章目标：运行 LiteRT-LM，按源码定义解释 benchmark 的四项指标，并建立后续章节使用的五层架构视图。
 
-第 1 章的推导停留在纸面。本章把它落到终端里真实的输出，并用实测数据核对第 1 章那条「约 25 tokens/s 的 decode 上限」。
+第 1 章在显式假设下推导了 decode 的带宽侧上限。本章把同一分析方法用于实测数据。第 1 章的 25 tokens/s 是示意点值，不能直接用来验证另一台设备。
 
-## 让它先跑起来
+## 运行命令行工具
 
-最快的路径不需要编译。LiteRT-LM 提供了一个命令行工具，一条命令装好：
+使用官方 Python 包不需要本地编译 C++。v0.13.1 的 README 给出以下安装与运行方式。[^ch02-litertlm-readme]
 
 ```bash
 uv tool install litert-lm
@@ -16,7 +16,7 @@ litert-lm run \
   --prompt="What is the capital of France?"
 ```
 
-`litert-lm` 是一层轻量的 Python 封装：它通过 FFI 绑定 C++ 运行时，再用 click 注册八个子命令（`python/litert_lm_cli/main.py:52`）。日常常用五个：`run` 交互对话、`benchmark` 采集性能指标、`import` 把模型收进本地目录、`list` 查看已有模型、`serve` 起一个 OpenAI 兼容的本地服务。
+`litert-lm` 的 CLI 入口使用 click，并注册八个子命令模块（`python/litert_lm_cli/main.py:52`）。本章使用 `run` 和 `benchmark`；同一入口还注册 `convert`、`list`、`import`、`delete`、`rename` 与 `serve`。
 
 ```python
 _serve_module.register(cli)      // (1)
@@ -29,9 +29,9 @@ _benchmark_module.register(cli)
 _run_module.register(cli)
 ```
 
-每个子命令是一个独立模块，各自调用 `register(cli)` 挂进同一个 click group。新增子命令不牵动其他模块，这是全书第一条设计原则「接口隔离」在 CLI 层的一次缩影。(2) 处的 `import` 子命令要靠 `importlib.import_module` 动态加载，因为 `import` 是 Python 关键字，不能直接写成 `from ... import import`（`main.py:33`）。
+每个子命令由独立模块实现，再通过 `register(cli)` 注册到同一个 click group。`import` 是 Python 关键字，因此对应模块通过 `importlib.import_module` 加载（`python/litert_lm_cli/main.py:33`）。入口只负责注册，命令逻辑由各模块实现。
 
-`run` 子命令的核心，是拿到模型路径后如何把一次对话跑起来。略去参数解析，核心逻辑如下：
+`run` 在解析模型与后端参数后创建 `Engine`，再用上下文管理器限定其生命周期（`python/litert_lm_cli/commands/run.py:240`）：
 
 ```python
       engine_cm = litert_lm.Engine(       // (1)
@@ -39,19 +39,19 @@ _run_module.register(cli)
           backend=backend_val,
           enable_speculative_decoding=enable_speculative_decoding,
           max_num_tokens=max_num_tokens,
-          # ...
+          vision_backend=vision_backend_val,
+          audio_backend=audio_backend_val,
+          cache_dir=cache_dir_val,
       )
 
     with engine_cm as engine:             // (2)
-      # ...
-      runner_cm = engine.create_session(...)
 ```
 
-(1) `Engine` 只接受一个模型路径和几个后端开关。它是第 3 章要拆解的两层结构里的外层，负责加载权重、装配后端。(2) `create_session` 才返回真正承载对话的 `session`。一个 Engine 可以派生多个 Session，这是第 5 问「Engine 和 Session 为什么分两层」的入口：权重加载一次，会话状态各自独立。`run` 用 `with` 托管 Engine 的生命周期，退出时释放显存与 KV cache。
+(1) 把模型路径、后端与生成配置交给 `Engine`。(2) 进入上下文后，`run` 再调用 `engine.create_session`（`python/litert_lm_cli/commands/run.py:252`）。`SessionInterface` 的注释说明，Session 保存每次独立交互的内部状态（`runtime/engine/engine.h:65`）。Python `Engine.__exit__` 调用 `close`（`python/litert_lm/engine.py:137`），后者删除原生 Engine 句柄（`python/litert_lm/engine.py:129`）。各后端何时释放设备资源仍由其实现决定。
 
-第一次运行会从 Hugging Face 拉取模型：`from_huggingface_repo` 触发 `common.download_from_huggingface`（`run.py:571`）。litert-community 的 Gemma 4 版可直接下载，google/ 官方版是受限发布，需先接受许可条款。模型文件通常数 GiB，需预留磁盘空间，首次下载耗时较长。跑通之后，答案会逐 token 输出：每个 decode step 产出一个增量 token，边生成边输出，这就是第 1 章的内存带宽约束（后文有时称带宽墙）在终端里的直接表现。
+指定 `--from-huggingface-repo` 时，`run` 调用 `common.download_from_huggingface`（`python/litert_lm_cli/commands/run.py:571`）。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，CLI 流式打印增量文本。
 
-逐 token 的流式输出，在 `run` 的输出循环里看得最清楚：它对 `send_message_async` 返回的 stream 逐块迭代，每块是一小段文本，边收边打印，不等整段生成完（`run.py:100`）：
+`run` 迭代 `send_message_async` 返回的 stream，并打印每个响应字典中的文本项（`python/litert_lm_cli/commands/run.py:101`）：
 
 ```python
   stream = conversation.send_message_async(prompt)
@@ -60,27 +60,37 @@ _run_module.register(cli)
       content_list = chunk.get("content", [])
       for item in content_list:
         if item.get("type") == "text":
-          # ...
+          if state.active_channel is not None:
+            click.echo()
+            state.active_channel = None
           click.echo(click.style(item.get("text", ""), fg="yellow"), nl=False)
-      # ...
-  except KeyboardInterrupt:                        // (2)
-    conversation.cancel_process()
 ```
 
-(1) 每次循环体对应一个 decode step 产出的增量 token，`nl=False` 让它们首尾相接连成一条流。(2) 按下 Ctrl-C，`KeyboardInterrupt` 直接调用 `cancel_process()`。这是第 9 问「生成中途取消为什么能立即停止」在最外层的入口：取消信号沿调用链传到 decode 循环，第 4、5 章会顺着这条链讲清楚。本章稍后走读 decode 循环时，会看到这个取消信号在 `tasks.cc` 里被检查的确切位置。
+(1) 每次迭代取得的是 Python 层生成的响应字典，不对应一个 token 或一次 decode step。`Conversation.send_message_async` 先把原生回调字符串解析为字典（`python/litert_lm/conversation.py:202`），随后按工具调用配置选择相应的 `yield` 分支（`python/litert_lm/conversation.py:218`、`python/litert_lm/conversation.py:220`）。当前 step 没有可输出文本时，C++ decode 循环还会跳过回调（`runtime/core/tasks.cc:533`）。因此，不能用 stream 迭代次数计算 token 数或吞吐；`nl=False` 只负责连续打印文本片段。
 
-如果要读源码、改代码，就得从源码编译 C++ 演示程序 `litert_lm_main`（完整构建见第 11 章与附录 C，这里先直接用它）。它最核心的两个开关：
+按下 Ctrl-C 不会同步终止后台生成。`run` 捕获 `KeyboardInterrupt` 后调用 `cancel_process()`，随后继续消费 stream，直至后台处理结束（`python/litert_lm_cli/commands/run.py:123`）：
+
+```python
+  except KeyboardInterrupt:
+    conversation.cancel_process()
+    for _ in stream:
+      pass
+```
+
+运行时只在预设检查点读取取消标志。decode 在下一次循环迭代开始前读取该标志；若请求发生在当前 decode step 内，必须先等该 step 返回。v0.13.1 的 `Prefill` 函数没有接收取消标志（`runtime/core/tasks.cc:413`），正在执行的 prefill 不会轮询该请求。详细调用链见第 4 章。
+
+从源码构建后，还可以运行 C++ 示例程序 `litert_lm_main`。完整构建命令见第 11 章与附录 C；这里先看两个基本参数：
 
 - `--backend`：选执行后端，默认是 `gpu`（`runtime/engine/litert_lm_main.cc:52`）。想用 CPU 就传 `--backend=cpu`。
-- `--model_path`：指向一个 `.litertlm` 模型文件（`litert_lm_main.cc:54`）。
+- `--model_path`：指向一个 `.litertlm` 模型文件（`runtime/engine/litert_lm_main.cc:54`）。
 
-一个纯 CPU 的最小跑法：
+以下命令选择 CPU 后端：
 
 ```bash
 litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 ```
 
-这个 C++ 程序把「一次对话」压缩成十来行，正好当作五层架构的第一张概览图（`runtime/engine/litert_lm_main.cc:113`）。下面这段是 `MainHelper` 的主干（省略了错误处理与 conversation 的装配）：
+`MainHelper` 依次创建模型资源、引擎设置、Engine 和 Conversation，再异步提交消息（`runtime/engine/litert_lm_main.cc:113`）。下面保留与调用链有关的语句，省略 Conversation 的装配：
 
 ```cpp
   ASSIGN_OR_RETURN(ModelAssets model_assets,  // NOLINT
@@ -94,6 +104,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
   // Enable benchmark by default.
   engine_settings.GetMutableBenchmarkParams() =
       litert::lm::proto::BenchmarkParams();                         // (2)
+  // ...
   ASSIGN_OR_RETURN(auto engine, litert::lm::EngineFactory::CreateDefault(
                                     std::move(engine_settings)));
   // ...
@@ -103,11 +114,13 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
   RETURN_IF_ERROR(engine->WaitUntilDone(absl::Minutes(10)));
 ```
 
-三步完成一次推理：(1) 把 `--backend` 字符串解析成 `Backend` 枚举，再交给工厂。CPU/GPU/NPU 的执行器实现从这里分岔，对应第二条设计原则「可插拔后端」（第 8 章）；本章末尾会讲到这套抽象如何让上层对后端无感。(2) 这个演示程序默认打开 benchmark，因此每跑一次都会输出一份性能指标，附录 D 的数据即由此采集。(3) `SendMessageAsync` 是非阻塞调用，prefill 与 decode 在后台线程执行，主线程靠 `WaitUntilDone` 等待；文本通过 `CreateMessageCallback` 分段回调，`message->is_null()` 时输出一个换行表示结束。本书的主线是推理流水线——一段输入经 prefill 处理后逐 token 生成的完整链路，起点就是这一句 `SendMessageAsync`，第二篇会沿着这条链路深入展开。
+(1) 把 `--backend` 字符串解析为 `Backend` 枚举，再写入 `EngineSettings`；`EngineFactory` 接收这份设置。具体后端装配见第 8 章。(2) 为示例程序启用 benchmark 记录。(3) `SendMessageAsync` 提交异步生成，随后由 `WaitUntilDone` 等待任务结束。`CreateMessageCallback` 接收增量消息；回调收到空消息时，示例程序只输出换行（`runtime/engine/litert_lm_main.cc:76`）。
 
-## 读懂第一批数字
+按主生成路径，输入先进入对话与 Session，再经过 prefill、decode，最后由回调返回结果。第 3 至 5 章分别分析状态管理、两阶段执行和输出处理。
 
-`litert-lm benchmark` 专门输出性能指标（本书附录 D 的基准数据集即由此采集）。它跑一个纯性能循环，不做真实对话，只按指定的 token 数各跑一轮 prefill 和 decode，再输出四个数字（`python/litert_lm_cli/commands/benchmark.py:102`）：
+## benchmark 输出的四项指标
+
+`litert-lm benchmark` 以固定输入触发一次生成，并通过 benchmark 参数指定 prefill 与 decode 的 token 数。Python 包装层把输入文本设为 `benchmark`，再调用 C API 的同步生成函数（`python/litert_lm/benchmark.py:74`）。命令完成后输出四项指标（`python/litert_lm_cli/commands/benchmark.py:102`）：
 
 ```python
     result = benchmark_obj.run()                            // (1)
@@ -127,7 +140,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
     )
 ```
 
-四行输出，分别对应四个受不同资源约束的指标。(1) `benchmark_obj.run()` 底层是 C++ 的 `BenchmarkInfo`：prefill 和 decode 分别计时，`last_*_per_second` 取最后一轮的吞吐。(2) Init 是把模型加载到就绪的时间，单列一项，不计入 (3) 的 TTFT。这一点是下面验算 TTFT 的关键。一次真实采集大致如下（M5 Pro、Gemma 4 E4B、cpu、prefill 256 token / decode 128 token〔基准 D〕）：
+(1) 返回 Python 的 `BenchmarkInfo`。其中字段名虽然带 `last_`，当前包装层实际读取 C API 的第 0 个 turn；本命令只触发一次生成，因此二者指向同一条记录（`python/litert_lm/benchmark.py:94`）。(2) 初始化时间单列，单位为秒。(3) TTFT 也以秒输出，而且不含初始化时间。下面是附录 D 主矩阵的一组中位数，条件为 Apple M5 Pro、Gemma 4 E4B、cpu 后端、prefill 256 token、decode 128 token。
 
 ```text
 Backend                    : cpu
@@ -140,26 +153,26 @@ Init time:            0.5400 s
 Time to first token:  3.9400 s
 ```
 
-这四个数字背后是一个叫 `BenchmarkInfo` 的结构，C API 把每一项都单独暴露了出来。四个最值得关注的：
+四项数据都由 C++ `BenchmarkInfo` 提供，C API 分别暴露读取函数：
 
-| 指标 | 含义 | 受何种资源约束 | C API（`c/engine.h`） |
+| 指标 | v0.13.1 中的定义 | 解释时需要检查的条件 | C API |
 |---|---|---|---|
-| **TTFT**（首 token 时延，ms） | 从发起到首个 token 生成的时间 | prefill（算力） | `..._get_time_to_first_token`（:583） |
-| **prefill 吞吐**（tokens/s） | 提示词被处理的速度 | prefill（算力） | `..._get_prefill_tokens_per_sec_at`（:634） |
-| **decode 吞吐**（tokens/s） | 逐 token 生成的速度 | decode（带宽） | `..._get_decode_tokens_per_sec_at`（:643） |
-| **初始化时间**（s） | 加载模型到就绪 | 冷启动（第 7 章） | `..._get_total_init_time_in_second`（:591） |
+| TTFT（s） | 首轮 prefill 完整耗时，加首轮 decode 的平均单 token 耗时；不含初始化 | prompt 长度、prefill 形状、首轮 decode turn 的 token 数 | `litert_lm_benchmark_info_get_time_to_first_token`（`c/engine.h:583`） |
+| prefill 吞吐（tokens/s） | 本 turn 的输入 token 数除以耗时 | 序列长度、固定形状填充率、后端与 kernel | `litert_lm_benchmark_info_get_prefill_tokens_per_sec_at`（`c/engine.h:634`） |
+| decode 吞吐（tokens/s） | 本 turn 的生成 token 数除以耗时 | 上下文长度、KV cache、采样、后端与 kernel | `litert_lm_benchmark_info_get_decode_tokens_per_sec_at`（`c/engine.h:643`） |
+| 初始化时间（s） | C API 将 `GetInitPhases()` 中各条 duration 相加；阶段可能重叠 | 文件缓存、模型映射、delegate 初始化与缓存；只作同口径对照 | `litert_lm_benchmark_info_get_total_init_time_in_second`（`c/engine.h:591`） |
 
-> 表 2-1　benchmark 报告的四个核心指标，以及它们各自受何种资源约束。第 6、7 章会分别深挖 decode 吞吐和初始化时间。
+> 表 2-1　benchmark 的四项指标及其源码定义。资源瓶颈不能只由指标名称预先指定，需要结合工作负载和后端验证。
 
-其中 TTFT 可以当场拆开（这就是第 4 问的答案）：它 ≈ 整段提示词的 prefill 耗时 + 第一步 decode，**不含**模型加载（Init 单列）。可以用基准数据验算：cpu、上下文 256 时，256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s，与实测 TTFT 3.94 s 精确吻合；上下文拉到 4096，TTFT 涨到 18.1 s，几乎全部来自 prefill 的耗时〔基准 D〕。所以想让第一个字更快，要么缩短提示词，要么加快 prefill——换个算力更强的后端效果直接可见。
+初始化时间必须按实现口径解释。C API 遍历 `GetInitPhases()`，把每条 duration 换算为毫秒后求和，最后除以 1000 返回秒（`c/engine.cc:821`）。`EngineAdvancedImpl::Create` 先开始记录 `kTotal`，紧接着开始 `kModelAssets` 子阶段（`runtime/core/engine_advanced_impl.cc:180`）。后续还记录 `kLlmMetadata` 子阶段（`runtime/core/engine_advanced_impl.cc:193`）。因此，这些 duration 并非互斥区间，CLI 的 `Init time` 不能直接视为一条无重叠的端到端墙钟计时。附录 D 保留 API 原始口径；分析单个初始化步骤时，应读取各 phase 或另设外部墙钟计时。
 
-注意这张表最左和第三列的对应关系：**prefill 吞吐和 decode 吞吐不是一个东西，也不该被平均成"一个速度"。** 在本书基准机上，同模型同上下文下 prefill 吞吐是 decode 的约 3 到 20 倍（附录 D；后端算力越强、上下文越长，差距越大）。原因第 1 章已经埋下：prefill 受计算能力约束（可并行运算），decode 受内存带宽约束（每步搬运全部权重）。把它俩混在一起谈"这模型多少 tok/s"，是端侧性能讨论里一个常见的混淆。
+v0.13.1 的 TTFT 是计算值，不是从请求开始直接计时到首个流式回调。cpu/256 档按同一批 turn 数据复算为 `256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s`。这与表中 3.94 s 一致，是对指标定义和数据记录的内部一致性检查，不是一次独立测量。cpu/4096 档同理：`4096 ÷ 226.5 + 1 ÷ 20.7 ≈ 18.13 s`〔基准 D〕。
 
-> 本书所有实测数据来自附录 D 的基准数据集（同一台 Mac、Gemma 4 E4B、公开可复现的采集脚本）。凡标注「〔基准 D〕」处，即由这套数据回填。
+prefill 与 decode 的吞吐对应不同阶段，不能合并为单一吞吐值。同模型、同设备、同后端时，两者仍会受序列长度、固定 prefill signature 的填充率和 kernel 实现影响。附录 D 的主矩阵来自 Apple M5 Pro；Android 真机数据作为扩展实验单列。引用基准数据时，正文会同时给出设备、模型、后端与上下文等条件。
 
-## 这些数字怎么来的：计时器与测量语义
+## 计时器与测量语义
 
-读懂这些指标之后，还要知道数字是怎么得到的，否则无从判断它可不可信。四个指标全部出自 `BenchmarkInfo`（`runtime/engine/io_types.h:420`），它的计时模型很简单：每一轮 prefill 或 decode 记为一个 turn，起点打一个时间戳，终点用当前时间减起点，连同这一轮处理的 token 数存进列表（`runtime/engine/io_types.cc:307`）：
+`BenchmarkInfo` 保存各阶段的计时记录（`runtime/engine/io_types.h:420`）。源码把一次 `RunPrefill` 或 `RunDecode` 调用定义为一个 turn；每条 `BenchmarkTurnData` 包含持续时间和 token 数（`runtime/engine/io_types.h:409`）。prefill 的结束计时如下（`runtime/engine/io_types.cc:306`）：
 
 ```cpp
 absl::Status BenchmarkInfo::TimePrefillTurnEnd(uint64_t num_prefill_tokens) {
@@ -172,9 +185,9 @@ absl::Status BenchmarkInfo::TimePrefillTurnEnd(uint64_t num_prefill_tokens) {
 }
 ```
 
-(1) 一个 turn 就是一条 `(token 数, 耗时)` 记录。吞吐的定义随之而来：某一轮的 tokens/s 就是这条记录的 `num_tokens / duration`（`GetDecodeTokensPerSec`，`io_types.cc:434`，函数里对零时长与越界各有防护）。前面表 2-1 里的 `last_*_per_second`，取的是最后一轮的这个商。
+(1) 将 `num_prefill_tokens` 与开始、结束时间之差写入 `prefill_turns_`。decode 在 `TimeDecodeTurnEnd` 中记录相同结构（`runtime/engine/io_types.cc:339`）。prefill 和 decode 吞吐都按 `num_tokens / duration` 计算，分别见 `runtime/engine/io_types.cc:395` 与 `runtime/engine/io_types.cc:434`。
 
-TTFT 的口径也写在代码里（`GetTimeToFirstToken`，`io_types.cc:455`）：
+TTFT 的实现位于 `runtime/engine/io_types.cc:455`：
 
 ```cpp
 double first_decode_token_seconds = absl::ToDoubleSeconds(
@@ -184,92 +197,97 @@ double first_prefill_token_seconds =
 return first_decode_token_seconds + first_prefill_token_seconds;
 ```
 
-(2) 是首轮 prefill 的完整耗时，(1) 是首轮 decode 平摊到单 token 的时长，两者相加。上一节那笔 256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s 的验算不是本书发明的口径，就是这个函数的算式本身。也因此 Init 不在里面：模型加载在任何 turn 开始之前就结束了。
+(1) 是首轮 decode turn 的平均单 token 耗时，(2) 是首轮 prefill 的完整耗时。函数返回二者之和。这里没有记录“首个流式回调发生时刻”；当首轮 decode turn 包含多个 token，且各 step 耗时不同时，这个平均值不等于首个回调的直接计时。C API 也明确以秒返回该值，并说明它不含初始化（`c/engine.h:574`）。
 
-数字可信还依赖两处刻意改变执行语义的设计。其一，benchmark 模式强制 prefill 同步完成（`runtime/core/tasks.cc:435`）：
+benchmark 模式还改变了两处执行条件。第一处要求 prefill 等待完成（`runtime/core/tasks.cc:435`）：
 
 ```cpp
 // Wait for prefill to complete if benchmark mode is enabled.
 params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 ```
 
-正常路径上 prefill 可以异步提交、不等硬件实际执行完成就返回（第 4 章）；计时若落在这样的路径上，测到的只是「提交耗时」。这一行把 benchmark 模式下的计时终点钉在硬件完成之后。其二，`ShouldStop` 对 benchmark 有专门分支（`tasks.cc:86`，第 5 章贴过全文）：指定了 decode 步数就跑满 N 步、忽略停止词。原因也是测量语义：若模型第 20 步恰好生成了停止词，一次 128 步的吞吐测量就会缩减为 20 步的样本，抖动大且不可比。
+`SetWaitForCompletion` 使 benchmark 请求同步完成 prefill，避免只记录异步提交所需的 host 时间。具体后端如何落实等待，见第 4 章。第二处位于 `ShouldStop`：只要 benchmark 指定的 decode 步数大于 0，命中停止序列不会提前结束，循环在达到指定步数后停止（`runtime/core/tasks.cc:85`）。这样，各次吞吐记录使用相同的 decode step 数。
 
-这两处合起来是一条测量原则：**基准模式可以改变执行语义，但改变的方向必须让数字更接近想测的那件事**（硬件真实耗时、固定长度的稳态吞吐），并且写在代码里可以被核对。
+因此，benchmark 数字描述的是启用等待和固定 decode 步数后的测量路径，不能直接代替真实对话的端到端时延。报告结果时，需要同时记录参数与执行模式。
 
-有了定义与语义，瓶颈判定可以给出一个操作化流程，全书各章会反复用到：
+解读一组结果时，可按以下顺序检查：
 
-1. **Init 偏大**：与推理无关，是加载问题，查第 7 章（mmap、分段、并行加载）。
-2. **TTFT 偏大而 decode 正常**：几乎总是 prefill 的账（TTFT 算式里 prefill 项占大头），受算力约束，换更强的后端收益直接（下一节 Roofline 的 3.9 倍实测）。
-3. **decode 吞吐低**：先用第 1 章的公式算纯权重上限（带宽 ÷ 权重字节），实测贴近上限说明已被内存带宽约束住，加算力无用；离上限还远则查采样、约束解码等每步的额外开销（第 5、10 章）。
-4. **decode 随上下文变长而变慢**：KV cache 的带宽占用在增长，见下一节的反解练习与第 6 章的正式对账。
+1. 对 Init，先区分冷缓存与热缓存，并核对模型文件、delegate 初始化和编译缓存；第 7 章讨论这些阶段。
+2. 按源码公式把 TTFT 拆成首轮 prefill 耗时和首轮 decode 的平均单 token 耗时。只有前者占主要比例时，才把后续分析集中到 prefill。
+3. 对 prefill，对照序列长度、signature 形状和后端，以区分计算效率与填充效率；不能仅凭 tokens/s 判定算力瓶颈。
+4. 对 decode，先记录上下文长度、采样配置和后端，再与带宽侧上限对照。上下文扫描只能显示相关成本随长度变化；若要区分 KV 流量与计算，应增加硬件计数器或更小范围的探针。
 
-## 一个分析框架：Roofline
+## Roofline 分析框架
 
-有了 prefill/decode 两类指标，就可以引入贯穿全书的分析框架：Roofline（屋顶线）模型。它一句话讲完：**一段计算的速度，要么受算力限制，要么受带宽限制，取决于它每读一字节数据能摊上多少次计算**（这个比值叫算术强度，是体系结构教科书的常识内容）。
+Roofline 用算术强度连接计算吞吐与内存带宽。沿用第 1 章的记号：每个 token 的计算量为 \\(F\\)，数据搬运量为 \\(D\\)，工作负载可用的有效计算吞吐和内存带宽分别为 \\(P_{\mathrm{eff}}\\) 与 \\(B_{\mathrm{eff}}\\)。token 率满足
 
-- **prefill** 一次处理许多 token，同一批权重被许多 token 共用，算术强度高，落在 Roofline 的"算力受限"区——所以它受 TOPS 约束。
-- **decode** 一次只处理一个 token，把全部权重读进来只为算这一个字，算术强度极低，落在"带宽受限"区——所以它受 GB/s 约束，与算力无关。这正是第 1 章那条 25 tok/s 上限公式的来历。
+$$ R \leq \min\left(\frac{P_{\mathrm{eff}}}{F},\frac{B_{\mathrm{eff}}}{D}\right) $$
 
-顺着这个视角，本书基准数据里得到直接体现〔基准 D〕：换到 GPU（都在 1024 上下文档测），prefill 从 259 tok/s 跳到 999（约 3.9 倍，算力受限，增加算力即可提速）；decode 却只从 24.7 到 50.6 tok/s（约 2 倍，被内存带宽约束，算力再高也无济于事）。同一台机器、同一个模型，两类操作对"更强的硬件"的反应截然不同。
+较低的一项决定这个工作点的 Roofline 上限。若带宽项更低，称为 memory-bound；若计算项更低，称为 compute-bound。端到端测得一个 tokens/s 点值，还不足以判定哪一项更低。
 
-这里也对一下第 1 章的账。那条 25 tok/s 是为一部假想手机（50 GB/s、1.86 GiB 权重）算的；本书基准机是另一套参数，得按同一条公式重算。这里有一个容易算错的分母：3.66 GB 是整个 `.litertlm` 文件，其中还打包着视觉/音频编码器、词嵌入表等段；decode 每步真正要读一遍的是主干模型那一段，实剖为 2.26 GB（附录 D 的段表）。于是 gpu decode 50.6 tok/s × 2.26 GB ≈ 114 GB/s 的有效搬运速率，cpu 24.8 tok/s × 2.26 GB ≈ 56 GB/s，量级都落在桌面级统一内存芯片的合理区间。至于 cpu 实测贴着"25"，只是巧合——分子分母都不是同一套。**公式可以迁移，数字不能照搬**，这正是第 1 章说"这是把尺子"而不是"这是个答案"的原因。
+prefill 一次处理一段 token，同一份权重可在序列维度复用，因此算术强度通常高于 decode。较长的 prefill 在 kernel 利用率足够时，可能进入计算约束区。batch=1 的稠密 decode 每次只生成一个新 token。若每步激活全部权重，且权重工作集超过可用片上缓存，它通常更接近带宽约束区。这个判断还要求量化解包、采样与同步没有先成为瓶颈。每步只激活部分参数、稀疏计算、权重常驻缓存、分层卸载或 kernel 利用率不足都会改变这个判断。
+
+附录 D 的 Apple M5 Pro 主矩阵提供一组后端敏感度数据。Gemma 4 E4B、context 1024、decode 128 token 时，prefill 从 cpu 的 259.2 tokens/s 变为 gpu 的 999.1 tokens/s，约为 3.9 倍；decode 从 24.7 变为 50.6 tokens/s，约为 2.0 倍。切换后端同时改变了有效计算吞吐、有效带宽、delegate 和 kernel。这组比例表明两个阶段的后端敏感度不同，不能单独证明 prefill 已受算力约束、decode 已受带宽约束。
+
+第 1 章的 25 tokens/s 来自假想手机的题设，不能直接套到这台 Mac。对本书基准模型，`.litertlm` 整文件为 3.66 GB，并包含多个模型段；附录 D 识别出的主 decode 段 payload 为 2.26 GB。若额外假设每个 decode step 恰好读取这 2.26 GB 一次，并忽略其他流量，那么 gpu/256 档的等效主干 payload 速率为 `50.6 × 2.26 ≈ 114 GB/s`，cpu/256 档为 `24.8 × 2.26 ≈ 56 GB/s`。这两个数是吞吐与假设 payload 的乘积，不是硬件计数器测得的 DRAM 带宽，也不能用来核验设备标称带宽。
 
 <figure>
 {{#include figs/fig-2-1.svg}}
-<figcaption>图 2-1　Roofline 模型：prefill 落在算力受限区，decode 落在带宽受限区。两者受完全不同的资源约束，这是全书性能分析的基准框架。</figcaption>
+<figcaption>图 2-1　Roofline 给出计算侧和带宽侧两条上限；prefill 与 decode 的工作点位置取决于序列、模型、缓存和 kernel 条件。</figcaption>
 </figure>
 
-### 差的那一段：从两个实测数据反解 KV cache
+### 用吞吐差异估算上下文相关开销
 
-Roofline 框架立刻能做一次有内容的练习。附录 D 里，cpu 后端 decode 吞吐在 256 上下文时是 24.8 tok/s，4096 上下文时掉到 20.7〔基准 D〕。权重没变，后端没变，变的只有上下文长度。这部分性能下降是什么引起的？
+附录 D 中，cpu 后端的 decode 吞吐从 context 256 时的 24.8 tokens/s 降到 context 4096 时的 20.7 tokens/s；gpu 后端从 50.6 降到 45.6 tokens/s。模型、设备与后端在各自对照中保持不变，输入上下文长度发生变化〔基准 D〕。
 
-按带宽受限的模型推一遍（以下是推算，假设两档的有效带宽相同、每步读全量 KV cache；每步读取的权重取主干模型段的 2.26 GB，见上文）。256 上下文时 KV cache 只有几 MB，相对权重可以忽略，于是有效带宽约为 24.8 × 2.26 ≈ 56 GB/s。4096 上下文时每步搬运总量变为 56 ÷ 20.7 ≈ 2.71 GB，比权重多出约 0.45 GB。这多出的部分除以 4096 个 token，约 110 KiB/token。也就是说，**仅凭两档吞吐实测加一条带宽等式，就能反解出「每 token 有一笔随上下文增长的额外搬运」**——这就是 KV cache 的带宽签名。
+这里仅估算等效字节数。假设两档使用相同的 \\(B_{\mathrm{eff}}\\)，全部时间都能表示为字节数除以该带宽，并忽略 256-token 档的上下文相关流量。取主 decode 段 \\(D_w=2.26\\) GB。若长上下文为 \\(L\\)，短、长两档吞吐分别为 \\(R_s\\) 和 \\(R_l\\)，则每个上下文 token 的等效附加项为
 
-同样的练习放到 gpu 上（50.6 → 45.6 tok/s）反解出约 60 KiB/token，与 cpu 侧的 110 KiB 并不一致；而从模型文件正着算的真实值是 28 KiB/token（24 层 int8 KV，实剖与算式见第 6 章与附录 D）。三个数字不一致，这个偏差本身有信息量：恒定带宽是近似假设，注意力计算随上下文增长的算力开销、两个后端不同的带宽利用率，全都被这条等式折进了"字节"里。反解正确探测到了额外搬运的存在与量级（每 token 数十 KiB 级），但把所有随上下文增长的成本都记在了它头上，高估了 2-4 倍。精确的账要正着算，第 6 章做这件事，第 13 问（`--max-num-tokens` 为什么影响速度）也在那里得到解答。
+$$ d_{\mathrm{eq}}=\frac{D_w}{L}\left(\frac{R_s}{R_l}-1\right) $$
+
+代入 cpu 数据得到约 107 KiB/token；代入 gpu 数据得到约 59 KiB/token。第 6 章按模型张量形状计算的逻辑 KV 容量是 28 KiB/token。这三个数不应相等：`d_{\mathrm{eq}}` 把注意力计算、带宽利用率变化、缓存行为和其他随上下文变化的成本都折算成字节。它不是实际 DRAM 流量的测量值，也不能单独证明降速全部来自 KV cache。这个对照只说明上下文相关成本不能从权重 payload 一项解释；第 6 章再按 KV 张量形状和访问路径核算。
 
 ## 二十个问题
 
-一本书最怕读者读着读着忘了自己为什么在读。所以把全书要回答的问题先摆出来，读到答案时回头勾掉。这份清单也是给作者的自检——每一问都必须在标注的章节得到正面回答。
+表 2-2 把后续章节的核心问题与解答位置对应起来。表中只给出索引，各章仍会说明结论的适用条件。
 
-| # | 你会问 | 解答章 |
+| # | 问题 | 解答章 |
 |---|---|---|
-| 1 | 同样的模型，为什么云端流畅、手机上就吃力？ | 1 |
-| 2 | 4B 参数的模型，8 GiB 内存的手机放得下吗？ | 1、6、7 |
+| 1 | 同样的模型，为什么云端可以流畅运行，手机端通常更受限制？ | 1 |
+| 2 | 8 GiB 内存的手机能否容纳 4B 参数模型？ | 1、6、7 |
 | 3 | prefill 每秒几千 token、decode 只有几十，为什么？ | 2 初讲、6 深化 |
 | 4 | time-to-first-token 由哪几段时间构成？ | 2 |
 | 5 | Engine 和 Session 为什么要分成两层？ | 3 |
-| 6 | 多轮对话的历史，每一轮都要重新计算吗？ | 3（模板 diff）、6（KV cache） |
-| 7 | 聊天模板是谁、在什么时候套上去的？ | 3 |
-| 8 | 模型文件里为什么有好几个固定长度的 prefill 入口？ | 4 |
-| 9 | 生成中途取消，为什么能立刻停下？ | 4、5 |
+| 6 | 多轮对话的历史，每一轮都要重新计算吗？ | 3（单轮渲染或前缀后缀提取）、6（KV cache） |
+| 7 | 聊天模板由哪一层在何时应用？ | 3 |
+| 8 | 模型文件中为什么包含多个固定长度的 prefill 入口？ | 4 |
+| 9 | 取消请求在哪些检查点被读取，响应延迟由什么决定？ | 4、5 |
 | 10 | 温度、top-k、top-p 各自改变了什么？ | 5 |
-| 11 | 流式输出为什么偶尔出现不完整的 token？ | 5 |
-| 12 | 停止词只出现了一半时，要不要输出？ | 5 |
-| 13 | KV cache 占多少内存？`--max-num-tokens` 为什么影响速度？ | 6（`LiteRT-LM#2568`） |
-| 14 | 克隆对话做分叉，需要重算公共前缀吗？ | 6 |
-| 15 | int4 量化省的是体积、带宽还是算力？ | 7 |
-| 16 | `.litertlm` 单文件里都装了什么？ | 7 |
-| 17 | 换个后端，速度甚至输出为什么都会变？ | 8（`LiteRT-LM#2281`） |
-| 18 | GPU 片上采样比拷回 CPU 采样快在哪？ | 8 |
-| 19 | 推测解码靠"猜"，为什么反而更快？什么时候更慢？ | 9（`LiteRT-LM#2227`） |
-| 20 | 模型怎么"看见"图片？输出怎么保证是合法 JSON？ | 10 |
+| 11 | 流式输出如何处理跨 token 的 UTF-8 字节序列？ | 5 |
+| 12 | 停止序列只有前缀匹配时，哪些 token 需要暂缓输出？ | 5 |
+| 13 | KV cache 占多少内存？`--max-num-tokens` 为什么影响速度？ | 6（`LiteRT-LM#2568`[^ch02-issue-2568]） |
+| 14 | 克隆对话并创建分支时，需要重算公共前缀吗？ | 3、6 |
+| 15 | int4 量化减少的是体积、带宽需求还是计算量？ | 7 |
+| 16 | `.litertlm` 单文件包含哪些分段？ | 7 |
+| 17 | 切换后端后，速度和输出为什么可能变化？ | 8（`LiteRT-LM#2281`[^ch02-issue-2281]） |
+| 18 | GPU 设备侧采样（device-side sampling）减少了哪些 host/device 数据传输？ | 8 |
+| 19 | speculative decoding 在什么条件下提高吞吐，又会增加哪些开销？ | 9（`LiteRT-LM#2227`[^ch02-issue-2227]） |
+| 20 | 图像怎样编码并进入语言模型？约束解码怎样限制结构化输出？ | 10 |
 
-> 表 2-2　二十个问题。工程集成向的问题（"一套 C++ 怎么变出六种语言 SDK"）另见第 11 章，不入这份面向推理的主清单。
+> 表 2-2　二十个推理与运行时问题。不同语言绑定如何复用核心 runtime，同时采用不同的原生边界，见第 11 章。
 
-## 五层架构与三条原则
+## 五层职责视图
 
-下面来看这张架构地图。LiteRT-LM 从上到下分五层，每一层只跟相邻层打交道：
+本书按主要职责把生成路径整理为五层，供后续章节定位实现位置。这是分析视图，不是仓库声明的强制依赖规则。主调用路径大体自上而下；工厂、元数据、日志与工具代码仍可能跨越相邻层。
 
-1. **对外接口层**——Engine / Session API、CLI、C API 与各语言绑定。使用者只碰这一层（第 3 章、第 11 章）。
-2. **对话与编排层**——把多轮对话转成模型输入，把一次请求编排成 prefill→decode 的有状态流程（第 3、4、5 章）。
-3. **推理执行层**——真正用 LiteRT 跑模型、管 KV cache、屏蔽 CPU/GPU/NPU 差异（第 6、8、9 章）。
-4. **组件层**——tokenizer、采样器、约束解码等可复用零件（第 5、10 章）。
-5. **格式与基础设施层**——`.litertlm` 文件格式、线程池等底座（第 7 章）。
+1. 对外接口层。包括 Engine、Session、CLI、C API 与各语言绑定，应用通常从这里进入（第 3、11 章）。
+2. 对话与编排层。把多轮消息转成模型输入，并组织 prefill、decode、取消和回调（第 3 至 5 章）。
+3. 推理执行层。通过 executor 和 LiteRT 模型执行操作管理推理状态，并适配不同后端（第 6、8、9 章）。
+4. 组件层。包括 tokenizer、采样器和约束解码等可复用组件（第 5、10 章）。
+5. 格式与基础设施层。包括 `.litertlm` 文件格式、模型资源和通用运行设施（第 7 章）。
 
-这五层不是抽象的概念划分，每一层都落在具体文件上。往下看三层，越贴近硬件抽象越薄。
+以下用前三层的接口和调用点说明这套划分。
 
-第 1 层的门面是 `SessionInterface`（`runtime/engine/engine.h:70`）。它把「跑一次生成」暴露成一个纯虚接口，使用者只面对方法名，看不见后端：
+对外接口层的主要入口之一是 `SessionInterface`（`runtime/engine/engine.h:70`）。类注释说明，Session 保存一次独立交互的内部状态，并负责生成、prefill 与 decode（`runtime/engine/engine.h:65`）：
 
 ```cpp
 class SessionInterface {
@@ -281,14 +299,12 @@ class SessionInterface {
   virtual absl::Status RunPrefill(const std::vector<InputData>& contents) = 0; // (2)
   // ...
   virtual absl::StatusOr<Responses> RunDecode() = 0;   // (3)
-  // ...
-  virtual absl::StatusOr<BenchmarkInfo> GetBenchmarkInfo() = 0;
 };
 ```
 
-(1) `GenerateContent` 是高层的一步到位；(2)(3) 把它拆成 `RunPrefill` 和 `RunDecode` 两个可分别调用的原语。推理流水线在接口层就已经分成两段：先 prefill 并行处理提示词，再 decode 逐 token 生成。第 3 章讲 Engine/Session 分层，就从这个 `= 0` 的纯虚签名开始。
+(1) `GenerateContent` 在一次调用中处理 prefill 与 decode（`runtime/engine/engine.h:107`）。(2)(3) 允许调用方分别执行两个阶段，见 `runtime/engine/engine.h:168` 与 `runtime/engine/engine.h:184`。`= 0` 表示这些方法由具体 Session 实现提供；接口本身不固定后端。
 
-第 2 层的编排落在 `runtime/core/tasks.cc`。`RunPrefill`/`RunDecode` 往下调，就到这里的 `Prefill` 和 `Decode` 两个自由函数。`Prefill` 的开头先检查上下文长度上限（KV cache 容量，第 1 章内存容量约束的一个具体面）（`runtime/core/tasks.cc:413`）：
+对话与编排层的核心循环位于 `runtime/core/tasks.cc`。`Prefill` 先读取 executor 给出的最大 token 数，再要求输入 token 数严格小于该值（`runtime/core/tasks.cc:413`）：
 
 ```cpp
   auto num_tokens = token_id_tensor_type.Layout().Dimensions().back();
@@ -302,9 +318,11 @@ class SessionInterface {
   RETURN_IF_ERROR(executor.Prefill(inputs, params));         // (2)
 ```
 
-(1) 提示词的 token 数一旦顶到 `max_num_tokens`（KV cache 的容量上限，即第 13 问里的 `--max-num-tokens`），直接报错——这堵上下文长度上限在调用执行器之前就拦截。(2) 校验过了才把 `inputs` 交给下一层的 `executor.Prefill`。decode 侧则是一个 `while (true)` 循环：每圈开头先检查 `cancelled` 原子量（`tasks.cc:487`），置位立即退出，取消故意不进 `ShouldStop`，语义上与「这一步之后判停」分开；然后每转一圈调一次 `DecodeOneStep`，再调用 `ShouldStop` 判断是否需要终止（`runtime/core/tasks.cc:571` 调 `ShouldStop`）：遇到停止词、达到 benchmark 指定步数、达到 `max_num_tokens`、或超过 `max_output_tokens`，四者任一为真就跳出（`ShouldStop` 定义在 `tasks.cc:86`）。第 4、5 章顺着这个循环展开取消、停止词判断和输出不完整字符的处理。
+(1) 在调用 executor 之前拒绝 `num_tokens >= max_num_tokens`；第 6 章解释该上限与 KV cache 容量的关系。(2) 校验通过后调用参数化的 `executor.Prefill`。
 
-第 3 层是执行器，一个纯虚基类把「用什么硬件跑」这件事完全封装起来（`runtime/executor/llm_executor_base.h:40`）：
+decode 的循环顺序决定取消与输出语义。每轮开始先读取 `cancelled`（`runtime/core/tasks.cc:487`），随后执行一个 `DecodeOneStep`（`runtime/core/tasks.cc:518`）。如果本轮得到可输出文本，流式回调发生在 `runtime/core/tasks.cc:563`。本轮末尾，`ShouldStop` 检查停止序列、benchmark 步数、`max_num_tokens` 与 `max_output_tokens`（`runtime/core/tasks.cc:571`；定义见 `runtime/core/tasks.cc:85`）。取消请求不会中断已经进入 executor 的当前 step，只能在下一轮检查点生效。第 4、5 章分别展开取消、停止序列与 UTF-8 输出处理。
+
+推理执行层的公共边界是 `LlmExecutorBase`（`runtime/executor/llm_executor_base.h:40`）：
 
 ```cpp
 class LlmExecutorBase {
@@ -318,29 +336,25 @@ class LlmExecutorBase {
 };
 ```
 
-(1)(2) 上一层调的 `executor.Prefill` / `Decode` 就是这两个纯虚方法；CPU、GPU、NPU 各有一个子类实现它们，同一套 `tasks.cc` 编排代码因此一字不改就能换后端。(3) `ExecutorBackendName` 让上层能问「我现在跑在哪个后端」，第 8 章讲换后端为什么连输出都会变，就从这里的多态分发切进去。第 4、5 层是可复用的 tokenizer / 采样器组件（`runtime/components/`）和 `.litertlm` 文件格式——留到第 5、7、10 章各自展开。
+(1) 定义基本 prefill 接口。`runtime/core/tasks.cc` 使用的参数化重载位于 `runtime/executor/llm_executor_base.h:51`；基类默认返回未实现，支持该路径的具体 executor 需要覆盖它。(2) 定义基本 decode 接口。(3) 返回 executor 的后端名称。工厂选择的 executor 与 delegate 配置可因 CPU、GPU、NPU 路径而异，但上层编排仍通过这些公共方法调用。组件层主要位于 `runtime/components/`；文件格式实现位于 `schema/`。
 
 <figure>
 {{#include figs/fig-2-2.svg}}
-<figcaption>图 2-2　LiteRT-LM 的五层架构。使用者只与最上层打交道；越往下越贴近硬件。括号里是本书对应的章节。</figcaption>
+<figcaption>图 2-2　本书用于定位职责的五层视图；主生成路径自接口向执行与模型资源传递，跨层辅助依赖未在图中展开。</figcaption>
 </figure>
 
-分层图说的是「有哪些层」；把视角换成数据流，一次生成请求是这样自上而下穿过这些层的：
+图 2-3 沿调用方向展开一次生成请求的主数据流：
 
 <figure>
 {{#include figs/fig-2-3.svg}}
-<figcaption>图 2-3　一次生成请求的端到端数据流：自用户向下逐层抵达硬件，侧枝是各层的输入与加速件（各框与图 2-2 的五层一一对应）。</figcaption>
+<figcaption>图 2-3　一次生成请求的主数据流；侧框列出各阶段使用的输入、组件和后端资源。</figcaption>
 </figure>
 
-支撑这五层的是三条设计原则，它们会在后续每一章反复出现，先记住名字：
+`SessionInterface` 与 `LlmExecutorBase` 提供抽象边界，但不保证所有模块只依赖相邻层。工厂和设置对象把后端选择传给 executor 与 delegate；上层编排可以复用，具体能力仍要逐后端检查。会话相关状态由 Session 及其 executor 上下文持有。Clone、checkpoint 与 rewind 分别复制或调整哪些状态，需按第 6 章的具体实现判断。
 
-- **接口隔离**：每层用抽象接口挡住下层实现，换后端、换 tokenizer 都不震动别处；
-- **可插拔后端**：CPU/GPU/NPU 由一个工厂按需装配，一套代码覆盖多硬件（第 8 章）；
-- **状态即对象**：把一次会话的全部状态（KV cache、步数、配置）打包成可搬运的对象，多轮、克隆、回退都因此成立（第 6 章）。
+## `.litertlm` 文件的组成
 
-## 一个 .litertlm 里装了什么
-
-地图的最底层是模型文件本身。LiteRT-LM 用一个自定义的单文件格式 `.litertlm`，把权重、tokenizer、元数据、能力声明全打包进去。仓库附带一个打印工具（`schema/core/litertlm_print.cc`），能把一个模型文件的分段结构打印出来。它的主循环很直白：先读文件头里的版本号和系统元数据，再遍历每个 section，把偏移和数据类型逐段打出来（`schema/core/litertlm_print.cc:156`）：
+`.litertlm` 是 LiteRT-LM 定义的容器格式。一个文件可以包含 TFLite 模型、tokenizer、LLM 元数据和通用二进制数据等 section；具体 section 组合由模型文件决定。`litertlm_print` 读取文件头（`schema/core/litertlm_print.cc:110`），输出系统元数据（`schema/core/litertlm_print.cc:133`），再遍历 section（`schema/core/litertlm_print.cc:159`）：
 
 ```cpp
     for (size_t i = 0; i < section_objects->size(); ++i) {
@@ -357,7 +371,9 @@ class LlmExecutorBase {
     }
 ```
 
-(1) 每个 section 只是一对字节偏移 `[begin, end)`——文件本身是连续排布的一块，section 表就是一张目录。这正是第 7 章说 mmap 能帮上冷启动的物理前提：权重那一段可以直接映射进地址空间，不必先拷进堆。(2) `data_type` 是个枚举，主要有以下几种：`AnySectionDataType_TFLiteModel`（权重与图）、`AnySectionDataType_SP_Tokenizer` 或 `HF_Tokenizer_Zlib`（两种 tokenizer）、`AnySectionDataType_LlmMetadataProto`（元数据）（`schema/core/litertlm_utils.cc:31`）。碰到 `LlmMetadataProto` 那一段，工具还会把 proto 展开成文本打进来。一份真实 dump 的骨架长这样（取自一个三段布局的示例模型文件，非基准模型 Gemma 4 E4B，E4B 有 10 个段，完整段表见附录 D 第六节）：
+(1) `begin_offset` 与 `end_offset` 定义半开区间 `[begin, end)`；schema 注释直接给出这一约定（`schema/core/litertlm_header_schema.fbs:85`），读取函数也用 `end_offset - begin_offset` 计算大小（`schema/core/litertlm_read.cc:200`）。(2) `data_type` 区分 section 内容。常见值包括 `TFLiteModel`、`SP_Tokenizer`、`HF_Tokenizer_Zlib`、`LlmMetadataProto` 与 `GenericBinaryData`（`schema/core/litertlm_header_schema.fbs:72`）。打印函数用 `AnySectionDataTypeToString` 转换名称（`schema/core/litertlm_utils.cc:25`），遇到 LLM 元数据时还会解析 proto 并输出文本（`schema/core/litertlm_print.cc:181`）。
+
+下面是一份三段示例文件的节选，并非本书基准模型。附录 D 对 Gemma 4 E4B 文件识别出 10 个 TFLite 模型段，完整清单见附录 D 第六节。
 
 ```text
 LiteRT-LM Version: 1.5.0
@@ -384,32 +400,28 @@ Section 2:
   Data Type:    AnySectionDataType_LlmMetadataProto
     <<<<<<<< start of LlmMetadata
       start_token { token_ids: 2 }                 <- BOS
-      stop_tokens { token_str: "<end_of_turn>" }   <- 停止词，第 12 问
+      stop_tokens { token_str: "<end_of_turn>" }   <- 停止序列配置，第 12 问
       prompt_templates { ... }                     <- 聊天模板，第 7 问
     >>>>>>>> end of LlmMetadata
 ```
 
-一个文件里三件东西各占一段：几个 GiB 的权重、几 MiB 的 tokenizer、几 KiB 的元数据。元数据段里的 `start_token`、`stop_tokens`、`prompt_templates` 不是可有可无的——它们是第 7 问「聊天模板谁在什么时候套上去」、第 12 问「停止词只出现一半是否输出」的答案所在，模型文件自带一份它该怎么被对话包裹的说明书。现在先记住它分段的、每段一对偏移、可被打印工具拆开查看这个事实。第 7 章会深入分析，解释为什么要自造一个格式、以及 mmap 加载怎么帮上冷启动的忙。
+这个示例把 TFLite 模型、SentencePiece tokenizer 与 LLM 元数据放在三个 section 中；其他模型可以采用不同布局。构建 Session 配置时，源码会从 LLM 元数据读取 `start_token`（`runtime/engine/engine_settings.cc:594`）、`stop_tokens`（`runtime/engine/engine_settings.cc:603`）和 `prompt_templates`（`runtime/engine/engine_settings.cc:623`）。它们如何影响输入构造与停止判断，见第 3、5 章。
+
+TFLite section 的读取路径先用 `end_offset - begin_offset` 计算模型大小（`schema/core/litertlm_read.cc:223`），再创建 `tflite::MMAPAllocation`（`schema/core/litertlm_read.cc:226`）。这说明 v0.13.1 的该路径使用文件映射分配对象；页错误、物理驻留与初始化耗时仍需结合操作系统和访问行为测量。第 7 章分析 section 布局、映射和冷启动。
 
 ## 小结
 
-至此你掌握了：一个能在本机运行的模型、一个解读性能数据的 Roofline 分析框架、一张五层架构地图。接下来第二篇进入架构的对外接口层与对话编排层（第 3-5 章），跟随一个 token 经历从输入到输出的完整推理流水线。
-
----
-
-<div class="aside-version">
-
-本书写作期间上游发布了 v0.14.0（2026-07，共 144 个提交，见 GitHub Releases）。抽样核对：全书锚定的核心机制叙述（取消标志的消费位置、`BenchmarkInfo` 的定义位置等）在 v0.14.0 中未发生结构性变化；变动集中在依赖更新、NPU 质量修复与 C/Python API 扩充。全书引用维持锚定 `v0.13.1` 不变，理由见前言的锁版本约定；整体迁移留待下一次修订版统一进行。
-
-</div>
+benchmark 指标必须按 `BenchmarkInfo` 的源码定义解释，Roofline 结论必须附带工作负载假设，五层视图只用于定位主要职责。第 3 至 5 章继续分析 Session、prefill/decode 编排和输出处理。
 
 ## 练习与自查
 
-1. **TTFT 验算。** 用附录 D 的 gpu/1024 档数据（prefill 999.1 tok/s、decode 50.6 tok/s）按 `GetTimeToFirstToken` 的算式验算 TTFT，并与实测 1.04 s 对照。
-2. **反解练习重走。** 用 gpu 的 256 与 4096 两档 decode 实测（50.6 与 45.6 tok/s）、主干权重 2.26 GB，自己走一遍本章的反解，得出每 token 额外搬运量，并解释它为什么高于实剖真值 28 KiB。
-3. **判定流程应用。** 某设备实测：Init 1.8 s、TTFT 4.4 s、decode 45 tok/s、上下文加倍后 decode 降 8%。按本章四步判定流程，逐项判断各环节是否异常。
-4. **代码定位。** benchmark 模式为什么必须强制 prefill 同步完成？找出实现这一行为的那一行代码。
-5. **架构归位。** 约束解码的 `MaskLogits` 调用发生在五层架构的哪一层？它修改的 logits 来自哪一层？
+1. TTFT 验算。用附录 D 的 gpu/1024 档数据（prefill 999.1 tokens/s、decode 50.6 tokens/s）按 `GetTimeToFirstToken` 的公式复算 TTFT，并说明为什么这不是独立计时。
+2. 等效字节估算。用 gpu 的 context 256 与 4096 两档 decode 吞吐（50.6 与 45.6 tokens/s）和 2.26 GB 主段 payload 计算 `d_{\mathrm{eq}}`，再说明它为何不能当作 KV cache 的实测 DRAM 流量。
+3. 条件检查。某设备报告 Init 1.8 s、TTFT 4.4 s、decode 45 tokens/s，上下文加倍后 decode 下降 8%。列出判断异常前仍需补充的模型、输入、后端和测量条件。
+4. 代码定位。找到 benchmark 模式要求 prefill 等待完成的语句，并说明不等待时计时可能覆盖什么范围。
+5. 架构归位。约束解码的 `MaskLogits` 调用属于五层视图中的哪一层？它接收的 logits 来自哪一层？
 
-
-<!-- 基准数字已回填（附录 D）；表 2-2 已定稿为完整 20 问。 -->
+[^ch02-litertlm-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/tree/v0.13.1)，版本 v0.13.1；访问日期：2026-07-18。
+[^ch02-issue-2568]: Yegorsh，[*`--max-num-tokens` unreasonably affects decoding speed*](https://github.com/google-ai-edge/LiteRT-LM/issues/2568)，LiteRT-LM issue #2568，2026-06-13；访问日期：2026-07-18。
+[^ch02-issue-2281]: 4ntoine，[*Different inference result depending on backend*](https://github.com/google-ai-edge/LiteRT-LM/issues/2281)，LiteRT-LM issue #2281，2026-05-15；访问日期：2026-07-18。
+[^ch02-issue-2227]: Shoolife，[*MTP / speculative decoding regresses decode tok/s on PowerVR GPU (Tensor G6) — even with GPU sampler fully loaded*](https://github.com/google-ai-edge/LiteRT-LM/issues/2227)，LiteRT-LM issue #2227，2026-05-11；访问日期：2026-07-18。

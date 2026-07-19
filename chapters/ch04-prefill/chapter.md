@@ -1,16 +1,16 @@
 # 第 4 章 Prefill：并行处理提示词
 
-> 本章目标：说清 prefill 为什么是计算受限（compute-bound）的一步、静态与动态两条实现路径各自的权衡，以及支撑异步执行与合作式取消的那层线程调度底座。
+> 本章目标：说明 prefill 的算术强度和固定 signature 对吞吐测量的影响，比较静态与动态路径的权衡。同时明确 v0.13.1 中任务调度、回调与取消的边界。
 
-上一章末尾，输入文本已经变成一串 token id。`Prefill` 接过这串 id，一次前向处理整段提示词，把注意力中间结果写进 KV cache。这一步的耗时直接决定首 token 时延（TTFT，time-to-first-token）。
+上一章末尾，输入文本已经变成一串 token id。`Prefill` 一次前向处理整段提示词，把注意力中间结果写入 KV cache。prefill 耗时是首 token 时延（TTFT，time-to-first-token）的主要组成之一。
 
-## prefill 为什么是计算受限的一步
+## prefill 的资源约束
 
-沿用第 2 章的 Roofline 分析。prefill 一次前向处理整段提示词，几百上千个 token 复用同一批已读入的权重，算术强度（每字节权重承担的浮点运算数）高，落在 Roofline 的计算受限区。它与 decode 的速度差距不是实现层面的差异，是两类操作受不同资源约束：prefill 受算力约束，decode 受内存带宽约束。
+沿用第 2 章的 Roofline 分析。对于稠密 Transformer，prefill 一次前向处理多个 token，同一批权重参与多个位置的计算。它的算术强度通常高于一次只处理一个 token 的 decode step。序列长度、模型结构和后端不同，prefill 可能处于计算受限区，也可能受内存访问或 host 侧开销影响。判断是否 compute-bound，需要读取目标设备的性能计数器或开展受控实验。
 
-这一差距在本书基准上是实测可见的。附录 D 的主基准（Gemma 4 E4B，公开权重，`litert-lm benchmark` 中位数）里，gpu 后端上下文 1024 时 prefill 吞吐 999.1 tokens/s、decode 仅 50.6 tokens/s，相差约 20 倍；cpu 后端上下文 1024 时 prefill 259.2 tokens/s、decode 24.7 tokens/s，相差约 10 倍〔基准 D〕。同一模型、同一后端，两个数字差一到两个数量级，因为它们受制于不同的资源约束。本章从第 2 层的编排入口（`Tasks::Prefill`）下探到第 3 层的 executor，把这条路径上的每一处开销摊开。
+主基准使用 Apple M5 Pro（24 GiB）、macOS 26.5 和 LiteRT-LM v0.13.1。模型是 Gemma 4 E4B 的公开 LiteRT-LM 产物，未另做量化转换；数据取 `litert-lm benchmark` 中位数。上下文为 1024 时，gpu 后端的 prefill 为 999.1 tokens/s，decode 为 50.6 tokens/s，相差约 20 倍。cpu 后端分别为 259.2 tokens/s 和 24.7 tokens/s，相差约 10 倍〔基准 D〕。这组数据描述端到端吞吐，不能单独证明两段分别受算力和带宽约束。代码路径从 `Tasks::Prefill` 进入 executor，测量中同时包含模型执行、固定形状填充和 host 侧开销。
 
-编排入口很短。它先取模型能接受的最大 token 数，做一次越界校验，再把整段 token 交给 executor（`runtime/core/tasks.cc:413`）：
+`Tasks::Prefill` 的编排入口依次完成最大长度校验、等待参数设置、计时和 executor 调用（`runtime/core/tasks.cc:413`）：
 
 ```cpp
 absl::StatusOr<Responses> Prefill(
@@ -37,34 +37,36 @@ absl::StatusOr<Responses> Prefill(
 }
 ```
 
-四处值得说明。(1) 越界判断用 `>=` 而非 `>`。模型的上下文窗口要留一个位置给随后的 pending token（下一节展开这个 token 的来历），所以 prefill 能写入的 token 数必须严格小于 `max_num_tokens`。(2) `wait_for_completion` 与 benchmark 开关做了一次按位或：只要在跑基准就强制同步等待，否则计时会把还在异步执行的 prefill 提前算完，拿到偏短的数字。(3)(4) 计时探针 `TimePrefillTurnStart` / `TimePrefillTurnEnd` 把 `executor.Prefill` 夹在中间，`TimePrefillTurnEnd` 收到本轮 token 数用于算吞吐。真正的计算下沉给 `executor.Prefill`：这个函数不碰模型、不选形状、不管 KV cache。第 2 层只做校验、计时与编排，形状怎么选、算子怎么跑是第 3 层 executor 的事。
+(1) 越界判断用 `>=` 而非 `>`。上下文窗口要留一个位置给 pending token，所以 token 数必须小于 `max_num_tokens`。(2) `wait_for_completion` 与 benchmark 开关做按位或。启用基准模式后强制同步等待，避免在异步执行完成前结束计时。(3)(4) `TimePrefillTurnStart` 与 `TimePrefillTurnEnd` 包围 `executor.Prefill`。后者接收本轮 token 数并计算吞吐。第 2 层负责校验、计时和编排；executor 负责形状选择、模型执行与 KV cache 更新。
 
-这两个探针的实现极薄。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键记一个 `absl::Now()` 起点，`TimePrefillTurnEnd` 再取一次 `absl::Now()` 求差，连同 token 数存进 `prefill_turns_`（`runtime/engine/io_types.cc:296` 与 `:306`）。它量的是整个 `executor.Prefill` 的墙钟时间，包含下面要讲的分块循环、掩码填充、embedding 装配与 KV cache 缓冲交换的全部开销。附录 D 那张 prefill 吞吐表，每个数字都出自这一对探针。
+这两个探针只记录起止时间。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键保存 `absl::Now()`（`runtime/engine/io_types.cc:296`）。`TimePrefillTurnEnd` 再取一次时间并求差，把结果和 token 数存入 `prefill_turns_`（`runtime/engine/io_types.cc:306`）。测量范围覆盖整个 `executor.Prefill`，包括工作组循环、掩码填充、embedding 装配与 KV 缓冲交换。附录 D 的 prefill 吞吐由这对探针产生。
 
-### 用探针复算一次 prefill 曲线
+### 固定 signature 如何影响吞吐曲线
 
-这条曲线本书实际扫过一遍：`litert-lm benchmark` 从 100 到 4000 取七个点（cpu，完整表见附录 D 第七节）。曲线的形状直接印证「计算受限」这个判断。
+本书在同一设备的 cpu 后端扫描了 100 至 4000 token。测试使用热磁盘缓存，decode 长度为 32，每个点运行一次，完整结果见附录 D 第七节。基准模型只有 `prefill_128` 和 `prefill_1024` 两个固定 signature。吞吐以真实 token 数作分子，执行成本则由选中的固定 signature 决定。
 
-短提示词区间吞吐偏低：100 token 时只有 48.3 tokens/s，250 时 64.0，到 1000 才爬上 257〔基准 D〕。原因是几百个 token 还不足以充分利用 CPU 的向量单元，算术强度不够高，一部分时间消耗在读取权重而非乘加运算上，此时更接近带宽受限。随着长度增加，同一批权重被更多 token 复用，算术强度上升，吞吐爬向该后端的算力上限：1000 到 3000 token 之间是一段 257-261 tokens/s 的平台，这就是这颗 CPU 在此模型上的 prefill 吞吐上限〔基准 D〕。gpu 后端同样从 256 档的 259.8 tokens/s 升到 1024 档的 999.1 tokens/s〔基准 D〕。
+100 token 由 `prefill_128` 处理。按 token 数除以吞吐复算，prefill 墙钟时间约为 2.07 s。250、500 和 1000 token 都只调用一次 `prefill_1024`。三者的 prefill 墙钟时间分别约为 3.91、3.90 和 3.89 s，近似恒定；吞吐依次为 64.0、128.4 和 257.0 tokens/s〔基准 D〕。吞吐近似按真实 token 数成比例增长，因为分母都是一次 1024 signature 的执行时间。
 
-长提示词区间吞吐回落。cpu 在 4000 token 档从平台的 261 降到 229，gpu 从 999.1 降到 925.2〔基准 D〕。回落来自注意力本身：因果注意力的计算量随序列长度平方增长，长上下文里注意力占的比重变大，配套的掩码填充也是 O(L²) 量级的开销。这条「先升后回落」的曲线不是实现缺陷，是算术强度上升与注意力二次项此消彼长的自然结果。
+gpu 主基准也有相同现象。256 与 1024 token 的 prefill 墙钟时间约为 0.99 s 和 1.03 s，吞吐从 259.8 增至 999.1 tokens/s〔基准 D〕。这些点主要反映固定形状填充率，不能证明短提示词没有充分利用向量单元。
 
-TTFT 与吞吐互为倒数，可直接验算。cpu/4096 的 TTFT 实测 18.13 s，而 4096 ÷ 226.5 tokens/s ≈ 18.08 s，两者吻合到小数点后一位〔基准 D〕。这条对账说明 TTFT 在长上下文下几乎全部是 prefill 耗时，加载与采样的固定开销可忽略。工程含义直接：要压 TTFT，要么减少 prefill 的 token 数（模板 diff 增量渲染，见第 3 章），要么换到 prefill 吞吐更高的后端（gpu/4096 的 TTFT 只有 4.45 s）。
+2000 和 3000 token 分别调用两个、三个 1024 signature。prefill 墙钟时间约为 7.67 s 和 11.48 s，折合每组约 3.83 s。4000 token 需要四组，墙钟时间增至约 17.45 s，吞吐降到 229.3 tokens/s〔基准 D〕。后续工作组开始时，已处理上下文更长。但这次单次扫描不能区分注意力、掩码写入、热状态与调度抖动。若要判断瓶颈，需要分别记录 signature 耗时并读取硬件性能计数器。
+
+按探针定义，prefill 吞吐等于 token 数除以墙钟时间。cpu/4096 的 prefill 时间约为 4096 ÷ 226.5 tokens/s = 18.08 s〔基准 D〕。`GetTimeToFirstToken` 在此基础上加一次平均 decode step 的耗时，得到表中的 18.13 s（`runtime/engine/io_types.cc:455`）。因此，这项复算只能检查指标定义和表中数字，不能证明模型加载或采样开销可以忽略。在相同模型和条件下，减少 prefill token 数或选择实测时间更短的后端，都能降低 TTFT。本书测得 gpu/4096 的 TTFT 为 4.45 s。
 
 ## 设计权衡：固定形状还是动态形状
 
-executor 如何处理这段 token，是一处端侧特有的设计权衡。
+executor 需要把长度可变的提示词映射到模型可执行的输入形状。
 
-模型编译成能在硬件上运行的形式后，它接受的输入形状（序列长度）往往是固定的。而提示词长度千变万化，有时 20 个 token，有时 2000 个。LiteRT-LM 给出两条路径，对应两个 executor 子类：`LlmLiteRtCompiledModelExecutorStatic` 与 `LlmLiteRtCompiledModelExecutorDynamic`。
+编译后的模型可能只接受固定序列长度，提示词却可能包含 20 或 2000 个 token。LiteRT-LM 提供两条路径，对应 `LlmLiteRtCompiledModelExecutorStatic` 与 `LlmLiteRtCompiledModelExecutorDynamic` 两个 executor 子类。
 
-静态形状路径预先编译好若干个固定长度的 prefill 入口（signature），比如 128、512、1024 各一个。这组入口按长度排序存放（`SortedPrefillSignatureMap`，`runtime/executor/litert_compiled_model_executor_utils.h:43`）：
+静态形状路径预先编译若干个固定长度的 prefill 入口（signature），例如 128、512、1024。这组入口按长度排序存放（`SortedPrefillSignatureMap`，`runtime/executor/litert_compiled_model_executor_utils.h:43`）：
 
 ```cpp
 using SortedPrefillSignatureMap =
     absl::btree_map<int, std::string, std::greater<int>>;                // (1)
 ```
 
-键是序列长度，值是 signature 名，比较器 `std::greater<int>` 让它从大到小排列，`begin()` 即最长的入口 (1)。选路策略是一个贪心切分（`GetOptimizedPrefillWorkGroups`，`runtime/executor/litert_compiled_model_executor_utils.cc:248`）：
+键是序列长度，值是 signature 名。比较器 `std::greater<int>` 使其按长度降序排列，`begin()` 指向最长入口 (1)。`GetOptimizedPrefillWorkGroups` 使用贪心算法选择入口（`runtime/executor/litert_compiled_model_executor_utils.cc:248`）：
 
 ```cpp
 int max_seq_len = prefill_runner_set.begin()->first;                    // (1)
@@ -85,23 +87,27 @@ if (input_length > 0) {
 }
 ```
 
-这段代码把一段输入切成一串「用哪个 signature、处理多长」的工单。(1) 先取最大的固定长度；(2) 只要剩余长度还够，就反复用最大入口覆盖，每次消耗 `max_seq_len` 个位置；(3)(4) 剩余长度不足一个最大入口时，从大往小找到第一个「再小一档就装不下」的入口收尾，即恰好覆盖剩余长度的最小入口。
+这段代码把输入切成一组工作组，每组记录 signature 与真实 token 数。(1) 先取最大的固定长度。(2) 剩余长度不小于它时，反复使用最大入口，每次消耗 `max_seq_len` 个 token。(3)(4) 剩余长度不足最大入口时，从大到小寻找能容纳余数的最小入口。
 
-举一个可复算的例子。入口集是 {1024, 512, 128}、输入 1300 个 token：第一步用 1024 覆盖一次，剩 276；276 装不进 128、装得进 512，于是最终工单是 [1024, 512]，第二段用 512 的入口处理 276 个真实 token、余下 236 个位置填充。这就是固定形状的代价：换来编译器把 kernel 充分优化的确定性，付出的是填充浪费和预编译多个入口带来的产物体积。
+以入口集 {1024, 512, 128} 和 1300-token 输入为例。第一组使用 1024，剩余 276。128 无法容纳余数，所以第二组使用 512 signature；其中 276 个位置是真实 token，236 个位置是填充。固定形状使序列长度在编译期已知，代价是填充计算和多个预编译入口占用的产物空间。
 
-真实模型的入口集比这个假想例子更粗。本书基准模型 Gemma 4 E4B 实剖出的 prefill signature 恰好只有两个：`prefill_1024` 与 `prefill_128`（附录 D 的段表）。对它，1300 个 token 的工单是 [1024, 1024]：剩余的 276 装不进 128，只能用 1024 收尾，第二段填充 748 个位置，整段填充率约 37%。入口越少产物越小、编译越省，但锯齿曲线的齿也越深，这正是下文那条 TODO 想用实测成本去调优的空间。
+本书基准模型 Gemma 4 E4B 只有 `prefill_1024` 与 `prefill_128`，详见附录 D。处理 1300 个 token 时，两个工作组都使用 1024 signature。第二组只有 276 个真实 token，其余 748 个位置填充，整体填充率约 37%。两个入口之间相差 896 个位置，输入长度跨过 128 后便会直接选择 1024。
 
 <div class="aside-compare">
 
-llama.cpp 在同一个问题上走了另一条路：不预编译固定长度入口，而是把提示词切成至多 `n_ubatch`（物理微批上限，`llama.cpp/include/llama.h:342 @ b9873`）的微批逐个执行，计算图按实际长度构建，没有填充浪费、也没有多入口的产物体积。代价在另一头：kernel 无法针对固定形状特化，也享受不到「编译期已知长度」带来的优化空间。这与本节的静态/动态之争是同一道题：llama.cpp 面向的桌面/服务器 GPU 对动态形状友好，移动端 NPU/GPU 常要求编译期定形，各自的硬件现实决定了各自的默认答案。
+llama.cpp 把提示词分成不超过 `n_ubatch` 的物理微批，并按实际批长构建计算图（`llama.cpp/include/llama.h:342 @ b9873`）。它不需要在固定 signature 末尾填充，也不保存多个预编译序列长度入口。相应地，形状直到运行时才确定。两种方案对性能和产物体积的影响取决于编译器与后端，需要实测比较。
 
 </div>
 
-**填充浪费定量。** 这个策略的浪费量随输入长度呈锯齿状波动，可以对固定入口集算一条曲线。仍用 {1024, 512, 128}。设输入长度 L，贪心切分先用若干个 1024 铺满，剩余 r = L mod 1024，再用恰好覆盖 r 的最小入口收尾；浪费量等于该收尾入口的长度减去 r。r 落在 (512, 1024) 区间时收尾用 1024，浪费最多 511（如 L = 1537，工单 [1024, 1024]，第二段 511 个位置填充）；r 落在 (128, 512] 时收尾用 512，浪费最多 383；r 恰等于某个入口长度时浪费为 0（如 L = 1536，工单 [1024, 512]，零填充）。整段填充率的顶点出现在 L 刚跨过一档的位置：L = 513 时工单只有 [1024]，511/1024 ≈ 50% 的位置是填充；L = 1537 时降到 511/2048 ≈ 25%；L = 1300 的例子只填 236 个零、总位置 1536，填充率约 15%。入口越粗锯齿越深：真实模型的入口集是 {1024, 128}（上一段），L = 1153 时工单 [1024, 1024]，填充 895 个位置，整段填充率约 44%。这条锯齿曲线的最坏点，恰好落在每一档入口长度刚被跨过的位置。
+固定入口的填充量随输入长度呈锯齿状变化。仍以 {1024, 512, 128} 为例。设输入长度为 \\(L\\)，余数为 \\(r = L \\bmod 1024\\)。贪心算法先使用若干个 1024 signature，再用能容纳 \\(r\\) 的最小入口处理最后一组。该组的填充量等于 signature 长度减去 \\(r\\)。当 \\(512 < r < 1024\\) 时，最后一组使用 1024，最多填充 511 个位置。当 \\(128 < r \\le 512\\) 时，最后一组使用 512，最多填充 383 个位置。
 
-源码在这个函数上留了一条 TODO：`b/378772479 - Improve this strategy once we have benchmarked costs`（`runtime/executor/litert_compiled_model_executor_utils.cc:255`）。它承认当前策略只是「先用最大入口铺、剩余用最小可容入口收尾」的朴素贪心，尚未按实测成本调优。据此推断，更优的切分会权衡两件事：大入口的算术强度更高、单位 token 更省时，但一旦最后一段填充率高，被填充的零位置也要走一遍前向计算，白付算力。在填充率高的区间，用两个较小入口拼可能比一个大入口更省——但这需要 benchmark 各入口的实际 kernel 成本才能定夺，也正是 TODO 想做的事。这属于基于代码与注释的推断，v0.13.1 尚未实现。
+若余数等于某个入口长度，则没有填充。\\(L = 513\\) 时使用一次 1024 signature，填充率为 \\(511/1024 \\approx 50\\%\\)。\\(L = 1537\\) 时使用两次 1024 signature，整体填充率为 \\(511/2048 \\approx 25\\%\\)。当 \\(L = 1300\\) 时，入口集 {1024, 512, 128} 总共填充 236 个位置，整体填充率约 15%。
 
-`Static::Prefill` 拿到工单后逐段调用底层（`runtime/executor/llm_litert_compiled_model_executor.cc:1537`）：
+真实入口集为 {1024, 128}。当 \\(L = 1153\\) 时，需要使用两次 1024 signature，填充 895 个位置，整体填充率约 44%。局部最大填充率出现在输入长度刚超过某个较小入口时。
+
+源码 TODO 表示，取得各入口的基准成本后再改进策略（`runtime/executor/litert_compiled_model_executor_utils.cc:256`）。当前贪心策略尚未按实测成本选择工作组。若要改为成本模型，需要同时测量各 signature 的执行成本与填充成本。在取得这些数据前，不能断言多个小入口一定优于一个大入口。v0.13.1 尚未实现基于成本的选择。
+
+`Static::Prefill` 取得工作组后逐组调用内部实现（`runtime/executor/llm_litert_compiled_model_executor.cc:1537`）：
 
 ```cpp
 ASSIGN_OR_RETURN(auto work_groups, GetOptimizedPrefillWorkGroups(
@@ -119,9 +125,9 @@ for (int i = 0; i < work_groups.size(); ++i) {
 }
 ```
 
-(1) 这行决定每一段是异步派发还是同步等：除最后一段外的所有工单都可以异步（因为后面还要接着提交，不必等），只有最后一段在调用方要求 `wait_for_completion` 时才同步落地。这就是编排层那个 `wait_for_completion` 参数真正生效的地方。(2) 每铺完一段就把 span 往前推，循环结束时全部消化完，函数末尾有一句 `RET_CHECK_EQ(ids.size(), 0)` 兜底，确保工单不多不少覆盖整段输入。
+(1) `do_prefill_sync_` 为 false 时，除最后一组外的工作组都使用异步执行。最后一组是否等待，由 `wait_for_completion` 决定。Metal 缓冲会使 `do_prefill_sync_` 为 true，此时各组同步执行。(2) 每处理一组就缩短 `ids` span。循环后的 `RET_CHECK_EQ(ids.size(), 0)` 验证工作组覆盖了全部输入。
 
-**动态形状**：输入长度可变，KV cache 也按需增长。长提示词被切成固定大小的块，一块一块 prefill（`runtime/executor/llm_litert_compiled_model_executor.cc:1855`）：
+动态形状路径允许输入长度变化，KV cache 也按需增长。长提示词被切成不超过配置上限的块（`runtime/executor/llm_litert_compiled_model_executor.cc:1855`）：
 
 ```cpp
 if (prefill_chunk_size_ <= 0) {
@@ -135,21 +141,21 @@ while (!ids.empty()) {
 }
 ```
 
-(1) 若未配置 chunk size，则不做分块：整段直接进入内部实现，全靠动态形状消化任意长度。(2)(3) 否则按 `prefill_chunk_size_` 切块，每块单独一次 `PrefillInternal`。与静态路径的关键区别是：静态的段长必须命中预编译入口之一，动态的块长只受一个上限约束，最后一块由 `std::min` 自然取到不足一个 chunk 的余数——不需要填充。这更灵活，桌面和服务端常见，代价是失去了固定形状带来的一部分编译期优化。
+(1) 若未配置 chunk size，整段输入直接进入内部实现。(2)(3) 否则按 `prefill_chunk_size_` 分块，每块调用一次 `PrefillInternal`。静态路径必须选择能容纳当前 token 数的预编译入口；动态路径的块长只受上限约束。最后一块通过 `std::min` 取得余数，不需要补到固定 signature 长度。v0.13.1 的动态 executor 只接受 cpu 后端（`runtime/executor/llm_litert_compiled_model_executor.cc:2030`）。
 
-把两条路径的取舍摆在一起：
+表 4-1 汇总两条路径的差异。
 
 | 维度 | 静态形状（`Static`） | 动态形状（`Dynamic`） |
 |---|---|---|
 | 形状 | 预编译固定长度入口（基准模型为 {1024, 128}） | 块长只受 `prefill_chunk_size` 上限约束 |
-| 填充 | 有：工单收尾档填充，浪费呈锯齿 | 无：最后一块取余数 |
-| KV cache | 按最大上下文一次性预留 | 随 decode 按 `kv_increment_size` 扩容 |
-| 编译期优化 | 充分：kernel 按定形特化 | 让渡一部分：形状运行时才定 |
-| 适用硬件 | 移动端 GPU/NPU（常要求编译期定形） | 桌面/服务端（对动态形状友好） |
+| 填充 | 有：最后一组可能填充，数量呈锯齿状变化 | 无：最后一块取余数 |
+| KV cache | 按最大上下文一次性预留 | 首次按 prefill 长度分配，后续按需扩容 |
+| 形状已知时机 | 编译期 | 运行时 |
+| v0.13.1 运行条件 | 模型需包含对应 signature | 仅 cpu 后端 |
 
-> 表 4-1　静态与动态两条 prefill 路径的权衡。第 8 章的静态/动态执行器分派与此同源。
+> 表 4-1　静态与动态两条 prefill 路径的权衡。第 8 章继续说明 executor 的分派条件。
 
-两条路径都通过基类的同一个内部函数落地（`PrefillInternal`，`runtime/executor/llm_litert_compiled_model_executor.cc:543`）。它把 token 写进输入缓冲、推进 `current_step`、更新已处理 token 记录，再交给 LiteRT 跑 signature，注意力中间结果就此写进 KV cache，为 decode 铺好底：
+两条路径最终都调用基类的 `PrefillInternal`（`runtime/executor/llm_litert_compiled_model_executor.cc:543`）。该函数写入输入缓冲，推进 `current_step`，更新已处理 token 记录，再由 LiteRT 执行 signature。输出写入 KV cache，供后续 decode 使用：
 
 ```cpp
 // We always hold one pending token in the input ids for the next
@@ -162,37 +168,62 @@ std::transform(prefill_input_pos_ptr, prefill_input_pos_ptr + prefill_length,
                });
 ```
 
-(1) 这里把要处理的长度减一：每次 prefill 都刻意留一个 token 不处理，把它当作"pending token"挂到下一次 prefill 或 decode 的第一步。这解释了上一节 `>=` 的越界判断——那个被留下的位置，正是给这个 pending token 的。(2) `current_step` 是一个随每个 token 自增的计数器，它填进 position 张量、也标记 KV cache 里这段 token 的落位。这个 step 计数器会一直用到 decode（第 5 章），是 prefill 与 decode 之间的衔接点。
+(1) 这里把处理长度减一。首次 prefill 留下一个 token，作为下一次 prefill 或 decode 的 pending token。这也解释了前面的 `>=` 越界判断。(2) `current_step` 随每个已处理 token 递增，用于填充 position 张量并确定 KV cache 位置。decode 延续同一个计数器，详见第 5 章。
 
-### prefill 的隐性 CPU 开销：掩码、装配与交换
+### prefill 的 host 侧 CPU 开销
 
-`PrefillInternal` 的核心是把输入交给 LiteRT 跑 signature，但围绕这次调用还有三件 host 侧的活。它们不占 FLOPs，却实实在在占时间，是 signature 之外的固定税。
+`PrefillInternal` 除了调用 LiteRT 执行 signature，还包含三类 host 侧工作。这些操作不计入模型 FLOPs，但会进入墙钟时间。
 
-其一，**掩码填充**。每次 prefill 都要把 4D 注意力掩码张量重写一遍：`FillAttentionMask`（`runtime/executor/litert_compiled_model_executor_utils.cc:339`）锁缓冲后按 `[batch, …, steps, channel]` 的形状逐位填充，prefill 路径在 `:668` 调用、`steps` 取整段长度，decode 每步也以 `steps=1` 调一次（`:900`）。掩码规模与 prefill 长度乘总上下文成正比——长 prefill 时这是一笔 O(L×S) 的 host 侧写入，与第 1 节那条「注意力随长度平方增长」的吞吐回落同一来源，只是它落在 CPU 上、不进算子的账。
+掩码填充。每次 prefill 都要更新 4D 注意力掩码。`FillAttentionMask` 锁定缓冲，按 `[batch, …, steps, channel]` 的布局写入（`runtime/executor/litert_compiled_model_executor_utils.cc:339`）。prefill 传入本段长度作为 `steps`（`runtime/executor/llm_litert_compiled_model_executor.cc:668`）。decode 每步传入 `steps=1`（`runtime/executor/llm_litert_compiled_model_executor.cc:900`）。写入量与 `steps × channel_size` 成正比，发生在 CPU 上并计入墙钟时间。
 
-其二，**embedding 装配**。除了 token 到 embedding 的查表（第 3 章），带 per-layer embeddings 的模型还要逐层装配：同一个准备循环里，`per_layer_embedding_lookup_->LookupPrefill` 按偏移把各层嵌入逐段查出（`llm_litert_compiled_model_executor.cc:662-665`）。查表是内存操作，装配的搬运量随 prefill 长度线性增长。
+embedding 装配。除了 token 到 embedding 的查表，带 per-layer embeddings 的模型还要准备逐层 embedding。同一个循环调用 `per_layer_embedding_lookup_->LookupPrefill`，按偏移写入本段结果（`runtime/executor/llm_litert_compiled_model_executor.cc:662`）。查表和写入的数据量随 prefill 长度增长。第 3 章介绍 embedding lookup。
 
-其三，**KV 缓冲交换**。双缓冲路径在 prefill 结尾做一次 `std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_)`（`:737-738`）——只换指针、不搬字节；单缓冲路径则改为每个工单填一次 int32 参数张量（`FillSingleBufferCacheParamTensor`，第 6 章展开）。交换本身近乎免费，但它说明：连「免费」的设计，每次 prefill 也要付一次分支与可选的填充。
+KV 缓冲交换。双缓冲路径在 prefill 结尾交换两组缓冲的指针，不复制 KV 数据（`runtime/executor/llm_litert_compiled_model_executor.cc:737`）。单缓冲路径为每个工作组填写 int32 参数张量。`FillSingleBufferCacheParamTensor` 的实现见第 6 章。
 
-三件事单看都小，合起来解释了短 prefill 的吞吐洼地。附录 D 第七节里 100 token 档只有 48.3 tok/s：除了权重读取摊不薄，这些 host 侧开销在短工单下占比同样可观；据此推断它们是次要因素（主因仍是权重读取），精确拆分需要插桩计时，本书未做。
+现有探针没有分别记录这三类操作的耗时，附录 D 的曲线不能给出各项占比。250、500 和 1000 token 都执行同一个 1024 signature，短输入的低吞吐主要反映填充率口径。若要判断 host 侧开销，需要在 `PrefillInternal` 内分别插桩。
 
 > 对照视野
-> "预编译多个固定长度入口"这个取舍在端侧很典型：宁可多占一点编译产物和填充浪费，换取运行时的确定性与峰值性能。云端更倾向动态形状（灵活、省显存），因为它不缺重新编译的算力，也不在乎多留几个 kernel。同一个问题，两端因约束不同给出相反的默认答案——这类"因地制宜"贯穿全书。
+> 固定 signature 使形状在编译期确定，但会增加入口数量与填充计算。动态形状减少填充和入口数量，但要求后端支持运行时形状。两者的执行速度取决于模型、编译器和硬件，需在目标设备上测量。
 
 <figure>
 {{#include figs/fig-4-1.svg}}
-<figcaption>图 4-1　prefill 的两条路径与异步底座。静态路径按长度挑固定 signature，动态路径分块处理；两者都经 PrefillInternal 落到 LiteRT，并把结果写进 KV cache。任务经队列异步执行，取消在 decode 循环每步与分块边界处生效。</figcaption>
+<figcaption>图 4-1　静态与动态 prefill 最终都更新 KV cache。v0.13.1 不会在正在执行的 prefill 工作组或 chunk 之间中断；decode 在下一次迭代开始前检查取消标志。</figcaption>
 </figure>
 
-## 生成中途，为什么能立刻停
+## 取消语义：prefill 与 decode 的检查点
 
-第 2 章那份"二十个问题"里有一问：生成中途取消，为什么能立刻停下（第 9 问）？答案的一半在 prefill 这一层——但要说清楚，得先分清"API 上有"和"路径上真正生效"两件事。
+`TaskController::Cancel()` 将共享原子量设为 true（`runtime/core/session_advanced.h:67`）。任务是否立即停止，取决于执行路径在何处读取该原子量。prefill 与 decode 的检查位置不同。
 
-`ExecutorPrefillParams` 上确实挂着两个为取消准备的开关（`runtime/executor/llm_executor_io_types.h:376`）：一个取消标志 `GetCancelFlag()`（一个 `const std::atomic_bool*`），一个限长开关 `GetMaxPrefillSequenceLength()`。前者让调用方传进一个原子布尔量的指针，后者限制单次能用多长的 prefill signature。设计意图很清楚：一次跑太长的 signature 就是一段不可打断的时间，把单次长度限住，取消标志才有足够密的机会被检查到。
+`ExecutorPrefillParams` 声明了 `GetCancelFlag()` 和 `GetMaxPrefillSequenceLength()`（`runtime/executor/llm_executor_io_types.h:376`）。但 v0.13.1 的 `Tasks::Prefill` 只设置 `wait_for_completion`。静态和动态 executor 也没有读取前两个字段。因此，运行中的 prefill 尚未实现基于这些字段的合作式取消。
 
-不过在 v0.13.1 里要诚实：这两个字段在整个 prefill 运行路径上还只是**声明和存取器**，`llm_litert_compiled_model_executor.cc` 里既没读 `GetCancelFlag()`、也没读 `GetMaxPrefillSequenceLength()`（在源码里 grep 这两个符号，命中的只有 `llm_executor_io_types.*` 自身与其测试）：prefill 内部目前不会在算到一半时主动瞄取消标志。这是我们据代码得出的判断，不是文档说法。
+<figure>
+{{#include figs/fig-4-2.svg}}
+<figcaption>图 4-2　取消请求不会中断已经开始的模型调用：prefill 要等整次调用返回后再改写状态，decode 则在下一次循环开始时停止。</figcaption>
+</figure>
 
-那"立刻停"靠什么？靠两处真正落地的机制。其一，**分块本身就是取消点**：动态路径每块、静态路径每个工单之间，控制权都回到循环里，长 prefill 被拆成若干段短调用，天然给了打断的缝隙。其二，取消真正生效的地方在 decode 循环——生成每一步开头都在看这个标志（`runtime/core/tasks.cc:487`）：
+`ThreadedExecutionManager::AddPrefillTask` 在获取 executor 和组装输入的几个边界读取取消标志。进入 `Tasks::Prefill` 后，要等整次调用返回才再次检查（`runtime/framework/resource_management/threaded_execution_manager.cc:763`）：
+
+```cpp
+if (cancelled != nullptr && cancelled->load()) {
+  llm_executor.value().reset();
+  FinishTaskAndLogErrors(task_id, Responses(TaskState::kCancelled),
+                         std::move(callback));
+  return;
+}
+
+auto responses =
+    Tasks::Prefill(*llm_executor.value(), *executor_inputs,
+                   /*wait_for_completion=*/true,
+                   /*benchmark_info=*/session_info->benchmark_info);
+// ...
+if (cancelled != nullptr && cancelled->load()) {
+  responses = Responses(TaskState::kCancelled);
+}
+```
+
+取消若发生在 `Tasks::Prefill` 之前，任务可以跳过模型执行。executor 开始运行后，当前 prefill 仍会完成，随后响应状态才改为 `kCancelled`。静态工作组循环和动态 chunk 循环都没有读取取消标志，因而分块边界不是取消点。
+
+decode 在每次迭代开始前检查同一个标志（`runtime/core/tasks.cc:487`）：
 
 ```cpp
 while (true) {
@@ -204,11 +235,11 @@ while (true) {
 }
 ```
 
-(1) 每次循环先读原子标志，(2) 一旦为真就立刻返回 `CancelledError`。注意编排层的 `Prefill`（tasks.cc:413）签名里根本没有 `cancelled` 参数，只有 `Decode` 有，这印证了前面的判断：v0.13.1 里 prefill 的可打断性来自"被切成小段"，decode 的可打断性才来自"每步查标志"。第 9 问答案的这一半，落在 decode 主循环开头的取消探测（第 5 章展开）。会话层把两者串起来：`SessionAdvanced::Cancel()` 只做一件事——`cancelled_->store(true)`（`runtime/core/session_advanced.h:68`），把这个共享原子量置真，正在跑的 decode 循环下一步就会读到。
+(1) 当前迭代开始时读取原子标志，(2) 为 true 时返回 `CancelledError`。如果 `Cancel()` 发生在一次 decode step 中，当前 step 不会中止。循环在下一次迭代开始前才观察到取消。因此，响应时间取决于当前 step 和流式回调的剩余耗时。第 5 章继续分析 decode 循环。
 
-## 异步底座：把 prefill 挪出主线程
+## 任务调度：在工作线程执行 prefill
 
-prefill 任务并不总在主线程同步跑。framework 层提供了一个最小的异步原语——一个单工作线程的顺序队列（`ExecutionQueue`，`runtime/framework/execution_queue.cc`）。它的 `Enqueue` 把任务塞进两个结构：
+framework 层提供了单工作线程的顺序队列 `ExecutionQueue`（`runtime/framework/execution_queue.cc`）。它的 `Enqueue` 把任务保存到两个结构中：
 
 ```cpp
 int id = next_id_++;
@@ -217,7 +248,7 @@ task_order_.push(id);                                                  // (2)
 return id;
 ```
 
-(1) `pending_tasks_` 存任务体、(2) `task_order_` 存 FIFO 顺序，两者分开是为了让取消变简单：`Remove(id)` 只需从 `pending_tasks_` 里 `erase` 掉任务体，不用去队列里翻找。工作线程取任务时若发现 id 已不在表里，就知道这个任务被取消了，直接跳过。工作线程循环里有一处关键决定（`runtime/framework/execution_queue.cc:97`）：
+(1) `pending_tasks_` 保存任务体，(2) `task_order_` 保存 FIFO 顺序。`Remove(id)` 只从 `pending_tasks_` 删除任务体，不修改队列。工作线程取到已删除的 id 时跳过该任务。这是 `ExecutionQueue` 对尚未执行任务的移除语义，不等同于会话 prefill 的运行中取消。任务在锁外执行（`runtime/framework/execution_queue.cc:97`）：
 
 ```cpp
 // Execute the task OUTSIDE the mutex lock.
@@ -227,13 +258,13 @@ if (current_task) {
 }
 ```
 
-(1) 任务在锁**外**执行。注释点明了原因：任务自己可能回头调 `Enqueue` 或 `Remove`（比如一个 prefill 任务完成后排入 decode），若持锁执行就会自锁死。这是并发代码里常见的一处纪律——临界区只碰共享结构，真正的活儿在锁外干。
+(1) 任务可能再次调用 `Enqueue` 或 `Remove`。若执行任务时仍持有互斥锁，就可能发生死锁。临界区只访问共享队列和映射，任务体在释放锁后运行。
 
-要说清楚的是，在 v0.13.1 里 `ExecutionQueue` 是 framework 提供的独立原语，会话路径实际用的是另一套 `ThreadedExecutionManager`。它才是 prefill/decode 任务真正的调度者，下面把它拆开。先划一条边界：这里讲的是**任务层**的排队与依赖（inter-op，谁先谁后）；算子内部用几个线程、绑哪个核（intra-op 并行度）是第 8 章的事，两者互不越界。
+v0.13.1 的会话路径由 `ThreadedExecutionManager` 调度 prefill 和 decode。`ExecutionQueue` 是 framework 中的另一项独立原语。任务之间的排队与依赖属于 inter-op 顺序；算子内部的线程数和绑核属于 intra-op 并行度，见第 8 章。
 
-### 会自己扩容的 ThreadPool
+### 按需扩容的 ThreadPool
 
-底层原语是一个按需扩容的线程池。`Schedule` 提交任务时顺带决定要不要加人手（`runtime/framework/threadpool.cc:78`）：
+底层原语是按需扩容的线程池。`Schedule` 提交任务时判断是否创建工作线程（`runtime/framework/threadpool.cc:78`）：
 
 ```cpp
   // If all worker threads are (supposed to be) busy, instantiates a new worker
@@ -256,11 +287,11 @@ if (current_task) {
   tasks_.push_back(std::move(callback));                  // (3)
 ```
 
-(1) 扩容判据：在跑的加在排的任务数不少于现有线程数，且未到 `max_num_threads_` 上限，就再建一个工作线程。池从零起步、按压力生长，空闲时不预留线程。(2) 错误容忍分两档：第一个线程都建不出来是致命错误，直接上抛；后续扩容失败只记警告，任务仍然入队，由现有线程消化。(3) 无论扩容成败，任务都进队列。工作线程的主循环则是和 `ExecutionQueue` 一样的锁外执行纪律（`RunWorker`，`:180`）：取任务、`mutex_.unlock()`、执行、再 `mutex_.lock()`，任意用户代码都不在持锁状态下运行。
+(1) 任务数不少于现有线程数，且尚未达到 `max_num_threads_` 时，线程池尝试创建一个工作线程。线程池从零个线程开始按需增长。(2) 第一个工作线程创建失败时返回错误。后续扩容失败只记录警告，任务仍由现有线程处理。(3) 无论是否扩容，任务都会进入队列。`RunWorker` 也在锁外执行任务（`runtime/framework/threadpool.cc:180`）。
 
-### 两个只有一个线程的池
+### 两个单线程池
 
-`ThreadedExecutionManager` 的构造函数把这套线程池用得很反直觉（`runtime/framework/resource_management/threaded_execution_manager.cc:74`）：
+`ThreadedExecutionManager` 创建两个线程池，并把各自的上限设为 1（`runtime/framework/resource_management/threaded_execution_manager.cc:74`）：
 
 ```cpp
   execution_thread_pool_ =
@@ -271,42 +302,51 @@ if (current_task) {
                                    /*max_num_threads=*/1);       // (2)
 ```
 
-两个池、各限一个线程。(1) 执行池单线程不是省资源，是**用构造保证串行**：执行器与 KV cache 都不是线程安全的，所有 prefill/decode/克隆任务都排进同一个单线程池，天然互斥，不需要给执行器内部加一把锁。多会话（第 3 章）也因此天然安全：不同 Session 的任务最终都汇进这一个线程。(2) 回调池单独一个线程，用途在下一段。
+两个池都只有一个工作线程。(1) prefill、decode 与克隆任务进入同一个执行池。因此，同一 `ThreadedExecutionManager` 中的模型任务串行运行。(2) 终态回调会投递到单独的回调池，但执行线程仍会等待回调完成。
 
-### 回调走另一条线程，别堵住执行
+### 回调线程边界与背压
 
-任务完成后要通知调用方（流式回调、完成回调）。回调是用户代码，跑多久、干什么都不可控。若在执行线程上直接调它，一个慢回调就会卡住后面所有排队的 decode step。`ThreadedExecutionManager` 的处理是把回调改投到回调池（`threaded_execution_manager.cc:438`）：
+流式回调与终态回调走不同路径。`Tasks::Decode` 产生文本后直接调用流式回调，此时仍在执行池线程上（`runtime/core/tasks.cc:564`）。慢回调会延长当前 decode 迭代。任务结束时，`FinishTask` 把终态回调投递到回调池（`runtime/framework/resource_management/threaded_execution_manager.cc:434`）：
 
 ```cpp
-    if (callback_thread_pool_ != nullptr) {
-      RETURN_IF_ERROR(callback_thread_pool_->Schedule(
-          [callback = std::move(callback), responses = std::move(responses),
-           task_id = task_id, next_task_state = std::move(next_task_state),
-           this]() mutable {
-            callback(std::move(responses));                      // (1)
-            absl::MutexLock lock(session_and_task_lookup_mutex_);
-            auto status = UpdateTaskState(task_id, next_task_state);
-            // ...
-          }));
+if (callback_thread_pool_ != nullptr) {
+  RETURN_IF_ERROR(callback_thread_pool_->Schedule(
+      [callback = std::move(callback), responses = std::move(responses),
+       task_id = task_id, next_task_state = std::move(next_task_state),
+       this]() mutable {
+        callback(std::move(responses));                          // (1)
+        absl::MutexLock lock(session_and_task_lookup_mutex_);
+        auto status = UpdateTaskState(task_id, next_task_state);
+        // ...
+      }));
+  RETURN_IF_ERROR(UpdateTaskState(task_id, TaskState::kLastCallbackQueued));
+}
+// ...
+if (callback_thread_pool_ != nullptr) {
+  RETURN_IF_ERROR(callback_thread_pool_->WaitUntilDone(absl::Seconds(10))); // (2)
+}
 ```
 
-(1) 用户回调在回调池的线程上执行，执行池不等它。这同时规避了一类死锁：回调若反过来调引擎接口（例如收到完整回复后立刻发起下一轮 prefill），新任务排进执行池即可，不会出现「执行线程等回调、回调等执行线程」的环。回调池同样单线程，保证回调按任务完成的顺序逐个送达，流式文本不会乱序。这一段的收尾处有一个 `WaitUntilDone(absl::Seconds(10))`，等回调池清空后 `FinishTask` 才返回，源码上方挂着一条 TODO（b/476205457）说计划改成全异步——这是 v0.13.1 里回调路径尚存的一处同步点。
+(1) 终态回调在回调池线程执行。(2) `FinishTask` 随后调用 `WaitUntilDone`，最长等待 10 s。`FinishTask` 此时仍占用单线程执行池，所以后续模型任务无法开始。回调池改变了终态回调的执行线程，但没有消除背压。源码 TODO 提出异步处理并移除这次等待（`runtime/framework/resource_management/threaded_execution_manager.cc:456`）。流式回调不经过该回调池，仍直接占用执行线程。
 
-回到主线：`ThreadedExecutionManager` 把任务 `Schedule` 到执行池（`:311`），并在 `QueueTask` 里检查依赖，一个任务若还有 `dependent_tasks` 没跑完就拒绝入列（`:301`）。第 3 章 `Clone` 那节看到的 `last_task_ids_` 串链，串的正是这张依赖图。这条依赖链保证 decode 一定在它依赖的 prefill 完成之后才开始。异步、分块、依赖三者合起来，端侧才能做到实时响应。
+终态回调可以异步提交新任务并返回。如果回调在提交新任务后同步等待结果，执行线程与回调线程可能相互等待，直至其中一侧超时。
+
+`ThreadedExecutionManager` 在 `QueueTask` 中检查依赖。`dependent_tasks` 非空的任务不能进入执行池（`runtime/framework/resource_management/threaded_execution_manager.cc:301`）。条件满足后，`Schedule` 才把任务加入执行池（`runtime/framework/resource_management/threaded_execution_manager.cc:311`）。第 3 章 `Clone` 使用的 `last_task_ids_` 记录了这组依赖。因此，decode 会在所依赖的 prefill 完成后开始。实际响应时间还包括模型执行和回调背压。
 
 ## 小结
 
-prefill 是算力受限的一步，快，且有静态/动态两条实现路径应对端侧固定形状的约束：静态按预编译入口贪心切工单、代价是填充；动态按 chunk 切、不用填充但少了编译期优化。它随时可被打断——但在 v0.13.1，这份"可打断"来自把长 prefill 切成小段，以及紧接其后的 decode 循环每步查取消标志，而非 prefill 内部主动轮询。异步底座把任务挪出主线程，依赖链保证 decode 接在 prefill 之后。
+prefill 通常比单 token decode 具有更高的算术强度，具体瓶颈仍需在目标设备上测量。静态路径按预编译 signature 组织工作组，可能产生填充。动态路径按 chunk 处理余数，v0.13.1 仅在 cpu 后端使用。
 
-提示词已经处理完毕，KV cache 的第一段也已填好。下一章进入全书最核心的环节：decode 循环。
+正在执行的 prefill 不会轮询取消标志，工作组和 chunk 之间也没有取消检查。decode 在下一次迭代开始前检查。任务依赖使 decode 排在所需 prefill 之后；流式回调与终态回调都可能对单线程执行池形成背压。
+
+prefill 完成后，KV cache 中已有提示词对应的 K/V。decode 如何读取这些 K/V，见第 5 章。
 
 ---
 
 ## 练习与自查
 
-1. **工单计算。** 本书基准模型的入口集是 {1024, 128}。输入 700 个 token，按贪心策略算出工单与填充率；再算若策略允许用多个 128 拼接，浪费降到多少？
-2. **旋钮推演。** 把 `prefill_chunk_size` 从 -1 改为 512，对一段 2048 token 的 prompt，激活峰值和 TTFT 各朝哪个方向变？为什么？
-3. **异步边界。** 多段工单中为什么只有最后一段可能同步等待，前面的段都异步提交？
-4. **曲线解读。** 附录 D 第七节里，100 token 时 prefill 只有 48 tok/s、2000 token 时 261 tok/s。用算术强度解释这条爬坡。
-5. **取消语义。** prefill 阶段的取消为什么依赖分块边界，而 decode 的取消能在每一步生效？
-
+1. **工作组计算。** 本书基准模型的入口集是 {1024, 128}。输入 700 个 token，按贪心策略算出工作组与填充率；再计算允许连续使用多个 128 signature 时的填充量。
+2. **参数推演。** 把动态路径的 `prefill_chunk_size` 从 -1 改为 512。代码能确认 2048 token 会被拆成几块？激活峰值和 TTFT 的变化为什么还需要实测？
+3. **异步边界。** 静态路径在什么条件下异步提交中间工作组？Metal 缓冲为何构成例外？
+4. **曲线解读。** 附录 D 第七节中，250、500 和 1000 token 的 TTFT 近似相同，吞吐却接近按 token 数成比例增长。结合入口集 {1024, 128} 解释原因。
+5. **取消语义。** 若取消发生在一次 prefill signature 执行期间和一次 decode step 执行期间，v0.13.1 分别会在何时观察到取消标志？

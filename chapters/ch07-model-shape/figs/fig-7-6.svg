@@ -1,0 +1,101 @@
+<svg viewBox="0 0 920 510" width="920" height="510" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="v41 旧进程 P41 与 v42 新进程 P42 的双泳道分代发布流程，旧版本保留到回滚窗口结束">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .lane { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .stage { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.2; }
+      .active { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.6; }
+      .keep { fill: var(--fig-bg, #ffffff); stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.5; }
+      .warn { fill: var(--fig-warning-panel, #fff4ce); stroke: var(--fig-warn, #9a6700); stroke-width: 1.4; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 15px; font-weight: 700; }
+      .head { fill: var(--fig-text, #1f2328); font-size: 10.5px; font-weight: 700; }
+      .lanehead { fill: var(--fig-accent, #0b57d0); font-size: 12px; font-weight: 700; }
+      .body { fill: var(--fig-text-soft, #57606a); font-size: 9.7px; }
+      .small { fill: var(--fig-text-dim, #8b949e); font-size: 9px; }
+      .accent2 { fill: var(--fig-accent-2, #6639ba); font-size: 9.7px; font-weight: 700; }
+      .warntext { fill: var(--fig-warn, #9a6700); font-size: 10px; font-weight: 700; }
+      .warnboxhead { fill: var(--fig-bg, #ffffff); font-size: 10px; font-weight: 700; }
+      .warnboxbody { fill: var(--fig-bg, #ffffff); font-size: 9.7px; }
+      .edge { stroke: var(--fig-accent, #0b57d0); stroke-width: 2; fill: none; }
+      .old-edge { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.5; fill: none; }
+      .keep-edge { stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+      .switch { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; fill: none; stroke-dasharray: 4 4; }
+    </style>
+    <marker id="f76-arrow" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+    <marker id="f76-arrow-dim" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
+    </marker>
+    <marker id="f76-arrow-keep" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent-2, #6639ba)"/>
+    </marker>
+  </defs>
+  <text class="title" x="460" y="27" text-anchor="middle">模型分代发布：新进程准备完成后再切换路由</text>
+  <text class="small" x="102" y="51" text-anchor="middle">版本 / 进程</text>
+  <rect class="stage" x="150" y="38" width="112" height="35" rx="5"/>
+  <text class="head" x="206" y="60" text-anchor="middle">准备产物</text>
+  <rect class="stage" x="274" y="38" width="112" height="35" rx="5"/>
+  <text class="head" x="330" y="60" text-anchor="middle">创建 Engine</text>
+  <rect class="stage" x="398" y="38" width="112" height="35" rx="5"/>
+  <text class="head" x="454" y="60" text-anchor="middle">冒烟测试</text>
+  <rect class="stage" x="522" y="38" width="112" height="35" rx="5"/>
+  <text class="head" x="578" y="60" text-anchor="middle">切换路由</text>
+  <rect class="stage" x="646" y="38" width="112" height="35" rx="5"/>
+  <text class="head" x="702" y="60" text-anchor="middle">排空旧进程</text>
+  <rect class="stage" x="770" y="38" width="125" height="35" rx="5"/>
+  <text class="head" x="832" y="60" text-anchor="middle">回滚窗口结束</text>
+  <rect class="lane" x="24" y="94" width="871" height="132" rx="8"/>
+  <text class="lanehead" x="86" y="127" text-anchor="middle">旧代 v41</text>
+  <text class="body" x="86" y="147" text-anchor="middle">进程 P41</text>
+  <text class="small" x="86" y="171" text-anchor="middle">chat-v41.litertlm</text>
+  <text class="small" x="86" y="188" text-anchor="middle">cache/v41/</text>
+  <path class="edge" d="M151,139 H510" marker-end="url(#f76-arrow)"/>
+  <text class="body" x="330" y="126" text-anchor="middle">P42 准备期间，P41 继续接收流量</text>
+  <rect class="keep" x="526" y="112" width="106" height="77" rx="6"/>
+  <text class="accent2" x="579" y="136" text-anchor="middle">停止接收新请求</text>
+  <text class="body" x="579" y="157" text-anchor="middle">保留进程与产物</text>
+  <text class="body" x="579" y="174" text-anchor="middle">可恢复旧路由</text>
+  <rect class="keep" x="650" y="112" width="104" height="77" rx="6"/>
+  <text class="accent2" x="702" y="136" text-anchor="middle">排空既有 Session</text>
+  <text class="body" x="702" y="157" text-anchor="middle">P41 仍可回滚</text>
+  <text class="body" x="702" y="174" text-anchor="middle">不删除 v41 cache</text>
+  <rect class="stage" x="774" y="112" width="117" height="77" rx="6"/>
+  <text class="head" x="832" y="136" text-anchor="middle">释放 P41</text>
+  <text class="body" x="832" y="157" text-anchor="middle">再清理 v41 产物</text>
+  <text class="body" x="832" y="174" text-anchor="middle">与 cache</text>
+  <path class="keep-edge" d="M633,150 H643" marker-end="url(#f76-arrow-keep)"/>
+  <path class="old-edge" d="M755,150 H767" marker-end="url(#f76-arrow-dim)"/>
+  <rect class="lane" x="24" y="247" width="871" height="132" rx="8"/>
+  <text class="lanehead" x="86" y="280" text-anchor="middle">新代 v42</text>
+  <text class="body" x="86" y="300" text-anchor="middle">进程 P42</text>
+  <text class="small" x="86" y="324" text-anchor="middle">chat-v42.litertlm</text>
+  <text class="small" x="86" y="341" text-anchor="middle">cache/v42/</text>
+  <rect class="active" x="150" y="265" width="112" height="86" rx="6"/>
+  <text class="head" x="206" y="288" text-anchor="middle">写入独立路径</text>
+  <text class="body" x="206" y="309" text-anchor="middle">校验内容哈希</text>
+  <text class="body" x="206" y="326" text-anchor="middle">与容器结构</text>
+  <rect class="active" x="274" y="265" width="112" height="86" rx="6"/>
+  <text class="head" x="330" y="288" text-anchor="middle">启动 P42</text>
+  <text class="body" x="330" y="309" text-anchor="middle">创建 Engine</text>
+  <text class="body" x="330" y="326" text-anchor="middle">生成独立 cache</text>
+  <rect class="active" x="398" y="265" width="112" height="86" rx="6"/>
+  <text class="head" x="454" y="288" text-anchor="middle">固定输入验证</text>
+  <text class="body" x="454" y="309" text-anchor="middle">初始化、prefill</text>
+  <text class="body" x="454" y="326" text-anchor="middle">与 decode 输出</text>
+  <rect class="active" x="522" y="265" width="112" height="86" rx="6"/>
+  <text class="head" x="578" y="288" text-anchor="middle">应用实现路由切换</text>
+  <text class="body" x="578" y="309" text-anchor="middle">新请求转到 P42</text>
+  <text class="body" x="578" y="326" text-anchor="middle">不改写 P41 文件</text>
+  <path class="edge" d="M263,308 H267" marker-end="url(#f76-arrow)"/>
+  <path class="edge" d="M387,308 H391" marker-end="url(#f76-arrow)"/>
+  <path class="edge" d="M511,308 H515" marker-end="url(#f76-arrow)"/>
+  <path class="edge" d="M635,308 H886" marker-end="url(#f76-arrow)"/>
+  <text class="body" x="758" y="294" text-anchor="middle">P42 承接新请求；保留 v41 作为回滚目标</text>
+  <path class="switch" d="M578,192 V258" marker-end="url(#f76-arrow)"/>
+  <text class="small" x="591" y="229">路由切换点</text>
+  <rect class="warn" x="24" y="411" width="871" height="61" rx="7"/>
+  <text class="warnboxhead" x="460" y="435" text-anchor="middle">本流程不原位覆盖 current</text>
+  <text class="warnboxbody" x="460" y="457" text-anchor="middle">P41 运行期间不要改写 /models/current.litertlm；v42 使用独立文件名、cache 目录和新进程 P42</text>
+  <text class="small" x="460" y="496" text-anchor="middle">跨进程切换与回滚由应用实现，不是 LiteRT-LM 接口提供的发布事务</text>
+</svg>

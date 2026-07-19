@@ -10,9 +10,12 @@
 **聚焦**：取 executor-llm 的 MTP drafter、schema-format 的 speculative_decoding 能力声明；#2227 的 PowerVR 回退无真机，按【文档】级引 issue。
 
 ## 本章图表（先规划后动笔，CLAUDE.md 第六节）
-- [ ] 图 9-1 drafter/verifier 时序
-- [ ] 图 9-2 接受率-收益曲线（用本章实测数据绘制）
-- [ ] 表 9-1 MTP 开/关实测对照
+- [x] 图 9-1 drafter/verifier 时序
+- [x] 图 9-2 条件匹配概率与理论加速比曲线
+- [x] 图 9-3 多 token 返回后的逐 token 停止检测与逻辑位置回退
+- [x] 表 9-1 Mac `false` / `auto` 记录及数据边界
+- [x] 表 9-2 多 token 返回下各终止条件的检查时点
+- [x] 表 9-3 停止、数值上限与流式回调的回归测试矩阵
 
 ## 本章实验（脚本入 `experiments/`）
 - [ ] --enable-speculative-decoding 开/关
@@ -46,3 +49,12 @@
 ## 待核实清单 / 随手记
 - 「快 3 倍」是官方博客口径（Gemma 4），本章实验实测核对；实测数字待基准 D（主基准 E4B 支持 MTP）。
 - 图 9-1 时序 = drafter 逐个草拟 G 个 → base 一次 verify G+1 → 接受前缀+bonus。
+
+## 扩章备料：多 token 返回的任务层语义（2026-07-18）
+
+- `DecodeOneStep::Run` 在 `runtime/core/tasks.cc:147-179` 将 executor 返回序列按位置展开。`ProcessTokens` 先于 `MergeTokenIds`，停止检测与 BPE 合并都保持 token 顺序。
+- 停止序列在批中命中时，`runtime/core/tasks.cc:223-233` 以 `sequence_length - step` 回退逻辑位置。命中批次末位时不调用 `SetCurrentStep`，正文与图 9-3 已分别说明。
+- `runtime/core/tasks.cc:523-566` 在一次 `Run` 后至多发送一次可见更新；BPE 未完成或停止序列前缀暂存时，也可能没有 `kProcessing` 回调。
+- benchmark 数量、KV cache 上限和 `max_output_tokens` 在 `runtime/core/tasks.cc:569-572` 的批后位置检查。`num_decode_steps` 是 `current_step` 相对 decode 起点的增量，不是 executor 调用次数。
+- `runtime/executor/llm_litert_compiled_model_executor.cc:1042-1043` 与 `:1077-1079` 表明 MTP 按返回 token 数推进 `current_step`。由此可推得任务层在稳态最多越过数值阈值 G 个位置，首轮最多 G+1 个位置；该推断以 executor 能完成本轮为前提。
+- 现有 `FakeLlmExecutor` 每次为每个候选返回 1 个 token，并将 `current_step` 增加 1（`runtime/executor/fake_llm_executor.cc:224-231`）。多 token 边界测试需要新增测试 executor，不能直接复用现有构造参数表达。

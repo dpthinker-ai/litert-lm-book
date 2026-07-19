@@ -1,0 +1,45 @@
+<svg viewBox="0 0 720 330" width="720" height="330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Engine、Session 与 Conversation 的关系">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .primary { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+      .inner { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1; }
+      .t { fill: var(--fig-text, #1f2328); }
+      .ts { fill: var(--fig-text-soft, #57606a); }
+      .accent { fill: var(--fig-accent, #0b57d0); }
+      .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.6; fill: none; }
+      .ref { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+    </style>
+    <marker id="arrow32" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/>
+    </marker>
+    <marker id="arrow32Accent" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+  </defs>
+  <text class="t" x="360" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">Engine、Session 与 Conversation 的对象关系</text>
+  <rect class="primary" x="42" y="70" width="270" height="210" rx="8"/>
+  <text class="accent" x="177" y="96" text-anchor="middle" style="font-size:14px;font-weight:700">Conversation</text>
+  <rect class="inner" x="66" y="116" width="222" height="36" rx="5"/>
+  <text class="t" x="177" y="139" text-anchor="middle" style="font-size:11px">消息历史 history_</text>
+  <rect class="inner" x="66" y="162" width="222" height="36" rx="5"/>
+  <text class="t" x="177" y="185" text-anchor="middle" style="font-size:11px">PromptTemplate 与 Preface</text>
+  <rect class="inner" x="66" y="208" width="222" height="36" rx="5"/>
+  <text class="t" x="177" y="231" text-anchor="middle" style="font-size:11px">ModelDataProcessor</text>
+  <text class="ts" x="177" y="264" text-anchor="middle" style="font-size:10px">面向多轮消息的高层接口</text>
+  <rect class="box" x="460" y="58" width="218" height="88" rx="8"/>
+  <text class="t" x="569" y="85" text-anchor="middle" style="font-size:14px;font-weight:700">Engine</text>
+  <text class="ts" x="569" y="107" text-anchor="middle" style="font-size:10.5px">模型资源、tokenizer 等共享资源</text>
+  <text class="ts" x="569" y="126" text-anchor="middle" style="font-size:10.5px">创建一个或多个 Session</text>
+  <rect class="primary" x="460" y="210" width="218" height="82" rx="8"/>
+  <text class="accent" x="569" y="238" text-anchor="middle" style="font-size:14px;font-weight:700">Engine::Session</text>
+  <text class="ts" x="569" y="261" text-anchor="middle" style="font-size:10.5px">一次交互的运行状态与上下文</text>
+  <text class="ts" x="569" y="279" text-anchor="middle" style="font-size:10.5px">Conversation 以 unique_ptr 独占</text>
+  <path class="ref" marker-end="url(#arrow32Accent)" d="M312,102 H458"/>
+  <text class="accent" x="385" y="92" text-anchor="middle" style="font-size:10px">保留 Engine&amp; 引用</text>
+  <path class="edge" marker-end="url(#arrow32)" d="M569,146 V208"/>
+  <text class="ts" x="584" y="180" style="font-size:10px">CreateSession</text>
+  <path class="edge" marker-end="url(#arrow32)" d="M312,245 H458"/>
+  <text class="ts" x="385" y="235" text-anchor="middle" style="font-size:10px">持有 session_</text>
+</svg>

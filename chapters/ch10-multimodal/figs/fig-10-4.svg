@@ -1,0 +1,94 @@
+<svg viewBox="0 0 900 480" width="900" height="480" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="工具调用从声明、模型输出、解析、宿主校验到外部执行和结果回填的信任边界">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .lane { fill: var(--fig-bg, #ffffff); stroke: var(--fig-border-2, #e6eaef); stroke-width: 1; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .gate { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+      .external { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.5; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 15px; font-weight: 700; }
+      .lanehead { fill: var(--fig-text-soft, #57606a); font-size: 10.5px; font-weight: 700; }
+      .head { fill: var(--fig-text, #1f2328); font-size: 11.5px; font-weight: 700; }
+      .soft { fill: var(--fig-text-soft, #57606a); font-size: 9.7px; }
+      .dim { fill: var(--fig-text-dim, #8b949e); font-size: 9.2px; }
+      .warn { fill: var(--fig-accent-2, #6639ba); font-size: 9.6px; font-weight: 700; }
+      .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.4; fill: none; }
+      .boundary { stroke: var(--fig-accent, #0b57d0); stroke-width: 2; stroke-dasharray: 6 4; }
+    </style>
+    <marker id="a104" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/>
+    </marker>
+  </defs>
+  <text class="title" x="450" y="24" text-anchor="middle">工具调用的语法边界与执行信任边界</text>
+  <text class="dim" x="450" y="43" text-anchor="middle">约束与 parser 处理格式；只有宿主策略入口可以授权真实副作用</text>
+  <rect class="lane" x="22" y="66" width="856" height="86" rx="5"/>
+  <rect class="lane" x="22" y="162" width="856" height="112" rx="5"/>
+  <rect class="lane" x="22" y="284" width="856" height="110" rx="5"/>
+  <rect class="lane" x="22" y="404" width="856" height="50" rx="5"/>
+  <text class="lanehead" x="38" y="85">应用配置</text>
+  <text class="lanehead" x="38" y="181">LiteRT-LM 与模型</text>
+  <text class="lanehead" x="38" y="303">宿主执行边界</text>
+  <text class="lanehead" x="38" y="424">外部系统</text>
+  <g transform="translate(126,91)">
+    <rect class="box" width="126" height="46" rx="6"/>
+    <text class="head" x="63" y="19" text-anchor="middle">工具声明</text>
+    <text class="soft" x="63" y="35" text-anchor="middle">name + parameters</text>
+  </g>
+  <g transform="translate(294,91)">
+    <rect class="box" width="126" height="46" rx="6"/>
+    <text class="head" x="63" y="19" text-anchor="middle">用户消息</text>
+    <text class="soft" x="63" y="35" text-anchor="middle">请求与上下文</text>
+  </g>
+  <g transform="translate(126,198)">
+    <rect class="box" width="126" height="54" rx="6"/>
+    <text class="head" x="63" y="20" text-anchor="middle">模板 + 约束</text>
+    <text class="soft" x="63" y="37" text-anchor="middle">允许 token 位图</text>
+  </g>
+  <g transform="translate(294,198)">
+    <rect class="box" width="126" height="54" rx="6"/>
+    <text class="head" x="63" y="20" text-anchor="middle">模型输出文本</text>
+    <text class="warn" x="63" y="39" text-anchor="middle">不可信</text>
+  </g>
+  <g transform="translate(462,198)">
+    <rect class="box" width="126" height="54" rx="6"/>
+    <text class="head" x="63" y="20" text-anchor="middle">parser JSON</text>
+    <text class="warn" x="63" y="39" text-anchor="middle">可解析但仍不可信</text>
+  </g>
+  <line class="boundary" x1="620" y1="166" x2="620" y2="390"/>
+  <text x="630" y="188" fill="var(--fig-accent, #0b57d0)" font-size="9.5px" font-weight="700">执行信任边界</text>
+  <g transform="translate(646,198)">
+    <rect class="gate" width="196" height="54" rx="6"/>
+    <text class="head" x="98" y="18" text-anchor="middle">只生成候选命令</text>
+    <text class="soft" x="98" y="35" text-anchor="middle">不在此处执行外部函数</text>
+  </g>
+  <g transform="translate(126,318)">
+    <rect class="gate" width="176" height="56" rx="6"/>
+    <text class="head" x="88" y="19" text-anchor="middle">校验与授权</text>
+    <text class="soft" x="88" y="36" text-anchor="middle">allowlist / schema / ACL</text>
+  </g>
+  <g transform="translate(352,318)">
+    <rect class="gate" width="176" height="56" rx="6"/>
+    <text class="head" x="88" y="19" text-anchor="middle">受控适配器</text>
+    <text class="soft" x="88" y="36" text-anchor="middle">超时 / 幂等 / 取消</text>
+  </g>
+  <g transform="translate(578,318)">
+    <rect class="gate" width="176" height="56" rx="6"/>
+    <text class="head" x="88" y="19" text-anchor="middle">结果规范化</text>
+    <text class="soft" x="88" y="36" text-anchor="middle">裁剪 / 转义 / 脱敏</text>
+  </g>
+  <g transform="translate(352,411)">
+    <rect class="external" width="176" height="34" rx="6"/>
+    <text class="head" x="88" y="22" text-anchor="middle">设备 / 文件 / 网络服务</text>
+  </g>
+  <path class="edge" marker-end="url(#a104)" d="M189,137 V196"/>
+  <path class="edge" marker-end="url(#a104)" d="M357,137 V196"/>
+  <path class="edge" marker-end="url(#a104)" d="M252,225 H292"/>
+  <path class="edge" marker-end="url(#a104)" d="M420,225 H460"/>
+  <path class="edge" marker-end="url(#a104)" d="M588,225 H644"/>
+  <path class="edge" marker-end="url(#a104)" d="M744,252 C744,286 214,278 214,316"/>
+  <path class="edge" marker-end="url(#a104)" d="M302,346 H350"/>
+  <path class="edge" marker-end="url(#a104)" d="M440,374 V409"/>
+  <path class="edge" marker-end="url(#a104)" d="M528,428 C620,428 666,407 666,376"/>
+  <path class="edge" marker-end="url(#a104)" d="M754,346 C842,346 842,126 422,126"/>
+  <text class="dim" x="814" y="309" text-anchor="middle">role: tool 回填</text>
+</svg>

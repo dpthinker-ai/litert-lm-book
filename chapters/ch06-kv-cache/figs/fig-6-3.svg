@@ -1,58 +1,81 @@
-<svg viewBox="0 0 760 320" width="760" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Clone 与 Rewind 的会话状态分叉">
-  <style>
-    text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
-    .b{fill:var(--fig-surface, #f6f8fa);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
-    .bl{fill:var(--fig-accent-soft, #e8f0fe);stroke:var(--fig-accent, #0b57d0);stroke-width:1.5}
-    .off{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border, #d0d7de);stroke-width:1.4;stroke-dasharray:4 3}
-    .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
-    .tw{fill:var(--fig-accent, #0b57d0);font-size:12.5px;font-weight:700}
-    .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
-    .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
-    .edge{stroke:var(--fig-accent, #0b57d0);stroke-width:1.8;fill:none}
-    .edged{stroke:var(--fig-text-dim, #8b949e);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
-  </style>
+<svg viewBox="0 0 760 540" width="760" height="540" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Session Clone 共享 SharedProcessedContext 并复制运行配置与状态对象；较短分支改写历史时才按 PackedSize 复制 KV 并写时分离；channel 过滤在下一条 user 消息到达后 rewind 并 refill">
   <defs>
-    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .b { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .bl { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; }
+      .off { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; stroke-dasharray: 4 3; }
+      .t { fill: var(--fig-text, #1f2328); font-size: 14px; font-weight: 700; }
+      .tw { fill: var(--fig-accent, #0b57d0); font-size: 12.5px; font-weight: 700; }
+      .ts { fill: var(--fig-text-soft, #57606a); font-size: 11.5px; }
+      .td { fill: var(--fig-text-dim, #8b949e); font-size: 10.5px; }
+      .edge { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; fill: none; }
+      .edged { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+      .rule { stroke: var(--fig-border, #d0d7de); stroke-width: 1; }
+    </style>
+    <marker id="f63-arrow" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
       <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
     </marker>
-    <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+    <marker id="f63-arrow-dim" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
       <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
     </marker>
   </defs>
-  <text class="t" x="380" y="26" text-anchor="middle">Clone 与 Rewind：共享前缀，分岔与回退</text>
-  <!-- Clone 分叉 -->
-  <text class="tw" x="28" y="66">Clone · 深拷一次前缀 KV，两会话独立续写</text>
-  <text class="td" x="30" y="102">session1</text>
-  <rect class="b" x="100" y="84" width="70" height="30" rx="6"/><text class="ts" x="135" y="104" text-anchor="middle">step 0</text>
-  <rect class="b" x="180" y="84" width="70" height="30" rx="6"/><text class="ts" x="215" y="104" text-anchor="middle">…</text>
-  <rect class="bl" x="260" y="84" width="80" height="30" rx="6"/><text class="ts" x="300" y="104" text-anchor="middle">step k</text>
-  <rect class="b" x="360" y="84" width="90" height="30" rx="6"/><text class="ts" x="405" y="104" text-anchor="middle">in the</text>
-  <rect class="b" x="460" y="84" width="90" height="30" rx="6"/><text class="ts" x="505" y="104" text-anchor="middle">world?</text>
-  <path class="edge" d="M170,99 H176" marker-end="url(#ar)"/>
-  <path class="edge" d="M250,99 H256" marker-end="url(#ar)"/>
-  <path class="edge" d="M340,99 H356" marker-end="url(#ar)"/>
-  <path class="edge" d="M450,99 H456" marker-end="url(#ar)"/>
-  <text class="td" x="30" y="166">session2</text>
-  <rect class="bl" x="260" y="148" width="80" height="30" rx="6"/><text class="ts" x="300" y="168" text-anchor="middle">step k</text>
-  <rect class="b" x="360" y="148" width="90" height="30" rx="6"/><text class="ts" x="405" y="168" text-anchor="middle">in</text>
-  <rect class="b" x="460" y="148" width="90" height="30" rx="6"/><text class="ts" x="505" y="168" text-anchor="middle">France?</text>
-  <path class="edged" d="M300,114 V144" marker-end="url(#ard)"/>
-  <text class="td" x="312" y="133">克隆点：前缀 KV 深拷一份</text>
-  <path class="edge" d="M340,163 H356" marker-end="url(#ar)"/>
-  <path class="edge" d="M450,163 H456" marker-end="url(#ar)"/>
-  <text class="td" x="570" y="133">公共前缀只算一次（prefill 不重算）</text>
-  <!-- Rewind 回退 -->
-  <text class="tw" x="28" y="222">Rewind · 游标回拨，后续写入覆盖旧槽位</text>
-  <text class="td" x="30" y="258">session</text>
-  <rect class="b" x="100" y="240" width="70" height="30" rx="6"/><text class="ts" x="135" y="260" text-anchor="middle">step 0</text>
-  <rect class="b" x="180" y="240" width="70" height="30" rx="6"/><text class="ts" x="215" y="260" text-anchor="middle">…</text>
-  <rect class="bl" x="260" y="240" width="80" height="30" rx="6"/><text class="ts" x="300" y="260" text-anchor="middle">checkpoint</text>
-  <rect class="off" x="360" y="240" width="90" height="30" rx="6"/><text class="ts" x="405" y="260" text-anchor="middle">思考段</text>
-  <rect class="off" x="460" y="240" width="90" height="30" rx="6"/><text class="ts" x="505" y="260" text-anchor="middle">思考段</text>
-  <path class="edge" d="M170,255 H176" marker-end="url(#ar)"/>
-  <path class="edge" d="M250,255 H256" marker-end="url(#ar)"/>
-  <path class="edge" d="M340,255 H356" marker-end="url(#ar)"/>
-  <path class="edge" d="M450,255 H456" marker-end="url(#ar)"/>
-  <path class="edged" d="M505,278 C505,300 300,300 300,278" marker-end="url(#ard)"/>
-  <text class="td" x="403" y="305" text-anchor="middle">RewindToCheckpoint：只改 current_step，不动 KV 字节；旧槽位被后续写入覆盖</text>
+  <text class="t" x="380" y="26" text-anchor="middle">会话克隆的写时分离与 channel 过滤</text>
+  <text class="tw" x="28" y="58">Session Clone：共享 LLM 上下文，分别持有运行配置与状态副本</text>
+  <rect class="b" x="35" y="82" width="145" height="38" rx="6"/>
+  <text class="ts" x="107.5" y="105" text-anchor="middle">session1 handler</text>
+  <rect class="b" x="35" y="137" width="145" height="38" rx="6"/>
+  <text class="ts" x="107.5" y="160" text-anchor="middle">session2 handler</text>
+  <rect class="bl" x="245" y="95" width="225" height="67" rx="7"/>
+  <text class="tw" x="357.5" y="120" text-anchor="middle">SharedProcessedContext</text>
+  <text class="ts" x="357.5" y="141" text-anchor="middle">ProcessedTokens + 活动 KV 上下文</text>
+  <text class="td" x="357.5" y="156" text-anchor="middle">CloneContextHandler：LLM KV 搬运量为 0</text>
+  <path class="edge" d="M180,101 H235" marker-end="url(#f63-arrow)"/>
+  <path class="edge" d="M180,156 H235" marker-end="url(#f63-arrow)"/>
+  <rect class="off" x="525" y="82" width="195" height="38" rx="6"/>
+  <text class="ts" x="622.5" y="105" text-anchor="middle">session1：config / state</text>
+  <rect class="off" x="525" y="137" width="195" height="38" rx="6"/>
+  <text class="ts" x="622.5" y="160" text-anchor="middle">session2：config / state 副本</text>
+  <path class="edged" d="M180,94 C330,62 460,66 515,96" marker-end="url(#f63-arrow-dim)"/>
+  <path class="edged" d="M180,163 C325,190 458,187 515,158" marker-end="url(#f63-arrow-dim)"/>
+  <text class="tw" x="28" y="206">较短分支需要截断或改写共享历史：触发写时分离</text>
+  <path class="edge" d="M357.5,162 V220" marker-end="url(#f63-arrow)"/>
+  <rect class="bl" x="258" y="230" width="199" height="42" rx="7"/>
+  <text class="ts" x="357.5" y="248" text-anchor="middle">SaveProcessedContextAnd</text>
+  <text class="ts" x="357.5" y="264" text-anchor="middle">SeparateLoadedHandler</text>
+  <path class="edge" d="M258,252 C210,252 180,273 167,289" marker-end="url(#f63-arrow)"/>
+  <rect class="b" x="35" y="294" width="265" height="48" rx="6"/>
+  <text class="ts" x="167.5" y="314" text-anchor="middle">原共享链保存 executor 快照</text>
+  <text class="td" x="167.5" y="331" text-anchor="middle">CloneContext → CopyTensorBuffer(PackedSize)</text>
+  <path class="edge" d="M457,252 C505,252 542,273 558,289" marker-end="url(#f63-arrow)"/>
+  <rect class="b" x="460" y="294" width="265" height="48" rx="6"/>
+  <text class="ts" x="592.5" y="314" text-anchor="middle">当前 handler 改用新共享对象</text>
+  <text class="td" x="592.5" y="331" text-anchor="middle">回到分叉步数后继续 prefill / decode</text>
+  <text class="td" x="380" y="361" text-anchor="middle">基准模型仅在 compiled executor 宽度为 4096 且进入快照路径时，单次复制容量约为 112 MiB</text>
+  <line class="rule" x1="28" y1="378" x2="732" y2="378"/>
+  <text class="tw" x="28" y="404">channel 过滤（配置开启）：下一条非追加式 user 消息触发处理</text>
+  <rect class="bl" x="35" y="423" width="110" height="34" rx="6"/>
+  <text class="ts" x="90" y="444" text-anchor="middle">checkpoint</text>
+  <path class="edge" d="M145,440 H165" marker-end="url(#f63-arrow)"/>
+  <rect class="b" x="175" y="423" width="80" height="34" rx="6"/>
+  <text class="ts" x="215" y="444" text-anchor="middle">user 1</text>
+  <path class="edge" d="M255,440 H275" marker-end="url(#f63-arrow)"/>
+  <rect class="off" x="285" y="423" width="95" height="34" rx="6"/>
+  <text class="ts" x="332.5" y="444" text-anchor="middle">channel</text>
+  <path class="edge" d="M380,440 H400" marker-end="url(#f63-arrow)"/>
+  <rect class="b" x="410" y="423" width="120" height="34" rx="6"/>
+  <text class="ts" x="470" y="444" text-anchor="middle">可见 assistant</text>
+  <path class="edge" d="M530,440 H550" marker-end="url(#f63-arrow)"/>
+  <rect class="bl" x="560" y="423" width="150" height="34" rx="6"/>
+  <text class="ts" x="635" y="444" text-anchor="middle">user 2 到达</text>
+  <path class="edged" d="M635,460 C635,484 90,484 90,460" marker-end="url(#f63-arrow-dim)"/>
+  <text class="td" x="362" y="472" text-anchor="middle">RewindToCheckpoint：恢复步数与会话状态，不复制 KV 张量</text>
+  <rect class="b" x="55" y="495" width="260" height="32" rx="6"/>
+  <text class="ts" x="185" y="515" text-anchor="middle">refill：user 1 + 可见 assistant</text>
+  <path class="edge" d="M315,511 H350" marker-end="url(#f63-arrow)"/>
+  <rect class="b" x="360" y="495" width="145" height="32" rx="6"/>
+  <text class="ts" x="432.5" y="515" text-anchor="middle">保存新 checkpoint</text>
+  <path class="edge" d="M505,511 H540" marker-end="url(#f63-arrow)"/>
+  <rect class="b" x="550" y="495" width="155" height="32" rx="6"/>
+  <text class="ts" x="627.5" y="515" text-anchor="middle">prefill 当前 user</text>
 </svg>

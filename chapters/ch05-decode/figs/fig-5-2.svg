@@ -1,16 +1,16 @@
-<svg viewBox="0 0 760 340" width="760" height="340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="停止词部分匹配的暂存与释放">
-  <style>
-    text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
-    .b{fill:var(--fig-surface, #f6f8fa);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
-    .bl{fill:var(--fig-accent-soft, #e8f0fe);stroke:var(--fig-accent, #0b57d0);stroke-width:1.5}
-    .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
-    .tw{fill:var(--fig-accent, #0b57d0);font-size:12.5px;font-weight:700}
-    .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
-    .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
-    .edge{stroke:var(--fig-accent, #0b57d0);stroke-width:1.8;fill:none}
-    .edged{stroke:var(--fig-text-dim, #8b949e);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
-  </style>
+<svg viewBox="0 0 780 370" width="780" height="370" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="单候选停止序列在部分匹配、失配和完整命中时的暂存与发送行为">
   <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .b { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .bl { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; }
+      .t { fill: var(--fig-text, #1f2328); font-size: 14px; font-weight: 700; }
+      .tw { fill: var(--fig-accent, #0b57d0); font-size: 12px; font-weight: 700; }
+      .ts { fill: var(--fig-text-soft, #57606a); font-size: 11px; }
+      .td { fill: var(--fig-text-dim, #8b949e); font-size: 10px; }
+      .edge { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; fill: none; }
+      .edged { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+    </style>
     <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
       <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
     </marker>
@@ -18,48 +18,48 @@
       <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
     </marker>
   </defs>
-  <text class="t" x="380" y="26" text-anchor="middle">停止词部分匹配的「暂存—释放」（停止序列 = A B C）</text>
-  <text class="td" x="380" y="45" text-anchor="middle">窗口 = pending_stop_tokens_ 队列，至多暂存 max_length 个 token；max_length 为当前已匹配的前缀长度</text>
-  <!-- 路径一：失配释放 -->
-  <text class="tw" x="28" y="84">路径一 · 中途失配 → 顺次放出</text>
-  <rect class="bl" x="150" y="96" width="96" height="32" rx="6"/>
-  <text class="ts" x="198" y="117" text-anchor="middle">token A</text>
-  <rect class="b" x="150" y="146" width="96" height="32" rx="6"/>
-  <text class="ts" x="198" y="167" text-anchor="middle">窗口 [A]</text>
-  <text class="td" x="198" y="200" text-anchor="middle">输出：—</text>
-  <path class="edge" d="M198,128 V142" marker-end="url(#ar)"/>
-  <rect class="bl" x="330" y="96" width="96" height="32" rx="6"/>
-  <text class="ts" x="378" y="117" text-anchor="middle">token B</text>
-  <rect class="b" x="330" y="146" width="96" height="32" rx="6"/>
-  <text class="ts" x="378" y="167" text-anchor="middle">窗口 [A B]</text>
-  <text class="td" x="378" y="200" text-anchor="middle">输出：—</text>
-  <path class="edge" d="M378,128 V142" marker-end="url(#ar)"/>
-  <path class="edged" d="M246,162 H326" marker-end="url(#ard)"/>
-  <rect class="bl" x="510" y="96" width="96" height="32" rx="6"/>
-  <text class="ts" x="558" y="117" text-anchor="middle">token X（失配）</text>
-  <rect class="b" x="510" y="146" width="96" height="32" rx="6"/>
-  <text class="ts" x="558" y="167" text-anchor="middle">窗口 [ ]</text>
-  <text class="tw" x="558" y="200" text-anchor="middle">输出 A B X</text>
-  <path class="edge" d="M558,128 V142" marker-end="url(#ar)"/>
-  <path class="edged" d="M426,162 H506" marker-end="url(#ard)"/>
-  <!-- 路径二：命中作废 -->
-  <text class="tw" x="28" y="238">路径二 · 完整命中 → 整段作废</text>
-  <rect class="bl" x="150" y="250" width="96" height="32" rx="6"/>
-  <text class="ts" x="198" y="271" text-anchor="middle">token A</text>
-  <rect class="b" x="150" y="298" width="96" height="32" rx="6" transform="translate(0,-2)"/>
-  <text class="ts" x="198" y="321" text-anchor="middle">窗口 [A]</text>
-  <text class="td" x="198" y="338" text-anchor="middle"></text>
-  <rect class="bl" x="330" y="250" width="96" height="32" rx="6"/>
-  <text class="ts" x="378" y="271" text-anchor="middle">token B</text>
-  <rect class="b" x="330" y="298" width="96" height="32" rx="6" transform="translate(0,-2)"/>
-  <text class="ts" x="378" y="321" text-anchor="middle">窗口 [A B]</text>
-  <path class="edged" d="M246,314 H326" marker-end="url(#ard)"/>
-  <rect class="bl" x="510" y="250" width="96" height="32" rx="6"/>
-  <text class="ts" x="558" y="271" text-anchor="middle">token C（命中）</text>
-  <rect class="b" x="510" y="298" width="96" height="32" rx="6" transform="translate(0,-2)"/>
-  <text class="ts" x="558" y="321" text-anchor="middle">窗口 [A B C]</text>
-  <path class="edged" d="M426,314 H506" marker-end="url(#ard)"/>
-  <text class="tw" x="660" y="271">整段作废，</text>
-  <text class="tw" x="660" y="289">AllDone 判停</text>
-  <path class="edged" d="M606,266 H652" marker-end="url(#ard)"/>
+  <text class="t" x="390" y="25" text-anchor="middle">单候选停止序列的暂存时序（停止序列 = [A, B, C]）</text>
+  <text class="td" x="390" y="44" text-anchor="middle">示例假设每个 token id 都能独立解码；队列保存文本块及对应 id，计数器记录暂存的 token id 数</text>
+  <text class="tw" x="28" y="82">路径一：收到 X 后失配</text>
+  <rect class="bl" x="150" y="94" width="100" height="32" rx="6"/>
+  <text class="ts" x="200" y="115" text-anchor="middle">token A</text>
+  <rect class="b" x="150" y="142" width="100" height="32" rx="6"/>
+  <text class="ts" x="200" y="163" text-anchor="middle">pending [A]</text>
+  <text class="td" x="200" y="192" text-anchor="middle">无可发送文本</text>
+  <path class="edge" d="M200,126 V138" marker-end="url(#ar)"/>
+  <rect class="bl" x="330" y="94" width="100" height="32" rx="6"/>
+  <text class="ts" x="380" y="115" text-anchor="middle">token B</text>
+  <rect class="b" x="330" y="142" width="100" height="32" rx="6"/>
+  <text class="ts" x="380" y="163" text-anchor="middle">pending [A B]</text>
+  <text class="td" x="380" y="192" text-anchor="middle">无可发送文本</text>
+  <path class="edge" d="M380,126 V138" marker-end="url(#ar)"/>
+  <path class="edged" d="M250,158 H326" marker-end="url(#ard)"/>
+  <rect class="bl" x="510" y="94" width="100" height="32" rx="6"/>
+  <text class="ts" x="560" y="115" text-anchor="middle">token X（失配）</text>
+  <rect class="b" x="510" y="142" width="100" height="32" rx="6"/>
+  <text class="ts" x="560" y="163" text-anchor="middle">pending [ ]</text>
+  <text class="tw" x="560" y="192" text-anchor="middle">可发送文本：A B X</text>
+  <path class="edge" d="M560,126 V138" marker-end="url(#ar)"/>
+  <path class="edged" d="M430,158 H506" marker-end="url(#ard)"/>
+  <text class="tw" x="28" y="235">路径二：收到 C 后完整命中</text>
+  <rect class="bl" x="150" y="247" width="100" height="32" rx="6"/>
+  <text class="ts" x="200" y="268" text-anchor="middle">token A</text>
+  <rect class="b" x="150" y="295" width="100" height="32" rx="6"/>
+  <text class="ts" x="200" y="316" text-anchor="middle">pending [A]</text>
+  <rect class="bl" x="330" y="247" width="100" height="32" rx="6"/>
+  <text class="ts" x="380" y="268" text-anchor="middle">token B</text>
+  <rect class="b" x="330" y="295" width="100" height="32" rx="6"/>
+  <text class="ts" x="380" y="316" text-anchor="middle">pending [A B]</text>
+  <path class="edged" d="M250,311 H326" marker-end="url(#ard)"/>
+  <rect class="bl" x="510" y="247" width="100" height="32" rx="6"/>
+  <text class="ts" x="560" y="268" text-anchor="middle">token C（命中）</text>
+  <rect class="b" x="510" y="295" width="100" height="32" rx="6"/>
+  <text class="ts" x="560" y="309" text-anchor="middle">C 不入 pending</text>
+  <text class="ts" x="560" y="322" text-anchor="middle">A B 不发送</text>
+  <path class="edged" d="M430,311 H506" marker-end="url(#ard)"/>
+  <text class="tw" x="652" y="268">AllDone = true</text>
+  <text class="td" x="652" y="287">（batch = 1）</text>
+  <text class="td" x="652" y="306">本轮无文本回调</text>
+  <path class="edged" d="M610,263 H644" marker-end="url(#ard)"/>
+  <text class="td" x="390" y="354" text-anchor="middle">多候选时，AllDone 需等待所有候选命中；已命中的候选不再产生文本</text>
 </svg>

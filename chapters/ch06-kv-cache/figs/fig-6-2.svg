@@ -1,0 +1,62 @@
+<svg viewBox="0 0 760 500" width="760" height="500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="条件化 GPU out-of-place 路径中，公共前缀分支、最长分支续写与较短分支写时分离的 KV 容量变化">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 16px; font-weight: 700; }
+      .label { fill: var(--fig-text, #1f2328); font-size: 12px; font-weight: 700; }
+      .soft { fill: var(--fig-text-soft, #57606a); font-size: 11px; }
+      .dim { fill: var(--fig-text-dim, #8b949e); font-size: 10px; }
+      .blue { fill: var(--fig-accent, #0b57d0); font-size: 11px; font-weight: 700; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .active { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.6; }
+      .copy { fill: var(--fig-bg, #ffffff); stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.5; }
+      .edge { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.7; fill: none; }
+      .dash { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.4; stroke-dasharray: 5 4; fill: none; }
+      .rule { stroke: var(--fig-border, #d0d7de); stroke-width: 1; }
+    </style>
+    <marker id="f62-arrow" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+    <marker id="f62-arrow-dim" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
+    </marker>
+  </defs>
+  <text class="title" x="380" y="28" text-anchor="middle">GPU out-of-place 路径的写时分离与 KV 增量</text>
+  <text class="blue" x="34" y="65">① A 位于 step 2048</text>
+  <rect class="active" x="34" y="82" width="208" height="72" rx="7"/>
+  <text class="label" x="138" y="108" text-anchor="middle">compiled executor 双缓冲</text>
+  <text class="soft" x="138" y="130" text-anchor="middle">输入 112 MiB + 输出 112 MiB</text>
+  <text class="dim" x="138" y="146" text-anchor="middle">条件：4096 槽位、无 param_tensor</text>
+  <path class="edge" d="M242,118 H280" marker-end="url(#f62-arrow)"/>
+  <text class="blue" x="298" y="65">② Clone 后 B 续写至 2304</text>
+  <rect class="box" x="288" y="82" width="206" height="72" rx="7"/>
+  <text class="label" x="391" y="107" text-anchor="middle">A、B 共享上下文</text>
+  <text class="soft" x="391" y="129" text-anchor="middle">Clone 搬运 0 MiB</text>
+  <text class="soft" x="391" y="146" text-anchor="middle">B 从末尾续写仍为 0 MiB</text>
+  <path class="edge" d="M494,118 H532" marker-end="url(#f62-arrow)"/>
+  <text class="blue" x="548" y="65">③ A 在 2048 后改写</text>
+  <rect class="copy" x="540" y="82" width="186" height="72" rx="7"/>
+  <text class="label" x="633" y="107" text-anchor="middle">触发写时分离</text>
+  <text class="soft" x="633" y="129" text-anchor="middle">复制活动输入 map</text>
+  <text class="soft" x="633" y="146" text-anchor="middle">增量约 112 MiB</text>
+  <line class="rule" x1="34" y1="186" x2="726" y2="186"/>
+  <text class="label" x="34" y="218">逻辑 token 与物理复制量</text>
+  <rect class="box" x="34" y="238" width="692" height="72" rx="7"/>
+  <rect x="54" y="260" width="316" height="18" rx="3" fill="var(--fig-accent, #0b57d0)"/>
+  <rect x="370" y="260" width="316" height="18" rx="3" fill="var(--fig-surface-2, #eef1f5)" stroke="var(--fig-border, #d0d7de)"/>
+  <text x="212" y="274" text-anchor="middle" fill="#ffffff" style="font-size:10px;font-weight:700">已使用 2048 槽位 ≈ 56 MiB</text>
+  <text class="dim" x="528" y="274" text-anchor="middle">尚未使用 2048 槽位</text>
+  <text class="soft" x="380" y="300" text-anchor="middle">固定形状快照仍复制全部 4096 槽位：约 112 MiB</text>
+  <path class="dash" d="M380,310 V342" marker-end="url(#f62-arrow-dim)"/>
+  <text class="label" x="34" y="358">预留宽度放大两类成本</text>
+  <rect class="active" x="34" y="378" width="320" height="78" rx="7"/>
+  <text class="label" x="194" y="403" text-anchor="middle">4096 槽位</text>
+  <text class="soft" x="194" y="425" text-anchor="middle">双缓冲约 224 MiB</text>
+  <text class="soft" x="194" y="444" text-anchor="middle">一次相同快照约 112 MiB</text>
+  <path class="edge" d="M354,417 H404" marker-end="url(#f62-arrow)"/>
+  <rect class="copy" x="412" y="378" width="314" height="78" rx="7"/>
+  <text class="label" x="569" y="403" text-anchor="middle">8192 槽位</text>
+  <text class="soft" x="569" y="425" text-anchor="middle">双缓冲约 448 MiB</text>
+  <text class="soft" x="569" y="444" text-anchor="middle">一次相同快照约 224 MiB</text>
+  <text class="dim" x="380" y="484" text-anchor="middle">张量形状取自基准模型；本图条件不是其实际 GPU 单缓冲配置</text>
+</svg>

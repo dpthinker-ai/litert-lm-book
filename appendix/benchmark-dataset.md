@@ -1,10 +1,10 @@
 # 附录 D · 基准数据集
 
-> 书中所有标注「〔基准 D〕」的实测数据，都来自这里定义的这一套数据集。目的只有一个：让实测可复现、可对照，不与纸面推算混淆。
+> 书中所有标注「〔基准 D〕」的实测数据都来自本附录定义的数据集。采集条件、原始记录与结果分开列出，避免把实测与纸面推算混为一谈。
 
 ## 采集状态
 
-> ✅ **已采集（2026-07-05）。** litert-lm 0.13.1，完整矩阵 30 次运行 + 1 次强制 MTP 验证；原始 CSV 在 `experiments/data/`。下表为各条件 3 次的中位数。
+> 主矩阵采集于 2026-07-05，扩展实验采集至 2026-07-18。Mac 记录共 30 次：18 次 backend × context 主矩阵，以及 12 次 `false`/`auto` 再采样；Android、自然文本 MTP、线程数和约束解码结果另列，不与主矩阵混算。原始记录位于 `experiments/data/`。
 
 ## 一、采集环境（固定，不可混）
 
@@ -12,24 +12,24 @@
 |---|---|
 | 芯片 / 内存 | Apple M5 Pro / 24 GiB |
 | 系统 | macOS 26.5 |
-| 主基准模型 | **Gemma 4 E4B**（`litert-community/gemma-4-E4B-it-litert-lm`，公开、支持 MTP，3.66 GB ≈ 3.4 GiB） |
+| 主基准模型 | Gemma 4 E4B（`litert-community/gemma-4-E4B-it-litert-lm`，公开、支持 MTP，3.66 GB ≈ 3.4 GiB；SHA-256 `0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0`） |
 | 后端 | cpu、gpu（Metal） |
 
-主模型本身支持 MTP，因此第 9 章的推测解码实测与主基准**共用同一个模型**，无需另找。
+主模型支持 MTP，因此第 9 章的推测解码实测与主基准使用同一个模型。
 
 ## 二、方法
 
-- **矩阵**：backend ∈ {cpu, gpu} × prefill/上下文 ∈ {256, 1024, 4096}，decode 固定 128 token。
-- **重复**：每个条件跑 3 次，取中位数（抵消抖动）。
-- **指标**：prefill tok/s、decode tok/s、Init（加载）时间(s)、TTFT(s)。（`litert-lm benchmark` 不报峰值内存，故本表不含该列。）
-- **纪律**：正文只引用本数据集与注明出处的官方数据；换后端/模型/机器即另一组数据，单独标注，不混算（第 8 章）。
+- 矩阵：backend ∈ {cpu, gpu} × prefill/上下文 ∈ {256, 1024, 4096}，decode 固定 128 token。
+- 重复：每个条件跑 3 次，取中位数（抵消抖动）。
+- 指标：prefill tokens/s、decode tokens/s、Init API 聚合值（s）、TTFT（s）。（`litert-lm benchmark` 不报峰值内存，故本表不含该列。）C API 会把 `GetInitPhases()` 中可能重叠的阶段 duration 相加，因此 Init 列不是无重叠的端到端墙钟时间。
+- 证据范围：本书的性能数字只引用本数据集与注明出处的官方数据。更换后端、模型或机器后，结果作为另一组数据单独标注，不参与混合计算（第 8 章）。
 - 原始 CSV 存 `experiments/data/baseline.csv` 与 `mtp.csv`，元信息存 `experiments/data/_meta.txt`。
 
 ## 三、结果
 
-**主基准（Gemma 4 E4B，decode 128 token，各条件中位数）：**
+主基准使用 Gemma 4 E4B，decode 长度为 128 token；表中数据为各条件的中位数：
 
-| backend | 上下文 | prefill tok/s | decode tok/s | Init (s) | TTFT (s) |
+| backend | 上下文 | prefill tokens/s | decode tokens/s | Init API 聚合值（s） | TTFT（s） |
 |---|---|---|---|---|---|
 | cpu | 256 | 65.6 | 24.8 | 0.54 | 3.94 |
 | cpu | 1024 | 259.2 | 24.7 | 0.54 | 3.99 |
@@ -38,49 +38,26 @@
 | gpu | 1024 | 999.1 | 50.6 | 1.77 | 1.04 |
 | gpu | 4096 | 925.2 | 45.6 | 1.78 | 4.45 |
 
-**推测解码（同一模型，context 1024，decode 中位数 tok/s）：**
+推测解码使用同一模型，context 为 1024；表中数据为 decode 吞吐中位数：
 
 | MTP | cpu | gpu | 说明 |
 |---|---|---|---|
 | 关（false） | 22.8 | 50.0 | 基线 |
 | auto | 24.9 | 50.2 | v0.13.1 中 auto 不触碰默认关（第 9 章），此行与基线本质是同行为的再采样 |
-| 强制开（true，gpu 单次验证） | — | 49.0 | 不报错、正常运行 → 模型与平台确实支持 MTP；单次临时验证，未入 CSV |
 
-> 注：MTP 表与主表为两个独立采集批次，故 cpu「关」的 22.8 与主表同条件的 24.7 不必相等——该批三次运行为 20.1 / 22.8 / 24.9（极差 4.8），gpu「关」批首跑 44.1、后两次 50.0 / 50.1。因此 MTP 的结论以「差异落在批内抖动幅度内」表述，不取精确点值。
+> 注：MTP 表与主表来自两个独立采集批次，故 cpu「关」的 22.8 与主表同条件的 24.7 不必相等。该批三次运行为 20.1 / 22.8 / 24.9（极差 4.8）；gpu「关」批首跑 44.1，后两次为 50.0 / 50.1。`false` 与 `auto` 在 v0.13.1 中都是关闭行为，表中差异只反映再采样波动。当前没有可核查的 Mac 强制开启记录；有记录的强制开启对照见第十三节 Android 扩展实验。
 
-## 四、结果解读（与正文对账）
+## 四、结果使用边界
 
-1. **Roofline 眼镜的实证（第 2 章）**：prefill 对算力/后端极敏感——cpu 从 65.6（短上下文吃不满算力）升到 259.2，gpu 到 999.1，gpu 约为 cpu 的 3.9 倍；decode 却几乎纹丝不动（cpu ≈24.7、gpu ≈50.6），gpu 仅为 cpu 的 2 倍。两类操作被不同资源顶住，实测清晰可见。（两个后端的 prefill 在 4096 档都略有回落，注意力开销随上下文增长，属预期。）
-2. **KV cache 占带宽的实证（第 6 章）**：上下文从 256 → 4096，decode 从 24.8 降到 20.7（cpu，-17%）、50.6 降到 45.6（gpu，-10%）——对话越长逐字越慢，正是 KV cache 读写分走带宽的直接证据。另一处自洽：cpu/4096 的 TTFT 18.1 s ≈ 4096 ÷ 226.5（prefill 耗时），公式与实测对上。
-3. **编译产物缓存的实证（第 7 章）**：GPU 首次运行（缓存未热）Init 5.29 s，其后稳定 ≈1.77 s——`--cache disk` 的冷启动收益直接可见（原始数据 `baseline.csv` gpu/256 run1）。
-4. **MTP 的诚实结果（第 9 章）**：在本基准（benchmark 模式的合成负载）下，auto 与关的 decode 差异在运行间抖动范围内（cpu 22.8→24.9，gpu 50.0→50.2；按第 9 章的代码链路，v0.13.1 中 auto 实为关，唯一真正开启的是强制 `true` 的一组，gpu 49.0，与关同样在抖动内），**远未复现官方"约 3 倍"口径**。归因已实证（2026-07-17，方法见下「十一、MTP 接受率实测」）：创造性文本 α ≈ 26%，恰在盈亏平衡（α* ≈ 0.25）边缘，收益自然出不来；代码类文本 α ≈ 99.5%，代入公式 speedup ≈ 2.7，与官方口径同区。接受率是文体的函数，两组数字不矛盾。
+各表只支持所列设备、模型、后端、输入和采集方法下的观察。端到端吞吐不能单独分离计算、访存、同步与调度成本；相应机制与结果解读见正文各章。
 
-> 关于第 1 章那条"25 tok/s"：本机 cpu decode 恰为 24.7-24.8，与第 1 章示例数字接近纯属**巧合**——第 1 章算的是一部假想手机（50 GB/s、1.86 GiB 权重），本机是另一套参数。正确的用法是公式本身：按第 1 章公式反推，且分母取 decode 每步真正读取的主干模型段 2.26 GB（见第六节实剖，而非 3.66 GB 整文件），gpu decode 50.6 tok/s × 2.26 GB ≈ 114 GB/s、cpu 24.8 × 2.26 ≈ 56 GB/s 的有效搬运速率，量级落在桌面级统一内存芯片的合理区间（具体带宽规格未查证，不作断言）。对账细节见第 2 章。
+## 五、实验索引
 
-## 五、对账清单（哪些结了、哪些还开着）
+各章实验的完成状态、复现入口与未形成结果的项目见附录 C，本附录不重复列出。
 
-- ✅ **decode 上限与 KV cache 差额**（第 1、6 章）：结清，见上"结果解读"第 2 条——上下文变长，decode 实测下降 10-17%。
-- ✅ **Roofline 分野**（第 2 章）：结清，见"结果解读"第 1 条。
-- ✅ **编译缓存的冷启动收益**（第 7 章）：结清，见"结果解读"第 3 条。
-- ✅ **MTP 与官方口径对照**（第 9 章）：结清（结果为"未复现"，如实报告），见"结果解读"第 4 条。
-- ✅ **KV cache 公式代入**（第 6 章）：结清，见下「六、模型实剖」——真实参数 24 层 / H_kv=2 / D=256（20 层）与 512（4 层）/ **int8**，每 token 28 KiB，4096 上下文 112 MiB。
-- ✅ **`--max-num-tokens` 预留宽度与速度**（第 6 章，`LiteRT-LM#2568`）：结清，见下「九、预留宽度扫描」——8192 比 1024 慢约 37%；过小预留直接报错。
-- ⬜ **int4 vs int8 三角**（第 7 章）：需社区有同模型两种量化产物，未做。
-- ⬜ **分段并行加载开关对比**（第 7 章）：开关仅 C API 暴露，未单测。
-- ⬜ **CPU 线程数扫描**（第 8 章）：flag 仅 C++ `litert_lm_main` 暴露（`shared_flags.cc:74`），Python CLI 无此项，未做。
-- ⬜ **Python/C++ 行为一致性**（第 11 章）：需 Bazel 构建 `litert_lm_main`，未做（正文已降为推断级）。
-- ✅ **接受率实证归因**（第 9 章）：结清，见下「十一、MTP 接受率实测」——无需改码，SDK VERBOSE 日志读出计数器。
-- ✅ **约束解码开/关成功率**（第 10 章）：结清，见下「十二、约束解码开/关工具调用成功率」——简单场景 8/8 无差异，保险定位。
-- ✅ **CPU 线程数扫描**（第 8 章）：结清，见下「十三、扩展基准（Android 真机）」——真机 1/2/4/8 线程近线性扩展，默认 4 非最优。
-- ✅ **MTP 真机实测**（第 9 章）：结清，同上——真机强制 MTP 双端变慢（cpu 3.6 倍、gpu 30%），#2227 同类现象。
-- ✅/⬜ **NPU 验证**（第 8 章）：完整打通尝试立档（见「十三」NPU 探测与 `experiments/data/npu_enablement.md`）——组件全就位、加载链路全通、context 创建成功；执行被生产 ROM 签名约束与 sm8750 预编译架构绑定拦住。结构描述仍基于代码分析，约束形态已真机确认。
-- ⬜ **E4B 的 NPU 验证（遗留问题，待触发重启）**：E4B 当前无 NPU 打包变体（HF 仅标准版与 web 版），E2B 包（qualcomm_sm8750 / Google_Tensor_G5）与本书 E4B 基准不同模型，不替代。重启条件（任一）：① litert-community 发布 E4B 的 qualcomm/Tensor NPU 包（查 HF repo siblings）；② 手边出现 ROM 放开 DSP 的 Qualcomm 设备（Samsung S25 系/工程机）或有 Pixel 10（G5）可用。重启路径：dispatch 桥与 QAIRT 已备好（`experiments/` 与 `npu_enablement.md` 全程留档），下包 → push → 跑 `android_bench.sh` NPU 分支 → 数据写回本节与第 8 章。
-- ⬜ **多模态端到端**（第 10 章）：图片输入 + visual token 计数验证 patchify，未做（需多模态负载预算）。
-- ⬜ **双 tokenizer 对比**（第 3 章）：需另下一个 HF tokenizer 模型（基准模型为 SentencePiece），未做。
+## 六、模型文件分析（gemma-4-e4b model.litertlm）
 
-## 六、模型实剖（gemma-4-e4b model.litertlm）
-
-不依赖 `litertlm_print` 的构建，用两步直接解剖模型文件（脚本思路：段按 16 KiB 对齐，扫对齐边界找 TFLite 魔数 `TFL3` 定段起点；再用 TFLite schema 的 flatbuffers 绑定读每段的 signature 与张量形状）。文件 3.66 GB，共 10 个 TFLite 段：
+本次分析不依赖 `litertlm_print`：先按 16 KiB 对齐边界查找 TFLite 魔数 `TFL3`，再用 TFLite schema 的 FlatBuffers 绑定读取每段的 signature 与张量形状。文件 3.66 GB，共 10 个 TFLite 段；完整记录见 `experiments/data/model_anatomy.md`：
 
 | 段起点（字节） | 大小 | 签名 | 关键张量 |
 |---:|---:|---|---|
@@ -88,24 +65,24 @@
 | 175,669,248 | 837 MB | `per_layer_embedder` | `token_ids[1,1]` |
 | 1,012,449,280 | 94 MB | `serving_default`（音频编码器） | `mask[1,1,816]` |
 | 1,106,509,824 | 16 MB | `audio_adapter` | `features[1,204,1536]` |
-| 1,122,254,848 | 16 KB | `eoa` | — |
+| 1,122,254,848 | 16 KB | `eoa` | 不适用 |
 | 1,122,271,232 | 224 MB | `vision_70/140/280` | `images[1,1260,768]` |
 | 1,346,420,736 | 8 MB | `vision_adapter_70/140/280` | `soft_tokens[1,140,768]` |
-| 1,354,317,824 | 16 KB | `eoi` | — |
-| 1,354,334,208 | **2,260 MB** | `decode` / `prefill_1024` / `prefill_128` / `verify` | `embeddings[1,1,2560]` |
+| 1,354,317,824 | 16 KB | `eoi` | 不适用 |
+| 1,354,334,208 | 2,260 MB | `decode` / `prefill_1024` / `prefill_128` / `verify` | `embeddings[1,1,2560]` |
 | 3,614,392,320 | 45 MB | `mtp_drafter` | `activations[1,1,5120]` |
 
 主干模型 `decode` signature 的关键事实：
 
-- KV cache 输入 48 个张量 = 24 层 × (K+V)，**dtype 全部 INT8**；20 层 `[1,2,32003,256]`、4 层 `[1,2,32003,512]`（V 侧维度转置存放）。
-- **KV 每 token = 2 × 2 × (20×256 + 4×512) × 1 B = 28,672 B = 28 KiB**；4096 上下文 = 112 MiB；静态槽位 32003 全预留 ≈ 875 MiB。
+- KV cache 输入 48 个张量 = 24 层 × (K+V)，dtype 全部为 INT8；20 层 `[1,2,32003,256]`、4 层 `[1,2,32003,512]`（V 侧维度转置存放）。
+- KV 每 token = 2 × 2 × (20×256 + 4×512) × 1 B = 28,672 B = 28 KiB；4096 上下文 = 112 MiB；静态槽位 32003 全预留 ≈ 875 MiB。
 - `embeddings[1,1,2560]` → model_dimension = 2560；`per_layer_embeddings[1,1,42,256]`；logits `[1,1,262144]` → 词表 262,144 = 2^18；`param_tensor[1,1,1,7]`（单缓冲 KV 路径的位置参数，见第 6 章）。
-- prefill 入口集恰为 {1024, 128}（第 4 章工单示例的真实版本）；`verify` 与 `mtp_drafter` 段互相配套（第 9 章）；vision 三档签名与三档 adapter 配套（第 10 章）。
-- 元数据侧：聊天模板以 `<turn|>` 作轮次收尾标记（解剖可见；`end_of_turn` 字样在本文件中不存在）——第 5 章停止符讨论的依据。
+- prefill 入口集为 {1024, 128}（第 4 章分块示例所用的实际入口）；`verify` 与 `mtp_drafter` 段互相配套（第 9 章）；vision 三档签名与三档 adapter 配套（第 10 章）。
+- 元数据中的聊天模板以 `<turn|>` 作为轮次结束标记。模型文件中不存在 `end_of_turn` 字样；这是第 5 章讨论停止符的依据。
 
 ## 七、prefill 长度扫描（cpu，-d 32，disk 缓存热，单次）
 
-| prefill tokens | prefill tok/s | decode tok/s | TTFT (s) |
+| prefill tokens | prefill tokens/s | decode tokens/s | TTFT (s) |
 |---:|---:|---:|---:|
 | 100 | 48.3 | 12.8 | 2.15 |
 | 250 | 64.0 | 25.7 | 3.95 |
@@ -115,37 +92,63 @@
 | 3000 | 261.3 | 26.0 | 11.52 |
 | 4000 | 229.3 | 20.7 | 17.49 |
 
-曲线三段式：短提示词吞吐低（向量单元喂不满、算术强度不足），约 1000 token 后进入 257-261 tok/s 的平台，4000 token 回落到 229（注意力二次项占比上升）。与第 4 章的解读一致。注意本表 decode 列在 -d 32 的短测量窗下抖动较大（p=100 档的 12.8 属预热效应），decode 结论以第二节的 -d 128 矩阵为准。原始数据 `experiments/data/prefill_sweep.csv`。
+基准模型只有 `prefill_128` 与 `prefill_1024` 两个静态入口。250、500、1000 token 都使用 1024-token signature，对应墙钟时间约为 3.91、3.89、3.89 s；吞吐差异主要反映有效 token 占比，不能单独证明算术强度变化。2000 token 以上需要多个分块，现有数据不能分离注意力与调度成本。本表 decode 只运行 32 步，主结果仍以第二节的 128 步矩阵为准。原始数据见 `experiments/data/prefill_sweep.csv`。
 
 ## 八、采样确定性实验（cpu）
 
-同一提示词（"Write one sentence about the ocean."）：温度 0、同种子跑两次，输出逐字一致；温度 1.0 时输出随种子可变（seed 7 与 seed 1 产出不同句子），但默认参数下 seed 1 与 seed 2 产出了相同序列——分布尖锐时，多个种子会命中同一条高概率路径。**开采样不等于每次必不同**。实录 `experiments/data/temperature_test.md`。
+同一提示词（"Write one sentence about the ocean."）在温度 0、相同种子下运行两次，输出逐字一致。温度 1.0 时，seed 7 与 seed 1 生成了不同句子，seed 1 与 seed 2 则生成了相同序列；启用随机采样不保证每次输出都不同。复现时须固定模型、后端、提示词、温度、top-k、top-p 与缓存模式。实录见 `experiments/data/temperature_test.md`。
 
 ## 九、`--max-num-tokens` 预留宽度扫描（cpu，2026-07-17 补采）
 
-验证第 6 章的因果：预留宽度决定每步 decode 的 KV 访存宽度，进而影响速度（`LiteRT-LM#2568`）。脚本 `experiments/max_tokens_sweep.sh`，原始数据 `experiments/data/max_tokens_sweep.csv`（-d 128，disk 缓存热，各 2 次）。
+观察第 6 章所述固定形状路径中预留宽度与 decode 吞吐的关系。脚本 `experiments/max_tokens_sweep.sh`，原始数据 `experiments/data/max_tokens_sweep.csv`（`-d 128`，磁盘缓存热，各 2 次）。实验同时改变了所选 signature 或张量宽度所带来的多项执行成本，未用性能计数器把 KV 访存单独分离出来。
 
-| max_num_tokens | prompt | decode tok/s | 备注 |
+| max_num_tokens | prompt | decode tokens/s | 备注 |
 |---:|---:|---:|---|
-| 1024 | 100 | 33.9 | 工单 [128] |
+| 1024 | 100 | 33.9 | 分块 [128] |
 | 2048 | 256 | 23.5 / 29.5 | 两次散布大，取区间 |
 | 4096 | 256 | 26.4 | 与默认值推导一致（(256+1023)/4096+1）×4096 |
 | 8192 | 256 | 21.5 | 同一 prompt，仅放宽预留 |
-| 1024 | 256 | **运行失败** | 工单 [1024] 恰好打满预留宽度，prefill 报 `dynamic_update_slice` 维度越界 |
+| 1024 | 256 | 运行失败 | 分块 [1024] 恰好占满预留宽度，prefill 报 `dynamic_update_slice` 维度越界 |
 
-两条结论的完整分析已并入第 6 章（表 6-2 与其后的解读）：方向与量级符合「预留越宽每步越慢」（8192 比 1024 慢约 37%）；过小预留不是变慢而是直接失败（工单打满即越界）。2048 档的散布提醒短扫描同样有抖动。
+同为 256-token prompt 时，4096 档约 26.4 tokens/s，8192 档约 21.5 tokens/s，后者低约 19%。1024/100 的 33.9 tokens/s 使用不同 prompt 与不同 signature，只能作为不同条件下的复现记录，不能与 8192/256 计算速度比例。1024/256 直接失败，说明预留宽度过小可能触发维度越界。2048 档两次结果散布较大，不据此下点值结论。
 
-## 十、原始记录
+## 十、MTP 聚合接受比例实测
 
-模型实剖与采样确定性的采集现场原始记录，以文件形式存于 `experiments/data/model_anatomy.md` 与 `experiments/data/temperature_test.md`，本附录不重复收录。
+Python SDK 将日志级别设为 VERBOSE 后，drafter 析构时会打印 drafted 与 verified token 计数。完整记录见 `experiments/data/mtp_acceptance.md`。
+
+| 输入 | drafted | verified | 聚合比例 \\(r=verified/drafted\\) | \\(G=3\\) 时每轮期望产出 \\(1+3r\\) |
+|---|---:|---:|---:|---:|
+| 机器人学习绘画的 100 词故事 | 213 | 56 | 0.2629 | 1.79 token |
+| Fibonacci 函数及解释 | 3069 | 3054 | 0.9951 | 3.99 token |
+
+这里的 \\(r\\) 是每轮接受前缀长度的聚合比例，不是“各位置具有相同独立命中概率”的 \\(p\\)。端到端加速还取决于 drafter、verify 和固定调度开销，不能只由 \\(r\\) 推出。两个提示词记录到的比例不同，但样本不足以建立一般性的内容规律。benchmark 的 pad 合成输入没有记录 \\(r\\)，因此本表不作为主基准开关结果的直接归因。
+
+## 十一、约束解码开/关工具调用观察
+
+Python SDK 在 Gemma 4 E4B、GPU 后端上比较 `enable_constrained_decoding=True/False`。原始记录见 `experiments/data/constraint_test.md`。
+
+| 场景 | 温度 | 开启约束 | 关闭约束 |
+|---|---:|---:|---:|
+| `get_weather(city)` | 0 | 2/2 结构合法 | 2/2 结构合法 |
+| `get_forecast(city, days, unit)` | 0 | 2/2 结构合法 | 2/2 结构合法 |
+| `get_forecast(city, days, unit)` | 1.0 | 2/2 结构合法 | 2/2 结构合法 |
+
+共 12 次生成，开启与关闭各 6 次；所测样本均未出现结构错误。该样本量不足以估计失败率，也未覆盖多工具混淆、嵌套 JSON、参数语义和函数执行结果。结论仅限于“在这些样本中未观察到差异”。
+
+## 十二、未形成指标的扩展记录
+
+- Android 峰值内存：无可报告数据；原始 CSV 位于 `experiments/data/android_*.csv`，采集脚本为 `experiments/android_bench.sh`。
+- NPU 端到端推理：无可报告数据；加载与失败阶段记录于 `experiments/data/npu_enablement.md`。
 
 ## 十三、扩展基准（Android 真机，2026-07-18 采集）
 
-> 与主基准（Mac M5 Pro）**分开标注、不混算**。设备：P0210（qcom，Android 16）；二进制：自编译 `litert_lm_advanced_main`（arm64，v0.13.1）；模型同主基准；`--max_num_tokens` 按上下文对齐（256/1024 → 4096，4096 → 8192），-d 128，各 3 次取中位数。脚本 `experiments/android_bench.sh`，原始数据 `experiments/data/android_*.csv`。
+> 本节数据与主基准（Mac M5 Pro）分开标注，不参与混合计算。设备：P0210（qcom，Android 16）；二进制：自编译 `litert_lm_advanced_main`（arm64，v0.13.1）；模型同主基准。真机 CLI 的 `max_num_tokens` 默认取 prompt 与 decode 长度之和，本次显式对齐为 256/1024 → 4096、4096 → 8192。decode 长度为 128 token，各条件运行 3 次取中位数。脚本为 `experiments/android_bench.sh`，原始数据位于 `experiments/data/android_*.csv`。
 
-**主基准（真机，中位数 tok/s）：**
+### Android 主基准
 
-| backend | 上下文 | prefill tok/s | decode tok/s | TTFT (s) |
+表中数据为真机各条件的吞吐中位数：
+
+| backend | 上下文 | prefill tokens/s | decode tokens/s | TTFT (s) |
 |---|---|---|---|---|
 | cpu | 256 | 19.9 | 9.9 | 13.0 |
 | cpu | 1024 | 79.1 | 10.0 | 13.0 |
@@ -154,42 +157,35 @@
 | gpu | 1024 | 957.2 | 18.8 | 1.12 |
 | gpu | 4096 | 858.6 | 17.4 | 4.83 |
 
-**MTP 开关（真机，context 1024，decode tok/s）：**
+### MTP 开关
+
+以下结果来自真机，context 为 1024，指标为 decode tokens/s：
 
 | MTP | cpu | gpu |
 |---|---|---|
 | 关 | 10.0 | 18.0 |
-| 强制开 | **2.8（慢 3.6 倍）** | **12.6（慢约 30%）** |
+| 强制开 | 2.8（降至关闭模式的约 28%） | 12.6（比关闭模式低约 30%） |
 
-注意：benchmark 的负载是「prompt + pad 填充」（`ids.resize`，`session_utils.cc:68-73`），不是自然文本，drafter 接受率在这类负载下天然塌掉——MTP 在此必亏，属 harness 固有属性。换用自然文本（`benchmark_prefill_tokens=0`）后，同一台手机符号翻转：
+benchmark 的负载是“prompt + pad 填充”（`ids.resize`，`runtime/core/session_utils.cc:68-73`），不是自然文本。在该负载下，强制开启 MTP 的端到端吞吐低于关闭模式；本次运行没有记录聚合接受比例，不能把负收益只归因于接受比例。换用自然代码文本（`benchmark_prefill_tokens=0`）后，同一台手机的单次观测高于关闭模式：
 
 | 负载 | cpu | gpu |
 |---|---|---|
 | 自然代码文本，关 | 11.6 | 16.0 |
-| 自然代码文本，强制开 | **12.6（+9%）** | **32.0（整 2 倍）** |
+| 自然代码文本，强制开 | 12.6（约 +9%） | 32.0（约 2.0 倍） |
 
-实录 `experiments/data/mtp_natural_phone.md`。
+实录见 `experiments/data/mtp_natural_phone.md`。这组自然文本结果每个条件只运行 1 次，prompt、decode 长度和采集入口也不完全相同。它只能说明观测结果随负载与后端变化，不能估计稳定加速比。
 
-**加速比上限（2026-07-18 补测，实录 `experiments/data/mtp_ceiling.md`）**：G = 3 已从 verify signature 核实（`input_pos` 形状 [4]）。最优手法（温度 0、纯代码长生成）下：Mac GPU 58.7 → 133.9 tok/s（**2.28×**）、手机 GPU 18.6 → 37.4 tok/s（**2.01×**）。按 speedup 上限 = 4 ÷ (1 + 3c) 反解：Mac c ≈ 0.24（上限 2.31×）、手机 c ≈ 0.32（上限 2.03×）——两台设备均已见顶。官方「约 3 倍」需 c ≈ 0.11，推测属 Pixel Tensor ARTISAN 路径或服务级 GPU。
+### 自然代码文本补测
 
-**CPU 线程数扫描（真机，context 1024，tok/s）：**
+本次补测采集于 2026-07-18，实录见 `experiments/data/mtp_ceiling.md`。verify signature 的 `input_pos` 形状为 [4]，因此 G=3。温度 0、长代码生成时，Mac GPU 从 58.7 增至 133.9 tokens/s（2.28 倍），手机 GPU 从 18.6 增至 37.4 tokens/s（2.01 倍）。若额外假设每轮都产出最大值 4，可由端到端结果反推出有效成本参数约 0.25 和 0.33。该参数不是 drafter 单步成本的独立测量，也不能证明设备已经达到理论上限。
+
+### CPU 线程数扫描
+
+以下结果来自真机，context 为 1024，指标为 tokens/s：
 
 | 线程数 | prefill | decode |
 |---:|---:|---:|
-| 1 | 21.6 | 4.5 |
+| 1 | 22.8 | 4.4 |
 | 2 | 45.3 | 7.4 |
 | 4 | 77.9 | 10.1 |
-| 8 | 131.6 | 13.5 |
-
-**峰值内存（context 1024，预留 4096，Peak private footprint）：** cpu **3268 MB**，gpu **918 MB**——同一模型同一条件，两个后端的峰值内存差约 3.5 倍（cpu 侧 XNNPACK 权重重打包在 RAM 里多一份副本，gpu 侧权重进 GPU 缓冲）。
-
-**NPU 探测（如实记录）**：`--backend=npu` 未能执行推理，但一次完整打通尝试把约束钉到了机制上（全程实录 `experiments/data/npu_enablement.md`）。三层组件全部就位并逐级打通：设备自带 QNN 运行时（/vendor/lib64）、dispatch 桥源码自编译、公开发布的 E2B NPU 打包模型（含 `tf_lite_aux` 段），一直到 QNN context 创建成功。执行最终卡在两层：其一，生产 ROM 拒绝未签名 DSP skel（`qnn-platform-validator` 实测，"Please use testsig if using unsigned images"）；其二，模型内嵌 context 面向 sm8750 预编译，与本机（canoe，HTP V81）架构不匹配，dispatch 路径无 JIT 兜底。这佐证并具体化了第 8 章「NPU 最封闭」：签名绑定 + 架构绑定，以及按 SoC 分别发包的根因。
-
-**解读（与正文对账）：**
-
-1. **Roofline 在第二台设备上再验**：真机 gpu prefill 与 Mac 相当（957 vs 999 tok/s，算力差距小），decode 却只有 Mac 的约三分之一（18.8 vs 50.6，内存带宽差距大）。prefill 跟算力走、decode 跟带宽走，跨设备依然成立。
-2. **真机 MTP 双端变慢**：强制开启后 cpu 慢 3.6 倍、gpu 慢约 30%——接受率经济学（第 9 章）的现场版，也是 `LiteRT-LM#2227` 的同类现象：drafter 在此硬件的 c_draft/c_base 与接受率组合下，加速比跌破 1。
-3. **线程数近线性扩展到 8**：默认 4 线程在此机不是最优点；且 decode 在 8 线程仍未饱和——「带宽先封顶」的拐点比预想靠后，线程调优在真机上值得做（第 8 章）。
-4. **后端决定内存形态**：cpu 峰值内存是 gpu 的约 3.5 倍——第 1 章的内存账要按后端重算（权重重打包的副本开销）。
-
-**采集环境注记**：真机 benchmark 的 max_num_tokens 默认取 prompt+decode 长度（与 Python CLI 的 4096 阶梯推导不同），小 prompt 会直接触发 `dynamic_update_slice` 越界——预留宽度与工单形状的边界问题（第 6 章）在第二个平台上复现。
+| 8 | 131.6 | 13.4 |

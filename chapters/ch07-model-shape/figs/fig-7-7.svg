@@ -1,0 +1,96 @@
+<svg viewBox="0 0 920 570" width="920" height="570" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LoRA ID 从未登记到待用数据、已物化对象和当前选择的生命周期，以及同 ID 重新加载仍复用旧对象的旁路">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .active { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.7; }
+      .keep { fill: var(--fig-bg, #ffffff); stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.5; }
+      .danger { fill: var(--fig-danger-soft, #ffebe9); stroke: var(--fig-danger, #cf222e); stroke-width: 1.5; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 15px; font-weight: 700; }
+      .head { fill: var(--fig-accent, #0b57d0); font-size: 11.5px; font-weight: 700; }
+      .keephead { fill: var(--fig-accent-2, #6639ba); font-size: 10.5px; font-weight: 700; }
+      .dangerhead { fill: var(--fig-danger, #cf222e); font-size: 10.5px; font-weight: 700; }
+      .body { fill: var(--fig-text-soft, #57606a); font-size: 9.7px; }
+      .small { fill: var(--fig-text-dim, #8b949e); font-size: 9px; }
+      .code { fill: var(--fig-text, #1f2328); font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 10px; }
+      .edge { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; fill: none; }
+      .keep-edge { stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+      .danger-edge { stroke: var(--fig-danger, #cf222e); stroke-width: 1.7; fill: none; }
+      .no-edge { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.4; fill: none; stroke-dasharray: 4 4; }
+    </style>
+    <marker id="f77-arrow" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+    <marker id="f77-arrow-keep" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent-2, #6639ba)"/>
+    </marker>
+    <marker id="f77-arrow-danger" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-danger, #cf222e)"/>
+    </marker>
+  </defs>
+  <text class="title" x="460" y="27" text-anchor="middle">LoRA ID 生命周期：待用数据、已物化对象与当前选择彼此独立</text>
+  <rect class="box" x="24" y="74" width="112" height="78" rx="7"/>
+  <text class="head" x="80" y="100" text-anchor="middle">未登记 ID=A</text>
+  <text class="body" x="80" y="124" text-anchor="middle">两个 map 均无条目</text>
+  <text class="body" x="80" y="141" text-anchor="middle">current 也未指向 A</text>
+  <rect class="active" x="181" y="62" width="190" height="102" rx="7"/>
+  <text class="head" x="276" y="87" text-anchor="middle">lora_data_[A]：待用</text>
+  <text class="body" x="276" y="111" text-anchor="middle">保存 LoraData 与文件映射</text>
+  <text class="body" x="276" y="130" text-anchor="middle">尚未创建后端 tensor buffer</text>
+  <text class="small" x="276" y="149" text-anchor="middle">LoadLoRA 只完成登记</text>
+  <rect class="keep" x="421" y="50" width="288" height="126" rx="7"/>
+  <text class="keephead" x="565" y="75" text-anchor="middle">loras_[A]：已物化</text>
+  <rect class="box" x="438" y="91" width="116" height="62" rx="5"/>
+  <text class="body" x="496" y="114" text-anchor="middle">源 LoraData</text>
+  <text class="small" x="496" y="134" text-anchor="middle">文件映射继续保留</text>
+  <rect class="box" x="566" y="91" width="126" height="62" rx="5"/>
+  <text class="body" x="629" y="114" text-anchor="middle">全部 LoRA 输入 buffer</text>
+  <text class="small" x="629" y="134" text-anchor="middle">随对象共同保留</text>
+  <rect class="active" x="758" y="74" width="138" height="78" rx="7"/>
+  <text class="head" x="827" y="100" text-anchor="middle">current_lora_id_</text>
+  <text class="code" x="827" y="124" text-anchor="middle">= A</text>
+  <text class="body" x="827" y="141" text-anchor="middle">本次推理选择 A</text>
+  <path class="edge" d="M137,113 H174" marker-end="url(#f77-arrow)"/>
+  <text class="small" x="156" y="101" text-anchor="middle">LoadLoRA(A)</text>
+  <path class="edge" d="M372,113 H414" marker-end="url(#f77-arrow)"/>
+  <text class="small" x="393" y="101" text-anchor="middle">首次 UseLoRA(A)</text>
+  <path class="edge" d="M710,113 H751" marker-end="url(#f77-arrow)"/>
+  <text class="small" x="730" y="101" text-anchor="middle">选择</text>
+  <text class="small" x="460" y="198" text-anchor="middle">首次 UseLoRA 才创建后端 buffer；已物化对象同时保留源数据与各 signature 对应的 buffer</text>
+  <rect class="box" x="24" y="227" width="872" height="154" rx="8"/>
+  <text class="head" x="48" y="252">切换到已物化的 other：只改变当前选择</text>
+  <rect class="keep" x="168" y="268" width="229" height="79" rx="6"/>
+  <text class="keephead" x="282" y="292" text-anchor="middle">loras_[A]</text>
+  <text class="body" x="282" y="314" text-anchor="middle">原对象、源 LoraData 与 buffer</text>
+  <text class="body" x="282" y="332" text-anchor="middle">继续留在 loras_</text>
+  <rect class="keep" x="430" y="268" width="203" height="79" rx="6"/>
+  <text class="keephead" x="531" y="292" text-anchor="middle">loras_[other]</text>
+  <text class="body" x="531" y="314" text-anchor="middle">另一个已物化对象</text>
+  <text class="body" x="531" y="332" text-anchor="middle">与 A 同时保留</text>
+  <rect class="active" x="696" y="268" width="174" height="79" rx="6"/>
+  <text class="head" x="783" y="292" text-anchor="middle">current_lora_id_</text>
+  <text class="code" x="783" y="316" text-anchor="middle">A → other</text>
+  <text class="body" x="783" y="334" text-anchor="middle">UseLoRA(other)</text>
+  <path class="keep-edge" d="M398,307 H422" marker-end="url(#f77-arrow-keep)"/>
+  <text class="small" x="410" y="294" text-anchor="middle">并存</text>
+  <path class="edge" d="M634,307 H689" marker-end="url(#f77-arrow)"/>
+  <path class="no-edge" d="M282,349 V366 H114"/>
+  <line x1="104" y1="357" x2="124" y2="377" stroke="var(--fig-danger, #cf222e)" stroke-width="2"/>
+  <line x1="124" y1="357" x2="104" y2="377" stroke="var(--fig-danger, #cf222e)" stroke-width="2"/>
+  <text class="small" x="134" y="371">接口中没有逐 ID 卸载边；切换 current 不删除 loras_[A]</text>
+  <rect class="danger" x="24" y="414" width="872" height="119" rx="8"/>
+  <text class="dangerhead" x="48" y="440">同 ID 重新加载：新数据不会替换已经物化的对象</text>
+  <rect class="box" x="52" y="458" width="171" height="51" rx="6"/>
+  <text class="dangerhead" x="137" y="479" text-anchor="middle">LoadLoRA(A, 新数据)</text>
+  <text class="body" x="137" y="497" text-anchor="middle">写入 lora_data_[A]</text>
+  <rect class="box" x="298" y="458" width="171" height="51" rx="6"/>
+  <text class="dangerhead" x="383" y="479" text-anchor="middle">UseLoRA(A)</text>
+  <text class="body" x="383" y="497" text-anchor="middle">先查 loras_</text>
+  <rect class="keep" x="544" y="451" width="245" height="65" rx="6"/>
+  <text class="keephead" x="666" y="475" text-anchor="middle">仍选择旧 loras_[A]</text>
+  <text class="body" x="666" y="495" text-anchor="middle">旧对象与全部 buffer 保持不变</text>
+  <path class="danger-edge" d="M224,483 H291" marker-end="url(#f77-arrow-danger)"/>
+  <path class="danger-edge" d="M470,483 H537" marker-end="url(#f77-arrow-danger)"/>
+  <path class="danger-edge" d="M137,510 V548 H666 V523" marker-end="url(#f77-arrow-danger)"/>
+  <text class="dangerhead" x="402" y="562" text-anchor="middle">新 lora_data_[A] 留在待用 map，未重新物化</text>
+</svg>

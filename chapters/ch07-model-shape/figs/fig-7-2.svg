@@ -1,53 +1,48 @@
-<svg viewBox="0 0 760 320" width="760" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="mmap 按需分页与分段并行加载">
-  <style>
-    text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
-    .b{fill:var(--fig-surface, #f6f8fa);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
-    .bl{fill:var(--fig-accent-soft, #e8f0fe);stroke:var(--fig-accent, #0b57d0);stroke-width:1.5}
-    .hw{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
-    .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
-    .tw{fill:var(--fig-accent, #0b57d0);font-size:12.5px;font-weight:700}
-    .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
-    .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
-    .edge{stroke:var(--fig-accent, #0b57d0);stroke-width:1.8;fill:none}
-    .edged{stroke:var(--fig-text-dim, #8b949e);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
-  </style>
+<svg viewBox="0 0 720 360" width="720" height="360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label=".litertlm 头部与 section 布局">
   <defs>
-    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
-      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
-    </marker>
-    <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
-      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
-    </marker>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .hdr { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+      .sec { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .meta { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; }
+      .t { fill: var(--fig-text, #1f2328); }
+      .ts { fill: var(--fig-text-soft, #57606a); }
+      .accent { fill: var(--fig-accent, #0b57d0); }
+      .edge { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.2; fill: none; stroke-dasharray: 3 3; }
+    </style>
   </defs>
-  <text class="t" x="380" y="26" text-anchor="middle">mmap 按需分页 + 两件重活并行</text>
-  <!-- 左：文件与 mmap -->
-  <text class="tw" x="28" y="64">磁盘上的 .litertlm</text>
-  <rect class="hw" x="28" y="76" width="150" height="34" rx="6"/><text class="ts" x="103" y="98" text-anchor="middle">FlatBuffer 头</text>
-  <rect class="bl" x="28" y="114" width="150" height="60" rx="6"/><text class="ts" x="103" y="140" text-anchor="middle">段：权重（数 GiB）</text>
-  <text class="td" x="103" y="160" text-anchor="middle">按页映射，不预先读入</text>
-  <rect class="b" x="28" y="178" width="150" height="34" rx="6"/><text class="ts" x="103" y="200" text-anchor="middle">段：tokenizer / 元数据</text>
-  <path class="edge" d="M186,96 H260" marker-end="url(#ar)"/>
-  <text class="td" x="223" y="88" text-anchor="middle">只读头</text>
-  <path class="edged" d="M186,144 H260" marker-end="url(#ard)"/>
-  <text class="td" x="223" y="136" text-anchor="middle">mmap</text>
-  <rect class="b" x="264" y="76" width="150" height="136" rx="8"/>
-  <text class="ts" x="339" y="98" text-anchor="middle">虚拟地址空间</text>
-  <text class="td" x="339" y="126" text-anchor="middle">页表建立映射</text>
-  <text class="td" x="339" y="146" text-anchor="middle">首次访问 → 缺页调入</text>
-  <text class="td" x="339" y="166" text-anchor="middle">内存压力 → 干净页可回收</text>
-  <text class="td" x="339" y="196" text-anchor="middle">工作集 ≈ 全量权重（decode 每步都读）</text>
-  <!-- 右：并行加载泳道 -->
-  <text class="tw" x="460" y="64">parallel_file_section_loading（默认开）</text>
-  <text class="td" x="460" y="84">并行的是两件重活，不是逐段读盘</text>
-  <text class="td" x="460" y="116">主线程</text>
-  <rect class="b" x="520" y="98" width="100" height="30" rx="6"/><text class="ts" x="570" y="118" text-anchor="middle">读头/建段表</text>
-  <rect class="bl" x="628" y="98" width="104" height="30" rx="6"/><text class="ts" x="680" y="118" text-anchor="middle">模型加载·编译准备</text>
-  <path class="edge" d="M620,113 H624" marker-end="url(#ar)"/>
-  <text class="td" x="460" y="164">工作线程</text>
-  <rect class="bl" x="520" y="146" width="150" height="30" rx="6"/><text class="ts" x="595" y="166" text-anchor="middle">tokenizer 构建（HF 含 zlib 解压）</text>
-  <path class="edged" d="M680,128 V190 H570 V210" marker-end="url(#ard)"/>
-  <path class="edged" d="M595,176 V210" marker-end="url(#ard)"/>
-  <rect class="bl" x="520" y="214" width="150" height="32" rx="6"/><text class="ts" x="595" y="235" text-anchor="middle">就绪：冷启动缩短</text>
-  <!-- 底部：madvise 注 -->
-  <text class="td" x="380" y="286" text-anchor="middle">平台分叉：映射后按平台给 madvise 建议（第 7 章），编译产物另可缓存到磁盘（--cache disk）</text>
+  <text class="t" x="360" y="27" text-anchor="middle" style="font-size:15px;font-weight:700">一个 .litertlm 文件：头部 + section 数据</text>
+  <g>
+    <rect class="hdr" x="190" y="52" width="300" height="54" rx="5"/>
+    <text class="accent" x="340" y="73" text-anchor="middle" style="font-size:12px;font-weight:700">FlatBuffer 头部</text>
+    <text class="ts" x="340" y="91" text-anchor="middle" style="font-size:10.5px">版本、系统元数据、SectionObject 目录</text>
+    <rect class="sec" x="190" y="114" width="300" height="48" rx="5"/>
+    <text class="t" x="340" y="135" text-anchor="middle" style="font-size:11.5px;font-weight:700">TFLiteModel / TFLiteWeights</text>
+    <text class="ts" x="340" y="151" text-anchor="middle" style="font-size:10px">权重表示由模型产物与后端约定决定</text>
+    <rect class="sec" x="190" y="170" width="300" height="42" rx="5"/>
+    <text class="t" x="340" y="195" text-anchor="middle" style="font-size:11px">SP_Tokenizer / HF_Tokenizer_Zlib</text>
+    <rect class="meta" x="190" y="220" width="300" height="64" rx="5"/>
+    <text class="t" x="340" y="241" text-anchor="middle" style="font-size:11.5px;font-weight:700">LlmMetadataProto</text>
+    <text class="ts" x="340" y="259" text-anchor="middle" style="font-size:10px">start / stop token、prompt 模板、采样参数</text>
+    <text class="ts" x="340" y="275" text-anchor="middle" style="font-size:10px">以及 LlmModelType</text>
+    <rect class="sec" x="190" y="292" width="300" height="34" rx="5"/>
+    <text class="t" x="340" y="314" text-anchor="middle" style="font-size:10.5px">GenericBinaryData 等可选 section</text>
+  </g>
+  <text class="accent" x="50" y="125" style="font-size:11px;font-weight:700">SectionObject</text>
+  <text class="ts" x="50" y="145" style="font-size:10px">data_type</text>
+  <text class="ts" x="50" y="162" style="font-size:10px">begin_offset</text>
+  <text class="ts" x="50" y="179" style="font-size:10px">end_offset</text>
+  <text class="ts" x="50" y="196" style="font-size:10px">items（可选键值）</text>
+  <path class="edge" d="M158,161 H188"/>
+  <text class="accent" x="522" y="124" style="font-size:11px;font-weight:700">结构边界</text>
+  <text class="ts" x="522" y="145" style="font-size:10px">键名是字符串，可扩展</text>
+  <text class="ts" x="522" y="162" style="font-size:10px">值限定为 VData union 类型</text>
+  <text class="ts" x="522" y="179" style="font-size:10px">后续 section 从 16 KiB 边界开始</text>
+  <path class="edge" d="M492,161 H516"/>
+  <text class="ts" x="522" y="215" style="font-size:10px">推测解码支持并非独立段：</text>
+  <text class="ts" x="522" y="232" style="font-size:10px">代码检查 TFLiteModel 的</text>
+  <text class="ts" x="522" y="249" style="font-size:10px">model_type section item</text>
+  <path class="edge" d="M492,138 H506 V215 H516"/>
+  <text class="ts" x="360" y="343" text-anchor="middle" style="font-size:10.5px">头部给出目录；当前 loader 先记录范围</text>
+  <text class="ts" x="360" y="354" text-anchor="middle" style="font-size:10.5px">调用方请求数据时，再取得相应 section buffer</text>
 </svg>

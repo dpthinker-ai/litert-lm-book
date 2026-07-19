@@ -1,66 +1,62 @@
-<svg viewBox="0 0 720 420" width="720" height="420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="一次 decode step 的完整循环">
-  <style>
-    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    .box  { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .hot  { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
-    .kv   { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .t  { fill: var(--fig-text, #1f2328); }
-    .ts { fill: var(--fig-text-soft, #57606a); }
-    .accent { fill: var(--fig-accent, #0b57d0); }
-    .a2 { fill: var(--fig-accent-2, #6639ba); }
-    .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
-    .loop { stroke: var(--fig-accent, #0b57d0); stroke-width: 2; fill: none; }
-  </style>
+<svg viewBox="0 0 760 440" width="760" height="440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decode 循环中取消检查、内部与外部采样、文本暂存、流式回调和停止判断的顺序">
   <defs>
-    <marker id="a5"  orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker>
-    <marker id="a5b" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent, #0b57d0)"/></marker>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .hot { fill: var(--fig-bg, #ffffff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+      .kv { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .t { fill: var(--fig-text, #1f2328); }
+      .ts { fill: var(--fig-text-soft, #57606a); }
+      .accent { fill: var(--fig-accent, #0b57d0); }
+      .a2 { fill: var(--fig-accent-2, #6639ba); }
+      .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
+      .loop { stroke: var(--fig-accent, #0b57d0); stroke-width: 2; fill: none; }
+    </style>
+    <marker id="a5" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/>
+    </marker>
+    <marker id="a5b" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
   </defs>
-  <text class="t" x="360" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">一次 decode step（循环直到 ShouldStop）</text>
-  <!-- 上一个 token -->
-  <rect class="box" x="40" y="70" width="120" height="46" rx="6"/>
-  <text class="t" x="100" y="90" text-anchor="middle" style="font-size:12px;font-weight:700">上一个 token</text>
-  <text class="ts" x="100" y="107" text-anchor="middle" style="font-size:10px">喂进模型</text>
-  <!-- 前向 -->
-  <rect class="box" x="230" y="70" width="150" height="46" rx="6"/>
-  <text class="t" x="305" y="90" text-anchor="middle" style="font-size:12px;font-weight:700">模型前向</text>
-  <text class="ts" x="305" y="107" text-anchor="middle" style="font-size:10px">读全部权重 → logits</text>
-  <!-- KV cache 侧 -->
-  <rect class="kv" x="230" y="140" width="150" height="34" rx="6"/>
-  <text class="t" x="305" y="162" text-anchor="middle" style="font-size:11px">KV cache（读+追加）</text>
-  <!-- 分岔：内部/外部 -->
-  <rect class="hot" x="450" y="52" width="230" height="46" rx="6"/>
-  <text class="accent" x="565" y="72" text-anchor="middle" style="font-size:11px;font-weight:700">内部采样：executor 一步出 token</text>
-  <text class="ts" x="565" y="89" text-anchor="middle" style="font-size:9.5px">片上采样，省 logits 搬运（第 8 章）</text>
-  <rect class="box" x="450" y="110" width="230" height="52" rx="6"/>
-  <text class="a2" x="565" y="128" text-anchor="middle" style="font-size:11px;font-weight:700">外部采样：DecodeLogits</text>
-  <text class="ts" x="565" y="144" text-anchor="middle" style="font-size:9.5px">logits 处理（重复惩罚/约束）</text>
-  <text class="ts" x="565" y="157" text-anchor="middle" style="font-size:9.5px">→ 采样器（第 10 章）</text>
-  <!-- 采样出 token id -->
-  <rect class="box" x="450" y="200" width="230" height="40" rx="6"/>
-  <text class="t" x="565" y="224" text-anchor="middle" style="font-size:12px;font-weight:700">采样出 token id</text>
-  <!-- 转文本 + 缓冲 -->
-  <rect class="box" x="450" y="270" width="230" height="52" rx="6"/>
-  <text class="t"  x="565" y="290" text-anchor="middle" style="font-size:11px;font-weight:700">转文本 + 流式输出</text>
-  <text class="ts" x="565" y="306" text-anchor="middle" style="font-size:9.5px">停止词暂存 · BPE 半字暂存</text>
-  <!-- ShouldStop -->
-  <rect class="hot" x="230" y="276" width="150" height="46" rx="6"/>
-  <text class="accent" x="305" y="296" text-anchor="middle" style="font-size:12px;font-weight:700">ShouldStop?</text>
-  <text class="ts" x="305" y="312" text-anchor="middle" style="font-size:9.5px">停止token/超长/取消</text>
-  <!-- 出口 -->
-  <rect class="box" x="40" y="276" width="120" height="46" rx="6"/>
-  <text class="t" x="100" y="300" text-anchor="middle" style="font-size:12px;font-weight:700">结束 → 交回</text>
-  <!-- edges -->
-  <path class="edge" marker-end="url(#a5)" d="M160,93 H228"/>
-  <path class="edge" marker-end="url(#a5)" d="M305,116 V138"/>
-  <path class="edge" marker-end="url(#a5)" d="M380,86 C 415,80 415,75 448,75"/>
-  <path class="edge" marker-end="url(#a5)" d="M380,96 C 415,120 415,130 448,132"/>
-  <path class="edge" marker-end="url(#a5)" d="M565,162 V198"/>
-  <path class="edge" marker-end="url(#a5)" d="M565,240 V268"/>
-  <path class="edge" marker-end="url(#a5)" d="M448,296 H382"/>
-  <text class="ts" x="415" y="290" text-anchor="middle" style="font-size:10px">每步</text>
-  <path class="edge" marker-end="url(#a5)" d="M230,299 H162"/>
-  <text class="ts" x="196" y="291" text-anchor="middle" style="font-size:10px">是</text>
-  <!-- 循环回边（否） -->
-  <path class="loop" marker-end="url(#a5b)" d="M305,276 V210 C 200,210 160,180 100,180 V118"/>
-  <text class="accent" x="150" y="205" text-anchor="middle" style="font-size:11px;font-weight:700">否 → 下一个 decode step</text>
+  <text class="t" x="380" y="25" text-anchor="middle" style="font-size:15px;font-weight:700">一次 decode 迭代的控制顺序</text>
+  <rect class="hot" x="30" y="65" width="150" height="54" rx="6"/>
+  <text class="accent" x="105" y="87" text-anchor="middle" style="font-size:12px;font-weight:700">迭代开始</text>
+  <text class="ts" x="105" y="105" text-anchor="middle" style="font-size:10px">检查 cancelled；为真则进入取消处理</text>
+  <rect class="box" x="230" y="65" width="160" height="54" rx="6"/>
+  <text class="t" x="310" y="87" text-anchor="middle" style="font-size:12px;font-weight:700">模型前向</text>
+  <text class="ts" x="310" y="105" text-anchor="middle" style="font-size:10px">执行 decode signature</text>
+  <rect class="kv" x="230" y="142" width="160" height="36" rx="6"/>
+  <text class="t" x="310" y="165" text-anchor="middle" style="font-size:11px">KV cache（读取并追加）</text>
+  <rect class="hot" x="455" y="49" width="270" height="56" rx="6"/>
+  <text class="accent" x="590" y="71" text-anchor="middle" style="font-size:11px;font-weight:700">内部采样：executor.Decode()</text>
+  <text class="ts" x="590" y="90" text-anchor="middle" style="font-size:9.5px">Tasks 层只接收 token id；执行位置由后端决定</text>
+  <rect class="box" x="455" y="123" width="270" height="62" rx="6"/>
+  <text class="a2" x="590" y="145" text-anchor="middle" style="font-size:11px;font-weight:700">外部采样：DecodeLogits → Sampler</text>
+  <text class="ts" x="590" y="163" text-anchor="middle" style="font-size:9.5px">Sampler 可在 CPU 或设备侧执行</text>
+  <text class="ts" x="590" y="178" text-anchor="middle" style="font-size:9.5px">是否复制 logits 取决于内存可访问性</text>
+  <rect class="box" x="455" y="222" width="270" height="42" rx="6"/>
+  <text class="t" x="590" y="248" text-anchor="middle" style="font-size:12px;font-weight:700">得到 token id</text>
+  <rect class="box" x="455" y="292" width="270" height="64" rx="6"/>
+  <text class="t" x="590" y="314" text-anchor="middle" style="font-size:11px;font-weight:700">停止检测 → BPE 解码 → 停止前缀暂存</text>
+  <text class="ts" x="590" y="333" text-anchor="middle" style="font-size:9.5px">至少一个候选有文本时：kProcessing 回调</text>
+  <text class="ts" x="590" y="348" text-anchor="middle" style="font-size:9.5px">无可发送文本则本轮不回调</text>
+  <rect class="hot" x="230" y="301" width="160" height="54" rx="6"/>
+  <text class="accent" x="310" y="323" text-anchor="middle" style="font-size:12px;font-weight:700">ShouldStop?</text>
+  <text class="ts" x="310" y="342" text-anchor="middle" style="font-size:9.5px">停止序列 / 基准步数 / token 上限</text>
+  <rect class="box" x="30" y="301" width="150" height="54" rx="6"/>
+  <text class="t" x="105" y="323" text-anchor="middle" style="font-size:11px;font-weight:700">返回最终状态</text>
+  <text class="ts" x="105" y="342" text-anchor="middle" style="font-size:9.5px">外层发送最终回调</text>
+  <path class="edge" marker-end="url(#a5)" d="M180,92 H228"/>
+  <path class="edge" marker-end="url(#a5)" d="M310,119 V140"/>
+  <path class="edge" marker-end="url(#a5)" d="M390,82 C420,77 425,77 453,77"/>
+  <path class="edge" marker-end="url(#a5)" d="M390,103 C420,135 425,151 453,153"/>
+  <path class="edge" marker-end="url(#a5)" d="M725,77 C746,115 746,225 727,241"/>
+  <path class="edge" marker-end="url(#a5)" d="M590,185 V220"/>
+  <path class="edge" marker-end="url(#a5)" d="M590,264 V290"/>
+  <path class="edge" marker-end="url(#a5)" d="M453,328 H392"/>
+  <path class="edge" marker-end="url(#a5)" d="M230,328 H182"/>
+  <text class="ts" x="205" y="319" text-anchor="middle" style="font-size:10px">是</text>
+  <path class="loop" marker-end="url(#a5b)" d="M310,355 V401 H105 V121"/>
+  <text class="accent" x="245" y="394" text-anchor="middle" style="font-size:10.5px;font-weight:700">否：下一轮重新检查 cancelled</text>
 </svg>

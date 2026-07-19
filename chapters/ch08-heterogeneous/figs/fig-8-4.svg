@@ -1,0 +1,59 @@
+<svg viewBox="0 0 900 500" width="900" height="500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="异构 buffer 直接交接与退化路径判定">
+  <defs>
+    <style>text{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}.title{fill:var(--fig-text,#1f2328);font-size:16px;font-weight:700}.box{fill:var(--fig-surface,#f6f8fa);stroke:var(--fig-border,#d0d7de);stroke-width:1.4}.check{fill:var(--fig-bg,#fff);stroke:var(--fig-accent,#0b57d0);stroke-width:1.6}.ok{fill:var(--fig-accent-soft,#e8f0fe);stroke:var(--fig-accent,#0b57d0);stroke-width:1.6}.copy{fill:var(--fig-accent-2-soft,#f2ecff);stroke:var(--fig-accent-2,#6639ba);stroke-width:1.6}.wait{fill:var(--fig-surface-2,#eef1f5);stroke:var(--fig-text-soft,#57606a);stroke-width:1.5}.t{fill:var(--fig-text,#1f2328);font-size:12px;font-weight:700}.ts{fill:var(--fig-text-soft,#57606a);font-size:10.5px}.td{fill:var(--fig-text-dim,#8b949e);font-size:10px}.edge{stroke:var(--fig-text-soft,#57606a);stroke-width:1.5;fill:none}.yes{stroke:var(--fig-accent,#0b57d0);stroke-width:1.6;fill:none}.no{stroke:var(--fig-accent-2,#6639ba);stroke-width:1.6;fill:none}.dash{stroke:var(--fig-text-dim,#8b949e);stroke-width:1.3;fill:none;stroke-dasharray:5 4}</style>
+    <marker id="a84" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft,#57606a)"/></marker>
+    <marker id="a84y" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent,#0b57d0)"/></marker>
+    <marker id="a84n" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent-2,#6639ba)"/></marker>
+  </defs>
+  <text class="title" x="450" y="27" text-anchor="middle">buffer 能否直接交接：三个条件与三种退化</text>
+  <rect class="box" x="30" y="78" width="138" height="62" rx="8"/>
+  <text class="t" x="99" y="103" text-anchor="middle">生产者输出</text>
+  <text class="ts" x="99" y="123" text-anchor="middle">TensorBuffer</text>
+  <path class="edge" d="M168,109 H210" marker-end="url(#a84)"/>
+  <rect class="check" x="214" y="70" width="174" height="78" rx="8"/>
+  <text class="t" x="301" y="98" text-anchor="middle">storage 可访问？</text>
+  <text class="ts" x="301" y="119" text-anchor="middle">host / Metal / delegate buffer</text>
+  <path class="yes" d="M388,109 H430" marker-end="url(#a84y)"/>
+  <text class="td" x="409" y="99" text-anchor="middle">是</text>
+  <path class="no" d="M301,148 V202" marker-end="url(#a84n)"/>
+  <text class="td" x="314" y="179">否</text>
+  <rect class="check" x="434" y="70" width="174" height="78" rx="8"/>
+  <text class="t" x="521" y="98" text-anchor="middle">类型与布局相容？</text>
+  <text class="ts" x="521" y="119" text-anchor="middle">dtype · shape · stride</text>
+  <path class="yes" d="M608,109 H650" marker-end="url(#a84y)"/>
+  <text class="td" x="629" y="99" text-anchor="middle">是</text>
+  <path class="no" d="M521,148 V202" marker-end="url(#a84n)"/>
+  <text class="td" x="534" y="179">否</text>
+  <rect class="check" x="654" y="70" width="214" height="78" rx="8"/>
+  <text class="t" x="761" y="98" text-anchor="middle">完成事件可传递？</text>
+  <text class="ts" x="761" y="119" text-anchor="middle">消费者知道生产者何时完成</text>
+  <path class="yes" d="M761,148 V202" marker-end="url(#a84y)"/>
+  <text class="td" x="774" y="179">是</text>
+  <path class="no" d="M868,109 H888 V332 H824" marker-end="url(#a84n)"/>
+  <text class="td" x="879" y="96" text-anchor="middle">否</text>
+  <rect class="copy" x="214" y="206" width="174" height="68" rx="8"/>
+  <text class="t" x="301" y="232" text-anchor="middle">重分配并复制</text>
+  <text class="ts" x="301" y="252" text-anchor="middle">例如 host → device</text>
+  <rect class="copy" x="434" y="206" width="174" height="68" rx="8"/>
+  <text class="t" x="521" y="232" text-anchor="middle">转换并复制</text>
+  <text class="ts" x="521" y="252" text-anchor="middle">例如 FP16 ↔ FP32</text>
+  <rect class="ok" x="654" y="206" width="214" height="68" rx="8"/>
+  <text class="t" x="761" y="232" text-anchor="middle">直接绑定同一存储</text>
+  <text class="ts" x="761" y="252" text-anchor="middle">Duplicate + 事件依赖</text>
+  <rect class="wait" x="630" y="300" width="194" height="64" rx="8"/>
+  <text class="t" x="727" y="326" text-anchor="middle">显式等待后交接</text>
+  <text class="ts" x="727" y="346" text-anchor="middle">不一定复制，但失去重叠</text>
+  <path class="edge" d="M301,274 V392 H430" marker-end="url(#a84)"/>
+  <path class="edge" d="M521,274 V392 H430" marker-end="url(#a84)"/>
+  <path class="yes" d="M761,274 V392 H470" marker-end="url(#a84y)"/>
+  <path class="edge" d="M727,364 V392 H470" marker-end="url(#a84)"/>
+  <rect class="box" x="430" y="372" width="190" height="58" rx="8"/>
+  <text class="t" x="525" y="396" text-anchor="middle">消费者运行</text>
+  <text class="ts" x="525" y="415" text-anchor="middle">kernel 时间只是端到端的一部分</text>
+  <path class="dash" d="M98,321 H570"/>
+  <text class="td" x="98" y="307">源码中的可确认案例</text>
+  <text class="ts" x="98" y="342">约束解码：完整 logits 回读、mask、写回</text>
+  <text class="ts" x="98" y="362">Clone / 多候选 KV：按 PackedSize() 执行 memcpy</text>
+  <text class="ts" x="98" y="382">Metal prefill：输入为 Metal memory 时改用同步 Run</text>
+  <text class="td" x="450" y="476" text-anchor="middle">无显式 memcpy 不能单独证明端到端零拷贝；同步等待也可能发生在后续 buffer 访问处</text>
+</svg>

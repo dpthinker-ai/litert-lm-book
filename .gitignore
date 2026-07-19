@@ -1,7 +1,10 @@
 # mdBook 构建产物
 book/
+.mdbook-src/
 # PDF 导出产物（可由 book/print.html 再生）
 dist/
+# 本地审校截图与中间文件
+tmp/
 # 模型与大文件（绝不入库）
 *.litertlm
 *.tflite

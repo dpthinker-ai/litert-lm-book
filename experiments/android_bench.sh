@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Android 真机扩展基准采集（BOOK_PLAN：扩展基准单独标注，不与 Mac 主基准混算）。
-# 前置：手机已开开发者模式+USB 调试；litert_lm_main（android_arm64）与模型已 push 到设备。
+# 前置：手机已开开发者模式+USB 调试；litert_lm_advanced_main（android_arm64）与模型已 push 到设备。
 # 用法：experiments/android_bench.sh；输出 experiments/data/android_baseline.csv
 set -uo pipefail
 cd "$(dirname "$0")"
@@ -22,11 +22,26 @@ adb shell "test -f $MODEL" 2>/dev/null || die "设备上没有 $MODEL"
 
 # push 参考（手动执行一次）：
 #   adb shell mkdir -p /data/local/tmp/litertlm
-#   adb push bazel-bin/runtime/engine/litert_lm_main /data/local/tmp/litertlm/
-#   adb push <gpu .so 所在目录>/. /data/local/tmp/litertlm/   # gpu 后端需要
+#   adb push bazel-bin/runtime/engine/litert_lm_advanced_main /data/local/tmp/litertlm/
+#   adb push ../LiteRT-LM-v0.13.1/prebuilt/android_arm64/*.so /data/local/tmp/litertlm/
+#   # constraint provider 是进程启动依赖；gpu 后端还需要 accelerator 与 sampler 动态库
 #   adb push ~/.litert-lm/models/gemma-4-e4b/model.litertlm /data/local/tmp/litertlm/
 
 field() { grep -i "$1" | head -1 | grep -oE '[0-9]+\.?[0-9]*' | head -1; }
+
+peak_private_mib() {
+  grep -i 'Peak private footprint' | head -1 |
+    grep -oE '[0-9]+\.?[0-9]*[[:space:]]*Mi?B' | head -1 |
+    awk '{
+      text = $0
+      value = text
+      sub(/[[:space:]]*Mi?B$/, "", value)
+      unit = text
+      sub(/^[0-9.]+[[:space:]]*/, "", unit)
+      if (unit == "MB") value = value * 1000000 / 1048576
+      printf "%.3f\n", value
+    }'
+}
 
 run_one() { # backend context extra_flags -> "prefill,decode,init,ttft,peak_mb"
   local b="$1" c="$2"; shift 2
@@ -40,7 +55,7 @@ run_one() { # backend context extra_flags -> "prefill,decode,init,ttft,peak_mb"
   d="$(printf '%s\n' "$o" | field 'Decode speed')"
   i="$(printf '%s\n' "$o" | field 'Init Total' | awk '{printf "%.3f", $1/1000}')"
   t="$(printf '%s\n' "$o" | field 'Time to first token')"
-  m="$(printf '%s\n' "$o" | field 'Peak private footprint')"
+  m="$(printf '%s\n' "$o" | peak_private_mib)"
   echo "${p:-NA},${d:-NA},${i:-NA},${t:-NA},${m:-NA}"
 }
 
@@ -52,7 +67,7 @@ run_one() { # backend context extra_flags -> "prefill,decode,init,ttft,peak_mb"
   adb shell getprop ro.build.version.release
 } | tee "$OUT/_meta_android.txt"
 
-echo "backend,context,repeat,prefill_tok_s,decode_tok_s,init_s,ttft_s,peak_mem" > "$OUT/android_baseline.csv"
+echo "backend,context,repeat,prefill_tok_s,decode_tok_s,init_total_s,ttft_s,peak_private_mib" > "$OUT/android_baseline.csv"
 for b in "${BACKENDS[@]}"; do
   for c in "${CONTEXTS[@]}"; do
     for i in $(seq 1 "$REPEATS"); do
@@ -63,7 +78,7 @@ for b in "${BACKENDS[@]}"; do
 done
 
 # MTP（context=1024）
-echo "backend,mtp,repeat,prefill_tok_s,decode_tok_s,init_s,ttft_s,peak_mem" > "$OUT/android_mtp.csv"
+echo "backend,mtp,repeat,prefill_tok_s,decode_tok_s,init_total_s,ttft_s,peak_private_mib" > "$OUT/android_mtp.csv"
 for b in "${BACKENDS[@]}"; do
   for mode in false true; do
     for i in $(seq 1 "$REPEATS"); do
@@ -74,7 +89,7 @@ for b in "${BACKENDS[@]}"; do
 done
 
 # CPU 线程数扫描（context=1024，解释「多线程未必更快」，第 8 章）
-echo "threads,repeat,prefill_tok_s,decode_tok_s,init_s,ttft_s,peak_mem" > "$OUT/android_threads.csv"
+echo "threads,repeat,prefill_tok_s,decode_tok_s,init_total_s,ttft_s,peak_private_mib" > "$OUT/android_threads.csv"
 for n in 1 2 4 8; do
   for i in $(seq 1 "$REPEATS"); do
     echo ">>> android threads=$n run=$i"
