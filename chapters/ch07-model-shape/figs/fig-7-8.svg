@@ -1,0 +1,98 @@
+<svg viewBox="0 0 920 530" width="920" height="530" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="分代发布六阶段中模型文件数与 Engine 工作集数的时间线，以及受限设备维持单 Engine 工作集的旁路">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .panel { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.3; }
+      .stage { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.1; }
+      .peak { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.2; stroke-dasharray: 4 3; }
+      .peak-zone { fill: var(--fig-accent-soft, #e8f0fe); opacity: 0.55; }
+      .warn { fill: var(--fig-warning-panel, #fff4ce); stroke: var(--fig-warn, #9a6700); stroke-width: 1.4; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 15px; font-weight: 700; }
+      .head { fill: var(--fig-text, #1f2328); font-size: 10.2px; font-weight: 700; }
+      .track1 { fill: var(--fig-accent, #0b57d0); font-size: 11px; font-weight: 700; }
+      .track2 { fill: var(--fig-accent-2, #6639ba); font-size: 11px; font-weight: 700; }
+      .body { fill: var(--fig-text-soft, #57606a); font-size: 9.7px; }
+      .small { fill: var(--fig-text-dim, #8b949e); font-size: 9px; }
+      .value1 { fill: var(--fig-accent, #0b57d0); font-size: 10px; font-weight: 700; }
+      .value2 { fill: var(--fig-accent-2, #6639ba); font-size: 10px; font-weight: 700; }
+      .warntext { fill: var(--fig-warn, #9a6700); font-size: 10px; font-weight: 700; }
+      .warnboxhead { fill: var(--fig-bg, #ffffff); font-size: 10px; font-weight: 700; }
+      .warnboxbody { fill: var(--fig-bg, #ffffff); font-size: 9.7px; }
+      .grid { stroke: var(--fig-border-2, #e6eaef); stroke-width: 1; stroke-dasharray: 3 4; }
+      .file-line { stroke: var(--fig-accent, #0b57d0); stroke-width: 2.2; fill: none; }
+      .engine-line { stroke: var(--fig-accent-2, #6639ba); stroke-width: 2.2; fill: none; }
+      .bypass { stroke: var(--fig-warn, #9a6700); stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
+      .dot1 { fill: var(--fig-bg, #ffffff); stroke: var(--fig-accent, #0b57d0); stroke-width: 2; }
+      .dot2 { fill: var(--fig-bg, #ffffff); stroke: var(--fig-accent-2, #6639ba); stroke-width: 2; }
+    </style>
+    <marker id="f78-arrow-warn" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-warn, #9a6700)"/>
+    </marker>
+  </defs>
+  <text class="title" x="460" y="27" text-anchor="middle">分代发布的资源峰值：磁盘与 Engine 工作集分别计数</text>
+  <text class="small" x="76" y="60" text-anchor="middle">发布阶段</text>
+  <rect class="stage" x="140" y="41" width="116" height="38" rx="5"/>
+  <text class="head" x="198" y="64" text-anchor="middle">v41 运行</text>
+  <rect class="stage" x="268" y="41" width="116" height="38" rx="5"/>
+  <text class="head" x="326" y="64" text-anchor="middle">v42 产物落盘</text>
+  <rect class="stage" x="396" y="41" width="116" height="38" rx="5"/>
+  <text class="head" x="454" y="58" text-anchor="middle">P42 / Engine</text>
+  <text class="head" x="454" y="72" text-anchor="middle">初始化</text>
+  <rect class="stage" x="524" y="41" width="116" height="38" rx="5"/>
+  <text class="head" x="582" y="64" text-anchor="middle">路由切换</text>
+  <rect class="stage" x="652" y="41" width="116" height="38" rx="5"/>
+  <text class="head" x="710" y="64" text-anchor="middle">P41 排空</text>
+  <rect class="stage" x="780" y="41" width="116" height="38" rx="5"/>
+  <text class="head" x="838" y="64" text-anchor="middle">清理旧代</text>
+  <rect class="peak" x="389" y="91" width="386" height="306" rx="7"/>
+  <text class="track1" x="582" y="111" text-anchor="middle">双 Engine 重叠阶段</text>
+  <text class="small" x="582" y="127" text-anchor="middle">模型文件 2 份；Engine 2 个，内存不按倍数推算</text>
+  <rect class="panel" x="24" y="137" width="872" height="115" rx="7"/>
+  <rect class="peak-zone" x="389" y="138" width="386" height="113"/>
+  <text class="track1" x="42" y="162">模型文件数</text>
+  <text class="small" x="42" y="181">磁盘资源</text>
+  <text class="small" x="126" y="180" text-anchor="end">2</text>
+  <text class="small" x="126" y="230" text-anchor="end">1</text>
+  <line class="grid" x1="140" y1="176" x2="880" y2="176"/>
+  <line class="grid" x1="140" y1="226" x2="880" y2="226"/>
+  <path class="file-line" d="M198,226 H262 V176 H774 V226 H838"/>
+  <circle class="dot1" cx="198" cy="226" r="5"/>
+  <circle class="dot1" cx="326" cy="176" r="5"/>
+  <circle class="dot1" cx="454" cy="176" r="5"/>
+  <circle class="dot1" cx="582" cy="176" r="5"/>
+  <circle class="dot1" cx="710" cy="176" r="5"/>
+  <circle class="dot1" cx="838" cy="226" r="5"/>
+  <text class="value1" x="198" y="215" text-anchor="middle">1</text>
+  <text class="value1" x="326" y="165" text-anchor="middle">2</text>
+  <text class="value1" x="454" y="165" text-anchor="middle">2</text>
+  <text class="value1" x="582" y="165" text-anchor="middle">2</text>
+  <text class="value1" x="710" y="165" text-anchor="middle">2</text>
+  <text class="value1" x="838" y="215" text-anchor="middle">1</text>
+  <rect class="panel" x="24" y="270" width="872" height="127" rx="7"/>
+  <rect class="peak-zone" x="389" y="271" width="386" height="125"/>
+  <text class="track2" x="42" y="295">Engine 工作集数</text>
+  <text class="small" x="42" y="314">运行内存资源</text>
+  <text class="small" x="126" y="313" text-anchor="end">2</text>
+  <text class="small" x="126" y="367" text-anchor="end">1</text>
+  <line class="grid" x1="140" y1="309" x2="880" y2="309"/>
+  <line class="grid" x1="140" y1="363" x2="880" y2="363"/>
+  <path class="engine-line" d="M198,363 H390 V309 H774 V363 H838"/>
+  <circle class="dot2" cx="198" cy="363" r="5"/>
+  <circle class="dot2" cx="326" cy="363" r="5"/>
+  <circle class="dot2" cx="454" cy="309" r="5"/>
+  <circle class="dot2" cx="582" cy="309" r="5"/>
+  <circle class="dot2" cx="710" cy="309" r="5"/>
+  <circle class="dot2" cx="838" cy="363" r="5"/>
+  <text class="value2" x="198" y="352" text-anchor="middle">1</text>
+  <text class="value2" x="326" y="352" text-anchor="middle">1</text>
+  <text class="value2" x="454" y="298" text-anchor="middle">2</text>
+  <text class="value2" x="582" y="298" text-anchor="middle">2</text>
+  <text class="value2" x="710" y="298" text-anchor="middle">2</text>
+  <text class="value2" x="838" y="352" text-anchor="middle">1</text>
+  <path class="bypass" d="M326,363 H838" marker-end="url(#f78-arrow-warn)"/>
+  <text class="warntext" x="582" y="391" text-anchor="middle">受限设备旁路：先停止 P41，再启动 P42，工作集数保持 1</text>
+  <rect class="warn" x="24" y="427" width="872" height="72" rx="7"/>
+  <text class="warnboxhead" x="460" y="452" text-anchor="middle">受限设备用中断时间换取较低的运行内存峰值</text>
+  <text class="warnboxbody" x="460" y="474" text-anchor="middle">P41 在 P42 初始化前已停止；回滚必须重新启动 P41，切换窗口也包含新 Engine 的冷启动时间</text>
+  <text class="small" x="460" y="518" text-anchor="middle">模型文件轨道不变：回滚窗口内仍保留 v41 与 v42 两份产物，清理旧代后才恢复为 1 份</text>
+</svg>

@@ -1,0 +1,68 @@
+<svg viewBox="0 0 760 510" width="760" height="510" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="端侧推理部署问题从模型产物、Engine、prefill、decode 到语言边界的分层诊断路径">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 16px; font-weight: 700; }
+      .label { fill: var(--fig-text, #1f2328); font-size: 12px; font-weight: 700; }
+      .soft { fill: var(--fig-text-soft, #57606a); font-size: 10.5px; }
+      .blue { fill: var(--fig-accent, #0b57d0); font-size: 11px; font-weight: 700; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .active { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.6; }
+      .edge { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.6; fill: none; }
+      .rule { stroke: var(--fig-border, #d0d7de); stroke-width: 1; }
+    </style>
+    <marker id="arrowe1" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4"><path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/></marker>
+  </defs>
+  <text class="title" x="380" y="28" text-anchor="middle">部署问题的分层诊断路径</text>
+  <text class="blue" x="28" y="64">先找到最早失败层，再建立只改变一个因素的对照</text>
+  <rect class="active" x="28" y="84" width="132" height="102" rx="8"/>
+  <text class="label" x="94" y="110" text-anchor="middle">模型产物</text>
+  <text class="soft" x="94" y="134" text-anchor="middle">SHA-256 / section</text>
+  <text class="soft" x="94" y="153" text-anchor="middle">量化 / capability</text>
+  <text class="soft" x="94" y="172" text-anchor="middle">格式与版本</text>
+  <path class="edge" d="M160,135 H174" marker-end="url(#arrowe1)"/>
+  <rect class="box" x="182" y="84" width="132" height="102" rx="8"/>
+  <text class="label" x="248" y="110" text-anchor="middle">Engine</text>
+  <text class="soft" x="248" y="134" text-anchor="middle">后端 / delegate</text>
+  <text class="soft" x="248" y="153" text-anchor="middle">编译与缓存</text>
+  <text class="soft" x="248" y="172" text-anchor="middle">设备初始化</text>
+  <path class="edge" d="M314,135 H328" marker-end="url(#arrowe1)"/>
+  <rect class="box" x="336" y="84" width="132" height="102" rx="8"/>
+  <text class="label" x="402" y="110" text-anchor="middle">prefill</text>
+  <text class="soft" x="402" y="134" text-anchor="middle">token 数 / shape</text>
+  <text class="soft" x="402" y="153" text-anchor="middle">signature</text>
+  <text class="soft" x="402" y="172" text-anchor="middle">上下文预留</text>
+  <path class="edge" d="M468,135 H482" marker-end="url(#arrowe1)"/>
+  <rect class="box" x="490" y="84" width="132" height="102" rx="8"/>
+  <text class="label" x="556" y="110" text-anchor="middle">decode</text>
+  <text class="soft" x="556" y="134" text-anchor="middle">采样 / 停止</text>
+  <text class="soft" x="556" y="153" text-anchor="middle">MTP / 约束</text>
+  <text class="soft" x="556" y="172" text-anchor="middle">吞吐 / step 时延</text>
+  <path class="edge" d="M622,135 H636" marker-end="url(#arrowe1)"/>
+  <rect class="box" x="644" y="84" width="88" height="102" rx="8"/>
+  <text class="label" x="688" y="110" text-anchor="middle">语言边界</text>
+  <text class="soft" x="688" y="134" text-anchor="middle">所有权</text>
+  <text class="soft" x="688" y="153" text-anchor="middle">线程</text>
+  <text class="soft" x="688" y="172" text-anchor="middle">回调</text>
+  <line class="rule" x1="28" y1="218" x2="732" y2="218"/>
+  <text class="label" x="28" y="248">每层保留一组可验证证据</text>
+  <rect class="active" x="28" y="270" width="218" height="82" rx="8"/>
+  <text class="label" x="137" y="296" text-anchor="middle">输入与配置</text>
+  <text class="soft" x="137" y="319" text-anchor="middle">模型摘要、命令、token、shape</text>
+  <text class="soft" x="137" y="338" text-anchor="middle">后端、线程、上下文与采样参数</text>
+  <path class="edge" d="M246,311 H270" marker-end="url(#arrowe1)"/>
+  <rect class="box" x="278" y="270" width="204" height="82" rx="8"/>
+  <text class="label" x="380" y="296" text-anchor="middle">阶段结果</text>
+  <text class="soft" x="380" y="319" text-anchor="middle">加载、prefill、decode、释放</text>
+  <text class="soft" x="380" y="338" text-anchor="middle">首个错误、首个分叉 token</text>
+  <path class="edge" d="M482,311 H506" marker-end="url(#arrowe1)"/>
+  <rect class="box" x="514" y="270" width="218" height="82" rx="8"/>
+  <text class="label" x="623" y="296" text-anchor="middle">对照与复现</text>
+  <text class="soft" x="623" y="319" text-anchor="middle">一次只改变模型、版本或后端之一</text>
+  <text class="soft" x="623" y="338" text-anchor="middle">保存日志、重复次数与环境</text>
+  <text class="blue" x="28" y="396">定位顺序</text>
+  <rect class="box" x="28" y="414" width="704" height="64" rx="8"/>
+  <text class="soft" x="380" y="438" text-anchor="middle">产物能否解析 → Engine 能否创建 → prefill 是否完成 → decode 如何终止 → 绑定是否正确释放</text>
+  <text class="soft" x="380" y="460" text-anchor="middle">上游层尚未通过时，不先用下游吞吐或输出文本解释原因</text>
+  <text class="soft" x="380" y="500" text-anchor="middle">该流程适用于版本升级、后端切换、模型替换和语言 SDK 集成</text>
+</svg>

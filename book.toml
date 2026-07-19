@@ -3,7 +3,7 @@ title = "端侧大模型推理：原理与 LiteRT-LM 实现"
 authors = ["dpthinker"]
 description = "On-Device LLM Inference: Principles and Practice with LiteRT-LM（内部打磨版，非官方）"
 language = "zh-CN"
-src = "."
+src = ".mdbook-src"
 
 [build]
 build-dir = "book"
@@ -14,6 +14,7 @@ default-theme = "light"
 preferred-dark-theme = "ayu"
 additional-css = ["assets/book.css"]
 mathjax-support = false
+no-section-label = true
 
 [output.html.fold]
 enable = true

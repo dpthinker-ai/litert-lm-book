@@ -1,15 +1,18 @@
-<svg viewBox="0 0 680 340" width="680" height="340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiteRT-LM 五层架构">
-  <style>
-    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    .layer  { stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .l1 { fill: var(--fig-bg, #ffffff); }
-    .l2 { fill: var(--fig-surface, #f6f8fa); }
-    .l3 { fill: var(--fig-surface-2, #eef1f5); }
-    .t  { fill: var(--fig-text, #1f2328); }
-    .ts { fill: var(--fig-text-soft, #57606a); }
-    .arrow { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; fill: none; }
-  </style>
-  <text class="t" x="340" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">LiteRT-LM 五层架构（越往下越贴近硬件）</text>
+<svg viewBox="0 0 680 340" width="680" height="340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiteRT-LM 主调用路径的五层职责视图">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .layer  { stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .l1 { fill: var(--fig-bg, #ffffff); }
+      .l2 { fill: var(--fig-surface, #f6f8fa); }
+      .l3 { fill: var(--fig-surface-2, #eef1f5); }
+      .t  { fill: var(--fig-text, #1f2328); }
+      .ts { fill: var(--fig-text-soft, #57606a); }
+      .arrow { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; fill: none; }
+    </style>
+    <marker id="a" orient="auto" markerWidth="7" markerHeight="7" refX="5" refY="3"><path d="M0,0 L6,3 L0,6 z" fill="var(--fig-accent, #0b57d0)"/></marker>
+  </defs>
+  <text class="t" x="340" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">LiteRT-LM 五层职责视图（主调用路径）</text>
   <g>
     <rect class="layer l1" x="120" y="44"  width="440" height="46" rx="5"/>
     <rect class="layer l1" x="120" y="98"  width="440" height="46" rx="5"/>
@@ -18,23 +21,21 @@
     <rect class="layer l3" x="120" y="260" width="440" height="46" rx="5"/>
   </g>
   <text class="t"  x="140" y="66"  style="font-size:13px;font-weight:700">① 对外接口层</text>
-  <text class="ts" x="140" y="83"  style="font-size:11px">Engine / Session · CLI · C API · 各语言绑定　〔第 3、11 章〕</text>
+  <text class="ts" x="140" y="83"  style="font-size:11px">Engine / Session · CLI · C API · 语言绑定（边界各异）　〔第 3、11 章〕</text>
   <text class="t"  x="140" y="120" style="font-size:13px;font-weight:700">② 对话与编排层</text>
   <text class="ts" x="140" y="137" style="font-size:11px">对话/模板 · prefill→decode 编排　〔第 3、4、5 章〕</text>
   <text class="t"  x="140" y="174" style="font-size:13px;font-weight:700">③ 推理执行层</text>
-  <text class="ts" x="140" y="191" style="font-size:11px">LiteRT 跑模型 · KV cache · 后端屏蔽　〔第 6、8、9 章〕</text>
+  <text class="ts" x="140" y="191" style="font-size:11px">LiteRT 模型执行 · KV 状态 · 后端适配　〔第 6、8、9 章〕</text>
   <text class="t"  x="140" y="228" style="font-size:13px;font-weight:700">④ 组件层</text>
   <text class="ts" x="140" y="245" style="font-size:11px">tokenizer · 采样 · 约束解码　〔第 5、10 章〕</text>
   <text class="t"  x="140" y="282" style="font-size:13px;font-weight:700">⑤ 格式与基础设施层</text>
-  <text class="ts" x="140" y="299" style="font-size:11px">.litertlm 格式 · 线程池　〔第 7 章〕</text>
-  <!-- 使用者 -->
-  <text class="ts" x="60" y="70" text-anchor="middle" style="font-size:11px">使用者</text>
-  <path class="arrow" marker-end="url(#a)" d="M60,80 V240 M60,80 H115"/>
-  <text class="ts" x="60" y="255" text-anchor="middle" style="font-size:10px">只碰</text>
-  <text class="ts" x="60" y="267" text-anchor="middle" style="font-size:10px">最上层</text>
+  <text class="ts" x="140" y="299" style="font-size:11px">.litertlm 格式 · 模型资源 · 运行设施　〔第 7 章〕</text>
+  <!-- 应用入口 -->
+  <text class="ts" x="60" y="70" text-anchor="middle" style="font-size:11px">应用入口</text>
+  <path class="arrow" marker-end="url(#a)" d="M60,80 H115"/>
   <!-- 硬件 -->
-  <text class="ts" x="615" y="287" text-anchor="middle" style="font-size:11px">CPU</text>
-  <text class="ts" x="615" y="300" text-anchor="middle" style="font-size:11px">GPU/NPU</text>
-  <path class="arrow" marker-end="url(#a)" d="M565,283 H600"/>
-  <defs><marker id="a" orient="auto" markerWidth="7" markerHeight="7" refX="5" refY="3"><path d="M0,0 L6,3 L0,6 z" fill="var(--fig-accent, #0b57d0)"/></marker></defs>
+  <text class="ts" x="620" y="170" text-anchor="middle" style="font-size:11px">CPU / GPU</text>
+  <text class="ts" x="620" y="184" text-anchor="middle" style="font-size:11px">/ NPU 后端</text>
+  <path class="arrow" marker-end="url(#a)" d="M565,175 H600"/>
+  <text class="ts" x="340" y="329" text-anchor="middle" style="font-size:10px">跨层辅助依赖未展开</text>
 </svg>

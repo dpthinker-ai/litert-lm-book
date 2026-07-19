@@ -1,0 +1,51 @@
+<svg viewBox="0 0 700 250" width="700" height="250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="prefill 与 decode 对取消请求的检查时序">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .run { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+      .check { fill: var(--fig-accent, #0b57d0); stroke: var(--fig-accent, #0b57d0); }
+      .cancel { fill: var(--fig-accent-2, #6639ba); stroke: var(--fig-accent-2, #6639ba); }
+      .t { fill: var(--fig-text, #1f2328); }
+      .ts { fill: var(--fig-text-soft, #57606a); }
+      .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
+      .cancel-edge { stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; }
+    </style>
+    <marker id="arrow4-2" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/>
+    </marker>
+    <marker id="cancel-arrow4-2" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent-2, #6639ba)"/>
+    </marker>
+  </defs>
+  <text class="t" x="350" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">取消请求被观察到的时机</text>
+  <text class="t" x="24" y="81" style="font-size:12px;font-weight:700">prefill</text>
+  <line class="edge" x1="104" y1="76" x2="658" y2="76" marker-end="url(#arrow4-2)"/>
+  <circle class="check" cx="128" cy="76" r="6"/>
+  <text class="ts" x="128" y="58" text-anchor="middle" style="font-size:10px">执行前检查</text>
+  <rect class="run" x="164" y="50" width="330" height="52" rx="6"/>
+  <text class="t" x="329" y="72" text-anchor="middle" style="font-size:11px;font-weight:700">Tasks::Prefill</text>
+  <text class="ts" x="329" y="90" text-anchor="middle" style="font-size:10px">工作组或 chunk 内没有读取取消标志</text>
+  <circle class="check" cx="530" cy="76" r="6"/>
+  <text class="ts" x="530" y="58" text-anchor="middle" style="font-size:10px">返回后检查</text>
+  <rect class="box" x="565" y="55" width="78" height="42" rx="6"/>
+  <text class="t" x="604" y="73" text-anchor="middle" style="font-size:10px;font-weight:700">回调状态</text>
+  <text class="ts" x="604" y="88" text-anchor="middle" style="font-size:9.5px">cancelled</text>
+  <path class="cancel-edge" d="M374,124 V105" marker-end="url(#cancel-arrow4-2)"/>
+  <circle class="cancel" cx="374" cy="132" r="5"/>
+  <text class="ts" x="386" y="136" style="font-size:10px">Cancel()：当前 prefill 继续执行</text>
+  <text class="t" x="24" y="188" style="font-size:12px;font-weight:700">decode</text>
+  <line class="edge" x1="104" y1="183" x2="658" y2="183" marker-end="url(#arrow4-2)"/>
+  <rect class="run" x="132" y="157" width="190" height="52" rx="6"/>
+  <text class="t" x="227" y="179" text-anchor="middle" style="font-size:11px;font-weight:700">decode step n</text>
+  <text class="ts" x="227" y="197" text-anchor="middle" style="font-size:10px">已经开始的单步执行完毕</text>
+  <circle class="cancel" cx="278" cy="226" r="5"/>
+  <path class="cancel-edge" d="M278,219 V212" marker-end="url(#cancel-arrow4-2)"/>
+  <text class="ts" x="290" y="230" style="font-size:10px">Cancel()</text>
+  <circle class="check" cx="374" cy="183" r="6"/>
+  <text class="ts" x="374" y="149" text-anchor="middle" style="font-size:10px">下一次循环开始</text>
+  <text class="ts" x="374" y="164" text-anchor="middle" style="font-size:10px">读取取消标志</text>
+  <rect class="box" x="424" y="162" width="146" height="42" rx="6"/>
+  <text class="t" x="497" y="180" text-anchor="middle" style="font-size:10px;font-weight:700">不再执行 step n+1</text>
+  <text class="ts" x="497" y="195" text-anchor="middle" style="font-size:9.5px">返回 cancelled</text>
+</svg>

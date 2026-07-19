@@ -1,40 +1,57 @@
-<svg viewBox="0 0 640 340" width="640" height="340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label=".litertlm 文件结构">
-  <style>
-    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    .hdr { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
-    .sec { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .big { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .t  { fill: var(--fig-text, #1f2328); }
-    .ts { fill: var(--fig-text-soft, #57606a); }
-    .accent { fill: var(--fig-accent, #0b57d0); }
-    .edge { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.2; fill: none; stroke-dasharray: 3 3; }
-  </style>
-  <text class="t" x="320" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">一个 .litertlm 文件：头 + 分段</text>
-  <!-- 文件竖条 -->
-  <g>
-    <rect class="hdr" x="150" y="52" width="220" height="46" rx="5"/>
-    <text class="accent" x="260" y="72" text-anchor="middle" style="font-size:12px;font-weight:700">FlatBuffer 头</text>
-    <text class="ts" x="260" y="89" text-anchor="middle" style="font-size:10px">类型化键值对元数据 (KeyValuePair)</text>
-    <rect class="big" x="150" y="104" width="220" height="54" rx="5"/>
-    <text class="t" x="260" y="126" text-anchor="middle" style="font-size:12px;font-weight:700">段：权重</text>
-    <text class="ts" x="260" y="143" text-anchor="middle" style="font-size:10px">int4 量化 · 体积/带宽 ÷4</text>
-    <rect class="sec" x="150" y="164" width="220" height="34" rx="5"/>
-    <text class="t" x="260" y="185" text-anchor="middle" style="font-size:11px">段：tokenizer</text>
-    <rect class="sec" x="150" y="204" width="220" height="34" rx="5"/>
-    <text class="t" x="260" y="225" text-anchor="middle" style="font-size:11px">段：聊天模板</text>
-    <rect class="sec" x="150" y="244" width="220" height="34" rx="5"/>
-    <text class="t" x="260" y="265" text-anchor="middle" style="font-size:11px">段：能力声明（如推测解码，第 9 章）</text>
-  </g>
-  <!-- 段存储方式注解 -->
-  <text class="ts" x="392" y="176" style="font-size:10.5px;font-weight:700">段的存储方式：</text>
-  <text class="ts" x="392" y="194" style="font-size:10px">· FileBacked（文件字节）</text>
-  <text class="ts" x="392" y="210" style="font-size:10px">· ProtoBuf（protobuf）</text>
-  <text class="ts" x="392" y="226" style="font-size:10px">· Zlib（压缩流）</text>
-  <path class="edge" d="M388,200 H372"/>
-  <!-- mmap 注解 -->
-  <text class="accent" x="60" y="160" text-anchor="middle" style="font-size:11px;font-weight:700">mmap</text>
-  <text class="ts" x="60" y="176" text-anchor="middle" style="font-size:10px">按需分页</text>
-  <text class="ts" x="60" y="190" text-anchor="middle" style="font-size:10px">用哪段读哪段</text>
-  <path class="edge" d="M92,150 H148"/>
-  <text class="ts" x="320" y="308" text-anchor="middle" style="font-size:11px">单文件分发 · 可 mmap 按需加载 · tokenizer 构建与模型加载可并行（parallel_file_section_loading，默认开）</text>
+<svg viewBox="0 0 820 430" width="820" height="430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="低比特权重从文件表示到运行时收益的四层检查链路">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .active { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.7; }
+      .result { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.4; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 15px; font-weight: 700; }
+      .head { fill: var(--fig-accent, #0b57d0); font-size: 12.5px; font-weight: 700; }
+      .body { fill: var(--fig-text-soft, #57606a); font-size: 10.5px; }
+      .small { fill: var(--fig-text-dim, #8b949e); font-size: 9.5px; }
+      .edge { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; fill: none; }
+      .fail { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.3; fill: none; stroke-dasharray: 5 4; }
+    </style>
+    <marker id="f71-arrow" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+    <marker id="f71-arrow-dim" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
+    </marker>
+  </defs>
+  <text class="title" x="410" y="28" text-anchor="middle">低比特表示转化为运行时收益的检查链路</text>
+  <rect class="active" x="24" y="66" width="170" height="118" rx="7"/>
+  <text class="head" x="109" y="90" text-anchor="middle">1　文件表示</text>
+  <text class="body" x="109" y="116" text-anchor="middle">int4 / int8 payload</text>
+  <text class="body" x="109" y="136" text-anchor="middle">分组、scale、zero point</text>
+  <text class="body" x="109" y="156" text-anchor="middle">内嵌或外挂权重段</text>
+  <rect class="box" x="225" y="66" width="170" height="118" rx="7"/>
+  <text class="head" x="310" y="90" text-anchor="middle">2　图与算子</text>
+  <text class="body" x="310" y="116" text-anchor="middle">tensor 类型与量化参数</text>
+  <text class="body" x="310" y="136" text-anchor="middle">FC / Conv 等 operator</text>
+  <text class="body" x="310" y="156" text-anchor="middle">prefill / decode signature</text>
+  <rect class="box" x="426" y="66" width="170" height="118" rx="7"/>
+  <text class="head" x="511" y="90" text-anchor="middle">3　后端编译</text>
+  <text class="body" x="511" y="116" text-anchor="middle">CPU / GPU / NPU</text>
+  <text class="body" x="511" y="136" text-anchor="middle">激活精度与 delegate</text>
+  <text class="body" x="511" y="156" text-anchor="middle">量化算子与转换选项</text>
+  <rect class="active" x="627" y="66" width="170" height="118" rx="7"/>
+  <text class="head" x="712" y="90" text-anchor="middle">4　kernel 与布局</text>
+  <text class="body" x="712" y="116" text-anchor="middle">原生低比特或反量化</text>
+  <text class="body" x="712" y="136" text-anchor="middle">设备相关权重转换</text>
+  <text class="body" x="712" y="156" text-anchor="middle">weight cache</text>
+  <path class="edge" d="M195,125 H219" marker-end="url(#f71-arrow)"/>
+  <path class="edge" d="M396,125 H420" marker-end="url(#f71-arrow)"/>
+  <path class="edge" d="M597,125 H621" marker-end="url(#f71-arrow)"/>
+  <rect class="result" x="210" y="246" width="400" height="76" rx="7"/>
+  <text class="head" x="410" y="271" text-anchor="middle">受控实测</text>
+  <text class="body" x="410" y="294" text-anchor="middle">固定模型、设备、上下文、后端与 cache 状态</text>
+  <text class="body" x="410" y="313" text-anchor="middle">分别测文件大小、峰值内存、初始化、吞吐与质量</text>
+  <path class="edge" d="M712,187 V220 H410 V240" marker-end="url(#f71-arrow)"/>
+  <rect class="box" x="34" y="354" width="752" height="48" rx="7"/>
+  <text class="small" x="410" y="375" text-anchor="middle">任一层不成立：记录失败位置，不把位宽比例直接写成速度比例</text>
+  <text class="small" x="410" y="392" text-anchor="middle">编译成功仍不等于受带宽约束；后端可能转换布局、展开权重或引入额外同步</text>
+  <path class="fail" d="M109,187 V347" marker-end="url(#f71-arrow-dim)"/>
+  <path class="fail" d="M310,187 V347" marker-end="url(#f71-arrow-dim)"/>
+  <path class="fail" d="M511,187 V347" marker-end="url(#f71-arrow-dim)"/>
 </svg>

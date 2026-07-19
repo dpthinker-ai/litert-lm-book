@@ -1,32 +1,36 @@
-<svg viewBox="0 0 720 260" width="720" height="260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="输入侧数据流">
-  <style>
-    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    .box  { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .hot  { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
-    .t  { fill: var(--fig-text, #1f2328); }
-    .ts { fill: var(--fig-text-soft, #57606a); }
-    .accent { fill: var(--fig-accent, #0b57d0); }
-    .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
-    .old { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1; }
-  </style>
-  <text class="t" x="360" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">一句话如何变成一串 token id</text>
-  <defs><marker id="a3" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker></defs>
+<svg viewBox="0 0 720 260" width="720" height="260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="消息到 token id 的输入路径">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .box  { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .hot  { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+      .t  { fill: var(--fig-text, #1f2328); }
+      .ts { fill: var(--fig-text-soft, #57606a); }
+      .accent { fill: var(--fig-accent, #0b57d0); }
+      .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
+      .old { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1; }
+    </style>
+    <marker id="a3" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/>
+    </marker>
+  </defs>
+  <text class="t" x="360" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">消息到 token id 的输入路径</text>
   <!-- 1 消息 -->
   <rect class="box" x="24" y="80" width="120" height="56" rx="6"/>
   <text class="t"  x="84" y="104" text-anchor="middle" style="font-size:12px;font-weight:700">消息 Message</text>
   <text class="ts" x="84" y="122" text-anchor="middle" style="font-size:10px">{role, content}</text>
-  <!-- 2 套模板 -->
+  <!-- 2 模型处理与模板 -->
   <rect class="box" x="176" y="80" width="120" height="56" rx="6"/>
-  <text class="t"  x="236" y="104" text-anchor="middle" style="font-size:12px;font-weight:700">套聊天模板</text>
-  <text class="ts" x="236" y="122" text-anchor="middle" style="font-size:10px">按模型类型分派</text>
-  <!-- 3 diff -->
+  <text class="t"  x="236" y="102" text-anchor="middle" style="font-size:11px;font-weight:700">ModelDataProcessor</text>
+  <text class="ts" x="236" y="120" text-anchor="middle" style="font-size:10px">应用聊天模板</text>
+  <!-- 3 取得本轮文本 -->
   <rect class="box" x="328" y="60" width="140" height="96" rx="6"/>
-  <text class="t"  x="398" y="80" text-anchor="middle" style="font-size:12px;font-weight:700">与历史做 diff</text>
+  <text class="t"  x="398" y="80" text-anchor="middle" style="font-size:12px;font-weight:700">取得本轮文本</text>
   <rect class="old" x="342" y="90" width="112" height="22" rx="3"/>
-  <text class="ts" x="398" y="105" text-anchor="middle" style="font-size:9.5px">渲染(旧消息)</text>
+  <text class="ts" x="398" y="105" text-anchor="middle" style="font-size:9.5px">单轮模板渲染</text>
   <rect class="hot" x="342" y="118" width="112" height="28" rx="3"/>
-  <text class="accent" x="398" y="130" text-anchor="middle" style="font-size:9.5px;font-weight:700">渲染(旧+新)</text>
-  <text class="accent" x="398" y="141" text-anchor="middle" style="font-size:9.5px;font-weight:700">相减 = 增量</text>
+  <text class="accent" x="398" y="130" text-anchor="middle" style="font-size:9px;font-weight:700">全历史回退</text>
+  <text class="accent" x="398" y="141" text-anchor="middle" style="font-size:9px;font-weight:700">校验前缀后取后缀</text>
   <!-- 4 tokenizer -->
   <rect class="box" x="500" y="80" width="120" height="56" rx="6"/>
   <text class="t"  x="560" y="104" text-anchor="middle" style="font-size:12px;font-weight:700">tokenizer</text>
@@ -40,6 +44,5 @@
   <path class="edge" marker-end="url(#a3)" d="M296,108 H326"/>
   <path class="edge" marker-end="url(#a3)" d="M468,108 H498"/>
   <path class="edge" marker-end="url(#a3)" d="M620,108 H650"/>
-  <!-- 只有增量去 prefill -->
-  <text class="accent" x="360" y="200" text-anchor="middle" style="font-size:12px;font-weight:700">只有「增量」这一小段需要 prefill —— 旧历史已在 KV cache 里（第 6 章）</text>
+  <text class="accent" x="360" y="200" text-anchor="middle" style="font-size:12px;font-weight:700">全历史回退只有在前缀校验通过后才提交新增后缀</text>
 </svg>

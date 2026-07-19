@@ -1,4 +1,4 @@
-# gemma-4-e4b model.litertlm 实剖（自研 16KiB 对齐扫描 + TFLite flatbuffer 解析）
+# gemma-4-e4b model.litertlm 文件分析（16 KiB 对齐扫描 + TFLite FlatBuffer 解析）
 # 文件 3.66 GB @ litert-community/gemma-4-E4B-it-litert-lm，运行时 v0.13.1
 # 方法：扫 16KiB 边界找 TFL3 魔数定段；tflite python 绑定读 SignatureDefs 与张量形状
 

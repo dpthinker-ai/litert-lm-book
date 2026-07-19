@@ -1,0 +1,60 @@
+<svg viewBox="0 0 780 340" width="780" height="340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LitertLmLoader section 映射与 tokenizer 条件并行">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .b { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .bl { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; }
+      .hw { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .t { fill: var(--fig-text, #1f2328); font-size: 14px; font-weight: 700; }
+      .tw { fill: var(--fig-accent, #0b57d0); font-size: 12.5px; font-weight: 700; }
+      .ts { fill: var(--fig-text-soft, #57606a); font-size: 11px; }
+      .td { fill: var(--fig-text-dim, #8b949e); font-size: 10px; }
+      .edge { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; fill: none; }
+      .edged { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+    </style>
+    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+    <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
+    </marker>
+  </defs>
+  <text class="t" x="390" y="26" text-anchor="middle">当前主加载路径：索引、按请求取段、条件并行</text>
+  <text class="tw" x="28" y="60">LitertLmLoader</text>
+  <rect class="hw" x="28" y="73" width="160" height="43" rx="6"/>
+  <text class="ts" x="108" y="91" text-anchor="middle">Initialize</text>
+  <text class="td" x="108" y="106" text-anchor="middle">解析头部，记录 section 范围</text>
+  <path class="edge" d="M196,94 H234" marker-end="url(#ar)"/>
+  <rect class="b" x="240" y="73" width="174" height="43" rx="6"/>
+  <text class="ts" x="327" y="91" text-anchor="middle">section_locations_</text>
+  <text class="td" x="327" y="106" text-anchor="middle">BufferKey → [begin, end)</text>
+  <rect class="bl" x="28" y="144" width="160" height="48" rx="6"/>
+  <text class="ts" x="108" y="163" text-anchor="middle">GetSectionBuffer</text>
+  <text class="td" x="108" y="180" text-anchor="middle">缓存未命中时才取对应范围</text>
+  <path class="edge" d="M196,168 H234" marker-end="url(#ar)"/>
+  <rect class="b" x="240" y="136" width="174" height="64" rx="6"/>
+  <text class="ts" x="327" y="155" text-anchor="middle">两种模型来源</text>
+  <text class="td" x="327" y="172" text-anchor="middle">整文件已映射：基址 + offset</text>
+  <text class="td" x="327" y="188" text-anchor="middle">ScopedFile：对齐后映射 section</text>
+  <rect class="hw" x="28" y="218" width="386" height="54" rx="6"/>
+  <text class="ts" x="221" y="238" text-anchor="middle">映射不等于物理页已全部驻留</text>
+  <text class="td" x="221" y="255" text-anchor="middle">页调入受后续访问、系统内存状态与 madvise 建议共同影响</text>
+  <text class="tw" x="462" y="60">仅带 LlmModelType 的新格式路径</text>
+  <text class="td" x="462" y="80">parallel_file_section_loading = true 时允许两路重叠</text>
+  <text class="td" x="462" y="112">主线程</text>
+  <rect class="b" x="520" y="94" width="104" height="32" rx="6"/>
+  <text class="ts" x="572" y="115" text-anchor="middle">读取元数据</text>
+  <rect class="bl" x="642" y="94" width="112" height="32" rx="6"/>
+  <text class="ts" x="698" y="115" text-anchor="middle">设置并创建 executor</text>
+  <path class="edge" d="M626,110 H638" marker-end="url(#ar)"/>
+  <text class="td" x="462" y="166">工作线程</text>
+  <rect class="bl" x="520" y="145" width="177" height="36" rx="6"/>
+  <text class="ts" x="608" y="168" text-anchor="middle">异步创建 tokenizer</text>
+  <path class="edged" d="M698,128 V208 H624 V223" marker-end="url(#ard)"/>
+  <path class="edged" d="M608,183 V223" marker-end="url(#ard)"/>
+  <rect class="b" x="540" y="228" width="168" height="38" rx="6"/>
+  <text class="ts" x="624" y="244" text-anchor="middle">future.get() 汇合</text>
+  <text class="td" x="624" y="258" text-anchor="middle">实际时延差异尚未单独测量</text>
+  <text class="td" x="390" y="307" text-anchor="middle">POSIX 页建议：Apple 使用 MADV_DONTNEED，其他平台使用 MADV_WILLNEED；调用失败只记录 warning</text>
+  <text class="td" x="390" y="325" text-anchor="middle">weight cache 模型标识 = 修改时间（秒）+ 文件大小，不是内容哈希</text>
+</svg>

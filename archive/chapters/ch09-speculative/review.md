@@ -1,33 +1,54 @@
-# 第 9 章 review.md （⭐压轴）
+# 第 9 章审校记录
 
-> 首稿验收留痕。状态：**初稿完成，Pass 1 完成（含实现补读），Pass 2 lint 已过、独立审校（§14）待做**。
+> 当前记录：2026-07-18，v4.9 独立扩章审校。适用对象为当前第 9 章正文与图 9-1 至图 9-3，源码基线为 LiteRT-LM v0.13.1。
 
-## Pass 1 · 事实核查（断言四级制 + 引用逐条核验）
+## 审校范围与当前结论
 
-**本章代码引用来自实现补读**（`llm_litert_mtp_drafter.cc @ v0.13.1` 逐行核验，见 notes.md 补读结论）：
-- Draft:453；RunDraftingLoop:328/336；RunVerification:437(RunAsync verify)/449(RET_CHECK size G+1) ✅
-- 接受循环:473-483（首个不匹配取 bonus / 全对白赚第 G+1）；输出:490-492；统计:493-494；析构接受率:165-171 ✅
-- num_draft_steps 固定:256(verify input_pos 维度-1)；verify signature:63/228 ✅
-- HasSpeculativeDecodingSupport（speculative_decoding.h:33/44）✅
-- 贴出的接受循环代码片段与 v0.13.1 逐字一致，仅加中文行末注释说明（未改源码逻辑）；已核验 ✅
+- [x] 语言：统一 MTP、drafter、verify、接受比例与成本口径，删除无条件加速结论。
+- [x] `humanizer-cn` 复核：高风险套话、否定式排比、加粗列表骨架、破折号与超 50 汉字单句均为 0 命中。
+- [x] 禁词与术语：检查禁词、退役叙事标签、概率术语和 SVG 文本。
+- [x] 严谨度：核对草拟、验证、接受循环、首轮与稳态、采样分布、CLI 设置链路及实验条件。
+- [x] 叙事姿态：删除戏剧化收益、文体定性和把单次观测写成稳定上限的表述。
+- [x] 源码锚点语义：检查引用行是否支撑 token 数、状态推进、signature 形状和自动启用行为。
 
-- 「约 3 倍」：明标 Gemma 4 官方博客【文档】级，实测待基准 D（主基准 E4B 支持 MTP）✅
-- `#2227`（某 GPU 上 MTP 更慢）：现象【文档】级引用；成因为本章接受率经济账的推断，明标"无真机、基于推断" ✅
-- 接受率经济学、bonus 保底"token 数不亏"：均由实读逻辑直接推出，非臆测 ✅
+本文件不记录整书 build 或 PDF 已通过；两项由主会话最终验收。
 
-## Pass 2 · 除 AI 味
+## v4.9 独立扩章审校
 
-- [x] `scripts/lint_prose.sh chapters/ch09-speculative/chapter.md` —— 0 命中（2026-07-05）
-- [x] 除 AI 味清单第 1-13 条：撰写时自查（压轴章，收尾避免自夸/元评论）
-- [x] 第 14 条 独立审校：**已由独立审校会话执行（2026-07-05）**，判为"AI 味很淡、可放行"；升华式收尾/自夸形容词/括号内同义重述等问题已逐条修正，修后 lint 复跑 0 命中
+本轮由未参与第 9 章扩写的独立会话执行，范围为“多 token 返回后的停止检测与回退”一节、图 9-3，以及受其影响的图表编号。
 
-## 待清零（补读/数据）
-- [x] MTP drafter 实现补读 —— 已完成（commit bf832b0）
-- [ ] 实测（MTP 开/关、文体接受率）待基准 D（需 Gemma 4 类 MTP 模型）
-- [ ] 图 9-2（接受率-收益曲线）、表 9-1（开/关实测）需实测数据，待基准 D（本轮出签名图 9-1 时序）
+- [x] 多 token 返回：核对 `DecodeOneStep::Run` 的等长检查、逐位置循环、停止检测与 BPE 合并顺序（`runtime/core/tasks.cc:147-179`）。
+- [x] 停止与回退：核对 `sequence_length - step` 的回退量，并补明末位命中不调用 `SetCurrentStep`（`runtime/core/tasks.cc:223-233`）。
+- [x] 执行器状态：核对 compiled executor 只更新逻辑 `current_step`，不清除 KV cache 缓冲（`runtime/executor/llm_litert_compiled_model_executor.cc:1452-1479`）。
+- [x] 流式回调：核对一次 `Run` 后至多一次 `kProcessing` 更新，且 `any_updates=false` 时不回调（`runtime/core/tasks.cc:523-566`）。
+- [x] 数值上限：明确 `num_decode_steps` 是 `current_step` 增量；稳态最多越界 G、首轮最多越界 G+1 的结论标为带前提的任务层推断（`runtime/core/tasks.cc:86-105`、`:569-572`）。
+- [x] 测试边界：确认现有 `FakeLlmExecutor` 每候选每次只返回 1 个 token，正文改为“新增测试 executor”，不声称现有 fake 已覆盖该场景。
+- [x] 图表顺序：正文出现顺序为图 9-1、图 9-2、图 9-3，以及表 9-1、表 9-2、表 9-3；include、文件名与图注一致。
+- [x] 图 9-3：补充末位不回退说明，并将图中 `AllDone` 放回 `MergeTokenIds` 之后，符合源码执行顺序。
 
-## 验收自问
-- [x] 使命兑现（讲透 drafter/verifier 机制 + 接受率经济学 + 为何有时更慢；结清第 19 问）
-- [x] 图 9-1 已落地并编号
-- [ ] 实验可复现（脚本随基准 D）
-- [x] 与 BOOK_PLAN 章卡一致；承接第 1 章带宽墙第三招、第 4 章固定形状、第 7 章能力声明；收束第三部
+验证结果：
+
+- [x] `bash scripts/lint_prose.sh chapters/ch09-speculative/chapter.md`：0 命中。
+- [x] `python3 scripts/check_code_references.py`：623 个唯一锚点通过，源码提交为 `a0afb5a56acd`。
+- [x] `xmllint --noout`：图 9-1 至图 9-3 均通过。
+- [x] 中文单句长度复查：未发现超过 50 个汉字的句子。
+- [x] `mdbook build`：HTML 构建成功，0 WARN。
+
+## 本轮已纠正的关键事实
+
+- 当前 MTP 路径对 drafter 与 verifier 都采用贪心 token 比较，不含保持随机采样分布不变的概率接受；temperature 或 top-p 下不能声称与普通路径分布一致。
+- 稳态每轮接受 K 个草稿时返回 K+1 个 token；prefill 后第一次 `Decode()` 还包含一次普通 decode，因此返回 K+2 个 token，并执行两次基础模型前向。
+- 日志的聚合比例 r 是 `ΣK/(RG)`；理论曲线中的 p 是逐位条件匹配概率。两者不能直接互换，旧盈亏平衡计算据此修正。
+- v0.13.1 的 CLI `auto` 映射为 `None`，随后保留 C++ 默认关闭；模型能力查询没有自动接入启用链路。
+- 合成负载、自然文本接受计数和自然代码吞吐来自不同运行。单次 2.28 倍或 2.01 倍观测不能证明达到理论上限，也不能由 drafter 文件大小反推单步成本。
+
+## 当前仍存在的实验缺口
+
+- 需要在同一次运行中同时记录接受比例、drafter/verify 分项成本与端到端吞吐，并对自然代码条件重复采样。
+- 主 benchmark 的 pad 合成负载没有接受计数；两个自然文本样本不足以建立内容与接受比例的一般关系。
+- 当前日志只提供 drafter 生命周期聚合值，缺少逐轮与分阶段遥测。
+
+## 历史记录
+
+- `2026-07-05 · 初稿验收`：旧文件记录了 MTP 实现补读、接受率与实验计划。
+- 旧记录中的图表待办和未复现判断已被 v4.8 的实测边界取代；当前缺口以上一节为准。

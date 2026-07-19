@@ -122,6 +122,36 @@ figcaption { color: var(--fig-text-dim, #8b949e); font-size: 0.9em; margin-top: 
 /* 分节水平线更轻 */
 .content main hr { border: none; border-top: 1px solid var(--fig-border-2, #e6eaef); margin: 34px 0; }
 
+/* 语义化脚注：HTML 保留 mdBook 的章末定义与往返链接。 */
+.content main .footnote-reference a { text-decoration: none; }
+.content main .footnote-definition {
+  color: var(--fig-text-soft, #57606a);
+  font-size: 0.86em;
+  line-height: 1.58;
+}
+.content main .footnote-definition > li { margin: 0.45em 0; }
+.content main .footnote-definition a { overflow-wrap: anywhere; }
+
+/* WebKit 打印脚本临时创建此矢量素材区；普通 HTML 中不存在这些元素。 */
+.pdf-footnote-bank { margin: 24px 0 0; padding: 0; }
+.content main .pdf-footnote-bank-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  column-gap: 4px;
+  padding: 2px 0;
+  color: #57606a;
+  font-size: 10.5px;
+  line-height: 1.38;
+  text-align: left;
+  break-inside: avoid;
+}
+.content main .pdf-footnote-bank-label { color: #1f2328; text-align: right; }
+.content main .pdf-footnote-bank-content { min-width: 0; overflow-wrap: anywhere; }
+.content main .pdf-footnote-bank-content p { margin: 0; }
+.content main .pdf-footnote-bank-content ul,
+.content main .pdf-footnote-bank-content ol { margin: 2px 0; padding-left: 18px; }
+.content main .pdf-footnote-bank-content a { color: #0b57d0; overflow-wrap: anywhere; }
+
 /* ── 打印 / PDF 专用 ── */
 @media print {
   /* 去掉 mdBook 主题的灰色页面底，强制干净白底黑字 */

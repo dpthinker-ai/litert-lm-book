@@ -7,32 +7,42 @@
 渲染仍由 Chrome 负责（MathJax、SVG 正确）；本脚本只做结构化后处理。
 用法：finalize_pdf.py <in.pdf> <out.pdf> [--debug]
 依赖：PyMuPDF(fitz)。CJK 用 fitz 内置 "china-ss"，失败则回退 macOS PingFang。"""
-import sys, re
+import sys, re, unicodedata
 import fitz  # PyMuPDF
 
 # 结构：顺序即成书顺序。detect=定位该单元起始页的正则（匹配页面最顶一行标题）；
-# part=所属部（None 表示不归部，做顶层书签）；short=页脚短名。
+# part=所属部分（部分导页与独立单元为 None）；short=页脚短名。
 UNITS = [
-    ("前言",                                    r"^\s*前言\s*$",              None,                 "前言"),
-    ("第 1 章 端侧 LLM：约束与总览",             r"^\s*第\s*1\s*章",          "第一篇 · 起点",       "第 1 章 约束与总览"),
-    ("第 2 章 从运行到架构：benchmark 指标解读与五层概览", r"^\s*第\s*2\s*章",   "第一篇 · 起点",       "第 2 章 从运行到架构"),
-    ("第 3 章 输入侧：从 Engine API 到 token 序列", r"^\s*第\s*3\s*章",       "第二篇 · 推理流水线", "第 3 章 输入侧"),
-    ("第 4 章 Prefill：并行处理提示词",          r"^\s*第\s*4\s*章",          "第二篇 · 推理流水线", "第 4 章 Prefill"),
-    ("第 5 章 Decode：单步解码循环",             r"^\s*第\s*5\s*章",          "第二篇 · 推理流水线", "第 5 章 Decode"),
-    ("第 6 章 KV cache 与会话状态",              r"^\s*第\s*6\s*章",          "第三篇 · 性能优化",   "第 6 章 KV cache"),
-    ("第 7 章 模型的形态：量化、.litertlm 格式与 LoRA", r"^\s*第\s*7\s*章",     "第三篇 · 性能优化",   "第 7 章 模型的形态"),
-    ("第 8 章 异构算力：CPU、GPU 与 NPU",        r"^\s*第\s*8\s*章",          "第三篇 · 性能优化",   "第 8 章 异构算力"),
-    ("第 9 章 一次前向，多个 token：推测解码与 MTP", r"^\s*第\s*9\s*章",       "第三篇 · 性能优化",   "第 9 章 推测解码"),
-    ("第 10 章 多模态输入、约束解码与工具调用",   r"^\s*第\s*10\s*章",         "第四篇 · 能力与工程", "第 10 章 多模态与工具"),
-    ("第 11 章 一套核心，六种语言：C ABI、绑定与工程纪律", r"^\s*第\s*11\s*章",  "第四篇 · 能力与工程", "第 11 章 六种语言"),
-    ("尾声 · 出发",                              r"^\s*尾声",                 None,                 "尾声"),
+    ("前言",                                    r"^\s*前[言⾔]\s*$",           None,                 "前言"),
+    ("第一部分 · 约束、指标与系统概览",          r"^\s*第\s*一\s*部分",       None,                         "第一部分 系统概览"),
+    ("第 1 章 端侧 LLM：约束与总览",             r"^\s*第\s*1\s*章",          "第一部分 · 约束、指标与系统概览", "第 1 章 约束与总览"),
+    ("第 2 章 从运行到架构：benchmark 指标解读与五层概览", r"^\s*第\s*2\s*章",   "第一部分 · 约束、指标与系统概览", "第 2 章 从运行到架构"),
+    ("第二部分 · 推理流水线",                    r"^\s*第\s*二\s*部分",       None,                         "第二部分 推理流水线"),
+    ("第 3 章 输入侧：从 Engine API 到 token 序列", r"^\s*第\s*3\s*章",       "第二部分 · 推理流水线",           "第 3 章 输入侧"),
+    ("第 4 章 Prefill：并行处理提示词",          r"^\s*第\s*4\s*章",          "第二部分 · 推理流水线",           "第 4 章 Prefill"),
+    ("第 5 章 Decode：单步解码循环",             r"^\s*第\s*5\s*章",          "第二部分 · 推理流水线",           "第 5 章 Decode"),
+    ("第三部分 · 运行时优化与异构执行",          r"^\s*第\s*三\s*部分",       None,                         "第三部分 运行时优化"),
+    ("第 6 章 KV cache 与会话状态",              r"^\s*第\s*6\s*章",          "第三部分 · 运行时优化与异构执行", "第 6 章 KV cache"),
+    ("第 7 章 模型的形态：量化、.litertlm 格式与 LoRA", r"^\s*第\s*7\s*章",     "第三部分 · 运行时优化与异构执行", "第 7 章 模型的形态"),
+    ("第 8 章 异构算力：CPU、GPU 与 NPU",        r"^\s*第\s*8\s*章",          "第三部分 · 运行时优化与异构执行", "第 8 章 异构算力"),
+    ("第 9 章 一次前向，多个 token：推测解码与 MTP", r"^\s*第\s*9\s*章",       "第三部分 · 运行时优化与异构执行", "第 9 章 推测解码"),
+    ("第四部分 · 能力扩展与工程集成",            r"^\s*第\s*四\s*部分",       None,                         "第四部分 工程集成"),
+    ("第 10 章 多模态输入、约束解码与工具调用",   r"^\s*第\s*10\s*章",         "第四部分 · 能力扩展与工程集成",   "第 10 章 多模态与工具"),
+    ("第 11 章 多语言绑定：C ABI、JNI 与 Embind", r"^\s*第\s*11\s*章",         "第四部分 · 能力扩展与工程集成",   "第 11 章 多语言绑定"),
+    ("尾声 · 实践入口与待验证问题",                r"^\s*尾声",                 None,                 "尾声"),
     ("附录 A 术语表",                            r"^\s*附录\s*A",             None,                 "附录 A 术语表"),
     ("附录 B 代码地图",                          r"^\s*附录\s*B",             None,                 "附录 B 代码地图"),
     ("附录 C 环境搭建与实验复现",                r"^\s*附录\s*C",             None,                 "附录 C 复现指南"),
     ("附录 D 基准数据集",                        r"^\s*附录\s*D",             None,                 "附录 D 基准数据集"),
     ("附录 E 练习提示与参考答案",                r"^\s*附录\s*E",             None,                 "附录 E 练习答案"),
-    ("附录 F 外部来源与延伸阅读",                r"^\s*附录\s*F",             None,                 "附录 F 外部来源"),
 ]
+
+PART_TITLES = {
+    "第一部分 · 约束、指标与系统概览",
+    "第二部分 · 推理流水线",
+    "第三部分 · 运行时优化与异构执行",
+    "第四部分 · 能力扩展与工程集成",
+}
 
 ACCENT = (0x0b/255, 0x57/255, 0xd0/255)
 INK    = (0x1f/255, 0x23/255, 0x28/255)
@@ -40,17 +50,17 @@ DIM    = (0x8b/255, 0x94/255, 0x9e/255)
 
 
 def get_font():
-    for name in ("china-ss", "china-s"):
-        try:
-            return fitz.Font(name), name
-        except Exception:
-            pass
-    # 回退 macOS 系统字体
+    # 优先嵌入真实字体文件，避免依赖阅读器的 Adobe-GB1/CJK language pack。
     for path in ("/System/Library/Fonts/PingFang.ttc",
                  "/System/Library/Fonts/STHeiti Light.ttc",
                  "/System/Library/Fonts/Supplemental/Songti.ttc"):
         try:
-            return fitz.Font(fontfile=path), "sys"
+            return fitz.Font(fontfile=path), "book-cjk", path
+        except Exception:
+            pass
+    for name in ("china-ss", "china-s"):
+        try:
+            return fitz.Font(name), name, None
         except Exception:
             pass
     raise RuntimeError("找不到可用的中文字体")
@@ -74,7 +84,15 @@ def page_top_line(page):
     if not lines:
         return "", 0.0
     lines.sort(key=lambda t: t[0])
-    return lines[0][2], lines[0][1]
+    # WebKit/PyMuPDF 偶尔会把同一标题同时提取为局部字形行和完整文本行，
+    # 两者的 y 坐标只相差几个千分点。选顶部窄带内最长的文本，避免把
+    # “附录 E · ……”误识别成只有“附录”的局部行。
+    top_y = lines[0][0]
+    top_band = [line for line in lines if line[0] <= top_y + 0.5]
+    _, size, txt = max(top_band, key=lambda line: (len(line[2]), line[1]))
+    # WebKit 的 PDF 字体偶尔把常用汉字编码为康熙部首兼容字（如“一”→“⼀”）。
+    # 定位前统一做兼容分解，避免同一标题因字体编码差异而匹配失败。
+    return unicodedata.normalize("NFKC", txt), size
 
 
 def detect_starts(doc):
@@ -115,6 +133,9 @@ def draw_toc_page(page, font, entries):
         if kind == "part":
             y += 12
             tw.append((ml, y), title, font=font, fontsize=13)
+            num = str(no)
+            num_w = font.text_length(num, fontsize=13)
+            tw.append((W - mr - num_w, y), num, font=font, fontsize=13)
             y += 22
             continue
         indent = ml + (16 if kind == "chapter" else 0)
@@ -137,7 +158,7 @@ def main():
     src, dst = sys.argv[1], sys.argv[2]
     debug = "--debug" in sys.argv
     doc = fitz.open(src)
-    font, fname = get_font()
+    font, fname, fontfile = get_font()
 
     raw_starts = detect_starts(doc)  # 0-based in raw
     if debug:
@@ -155,11 +176,16 @@ def main():
     # 目录条目
     entries, cur_part = [], None
     for i, (title, rx, part, short) in enumerate(UNITS):
-        if part and part != cur_part:
-            entries.append(("part", part, None))
-            cur_part = part
-        kind = "chapter" if part else "plain"
-        entries.append((kind, title, printed[i]))
+        if title in PART_TITLES:
+            entries.append(("part", title, printed[i]))
+            cur_part = title
+        elif part:
+            if part != cur_part:
+                raise RuntimeError(f"章节缺少对应的部分导页：{title} -> {part}")
+            entries.append(("chapter", title, printed[i]))
+        else:
+            cur_part = None
+            entries.append(("plain", title, printed[i]))
 
     toc_page = doc.new_page(pno=1, width=W, height=H)
     draw_toc_page(toc_page, font, entries)
@@ -170,10 +196,12 @@ def main():
     outline.append([1, "目录", 2])
     for i, (title, rx, part, short) in enumerate(UNITS):
         tgt = phys[i] + 1  # 1-based
-        if part:
+        if title in PART_TITLES:
+            outline.append([1, title, tgt])
+            cur_part = title
+        elif part:
             if part != cur_part:
-                outline.append([1, part, tgt])  # 部指向其首章页
-                cur_part = part
+                raise RuntimeError(f"章节缺少对应的部分导页：{title} -> {part}")
             outline.append([2, title, tgt])
         else:
             cur_part = None
@@ -206,8 +234,13 @@ def main():
         x = (pg.rect.width - tlen) / 2
         y = pg.rect.height - 26
         # 用 insert_text（TextWriter 写 Chrome 既有页会坐标错乱，insert_text 正常）
-        pg.insert_text((x, y), text, fontname="china-ss", fontsize=size, color=DIM)
+        pg.insert_text(
+            (x, y), text, fontname=fname, fontfile=fontfile,
+            fontsize=size, color=DIM,
+        )
 
+    if fontfile is not None:
+        doc.subset_fonts()
     doc.save(dst, deflate=True, garbage=4)
     print(f"[完成] {dst}  共 {doc.page_count} 页（含封面+目录），书签 {len(outline)} 条，字体 {fname}")
 

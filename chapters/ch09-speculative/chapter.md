@@ -1,20 +1,20 @@
 # 第 9 章 一次前向，多个 token：推测解码与 MTP
 
-> 使命：讲透一件反直觉的事——先用一个便宜的草稿模型（drafter）推测接下来的若干 token，再让基础模型一次前向把这一串并行验完，加速比为何完全取决于接受率。这是第三篇的收尾，讲端侧如何在内存带宽约束下再取得成倍的吞吐。
+> 使命：说明 MTP 如何让 drafter 草拟多个 token，再由基础模型一次验证。分析接受比例与每轮运行成本如何共同决定加速比。
 
-第 1 章分析 decode 的内存带宽约束时给过两条出路：提高带宽（端侧作者无从选择硬件），或减少每 token 要读的字节（量化，第 7 章做了）。这一章是第三条路：不改带宽、不改模型，用一次前向产出多个 token。这正是第 2 章「二十个问题」的第 19 问——推测解码（speculative decoding）靠预测，为什么反而更快，什么时候又更慢。
+第 1 章讨论了缓解 decode 内存带宽约束的两类方法。硬件可以提高带宽，量化可以减少每 token 读取的字节数。第三种方法是推测解码（speculative decoding）。基础模型每读取一次权重，尽量确认多个 token。本章据此定量分析第 2 章第 19 问：推测解码为什么可能加速，又会在什么条件下减速。
 
-## 用一次前向产出多个 token
+## 推测解码的目标：一次验证多个候选 token
 
-先把成本摆清。decode 的瓶颈是内存带宽：每生成一个 token，都要把全部权重从内存读一遍（第 1 章）。这一次前向的带宽开销很高，而它只换来一个 token。问题随之而来：这一次开销最高的前向，能不能一次产出多个 token。
+dense 模型在 decode 阶段通常每生成一个 token 就读取一次模型权重。普通 decode 前向只确定一个 token。推测解码试图增加每次基础模型权重读取所确认的 token 数。
 
-推测解码的回答是能，前提是先做一次预测。用一个又小又快的模型先草拟接下来的若干 token，再让基础模型（base 模型）一次前向把这几个 token 一并验证。预测正确的部分直接采用，预测错误的位置用基础模型算出的正确 token 回退兜底。关键在于验证那几个草稿 token 只花基础模型一次前向，而不是逐个前向。开销最高的那次前向，被摊到了多个 token 上。
+推测解码先由低成本的 drafter 草拟若干 token。基础模型（base 模型）再用一次前向验证这些候选。匹配的最长前缀被接受；第一个不匹配位置改用基础模型给出的 token。验证多个候选只执行一次基础模型前向，而不是对每个候选分别执行一次。若一轮接受多个 token，这次前向的成本便由这些 token 分担。
 
-推测解码有几种形态。草稿模型可以是完全独立的另一个模型，也可以是和主模型共享主干的多头结构，即 MTP（Multi-Token Prediction，多 token 预测），Gemma 4 走的就是后者。在 LiteRT-LM 的运行时里，drafter 装载为一个独立的小模型（成员 `mtp_drafter_model_`），验证则复用基础模型上一个专门的 `"verify"` signature（常量定义 `runtime/executor/llm_litert_mtp_drafter.cc:63`，取用见 `base_model.FindSignature(kVerifySignatureRunner)` 于 `:227`）。所以无论训练时共不共享主干，运行时看到的都是同一套结构：小模型草拟、基础模型验证。
+推测解码有多种实现。drafter 可以是独立模型，也可以来自与基础模型联合训练的预测头。这类预测头称为多 token 预测（Multi-Token Prediction，MTP）头。Google 发布的 Gemma 4 MTP drafter 使用目标模型的 activation，并与目标模型共享 KV cache。[^ch09-google-mtp] LiteRT-LM 在运行时把 drafter 装载为独立模型，对应成员是 `mtp_drafter_model_`。验证使用基础模型的 `"verify"` signature。常量定义见 `runtime/executor/llm_litert_mtp_drafter.cc:63`。`base_model.FindSignature(kVerifySignatureRunner)` 的调用见 `runtime/executor/llm_litert_mtp_drafter.cc:227-228`。
 
-## 机制：草拟，然后一次验一串
+## 机制：串行草拟，批量验证
 
-一次 `Draft()`（`runtime/executor/llm_litert_mtp_drafter.cc:453`）分三步，函数体本身就是这三步的骨架：
+一次 `Draft()`（`runtime/executor/llm_litert_mtp_drafter.cc:453-469`）包含三个阶段：
 
 ```cpp
 ASSIGN_OR_RETURN(std::vector<int> drafted_tokens,
@@ -26,9 +26,9 @@ RETURN_IF_ERROR(PrepareVerifierInputBuffers(
 ASSIGN_OR_RETURN(std::vector<int> verifier_id_vector, RunVerification());  // (3)
 ```
 
-`(1)` 草拟，`(2)` 把「上一个真 token 加草拟出的那串」拼成 verify 的输入，`(3)` 基础模型一次前向验完。三步之后才是接受循环。
+`(1)` 草拟 G 个 token。`(2)` 把上一个已确认 token 和 G 个草稿拼成 verify 输入。`(3)` 由基础模型一次完成验证。接受循环再比较两组 token。
 
-第一步是草拟。drafter 逐个生成接下来的 G 个候选 token（`RunDraftingLoop`，`:328`）。G 是草拟步数（代码里 `num_draft_steps_`）。循环体一步一个 token：
+第一步是草拟。drafter 逐个生成接下来的 G 个候选 token。对应函数是 `RunDraftingLoop`，见 `runtime/executor/llm_litert_mtp_drafter.cc:328-371`。G 是草拟步数（代码里 `num_draft_steps_`）。循环体一步一个 token：
 
 ```cpp
 for (int i = 0; i < num_draft_steps_; ++i) {                      // (1)
@@ -50,9 +50,9 @@ for (int i = 0; i < num_draft_steps_; ++i) {                      // (1)
 }
 ```
 
-`(1)` 循环 G 次，每次生成一个 token，串行。`(3)` 每步跑的是 `mtp_drafter_model_`，一个独立装载的小模型，不是基础模型，这是运行时能低成本草拟的前提。`(2)` 是 MTP 这一类方案的特征：drafter 的输入不只是词嵌入，还拼上了上一步的隐藏态 activation（源码注释以 `[B=1, T=1, D=3072]` 为例，即 1536 维词嵌入接 1536 维 activation；维度随模型而定，本书基准模型实剖出的 drafter 输入是 `[1, 1, 5120]`，即 2560 + 2560，与主干 `model_dimension = 2560` 一致，见附录 D），使草稿头以基础模型的语义状态为条件继续预测。`(4)` 每步只产出一个 token（`RET_CHECK_EQ(..., 1)` 作断言兜底）。`(5)` 把这一步的输出喂回下一步的输入：drafter 是自回归的，只是它的自回归开销远低于基础模型一次前向。这几步再串行，总开销也远不及基础模型一次前向。
+`(1)` 循环 G 次，每次串行生成一个 token。`(3)` 每步运行独立装载的 `mtp_drafter_model_`，而非基础模型。`(2)` 的输入由词嵌入和上一步的隐藏态 activation 拼接而成。源码注释以 `[B=1, T=1, D=3072]` 为例，即 1536 维词嵌入加 1536 维 activation。具体维度随模型而定。本书基准模型的 drafter 输入为 `[1, 1, 5120]`，由 2560 维词嵌入和 2560 维 activation 组成。两部分都与主干的 `model_dimension = 2560` 一致，见附录 D。`(4)` 断言每步只产出一个 token。`(5)` 把本步输出作为下一步输入，drafter 仍按自回归方式生成。总成本包括 G 次 drafter 前向和一次 verify 前向。MTP 是否加速取决于这个总成本，不能只看 drafter 的模型尺寸。
 
-第二步，一次验一串。把「上一个真 token 加草拟的 G 个」拼起来，交给基础模型的 verify signature（`RunVerification`，`:437`）：
+第二步执行批量验证。运行时把上一个已确认 token 和 G 个草稿交给基础模型的 verify signature。对应函数为 `RunVerification`，见 `runtime/executor/llm_litert_mtp_drafter.cc:437-450`：
 
 ```cpp
 LITERT_RETURN_IF_ERROR(base_model_.RunAsync(                       // (1)
@@ -65,18 +65,18 @@ RET_CHECK_EQ(id_vector.size(), num_draft_steps_ + 1);             // (2)
 return id_vector;
 ```
 
-`(1)` 这一次 `RunAsync` 是整套机制里带宽开销最高、也是唯一一次基础模型前向；G 个位置的验证全压在这一次里。`(2)` 它返回长度 G+1 的 id 序列，对 G+1 个位置各给出一个正确答案，多出来的那一位后面会用到。验证 G 个草稿 token 只用基础模型一次前向，这正是加速的来源。
+`(1)` 在一次 `Draft()` 调用内，`RunAsync` 是唯一一次基础模型前向。G 个草稿位置在这次前向中一起验证。`(2)` 返回长度为 G+1 的 id 序列，每个位置对应一个基础模型输出；最后一个位置在 G 个草稿全部匹配时使用。“一次基础模型前向”仅指一次 `Draft()`。prefill 后首次调用 `Decode()` 还会先执行一次普通 decode。
 
 第三步是接受。逐位比对草拟结果与验证结果，接受最长的匹配前缀。
 
 <figure>
 {{#include figs/fig-9-1.svg}}
-<figcaption>图 9-1　推测解码一轮：drafter 逐个草拟 G 个 token，基础模型一次前向验证 G+1 个位置，接受最长匹配前缀再加一个 bonus token。一次前向，产出 1 到 G+1 个 token。</figcaption>
+<figcaption>图 9-1　一次 `Draft()` 调用执行 G 次 drafter 前向和一次基础模型 verify，返回匹配前缀及一个 bonus token，即 1 到 G+1 个 token；首次 `Decode()` 还包含一次普通 decode。</figcaption>
 </figure>
 
-## 接受循环：匹配前缀，加一个 bonus 保证产出下界
+## 接受循环：匹配前缀与 bonus token
 
-第三步值得逐行看，因为它藏着一个回退设计（`Draft()` 接受循环，`:471`–`:484`）：
+第三步处理接受与回退（`Draft()` 接受循环，`runtime/executor/llm_litert_mtp_drafter.cc:471-484`）：
 
 ```cpp
 int num_correct_tokens = 0;
@@ -95,11 +95,11 @@ if (bonus_token == -1) {                               // (4)
 }
 ```
 
-`(1)` 从头逐位比对草拟结果与验证结果。`(3)` 一致就接受、`num_correct_tokens` 加一。`(2)` 一旦碰到第一个不一致就停下，把基础模型在这个位置给出的正确 token 记为 bonus：这一位草拟错了，但基础模型已经算出了对的，不浪费。`(4)` 循环走完 `bonus_token` 仍是 −1，说明 G 个全部命中；`(5)` 此时直接取第 G+1 个位置的验证结果——verify 本就多算了这一位（上一步 `RunVerification` 返回 G+1 个 id），全部命中时它就是额外获得的第 G+1 个 token。
+`(1)` 从头逐位比较草拟结果与验证结果。结果一致时，`(3)` 增加 `num_correct_tokens`。遇到第一个不一致位置后，`(2)` 停止比较。基础模型在该位置的输出被记为 bonus token。若循环结束后 `bonus_token` 仍为 −1，说明 G 个草稿全部匹配；`(5)` 此时取 verify 输出的第 G+1 个 token。无论是否全部匹配，基础模型本轮都提供一个不来自已接受草稿的输出 token。
 
-被反复更新的 `last_verified_token_id_idx_` 不用于统计：它记住接受前缀在 verify 输出缓冲里的下标，下一轮 `RunDraftingLoop` 走 `ConcatenateEmbeddingsAndActivationsFromVerifierBuffer` 分支时，正是靠这个下标取出接受位置的 activation 作为草拟的新起点。接受循环和下一轮草拟就这样接上了（这条数据流后文详解）。
+`last_verified_token_id_idx_` 不参与接受比例统计。它保存 verify 输出中最后一个有效位置的下标。下一轮 `RunDraftingLoop` 会进入 `ConcatenateEmbeddingsAndActivationsFromVerifierBuffer` 分支。该分支用此下标读取相应 activation，作为草拟起点。隐藏态来源见本章后文。
 
-最后输出「接受的前缀加一个 bonus」（`:492`–`:493`）：
+`Draft()` 最后返回接受前缀和一个 bonus token（`runtime/executor/llm_litert_mtp_drafter.cc:492-493`）：
 
 ```cpp
 // The first token comes from the decode output and is always correct.
@@ -107,15 +107,15 @@ drafted_tokens.resize(num_correct_tokens);   // (1)
 drafted_tokens.push_back(bonus_token);       // (2)
 ```
 
-`(1)` 把草拟序列截断到接受的长度，`(2)` 接上 bonus。源码注释点明第一个 token 来自 decode 输出、永远正确，所以哪怕 `num_correct_tokens` 为 0（第一个 token 就预测错），`resize(0)` 后 `push_back` 仍留下 1 个 bonus token。
+`(1)` 把草拟序列截断到接受长度，`(2)` 再追加 bonus。源码中的“always correct”表示该 token 来自基础模型输出。采用它不需要以 drafter 匹配为前提。即使 `num_correct_tokens` 为 0，`resize(0)` 后的 `push_back` 仍会返回 1 个 token。
 
-这就是产出下界的保证：哪怕第一个 token 就预测错，也能拿到基础模型给的 1 个正确 token。论产出的 token 数，推测解码不会比普通 decode 差——最坏一次前向出一个 token，与普通 decode 打平。接受率高时单 token 成本大幅下降；接受率低时产出 token 数不减，只多付了 drafter 与 verify 的计算开销。
+一次 `Draft()` 至少返回 1 个 token。即使第一个草稿不匹配，函数也会返回基础模型在该位置的输出。这个结论只是每轮输出数量的下界，不是运行成本的上界。该轮还包含 G 次 drafter 前向和缓冲操作。prefill 后的首次 `Decode()` 另有一次普通基础模型前向，也不属于这个稳态下界。
 
-## 采样约束：这条 MTP 路径只做贪心接受
+## 采样约束：当前 MTP 路径采用贪心接受
 
-上面的接受循环有一个容易被略过的前提：判定用的是严格相等 `verifier_id_vector[i] != drafted_tokens[i]`。这不是文献里经典的推测采样。Leviathan 等（2023）与 Chen 等（2023）提出的推测解码带一个概率接受步骤（rejection sampling），能证明采样分布与直接用基础模型逐 token 采样完全一致，即分布无损。LiteRT-LM 当前这条 MTP 路径没有走那一步，drafter 与 verifier 都被强制为贪心采样，接受判定退化成逐位 token 相等。
+接受循环使用严格相等比较 `verifier_id_vector[i] != drafted_tokens[i]`。这与带概率接受步骤的经典推测采样不同。Leviathan 等（2023）采用 rejection sampling。[^ch09-leviathan] Chen 等（2023）也采用保留目标模型分布的修正 rejection sampling。[^ch09-chen] LiteRT-LM 当前 MTP 路径没有该步骤；drafter 与 verifier 均采用贪心采样，接受条件是两个 token id 相等。
 
-强制贪心的地方在构造采样器的辅助函数里（`CreateGreedySampler`，`:65`–`:79`）：
+强制贪心的地方在构造采样器的辅助函数里（`CreateGreedySampler`，`runtime/executor/llm_litert_mtp_drafter.cc:65-77`）：
 
 ```cpp
 proto::SamplerParameters sampler_params;
@@ -129,13 +129,13 @@ return CreateSampler(backend, output_heads, std::move(sampler_params),
                      activation_data_type);
 ```
 
-`(1)` top-k 写死为 1，`(2)` top-p 写死为 0，两者合起来把候选集裁到唯一的 argmax；`(3)` temperature 固定 1.0，但在 k=1 的前提下已无采样自由度。drafter 与 verifier 共用这个工厂函数，只是 `sequence_size` 不同：drafter 每步一个位置（`:264`–`:267`），verifier 一次 G+1 个位置（`:268`–`:272`）。因此两侧都取各自 logits 的 argmax，验证阶段的判定就成了「drafter 的 argmax 是否等于 verifier 的 argmax」。
+`(1)` 把 top-k 设为 1，`(2)` 把 top-p 设为 0，候选集中只保留 argmax。`(3)` 的 temperature 为 1.0，但在 k=1 时不会引入随机选择。drafter 与 verifier 共用该工厂函数。drafter 的 `sequence_size` 为 1，见 `runtime/executor/llm_litert_mtp_drafter.cc:263-267`；verifier 的值为 G+1，见 `runtime/executor/llm_litert_mtp_drafter.cc:268-272`。接受阶段比较两侧 logits 的 argmax token。
 
-这个选择有明确的工程含义。分布无损的推测采样需要 verifier 回传每个位置的完整概率分布，接受时按 q(x)/p(x) 的比例做概率取舍，拒绝时还要从残差分布 max(0, q−p) 重采样。这要求把 verifier 的 logits 分布搬回宿主内存并逐位算比值，端侧要多付一份数据搬运与逐位计算。贪心接受把这一切省成一次整数相等比较：verifier 只需回传采样后的 token id（`verifier_id_tensor_` 形状 `[1, G+1]`），不必回传分布。代价是这条路径只在贪心解码（temperature=0 意义上的确定性输出）下等价于普通 decode；一旦用户想要带温度或 top-p 的随机采样，当前 MTP 路径并不保证与非推测路径同分布。据此推断，端侧在这里用简单换取了搬运与算力的节省，把无损采样留给了后续演进。
+保持采样分布不变的推测采样需要 verifier 提供各位置的概率分布。接受阶段按概率比值决定是否采用草稿；拒绝后还要从残差分布重新采样。LiteRT-LM 的 verifier 只回传形状为 `[1, G+1]` 的 token id。接受循环执行整数比较，不处理完整 logits 分布。这省去了完整概率分布的回传和逐位处理，但适用范围限于贪心 token 比较。当前代码没有实现随机采样所需的概率接受与残差重采样。即使设置 temperature 或 top-p，MTP 路径也无法保持非推测路径的采样分布。
 
 ## 验证输入的构造：位置、mask 与 KV cache 的复制
 
-「一次前向验一串」在缓冲层面怎么落地，值得摊开。verify 走的不是 decode 那种一次一个位置的形状，而是 prefill 形状：G+1 个位置一次喂入。构造这份输入的是 `PrepareVerifierInputBuffers`（`:374`–`:423`）：
+verify 使用包含 G+1 个位置的批量输入，而不是普通 decode 的单位置输入。`PrepareVerifierInputBuffers`（`runtime/executor/llm_litert_mtp_drafter.cc:374-421`）负责构造这组缓冲：
 
 ```cpp
 auto* prefill_input_pos_ptr =
@@ -158,9 +158,9 @@ for (const auto& [input_name, input_buffer] : input_kv_cache_buffers) {
 }
 ```
 
-`(1)` `input_pos` 连续填 `position` 到 `position+G`：这 G+1 个位置紧接在已生成序列之后，验证的是「若第 `position` 位是真 token、随后是草稿的 G 个，各位置基础模型给出什么」。`(2)` `FillAttentionMask` 以 `start_step=position`、`steps=G+1` 铺注意力 mask，形成因果结构：每个待验位置只能看到它之前的前缀（包括真 token 和更早的草稿位置），看不到自己之后的草稿。这一点保证验证的语义正确——第 `i` 个位置得到的 logits 只依赖前 `i` 个 token，与逐 token decode 到该位置时的条件一致，因此逐位比对才有意义。`(3)` 把 `[真 token, 草稿_1, …, 草稿_G]` 经 `LookupPrefill` 一次查成 embeddings，正是 prefill 那套批量查嵌入的接口（第 3 章）。`(4)` 对每个 KV cache 输入调 `Duplicate()`，把基础模型现有的 KV cache 句柄复制一份给 verify 用。
+`(1)` 把 `input_pos` 依次写为 `position` 到 `position+G`。这 G+1 个位置对应一个已确认 token 和随后 G 个草稿。`(2)` 调用 `FillAttentionMask`，参数为 `start_step=position`、`steps=G+1`。因果 mask 使每个待验证位置只能读取此前的前缀，包括已确认 token 和更早的草稿位置。第 `i` 个位置的 logits 因而与逐 token decode 到该位置时具有相同的可见前缀。`(3)` 使用 `LookupPrefill` 批量查询 `[已确认 token, 草稿_1, …, 草稿_G]` 的 embeddings，接口与第 3 章的 prefill 路径相同。`(4)` 为每个 KV cache 输入复制 `TensorBuffer` 句柄，供 verify 使用。
 
-`Duplicate()` 复制的是缓冲句柄而非底层数据（TensorBuffer 的浅复制语义，第 7 章）。之所以要这一层，是因为 verify 前向要在已有 KV cache 之上追加 G+1 个位置的写入，而运行时对同一块缓冲有读写分离的约束（第 6 章的双缓冲）。紧接着的分支处理单缓冲 KV cache 的情形：
+`Duplicate()` 复制缓冲句柄而非底层数据，采用第 7 章所述的 `TensorBuffer` 浅复制语义。verify 前向会在现有 KV cache 之后追加 G+1 个位置；第 6 章介绍的双缓冲路径要求分别传入读写句柄。紧随其后的分支处理单缓冲 KV cache：
 
 ```cpp
 if (active_verifier_input_buffers_.contains("param_tensor")) {   // (1)
@@ -170,11 +170,11 @@ if (active_verifier_input_buffers_.contains("param_tensor")) {   // (1)
 }
 ```
 
-`(1)` 当模型走单缓冲 KV cache（把缓存的读写位置参数打包进一个 `param_tensor`）时，这里按 `position` 起、`G+1` 步填好那份参数张量，让 verify 前向知道该把这 G+1 个位置写到缓存的哪一段。两种 KV cache 布局在这里各有一条路径，`Duplicate()` 对应双缓冲、`param_tensor` 对应单缓冲。输出侧同理，`PrepareVerifierOutputBuffers`（`:424`）也对每个输出 KV cache 缓冲做 `Duplicate()` 再 `ClearEvent()`，为异步执行的完成事件让路。
+`(1)` 单缓冲 KV cache 把读写位置参数放在 `param_tensor` 中。这里从 `position` 开始填入 G+1 步对应的参数，使 verify 写入相应缓存区间。双缓冲路径传入复制后的句柄，单缓冲路径则额外设置 `param_tensor`。输出侧由 `PrepareVerifierOutputBuffers` 处理，见 `runtime/executor/llm_litert_mtp_drafter.cc:424-434`。它复制各个 KV cache 输出句柄，并调用 `ClearEvent()` 清除旧的完成事件。
 
 ## drafter 的隐藏态拼接：两条 activation 来源
 
-回到草拟循环。MTP 头之所以能「续着基础模型的思路」预测，靠的是每步都把上一步的隐藏态拼进输入。正文前面给过 `[1536+1536=3072]` 的拼接，这里把两条 activation 来源讲清。`RunDraftingLoop` 的循环体里有一个分支（`:346`–`:353`）：
+MTP drafter 每步都把词嵌入与隐藏态拼接后输入模型。前文给出的示例形状为 `[1536+1536=3072]`。`RunDraftingLoop` 的以下分支选择隐藏态来源（`runtime/executor/llm_litert_mtp_drafter.cc:346-353`）：
 
 ```cpp
 if (activations_ptr) {
@@ -187,15 +187,15 @@ if (activations_ptr) {
 }
 ```
 
-`(1)` `activations_ptr` 非空时走这条：拼接的 activation 来自参数传入的 `activations`。这只在一轮草拟的第一步成立，且这份 activation 由基础模型上一次 decode 前向产出（下一节讲集成时会看到它从哪来）。第一步之后，`activations_ptr` 被改指向 drafter 自己上一步的 `projected_activations`（循环末尾 `:369`），后续步骤就用 drafter 自产的隐藏态自回归下去。`(2)` `activations_ptr` 为空时走这条：从 verifier 的输出缓冲 `verifier_output_buffers_["activations"]` 里，按 `last_verified_token_id_idx_` 取出上一轮被接受位置的 activation。这正是接受循环里那个下标的用途——上一轮验证时基础模型顺带算出了每个位置的隐藏态，接受前缀的末位隐藏态就是这一轮草拟的起点。
+`(1)` 当 `activations_ptr` 非空时，拼接参数传入的 `activations`。一轮草拟的第一步可采用这条路径；该 activation 来自基础模型此前的 decode 前向。第一步结束后，`activations_ptr` 指向 drafter 上一步输出的 `projected_activations`。赋值位置见 `runtime/executor/llm_litert_mtp_drafter.cc:368-369`。后续步骤据此自回归生成。`(2)` 当 `activations_ptr` 为空时，隐藏态来自上一轮的 verifier 输出缓冲。`last_verified_token_id_idx_` 选择被接受位置对应的 activation。接受循环维护该下标，供下一轮草拟使用。
 
-两条来源对应两种进入草拟的时机。首个 decode 之后，drafter 拿到的是基础模型 decode 输出的 activation（走 `(1)`）；进入稳态后，drafter 拿到的是上一轮 verify 缓冲里接受位置的 activation（走 `(2)`）。无论哪条，语义都一样：草稿头从基础模型算出的隐藏态接着往下预测，而不是从零起步。这解释了 MTP 草稿为何比一个完全独立、只看 token id 的小模型更容易命中——它拿到的不只是上一个 token，还有基础模型对上下文的内部表示。
+两条来源对应两种调用时机。prefill 后首次 decode 使用路径 `(1)`。drafter 此时读取普通 decode 输出的 activation。进入稳态后，它使用上一轮 verify 中被接受位置的 activation，即路径 `(2)`。两条路径都让 drafter 获得上一个 token 和基础模型产生的上下文表示。本章没有比较其他 drafter 结构，不能据此推断相对命中率。
 
-拼接本身是一次内存拷贝（`ConcatenateEmbeddingsAndActivations`，`:80` 起）：先把词嵌入 memcpy 进输出缓冲前半段，再把 activation memcpy 进后半段。两段各 `model_dimension` 维 float，拼成双倍宽度，正是 drafter signature 的 `activations` 输入形状（本书基准模型为 2560 + 2560 = 5120，实剖见附录 D）。这里没有额外计算，只有缓冲布局的拼装，开销可忽略；drafter 每步的主要成本仍是那一次 `RunAsync` 小模型前向。
+`ConcatenateEmbeddingsAndActivations`（`runtime/executor/llm_litert_mtp_drafter.cc:79-99`）先把词嵌入复制到输出缓冲前半段，再把 activation 复制到后半段。两段各含 `model_dimension` 个 float，组成 drafter signature 的双倍宽度输入。本书基准模型的形状为 2560 + 2560 = 5120，记录见附录 D。这段函数本身只执行两次内存复制，不含矩阵计算；它在端到端时延中的占比仍需测量，不能仅凭代码结构判定为可忽略。
 
-## 集成：Draft 由谁调用，接受的 token 如何回写
+## 集成：`Draft()` 的调用与 token 回写
 
-机制章讲到这里都在 drafter 内部。把它接回运行时的缝在执行器的 decode 里（`llm_litert_compiled_model_executor.cc:1003` 起的 `Decode`）。有没有装载 drafter，决定走哪条路：`mtp_drafter_ == nullptr` 时走普通 decode（`:1007`），否则走推测路径。推测路径本身又分两个分支，区别在于这是不是 prefill 后的首个 decode：
+执行器的 `Decode()` 负责把 drafter 接入推理流程，入口见 `runtime/executor/llm_litert_compiled_model_executor.cc:1003`。`mtp_drafter_ == nullptr` 时执行普通 decode，判断位置见 `runtime/executor/llm_litert_compiled_model_executor.cc:1007`；否则执行 MTP 路径。MTP 路径还会根据当前调用是否为 prefill 后的第一次 decode 选择不同分支：
 
 ```cpp
 bool last_run_is_decode = llm_context_->runtime_state().ran_decode; // (1)
@@ -212,9 +212,9 @@ if (last_run_is_decode) {
       output_tokens_vector[0].size();
 ```
 
-`(1)` `ran_decode` 记录上一次运行是不是 decode。进入稳态（上一次已是 decode）时走这个分支：`activations` 传 `std::nullopt`（`(2)`），对应上一节的第二条 activation 来源——drafter 会从 verifier 缓冲里按接受下标取隐藏态，不需要外部再喂。`(3)` 是「一次前向前进多个位置」在记账层面的落地：`current_step` 不再加一，而是加上 `Draft` 这一轮实际产出的 token 数（接受前缀长度加 1 个 bonus）。这一行把机制的成倍产出兑现成了序列位置的成倍前进。
+`(1)` `ran_decode` 表示上一次运行是否为 decode。进入稳态后执行该分支。`(2)` 将 `activations` 设为 `std::nullopt`，drafter 从 verifier 缓冲读取上一轮被接受位置的隐藏态。`(3)` 按 `Draft()` 本轮返回的 token 数增加 `current_step`。该数等于接受前缀长度加 1 个 bonus token。稳态下，一次 `Decode()` 直接返回这组 token，范围为 1 到 G+1。
 
-另一条分支处理 prefill 后的首个 decode（源码注释说明 MTP 要先做一次普通 decode 拿到 activation 再喂给草稿）：
+另一条分支处理 prefill 后的第一次 decode。此时运行时先执行普通 decode，取得首个 token 及其 activation，再调用 `Draft()`：
 
 ```cpp
 RETURN_IF_ERROR(SampleLogits(decoded_logits, output_tokens));      // (1)
@@ -233,22 +233,20 @@ llm_context_->runtime_state().current_step += output_tokens_vector[0].size();
 output_tokens_vector[0].insert(output_tokens_vector[0].begin(), token_id); // (4)
 ```
 
-`(1)` 先老老实实跑一次普通 decode，采样出一个 `token_id`。`(2)` 把这次 decode 输出的 `activations` 复制一份，作为参数喂进 `Draft`，这正是上一节第一条 activation 来源。`(3)` 传入的 `position` 是 `current_step - 1`：源码注释解释，普通 decode 已经在 `DecodeLogits` 里把 `current_step` 加过一次，而草稿要从这次真 token 所在的位置起算，因此要减一。`(4)` 收尾时把这个真 `token_id` 插回结果序列开头——`Draft` 返回的是「接受前缀加 bonus」，不含触发这一轮的那个真 token，这里补上，输出序列才完整。两个分支殊途同归：都以一个已确定正确的真 token 加它的隐藏态为起点，`current_step` 都按实际产出前进。
+`(1)` 普通 decode 先采样出 `token_id`。`(2)` 复制该次 decode 输出的 `activations`，并传给 `Draft()`；这对应上一节的第一条 activation 来源。`(3)` 传入 `current_step - 1`。此时 `DecodeLogits` 已将 `current_step` 增加一次，而草拟位置从刚得到的 token 开始计算。`(4)` 最后把这个普通 decode token 插到 `Draft()` 返回序列之前。第一次 `Decode()` 返回 2 到 G+2 个 token。其中 1 个来自普通 decode，另有 1 到 G+1 个来自 `Draft()`。
 
-这条缝是理解 MTP 端到端行为的关键。对上层来说，一次 `Decode` 调用可能返回 1 到 G+1 个 token，序列位置一次前进相应的步数，而这背后只发生了一次基础模型前向（verify）加上若干次廉价的 drafter 前向。首个 decode 那次「浪费」的普通 decode 只发生一次，稳态后每轮都省在一次前向里。
+首轮与稳态的基础模型调用次数也不同。第一次 `Decode()` 执行一次普通 decode 和一次 verify，共两次基础模型前向；稳态的每次 `Decode()` 只执行一次 verify。两种分支都执行 G 次 drafter 前向。分析长期吞吐时通常采用稳态口径，但测量短输出时，首轮的额外基础模型前向不能省略。
 
-## 接受率经济学：加速比取决于预测准不准
+## 接受比例与加速比
 
-现在回答第 19 问的后半段：什么时候反而更慢。
-
-关键指标是接受率——草拟的 token 里有多少被接受。每一轮结束，`Draft()` 累加两个计数（`:494`–`:495`）：
+MTP 是否加速，取决于每轮产出的 token 数和该轮的运行成本。`Draft()` 在每轮结束时累加两个计数（`runtime/executor/llm_litert_mtp_drafter.cc:494-495`）：
 
 ```cpp
 num_drafted_tokens_ += num_draft_steps_;    // (1)
 num_verified_tokens_ += num_correct_tokens; // (2)
 ```
 
-`(1)` 分母，每轮固定加 G，与接受多少无关。`(2)` 分子，只加真正被接受的 `num_correct_tokens`，不含 bonus——bonus 是 verify 前向顺带算出的，不计入 drafter 的命中。drafter 析构时把这个比值打印出来（`:164`–`:172`）：
+`(1)` 每轮把草稿总数增加 G。`(2)` 只累加匹配前缀的长度 `num_correct_tokens`，不含 bonus token。drafter 析构时输出这两个计数及其比值（`runtime/executor/llm_litert_mtp_drafter.cc:165-172`）：
 
 ```cpp
 LlmLiteRtMtpDrafter::~LlmLiteRtMtpDrafter() {
@@ -262,59 +260,143 @@ LlmLiteRtMtpDrafter::~LlmLiteRtMtpDrafter() {
 }
 ```
 
-`(1)` 这个 "Success rate" 就是接受率，只在进程退出时打印一次，落在日志里、CLI 不透出——这也是本书实测无法实证归因接受率的直接原因。分子分母的定义决定了一个上界：G 步全部命中时接受率为 1.0；bonus 不进分子，所以这个数永远达不到「平均每轮产出 token 数除以 G」那个更乐观的口径。
+设共执行 R 轮 `Draft()`，第 j 轮接受的草稿数为 K_j，且 0 ≤ K_j ≤ G。日志中的 `Success rate` 是聚合接受比例：
 
-把这笔账做成定量模型，能看清盈亏平衡在哪。设逐位接受概率为 α（贪心接受下，α 是「drafter 的 argmax 等于 verifier 的 argmax」的概率，随文体与模型而变），各位置近似独立。一轮草拟 G 步，第 k 位被接受当且仅当前 k 位全接受，概率 α^k。加上那个必得的 bonus，一轮的期望产出为：
+$$ \widehat r = \frac{\sum_{j=1}^{R} K_j}{R G} $$
 
-$$ E[\text{产出}] = 1 + \sum_{k=1}^{G} \alpha^k $$
+这个量直接给出样本中的平均接受数：`平均 K = G × r̂`。每轮还会返回 1 个 bonus token，所以稳态下 `Draft()` 的样本平均产出为：
 
-再看成本。设基础模型一次前向的开销为 c_base、drafter 一步前向的开销为 c_draft，一轮总开销约 c_base + G·c_draft（verify 一次，drafter G 步）。普通 decode 每 token 开销 c_base。于是加速比约为：
+$$ \overline N = 1 + G\widehat r $$
 
-$$ \text{speedup} \approx \frac{E[\text{产出}]}{1 + G \cdot c_{\text{draft}} / c_{\text{base}}} $$
+日志中的 r̂ 不是“每个位置独立匹配的概率”。理论曲线另设参数 p。给定前 k−1 个草稿均已匹配，第 k 个草稿继续匹配的条件概率假定恒为 p。此时 `P(K ≥ k) = p^k`，于是：
 
-分子随 α 单调增，分母是固定的额外开销比。令 speedup = 1 解出的 α 就是盈亏平衡接受率：α 高于它，推测解码更快；低于它，反而更慢。分母里 c_draft/c_base 越大（drafter 相对基础模型不够便宜，或在某后端上开销比失衡），盈亏平衡点越高，越难划算。这把定性的权衡变成了可代入数字的判据。
+$$ E[N] = 1 + E[K] = 1 + \sum_{k=1}^{G} p^k $$
 
-算一个例子。取 G=3、drafter 开销约为基础模型的 15%（c_draft/c_base = 0.15），分母 = 1 + 3×0.15 = 1.45。若 α = 0.8，分子 = 1 + 0.8 + 0.64 + 0.512 = 2.95，speedup ≈ 2.95 / 1.45 ≈ 2.0；若 α 掉到 0.4，分子 = 1 + 0.4 + 0.16 + 0.064 = 1.62，speedup ≈ 1.62 / 1.45 ≈ 1.12；若 α = 0.2，分子 ≈ 1.25，speedup ≈ 0.86，已经低于 1，也就是更慢。（这里的 c_draft/c_base 与 α 均为示意取值，用于说明公式形状，非实测；实测见下。）接受率从 0.8 掉到 0.2，同一套代码从提速一倍变成拖慢，这就是「加速比取决于预测准不准」的定量含义。
+这两个口径满足 `r = E[K]/G = (Σp^k)/G`，不能把日志中的 r 直接代入 p 的位置。真实数据还可能随位置变化，未必符合恒定 p 的假设。
+
+归一化轮次成本 q 是两个墙钟时间之比。分子是一次稳态 MTP 轮次，分母是一次普通 decode step。端到端加速比可写成：
+
+$$ \text{speedup} \approx \frac{1 + G r}{q} $$
+
+图 9-2 采用简化成本模型 `q = 1 + Gc`。其中 c 是归一化的有效开销参数，不是直接测得的 drafter 单步前向时间。该参数合并了 verify 与普通 decode 的成本差异、G 次 drafter 前向和缓冲操作。结合恒定条件概率 p 的假设，得到：
+
+$$ \text{speedup}(p,c) \approx
+\frac{1 + \sum_{k=1}^{G} p^k}{1 + Gc} $$
+
+取 G=3、c=0.15，分母为 1.45。p=0.8 时，期望产出为 2.952 个 token，加速比约 2.04；p=0.4 时约为 1.12；p=0.2 时约为 0.86。令加速比等于 1，解得盈亏平衡点 p≈0.317，而不是 0.25。这些数值只说明理论曲线的形状，不代表本书设备上的实测成本。
 
 <figure>
 {{#include figs/fig-9-2.svg}}
-<figcaption>图 9-2　接受率—收益曲线（按闭式公式推算，非实测）：盈亏平衡接受率约 0.25，α 越高收益越陡。</figcaption>
+<figcaption>图 9-2　理论曲线使用逐位条件匹配概率 p；在 G=3、c=0.15 的示意条件下，盈亏平衡点约为 0.32。日志聚合比例 r 不能直接作为横轴 p。</figcaption>
 </figure>
 
-- 接受率高时：一次基础模型前向产出多个 token，而基础模型前向是开销最高的一项，于是每 token 摊到的成本大幅下降，明显更快。官方报告 Gemma 4 上可达约 3 倍（官方博客口径，参见附录 F）。
-- 接受率低时：草稿大多被丢弃，drafter 那几步的计算被丢弃、成为净开销，还多搭了 verify 相对普通 decode 的额外开销。当这些额外开销超过省下的前向，净收益为负，结果更慢。
+聚合接受比例 r 增大时，平均每轮产出 `1+Gr` 随之增加。轮次成本 q 同样影响加速比。即使 r 很高，较大的 q 仍会限制收益。r 较低时，MTP 可能只返回 1 个或少量 token。该轮仍要执行 drafter 与 verify，吞吐可能低于普通 decode。Google 报告 Gemma 4 MTP drafter 在其跨模型、硬件与运行时测试中最高达到约 3 倍。[^ch09-google-mtp] 该数字不是本书设备上的预期值。
 
-这里如实报告本书自己的实测〔基准 D〕。主基准 Gemma 4 E4B 在基准机（context 1024、decode 128 token）上采了三档：关、`auto`、强制 `true`。按上一节的代码链路，`auto` 在 v0.13.1 实为关，所以「关」与「auto」两行本质是同一行为的两次采样：CPU 后端 22.8 对 24.9 tokens/s、GPU 后端 50.0 对 50.2 tokens/s，差异落在批内抖动幅度里（CPU 那批三次运行本身就散布在 20.1 到 24.9 之间）。真正开启的是强制 `true` 的一组，GPU 得 49.0，与同条件「关」的 50.2 同样在抖动内——两条口径下都没有复现 3 倍。
+附录 D 保存了 Gemma 4 E4B 的两组 Mac 记录。测试条件为 context 1024、decode 128 token，参数分别设为 `false` 与 `auto`。本章“开启条件”一节核对的设置链路表明，v0.13.1 的 `auto` 最终沿用 C++ 默认值 `false`。两组记录都来自关闭 MTP 后的独立采样。CPU 中位数为 22.8 和 24.9 tokens/s；`false` 组的三次运行分布在 20.1 到 24.9 tokens/s。GPU 中位数为 50.0 和 50.2 tokens/s。两组差异只能反映这几次运行的波动，不能估计 MTP 的开关收益。当前没有可核查的 Mac 强制开启记录。
 
-| 模式 | cpu decode tok/s | gpu decode tok/s | 说明 |
+| 模式 | cpu decode tokens/s | gpu decode tokens/s | 说明 |
 |---|---|---|---|
 | 关（`false`） | 22.8 | 50.0 | 基线 |
 | `auto` | 24.9 | 50.2 | v0.13.1 实为关，与基线同行为的再采样 |
-| 强制 `true` | — | 49.0 | 唯一真正开启的一组，与关在抖动内 |
 
-> 表 9-1　MTP 实测对照（Gemma 4 E4B，context 1024，decode 128 token，各 3 次中位数〔基准 D〕）。官方博客的「约 3 倍」口径在本基准未复现——收益取决于接受率。
+> 表 9-1　Mac 归档记录中的 `false` 与 `auto` 均为关闭行为，各列为 3 次运行的中位数；该表不能用于估计 MTP 收益。
 
-这不推翻机制，反而与上面的公式相容。接受率现已实测：用 Python SDK 把日志级别调到 VERBOSE，drafter 析构时会打印 `Num drafted/verified tokens` 与 `Success rate`（`llm_litert_mtp_drafter.cc:166-169`，实录见附录 D）。两类文体的对照极有说服力：写一段机器人学画画的创造性故事，α ≈ 26%——恰好压在盈亏平衡（α* ≈ 0.25）上方边缘，代入公式 speedup ≈ 0.93，这就是本书 benchmark「开关无差异」的直接原因；写一段 fibonacci 函数加解释，α ≈ 99.5%，代入公式 speedup ≈ 2.7，落入官方「约 3 倍」的口径区间。接受率不是模型常数，是文体的函数：benchmark 的合成负载与创造性写作落在低 α 区，官方演示的高可预测文本落在高 α 区，两个看似矛盾的数字因此同时为真。
+附录 D 还记录了 drafter 析构时输出的计数器。实验通过 Python SDK 把日志级别设为 VERBOSE；计数器代码见 `runtime/executor/llm_litert_mtp_drafter.cc:165-172`。故事提示词产生 213 个草稿，其中 56 个匹配，故 `r̂=56/213≈0.263`。平均每次 `Draft()` 返回 `1+3r̂≈1.79` 个 token。代码提示词产生 3069 个草稿，其中 3054 个匹配。对应的 `r̂≈0.995`，平均返回约 3.99 个 token。
 
-还要交代 benchmark 负载本身的一个发现，它改变这组数字的解读方式。benchmark 模式的 prefill 输入不是一段真实文本：它把你的 prompt 分词后 `ids.resize(N)`，用 pad（token 0）填满到目标长度（`runtime/core/session_utils.cc:68-73`）。256/1024/4096 档的输入其实是「一句话 + 一堵 pad 墙」，模型在 pad 之后续写的内容退化、不可预测，drafter 的接受率在这种负载下天然塌掉。所以「benchmark 测不出 MTP 收益」是 harness 的固有属性，不是模型的属性——要测真实收益，必须上自然文本。
+在图 9-2 的示意假设 `q=1.45` 下，两个样本对应的加速比分别约为 1.23 和 2.75。把 r̂ 误作 p 会得到 0.93；该结果混用了两种口径。这两次计数实验没有同时测量 q，所以上述示意值不是实测速率。两次实验的提示词也与固定长度 benchmark 不同。故事样本的 r̂ 因而不能用于推断该 benchmark 开启 MTP 后的吞吐。
 
-这条实测路径值得记下来，因为它绕过了「CLI 不输出接受率」的限制，且不用改码重编：计数器本来就在 drafter 里累加（`num_drafted_tokens_` / `num_verified_tokens_`），析构时经 `ABSL_LOG(INFO)` 打印；Python SDK 暴露了 `set_min_log_severity`（`python/litert_lm/_ffi.py:450`），调到 VERBOSE 即可看到。若想做成按周期输出或落进 benchmark 统计，仍需把计数器经执行器暴露出去（`Draft()` 每轮结束处，`:494` 之后），本书未改上游代码。
+固定长度 benchmark 的输入由 `runtime/core/session_utils.cc:68-73` 构造。代码先对提示词分词，再调用 `ids.resize(N)`。N 大于原 token 数时，新增的 `int` 元素为 0；N 更小时，序列会被截断。该负载不是定长的自然文本，不能沿用前述两个提示词的 r̂。Mac 归档数据既没有强制开启组，也没有这组 benchmark 的 drafter 计数器。现有可核查的强制开启端到端对照只有 Android 记录。没有证据把其中的减速归因于低接受比例。
 
-由此也能理解那个反直觉现象（第 19 问后半，`LiteRT-LM#2227`）：在某些 GPU（如 PowerVR）上，MTP 反而拖慢 decode。成因可以从公式推出——当 α 不够高、或 drafter 与 verify 在那块硬件上的 c_draft/c_base 偏大时，加速比跌破 1。该现象无真机可复现，按上游报告所述。实践含义直接：在目标硬件上开推测解码之前先实测一次，加速依赖「drafter 够便宜」与「猜得够准」同时成立，两者都随硬件与文体而变。
+这组计数不需要修改或重新编译运行时。drafter 已维护 `num_drafted_tokens_` 和 `num_verified_tokens_`，并在析构时通过 `ABSL_LOG(INFO)` 输出。Python SDK 的 `set_min_log_severity`（`python/litert_lm/_ffi.py:450`）可把日志级别调到 VERBOSE。若要得到分阶段或逐轮数据，则需新增遥测接口；当前日志只能提供整个 drafter 生命周期内的聚合比例。
 
-本书后来在一台 Qualcomm 机型上真机复测了这件事（附录 D 第十三节）：强制开启 MTP 后，cpu decode 从 10.0 掉到 2.8 tok/s（慢 3.6 倍），gpu 从 18.0 掉到 12.6 tok/s（慢约 30%）——同一批 synthetic 负载，在 Mac 上是「无差异」，在这台手机上就是明确的负收益。这正是 `#2227` 的同类现象落到实测里：同一套代码、同一份模型，硬件换了，公式的分母与 α 一起变，结论就翻面。第 19 问「什么时候更慢」的答案，至此有了两台设备的完整数据。
+`LiteRT-LM#2227` 报告了 PowerVR GPU 上开启 MTP 后 decode 吞吐下降的案例。[^ch09-issue-2227] 该 issue 使用 LiteRT-LM 0.11.0、Gemma 4 E2B 和俄文分类负载；其中关于 GPU 路径的原因分析明确标为假设。本章的公式只说明两类可能条件：r 偏低，或归一化轮次成本 q 偏高。它不能从吞吐数据中区分二者，也不能据此确认 issue 的根因。
 
-最后一个对照把圆环闭合：同一台手机、同一份模型，把负载换成本章开头那样的自然代码文本（`benchmark_prefill_tokens=0`，附录 D 第十三节），MTP 的符号立刻翻转——gpu decode 从 16.0 到 32.0 tok/s（整 2 倍），cpu 从 11.6 到 12.6 tok/s（+9%）。gpu 上 drafter 便宜、α 又高，收益近乎翻倍；手机 CPU 上 drafter 相对更贵，高 α 也只换来微利。所以「为什么有时更快、有时更慢」的完整答案是：加速比 = f（负载的可预测性，硬件的 drafter 相对成本），模型自始至终没有变过。
+附录 D 第十三节记录了一台 Qualcomm 机型上的 MTP 减速。合成负载使用 `benchmark_prefill_tokens=1024`。强制开启 MTP 后，CPU decode 从 10.0 降到 2.8 tokens/s；GPU 从 18.0 降到 12.6 tokens/s。在该设备和负载的这次测试中，MTP 组吞吐更低。实验没有同步记录 r 或分解 q，不能把原因归到其中一个参数。
 
-那官方的「约 3 倍」我们能不能摸到？先把公式里的两个量钉死。G 已从模型里核实：verify signature 的 `input_pos` 形状是 [4]，G = 3（导出定死，运行时不可调）。于是加速比的上限是 4 ÷ (1 + 3c)，c 是 drafter 的相对成本。用最优手法实测（温度 0、纯代码长生成，实录见附录 D）：Mac GPU 从 58.7 到 133.9 tok/s（2.28×），反解 c ≈ 0.24，上限 2.31×；手机 GPU 从 18.6 到 37.4 tok/s（2.01×），反解 c ≈ 0.32，上限 2.03×。两台设备都已顶到各自的上限。官方的 3 倍要求 c ≈ 0.11，这个成本在本书的两台设备上都不存在，它更可能属于 Pixel Tensor 的 GOOGLE_TENSOR_ARTISAN 手写路径或服务级 GPU（推测，非实测）。值得记住的是最后一个反直觉点：drafter 只有 45 MB（主模型的 2%），c 却是 0.24-0.32 而非 0.02——小模型的每步固定开销（kernel 启动、KV 管理）在这些后端上主导了成本，这也是收益上限随硬件差异这么大的原因。
+同一台手机另有自然代码提示词的记录，参数为 `benchmark_prefill_tokens=0`。GPU 的单次观测从 16.0 变为 32.0 tokens/s，decode 长度为 128。CPU 的单次观测从 11.6 变为 12.6 tokens/s，decode 长度为 64。每个条件只运行 1 次，两种后端的 decode 长度也不同。记录只能说明这些测试中存在观测差异，不能估计稳定加速比或比较后端绝对值。自然代码吞吐测试与 r̂ 计数也不是同一次运行。现有数据不能把差异分解为接受比例和轮次成本两部分。
 
-所以推测解码不是无条件的加速，是一个有条件的权衡：收益取决于接受率，接受率不足时净收益为负。文体也影响接受率——套路性强的文本（比如代码）容易预测、接受率高，天马行空的散文难预测、接受率低。
+本书基准模型的 verify signature 中，`input_pos` 形状为 `[4]`，故 G=3。一次 `Draft()` 最多返回 4 个 token。附录 D 另有两组自然代码长生成的单次记录。Mac GPU 从 58.7 变为 133.9 tokens/s，比值为 2.28。手机 GPU 从 18.62 变为 37.38 tokens/s，比值为 2.01。两组记录使用不同采集入口，没有重复运行，也没有在同一次运行中记录 r。吞吐比因而不能唯一确定 q 或 c，也不能估计跨设备的稳定差异。
 
-## 开启条件：模型声明支持，草拟步数导出时定死
+在 `r=1`、`q=1+3c` 的假设下，2.28 倍和 2.01 倍分别对应 c≈0.25 和 c≈0.33。这里的 c 是由端到端结果反推的有效参数。它包含 verify、drafter 和运行时操作，不是 drafter 模型的实测单步成本。若实际 r 小于 1，反推出的 c 也会更小。这些数值不能证明两台设备已经达到吞吐上限。在相同简化模型下，即使 r=1，3 倍加速也要求 c≤1/9≈0.11。现有数据不足以把官方结果[^ch09-google-mtp] 归因于某种硬件路径。drafter 文件约 45 MB 也不能推出 c≈0.02，因为模型存储大小不是端到端时延的比例尺。
 
-要开推测解码，得先过两道门槛：模型自己声明支持，以及草拟步数 G 早在导出时就定死。
+推测解码是否加速由 r 和 q 共同决定。聚合接受比例 r 决定每轮平均产出，归一化成本 q 表示取得这些输出所需的时间。两者都会随模型、输入内容、生成位置、设备和后端变化。评估目标负载时，需要在同一次测试中记录接受比例与吞吐。
 
-其一，一个模型支不支持推测解码，写在它的能力声明里。运行时用 `HasSpeculativeDecodingSupport`（`schema/capabilities/speculative_decoding.h:33`、`:44`）判断——头文件给了两个重载，一个接受 `std::istream&`、一个接受文件路径，后者只是打开文件转调前者。真正的判断在 `.cc` 里，机制很朴素（`speculative_decoding.cc:40`–`:73`）：
+## 多 token 返回后的停止检测与回退
+
+MTP 还改变了 executor 的返回形态。普通 decode 通常返回一个 token，一次 MTP `Decode()` 则可能返回一段序列。任务层必须按顺序处理这段序列，因为停止序列可能在批次中间命中，BPE 片段也可能跨越两次 MTP 调用。
+
+`DecodeOneStep::Run` 先取得 executor 返回的二维 token 序列，并检查各候选的序列长度是否相同。检查代码见 `runtime/core/tasks.cc:147-156`。随后按位置逐个处理，见 `runtime/core/tasks.cc:163-179`：
+
+```cpp
+for (size_t step = 0; step < sequence_length; ++step) {             // (1)
+  std::vector<std::vector<int>> step_tokens;
+  // ... 每个候选在当前位置取一个 token
+  RETURN_IF_ERROR(stop_token_detector_.ProcessTokens(step_tokens)); // (2)
+  ASSIGN_OR_RETURN(step_tokens, tokenizer_.MergeTokenIds(           // (3)
+                                    bpe_partial_token_ids_, step_tokens));
+  auto decoded_result =
+      tokenizer_.TokenIdsToTexts(num_output_candidates_, step_tokens);
+```
+
+`(1)` 将本轮返回序列展开为逐位置处理。`(2)` 先推进停止序列检测器，`(3)` 再合并未完成的 BPE token id。即使 executor 一次返回多个 token，停止检测与文本解码仍按 token 顺序推进。
+
+停止序列在批次中间命中时，v0.13.1 会调整 executor 的逻辑位置。代码以 `sequence_length - step` 计算回退量，再调用 `SetCurrentStep`（`runtime/core/tasks.cc:223-233`）：
+
+```cpp
+if (all_done) {
+  if (step != sequence_length - 1) {
+    int diff = sequence_length - step;                               // (1)
+    ASSIGN_OR_RETURN(int current_step, executor_.GetCurrentStep());
+    RETURN_IF_ERROR(executor_.SetCurrentStep(current_step - diff));   // (2)
+  }
+  return true;
+}
+```
+
+假设本轮返回 4 个 token，停止 token 位于下标 1。可见输出只保留下标 0；`diff=4-1=3`，`(2)` 回退停止位置及其后的两个位置。若停止 token 位于本批最后一个位置，`if` 条件不成立，代码不会调用 `SetCurrentStep`。这是两个不同分支，不能把批中回退规则推广到批次末位。
+
+compiled executor 的 `SetCurrentStep` 检查新位置不超过已处理 token 数且不小于 0。检查通过后，它只更新逻辑 `current_step`，不清除 KV cache 缓冲。对应代码见 `runtime/executor/llm_litert_compiled_model_executor.cc:1452-1479`。后续调用读取调整后的逻辑位置。
+
+<figure>
+{{#include figs/fig-9-3.svg}}
+<figcaption>图 9-3　示例中的停止 token 位于 4-token 批次的下标 1，任务层保留下标 0，并将逻辑位置回退 3；命中批次末位时不执行该回退分支。</figcaption>
+</figure>
+
+`DecodeOneStep` 在每次 `Run` 开始时清空结果，再累积本批可见文本和 token id（`runtime/core/tasks.cc:158-214`）。外层循环在 `Run` 返回后至多发送一次 `TaskState::kProcessing` 回调，而且只有 `any_updates` 为真时才发送（`runtime/core/tasks.cc:523-566`）。一次 executor `Decode()` 可能不产生可见更新，也可能产生一次携带多个 token id 的更新。回调次数既不等于 executor 调用次数，也不等于生成 token 数。统计可见输出时应读取回调中的 token id；统计 executor 的位置推进量时应读取 `current_step` 差值。
+
+| 终止条件 | 检查位置 | 对本轮多 token 序列的处理 |
+|---|---|---|
+| 停止 token 或停止序列 | `DecodeOneStep::Run` 内逐 token 检查 | 批中命中时回退停止位置及后续位置；末位命中不回退 |
+| benchmark decode token 数量 | `Run` 返回后调用 `ShouldStop` | 任务层没有按剩余额度截短本批 |
+| KV cache 最大长度 | `Run` 返回后调用 `ShouldStop` | 使用本轮后的绝对 `current_step` 判断 |
+| `max_output_tokens` | `Run` 返回后调用 `ShouldStop` | 使用本轮后的 `current_step` 增量判断 |
+| 取消标志 | 下一轮 `Run` 之前检查 | 已完成并回调的上一批不会被撤销 |
+
+> 表 9-2　停止序列在批内逐 token 检查；三个数值上限在整批返回后检查，取消标志则在下一批开始前检查。
+
+外层循环在回调之后读取 `current_step`，并以它相对 decode 起点的增量作为 `num_decode_steps`（`runtime/core/tasks.cc:569-572`）。`ShouldStop` 再将这个增量与 benchmark 数量、`max_output_tokens` 比较，并将绝对 `current_step` 与 KV cache 上限比较（`runtime/core/tasks.cc:86-105`）。这里的 step 数是 token 位置增量，不是 `Run` 调用次数。
+
+据此可以给出任务层的上界推断。若某项数值限制只剩 B 个 token，而本轮在没有提前命中停止序列时推进 L 个位置，且 L>B，任务层将在回调后停止，越过阈值 L-B 个位置。稳态 MTP 一轮最多返回 G+1 个 token，任务层的理论最大越界量为 G；prefill 后第一次 `Decode()` 最多返回 G+2 个 token，对应 G+1。这个推断来自后置检查和 `current_step` 增量，前提是 executor 能完成该次调用。KV cache 容量还可能由 executor 或模型形状提前约束，不能仅凭任务层代码断言真实调用一定越界。
+
+现有 `max_output_tokens` 测试使用一次返回一个 token 的 `FakeLlmExecutor`（`runtime/core/pipeline_test.cc:117-121`、`runtime/core/pipeline_test.cc:249-272`）。它没有覆盖一次返回多 token 的边界。需要新增可为单个候选返回 token 序列的任务层测试 executor，再用真实 MTP 模型核对执行器状态：
+
+| 输入序列与条件 | 应检查的结果 | 用途 |
+|---|---|---|
+| `[a, stop, b, c]`，停止 token 位于下标 1 | 只输出 `a`，最终位置为批前位置加 1 | 验证批中命中及 `diff=3` 的回退 |
+| `[a, b, c, stop]`，停止 token 位于末位 | 可见输出、最终位置和 `SetCurrentStep` 调用次数 | 覆盖末位不回退分支 |
+| 上一批末尾是停止序列前缀，本批首 token 完成匹配 | pending 队列和跨批停止行为 | 验证批边界不改变停止序列语义 |
+| 剩余 `max_output_tokens=1`，executor 返回 4 个 token | 输出长度、回调 token id 和最终位置 | 验证后置检查与越界量 |
+| 4 个 token 均可见且启用 streaming | 回调次数及单次回调的 token id 数 | 验证一个批次至多一次可见更新 |
+
+> 表 9-3　多 token 返回测试需同时检查可见文本、回调 token id、逻辑位置和回退调用；只检查最终字符串不足以覆盖状态语义。
+
+一次 executor `Decode()` 表示一轮运行调用，`current_step` 增量表示本轮推进的 token 位置数。MTP 性能分析用前者计算轮次成本，用后者计算产出和数值终止条件。流式接口还要区分可见 token 与因 BPE 或停止前缀而暂存的 token。
+
+## 开启条件：模型能力与固定草拟步数
+
+模型文件需要同时包含 MTP drafter 和相应的 verify signature；调用方还必须显式启用推测解码。草拟步数 G 由 verify signature 的形状固定。
+
+`HasSpeculativeDecodingSupport` 检查模型是否支持推测解码，声明见 `schema/capabilities/speculative_decoding.h:33-45`。头文件提供两个重载：一个接受 `std::istream&`，另一个接受文件路径并转调前者。转调代码见 `schema/capabilities/speculative_decoding.cc:81-88`。具体判断位于 `schema/capabilities/speculative_decoding.cc:40-78`：
 
 ```cpp
 const std::vector<std::string> speculative_decoding_model_types = {
@@ -334,9 +416,9 @@ if (section_object->data_type() == AnySectionDataType_TFLiteModel) {  // (2)
 }
 ```
 
-`(2)` 遍历 `.litertlm` 的所有 section，`(3)` 找每个 TFLite 模型 section 的 `model_type` 元数据，`(4)` 只要有一个等于 `(1)` 里那个字符串 `"tf_lite_mtp_drafter"` 就返回 true。也就是说，「支持推测解码」不是一个布尔开关，而是文件里有没有打包一个 `model_type` 标为 mtp drafter 的子模型。这正是第 7 章讲的 `.litertlm` 容器里那些 section 的用途之一：drafter 就是和基础模型打包在同一个文件里的另一个 section。
+`(2)` 遍历 `.litertlm` 的 section，`(3)` 读取 TFLite 模型 section 的 `model_type` 元数据。出现一项 `"tf_lite_mtp_drafter"`，`(4)` 即返回 true。能力判断取决于模型文件中是否包含相应 drafter section。第 7 章介绍的 `.litertlm` 容器可同时保存基础模型和这个子模型。
 
-从能力声明到 drafter 装载，链路各环都能落到代码，但中间有一环在 v0.13.1 还没接上。CLI 侧，`--enable-speculative-decoding` 取 `auto`、`true`、`false` 三选一（`python/litert_lm_cli/common.py:108`），经 `parse_speculative_decoding`（`:21`）映射：`auto` 与缺省映射为 `None`、`true` 映射为 `True`（强制开启，模型不支持则报错）、`false` 映射为 `False`。关键在 `None` 的走向：Python 绑定层只在值非 `None` 时才调 setter（`python/litert_lm/engine.py:113`），`auto` 因此不触碰 C++ 侧的默认值——而默认是关（`bool enable_speculative_decoding = false`，`runtime/executor/llm_executor_settings.h:258`）。所以 v0.13.1 里 `auto` 的实际行为是关：CLI help 宣称的「按模型元数据自动判断」（`common.py:115`）尚未接线，引擎创建路径并不调用 `HasSpeculativeDecodingSupport` 做探测。这个标志经引擎注入执行器设置（`.enable_speculative_decoding = settings.enable_speculative_decoding`，`runtime/engine/litert_lm_lib.cc:592`）。执行器构造时看这个标志：
+模型能力查询与自动启用在 v0.13.1 尚未连通。CLI 参数 `--enable-speculative-decoding` 接受 `auto`、`true`、`false`（`python/litert_lm_cli/common.py:108-119`）。`parse_speculative_decoding` 把 `auto` 和缺省值映射为 `None`，见 `python/litert_lm_cli/common.py:21-41`。另外两项映射为相应的布尔值。Python 绑定只在值非 `None` 时调用 setter（`python/litert_lm/engine.py:113-116`）。所以 `auto` 保留 C++ 默认值 `false`（`runtime/executor/llm_executor_settings.h:257-258`）。CLI help 写明会根据模型元数据自动判断，位置在 `python/litert_lm_cli/common.py:114-117`。v0.13.1 的引擎创建路径没有调用 `HasSpeculativeDecodingSupport`。该标志经 `runtime/engine/litert_lm_lib.cc:592` 写入执行器设置。执行器构造时据此决定是否创建 drafter（`runtime/executor/llm_litert_compiled_model_executor.cc:1807-1822`）：
 
 ```cpp
 if (advanced_settings.has_value() &&
@@ -349,9 +431,9 @@ if (advanced_settings.has_value() &&
 }
 ```
 
-`(1)` 标志为真才装载 drafter，`(2)` `Create` 内部用 `resources.GetTFLiteModel(ModelType::kTfLiteMtpDrafter)`（`:194`）取出那个 drafter section 编译成独立小模型。若文件里根本没打包 drafter section，这一步取不到模型、`Create` 失败——这就把「强制开启但模型不支持则报错」的 CLI 语义落到了实处。至于能力探测，`HasSpeculativeDecodingSupport` 在 v0.13.1 只作为查询接口暴露给 SDK 调用方（C API 见 `schema/capabilities/capabilities_c.cc:50`，Kotlin JNI 见 `kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:1233`），引擎自己不调它：想按元数据自动开启的应用，得自己查、自己把标志置真。
+`(1)` 为真时才创建 drafter。`(2)` 的 `Create` 调用 `resources.GetTFLiteModel(ModelType::kTfLiteMtpDrafter)`，取出 drafter section。该 section 随后被编译为独立模型，见 `runtime/executor/llm_litert_mtp_drafter.cc:193-197`。模型文件不含该 section 时，创建过程返回错误。v0.13.1 也把 `HasSpeculativeDecodingSupport` 作为查询接口提供给调用方。C API 见 `schema/capabilities/capabilities_c.cc:45-55`。Kotlin JNI 见 `kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:1233-1236`。需要自动行为的应用必须先查询能力，再显式设置启用标志。
 
-其二，草拟步数 G 不是运行时可调的旋钮。它由模型 verify signature 的形状固定（`:250`–`:256`）：
+草拟步数 G 也不能在运行时调整。它由模型 verify signature 的形状决定（`runtime/executor/llm_litert_mtp_drafter.cc:252-256`）：
 
 ```cpp
 LITERT_ASSIGN_OR_RETURN(auto input_pos_tensor_type,
@@ -361,29 +443,34 @@ const auto& input_pos_dims = input_pos_tensor_type.Layout().Dimensions();
 num_draft_steps = input_pos_dims[0] - 1;                         // (1)
 ```
 
-`(1)` G 直接读自 verify signature 的 `input_pos` 张量维度减一——signature 能同时喂进几个位置，G 就是几。verify 一次吃 G+1 个位置（源码注释 `[T = G + 1]`），减去起头那个真 token，就是草拟步数。一个模型草拟几步，在它被导出、signature 形状定死的那一刻就固定了，运行时只能读、不能改。这是第 4 章「固定形状」约束在推测解码上的又一次体现：连草拟几步这个看似是超参的量，也被烘焙进了 signature。这也解释了为何 `CreateGreedySampler` 构造 verifier 采样器时把 `sequence_size` 设为 `num_draft_steps + 1`（`:270`）：采样器的形状必须与 verify signature 一次输出 G+1 个位置对齐。
+`(1)` 用 verify signature 的 `input_pos` 第一维减一得到 G。verify 一次接收 G+1 个位置，其中一个是起始的已确认 token，其余 G 个对应草拟步数。signature 的张量形状在模型导出时固定，运行时只能读取。`CreateGreedySampler` 把 verifier 采样器的 `sequence_size` 设为 `num_draft_steps + 1`。对应代码见 `runtime/executor/llm_litert_mtp_drafter.cc:268-272`。采样器输出与 verify signature 对齐。
 
 <div class="aside-compare">
 
-推测解码的组织方式，llama.cpp 给出对照：draft 模型是一个独立的模型文件，用 `--model-draft` 在运行时指定（`llama.cpp/common/arg.cpp:3763 @ b9873`），配一套通用的草拟-验证循环（`common/speculative.cpp`），任何词表兼容的小模型都能当 drafter。LiteRT-LM 的 MTP 则把 drafter 作为一个段打包进同一个 `.litertlm`、verify signature 编进主模型（本章实剖）。前者自由：可以给 70B 配 1B，随时换搭配；后者省心：模型发布者选好、验证好、一个文件带走，运行时按能力声明自动开启。自由度与开箱即用，仍是那道熟悉的选择题。
+llama.cpp 把 draft 模型保存为独立文件。调用方通过 `--model-draft` 在运行时指定文件，见 `llama.cpp/common/arg.cpp:3763 @ b9873`。草拟与验证逻辑位于 `common/speculative.cpp`。LiteRT-LM 的 MTP 把 drafter section 与基础模型放在同一个 `.litertlm` 文件中。基础模型还提供 verify signature。前者允许调用方在运行时选择兼容的 draft 模型；后者由模型发布者固定 drafter 与 verify 的组合。v0.13.1 可以查询模型能力，但不会据此自动启用 MTP，调用方仍需显式设置。
 
 </div>
 
 ## 小结
 
-推测解码是降低 decode 阶段带宽压力的第三类手段：不改带宽、不改模型，用一个便宜的 drafter 先预测、基础模型一次前向验一串，把开销最高的那次前向摊到多个 token 上。bonus 设计保证它论 token 数不亏，接受率决定它到底快多少。这一章把机制拆到了缓冲与集成两层：verify 走 prefill 形状、以因果 mask 保证逐位比对有意义、对 KV cache 做 `Duplicate()` 或填 `param_tensor`；drafter 每步拼接基础模型的隐藏态自回归下去，起点来自 decode 输出或上一轮接受位置；执行器 decode 用 `current_step += 产出数` 把成倍产出兑现为序列位置的成倍前进。当前这条 MTP 路径做的是贪心接受而非分布无损的推测采样，用一次整数相等比较换掉了分布回传与逐位概率计算。加速比可写成 E[产出] 除以固定额外开销比，存在一个盈亏平衡接受率；〔基准 D〕E4B 在合成负载下未复现 3 倍，现已实证归因：创造性文本 α ≈ 26%，恰压在盈亏平衡边缘，而代码类文本 α ≈ 99.5%，落入官方 3 倍口径区——接受率是文体的函数，两组数字不矛盾。
+LiteRT-LM 的 MTP 路径让基础模型一次 verify 前向确认多个草稿位置。稳态下，一轮 `Draft()` 接受 K 个草稿并返回 K+1 个 token。prefill 后首次 `Decode()` 还会执行一次普通 decode，因此返回 K+2 个 token。该次调用包含两次基础模型前向。当前实现采用贪心 token 比较，没有保持随机采样分布不变的概率接受步骤。
 
-第三篇到此收尾。内存容量与带宽约束、硬件差异约束，各有对策：KV cache 与量化针对内存与带宽，异构后端针对硬件差异，推测解码在接受率够高时能再取得成倍的吞吐。下一部走出纯文本，去看这套运行时怎么长出多模态、工具调用这些能力，以及它如何变成六种语言的 SDK。
+日志中的 `Success rate` 是聚合接受比例 `r̂=ΣK/(RG)`，样本平均产出为 `1+Gr̂`。理论曲线中的 p 是逐位条件匹配概率，不能用 r̂ 替代。端到端加速比还取决于归一化轮次成本 q。故事和代码样本分别得到 `r̂≈0.263` 与 `r̂≈0.995`，但计数与主 benchmark 吞吐来自不同负载。现有记录不能把吞吐差异分解为 r 和 q；完整测试需要在同一次运行中记录接受比例与吞吐。
 
 ---
 
 ## 练习与自查
 
-1. **盈亏平衡。** 设 drafter 单步成本是 base 前向的 0.1 倍，G = 3。若每个位置独立以概率 p 被接受（前缀截断），一轮期望产出约 1 + p + p² + p³ 个 token。推测解码不亏的最低 p 约是多少？
-2. **保底机制。** 为什么最坏情况下（首个草拟就错）推测解码的产出 token 数也不少于普通 decode？
-3. **形状约束。** 草拟步数 G 为什么在模型导出时就定死？从 verify signature 的哪一个维度读出？
-4. **现象解释。** 本书基准里 MTP 开关无显著差异。用实测接受率解释：两类文体的 α 各是多少？代入加速比公式后，各自的 speedup 落在什么位置？
-5. **实剖对照。** drafter 输入形状是 `[1, 1, 5120]`。这 5120 由哪两半拼成？各自从哪里来？
+1. 盈亏平衡：设 G=3、有效开销参数 c=0.1，逐位条件匹配概率为恒定 p。一轮期望产出为 `1+p+p²+p³`，归一化成本为 `1+3c`。求加速比达到 1 时的 p。
+2. 返回下界：第一次草稿不匹配时，`Draft()` 为什么仍返回 1 个 token？这个结论为什么不等于“端到端成本不会增加”？
+3. 形状约束：草拟步数 G 为什么在模型导出时固定？从 verify signature 的哪一个维度读出？
+4. 口径换算：G=3、日志聚合比例 `r̂=0.4` 时，平均每轮接受多少草稿、返回多少 token？为什么不能把 0.4 直接代入理论曲线中的 p？
+5. 结构对照：drafter 输入形状为 `[1, 1, 5120]`。5120 由哪两部分组成？它们分别来自哪里？
 
+[^ch09-google-mtp]: Olivier Lacombe、Maarten Grootendorst，*Accelerating Gemma 4: faster inference with multi-token prediction drafters*，Google，2026-05-05，<https://blog.google/innovation-and-ai/technology/developers-tools/multi-token-prediction-gemma-4/>（访问 2026-07-18）。
 
-<!-- MTP 已实测（附录 D）：auto 档在 v0.13.1 实为关；强制 true 与关在抖动内、未复现 3x。2026-07-17 接受率实证归因：Python SDK VERBOSE 日志读出析构打印的计数器（故事 α≈0.26 / 代码 α≈0.995），文体接受率对比由此补上，无需改码。#2227 无真机，按【文档】级引 issue。 -->
+[^ch09-leviathan]: Yaniv Leviathan、Matan Kalman、Yossi Matias，*Fast Inference from Transformers via Speculative Decoding*，ICML 2023，arXiv:2211.17192，<https://arxiv.org/abs/2211.17192>（访问 2026-07-18）。
+
+[^ch09-chen]: Charlie Chen、Sebastian Borgeaud、Geoffrey Irving、Jean-Baptiste Lespiau、Laurent Sifre、John Jumper，*Accelerating Large Language Model Decoding with Speculative Sampling*，2023，arXiv:2302.01318，<https://arxiv.org/abs/2302.01318>（访问 2026-07-18）。
+
+[^ch09-issue-2227]: Shoolife，*MTP / speculative decoding regresses decode tok/s on PowerVR GPU (Tensor G6) — even with GPU sampler fully loaded*，LiteRT-LM issue #2227，2026-05-11，<https://github.com/google-ai-edge/LiteRT-LM/issues/2227>（访问 2026-07-18）。

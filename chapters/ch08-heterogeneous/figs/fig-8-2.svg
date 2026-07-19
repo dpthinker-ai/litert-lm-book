@@ -1,54 +1,45 @@
-<svg viewBox="0 0 760 310" width="760" height="310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="片上采样与回传采样的数据路径对比">
-  <style>
-    text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
-    .b{fill:var(--fig-surface, #f6f8fa);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
-    .bl{fill:var(--fig-accent-soft, #e8f0fe);stroke:var(--fig-accent, #0b57d0);stroke-width:1.5}
-    .hw{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border, #d0d7de);stroke-width:1.4}
-    .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
-    .tw{fill:var(--fig-accent, #0b57d0);font-size:12.5px;font-weight:700}
-    .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
-    .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
-    .edge{stroke:var(--fig-accent, #0b57d0);stroke-width:1.8;fill:none}
-    .edged{stroke:var(--fig-text-dim, #8b949e);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
-  </style>
+<svg viewBox="0 0 820 350" width="820" height="350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="host 采样与设备侧采样的数据路径对比">
   <defs>
-    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
-      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
-    </marker>
-    <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4">
-      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim, #8b949e)"/>
-    </marker>
+    <style>text{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}.dev{fill:var(--fig-accent-soft,#e8f0fe);stroke:var(--fig-accent,#0b57d0);stroke-width:1.5}.host{fill:var(--fig-surface,#f6f8fa);stroke:var(--fig-border,#d0d7de);stroke-width:1.4}.t{fill:var(--fig-text,#1f2328);font-size:14px;font-weight:700}.th{fill:var(--fig-accent,#0b57d0);font-size:12.5px;font-weight:700}.ts{fill:var(--fig-text-soft,#57606a);font-size:11.5px}.td{fill:var(--fig-text-dim,#8b949e);font-size:10.5px}.edge{stroke:var(--fig-accent,#0b57d0);stroke-width:1.8;fill:none}.edged{stroke:var(--fig-text-dim,#8b949e);stroke-width:1.4;fill:none;stroke-dasharray:5 4}</style>
+    <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4"><path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent,#0b57d0)"/></marker>
+    <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="6" refY="4"><path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-dim,#8b949e)"/></marker>
   </defs>
-  <text class="t" x="380" y="26" text-anchor="middle">同一个 decode step，两条数据路径</text>
-  <!-- 回传采样 -->
-  <text class="tw" x="28" y="66">回传采样（外部）：每步 1 MiB logits 过设备边界</text>
-  <rect class="hw" x="60" y="80" width="150" height="52" rx="8"/>
-  <text class="ts" x="135" y="102" text-anchor="middle">GPU 前向</text>
-  <text class="td" x="135" y="120" text-anchor="middle">logits [1,1,262144]</text>
-  <path class="edge" d="M214,106 H292" marker-end="url(#ar)"/>
-  <text class="tw" x="253" y="95" text-anchor="middle">1 MiB</text>
-  <text class="td" x="253" y="127" text-anchor="middle">device→host</text>
-  <rect class="b" x="296" y="80" width="140" height="52" rx="8"/>
-  <text class="ts" x="366" y="102" text-anchor="middle">CPU 采样器</text>
-  <text class="td" x="366" y="120" text-anchor="middle">top-k / top-p / 温度</text>
-  <path class="edge" d="M440,106 H518" marker-end="url(#ar)"/>
-  <rect class="bl" x="522" y="80" width="110" height="52" rx="8"/>
-  <text class="ts" x="577" y="102" text-anchor="middle">token</text>
-  <path class="edged" d="M577,136 C577,168 135,168 135,136" marker-end="url(#ard)"/>
-  <text class="td" x="360" y="163" text-anchor="middle">token 回 GPU 作为下一步输入：每生成 N 个 token，往返 N 次</text>
-  <!-- 片上采样 -->
-  <text class="tw" x="28" y="210">片上采样（内部）：token 不出显存</text>
-  <rect class="hw" x="60" y="224" width="150" height="52" rx="8"/>
-  <text class="ts" x="135" y="246" text-anchor="middle">GPU 前向</text>
-  <text class="td" x="135" y="264" text-anchor="middle">logits 留在显存</text>
-  <path class="edge" d="M214,250 H292" marker-end="url(#ar)"/>
-  <text class="td" x="253" y="239" text-anchor="middle">零拷贝</text>
-  <rect class="bl" x="296" y="224" width="140" height="52" rx="8"/>
-  <text class="ts" x="366" y="246" text-anchor="middle">GPU 采样器（片上）</text>
-  <text class="td" x="366" y="264" text-anchor="middle">sampler_handles_input_</text>
-  <path class="edge" d="M440,250 H518" marker-end="url(#ar)"/>
-  <rect class="bl" x="522" y="224" width="110" height="52" rx="8"/>
-  <text class="ts" x="577" y="246" text-anchor="middle">token</text>
-  <text class="td" x="660" y="250">省掉每步一次</text>
-  <text class="td" x="660" y="266">跨设备同步</text>
+  <text class="t" x="410" y="26" text-anchor="middle">一个 decode step 的两条采样路径</text>
+  <text class="th" x="26" y="61">host 采样：完整 logits 跨越设备边界</text>
+  <rect class="dev" x="42" y="76" width="160" height="54" rx="8"/>
+  <text class="ts" x="122" y="99" text-anchor="middle">GPU 前向</text>
+  <text class="td" x="122" y="117" text-anchor="middle">logits [1, 1, 262144]</text>
+  <path class="edge" d="M206,103 H300" marker-end="url(#ar)"/>
+  <text class="th" x="253" y="91" text-anchor="middle">1 MiB</text>
+  <text class="td" x="253" y="122" text-anchor="middle">device → host</text>
+  <rect class="host" x="304" y="76" width="150" height="54" rx="8"/>
+  <text class="ts" x="379" y="99" text-anchor="middle">CPU sampler</text>
+  <text class="td" x="379" y="117" text-anchor="middle">top-k / top-p / 温度</text>
+  <path class="edge" d="M458,103 H530" marker-end="url(#ar)"/>
+  <rect class="host" x="534" y="76" width="112" height="54" rx="8"/>
+  <text class="ts" x="590" y="99" text-anchor="middle">token id</text>
+  <text class="td" x="590" y="117" text-anchor="middle">host 结果</text>
+  <path class="edged" d="M590,134 C590,171 122,171 122,134" marker-end="url(#ard)"/>
+  <text class="td" x="356" y="189" text-anchor="middle">host 再填写下一步设备输入</text>
+  <text class="th" x="26" y="207">设备侧采样：完整 logits 保留在 GPU 侧</text>
+  <rect class="dev" x="42" y="222" width="160" height="54" rx="8"/>
+  <text class="ts" x="122" y="245" text-anchor="middle">GPU 前向</text>
+  <text class="td" x="122" y="263" text-anchor="middle">完整 logits</text>
+  <path class="edge" d="M206,249 H292" marker-end="url(#ar)"/>
+  <text class="td" x="249" y="238" text-anchor="middle">设备缓冲</text>
+  <rect class="dev" x="296" y="222" width="160" height="54" rx="8"/>
+  <text class="ts" x="376" y="245" text-anchor="middle">GPU sampler</text>
+  <text class="td" x="376" y="263" text-anchor="middle">消费完整 logits</text>
+  <path class="edge" d="M460,249 H532" marker-end="url(#ar)"/>
+  <rect class="dev" x="536" y="222" width="112" height="54" rx="8"/>
+  <text class="ts" x="592" y="245" text-anchor="middle">选中 token</text>
+  <text class="td" x="592" y="263" text-anchor="middle">设备缓冲</text>
+  <path class="edged" d="M652,249 H704" marker-end="url(#ard)"/>
+  <text class="td" x="678" y="238" text-anchor="middle">少量 id</text>
+  <rect class="host" x="708" y="222" width="92" height="54" rx="8"/>
+  <text class="ts" x="754" y="245" text-anchor="middle">host</text>
+  <text class="td" x="754" y="263" text-anchor="middle">输出与状态</text>
+  <path class="edge" d="M592,280 C592,315 122,315 122,280" marker-end="url(#ar)"/>
+  <text class="td" x="356" y="293" text-anchor="middle">sampler_handles_input_ 为 true 时，直接写入下一步设备输入</text>
+  <text class="td" x="410" y="338" text-anchor="middle">省去的是完整 logits 回传，不是全部 host 交互</text>
 </svg>

@@ -1,17 +1,19 @@
-<svg viewBox="0 0 700 320" width="700" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="prefill 两条路径与异步底座">
-  <style>
-    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    .box  { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .hot  { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
-    .kv   { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .t  { fill: var(--fig-text, #1f2328); }
-    .ts { fill: var(--fig-text-soft, #57606a); }
-    .accent { fill: var(--fig-accent, #0b57d0); }
-    .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
-    .dash { stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; }
-  </style>
-  <defs><marker id="a4" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker></defs>
-  <text class="t" x="350" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">RunPrefill：吞下提示词，填好 KV cache</text>
+<svg viewBox="0 0 700 320" width="700" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="prefill 静态与动态路径、任务调度和取消检查边界">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .box  { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .hot  { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+      .kv   { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .t  { fill: var(--fig-text, #1f2328); }
+      .ts { fill: var(--fig-text-soft, #57606a); }
+      .accent { fill: var(--fig-accent, #0b57d0); }
+      .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
+      .dash { stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; }
+    </style>
+    <marker id="a4" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker>
+  </defs>
+  <text class="t" x="350" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">RunPrefill：处理提示词并更新 KV cache</text>
   <!-- 输入 -->
   <rect class="box" x="24" y="130" width="96" height="48" rx="6"/>
   <text class="t" x="72" y="150" text-anchor="middle" style="font-size:11px;font-weight:700">token ids</text>
@@ -21,24 +23,24 @@
   <text class="t"  x="254" y="92"  text-anchor="middle" style="font-size:12px;font-weight:700">静态：挑固定 signature</text>
   <text class="ts" x="254" y="110" text-anchor="middle" style="font-size:10px">SortedPrefillSignatureMap</text>
   <rect class="box" x="164" y="184" width="180" height="52" rx="6"/>
-  <text class="t"  x="254" y="204" text-anchor="middle" style="font-size:12px;font-weight:700">动态：分块吞入</text>
+  <text class="t"  x="254" y="204" text-anchor="middle" style="font-size:12px;font-weight:700">动态：按 chunk 分块</text>
   <text class="ts" x="254" y="222" text-anchor="middle" style="font-size:10px">prefill_chunk_size</text>
   <!-- 汇合 PrefillInternal -->
   <rect class="box" x="388" y="128" width="130" height="52" rx="6"/>
   <text class="t"  x="453" y="148" text-anchor="middle" style="font-size:12px;font-weight:700">PrefillInternal</text>
-  <text class="ts" x="453" y="166" text-anchor="middle" style="font-size:10px">→ LiteRT 跑模型</text>
+  <text class="ts" x="453" y="166" text-anchor="middle" style="font-size:10px">LiteRT 执行 signature</text>
   <!-- KV cache -->
   <rect class="kv" x="560" y="128" width="116" height="52" rx="6"/>
   <text class="t"  x="618" y="148" text-anchor="middle" style="font-size:12px;font-weight:700">KV cache</text>
-  <text class="ts" x="618" y="166" text-anchor="middle" style="font-size:10px">为 decode 铺底</text>
+  <text class="ts" x="618" y="166" text-anchor="middle" style="font-size:10px">供 decode 使用</text>
   <!-- edges -->
   <path class="edge" marker-end="url(#a4)" d="M120,150 C 140,150 144,98 162,98"/>
   <path class="edge" marker-end="url(#a4)" d="M120,158 C 140,158 144,210 162,210"/>
   <path class="edge" marker-end="url(#a4)" d="M344,98  C 366,98 366,146 386,146"/>
   <path class="edge" marker-end="url(#a4)" d="M344,210 C 366,210 366,162 386,162"/>
   <path class="edge" marker-end="url(#a4)" d="M518,154 H558"/>
-  <!-- 异步底座 + 取消 -->
-  <rect class="hot" x="164" y="268" width="354" height="38" rx="6"/>
-  <text class="accent" x="341" y="292" text-anchor="middle" style="font-size:11px;font-weight:700">异步任务队列 · 取消标志 · 限长（max_prefill_sequence_length）→ 可随时打断</text>
-  <path class="dash" marker-end="url(#a4)" d="M341,268 V186"/>
+  <!-- 任务调度与取消检查边界 -->
+  <rect class="hot" x="84" y="268" width="532" height="38" rx="6"/>
+  <text class="accent" x="350" y="292" text-anchor="middle" style="font-size:10.5px;font-weight:700">任务调度 · prefill：执行前/后检查 · decode：下一次迭代前检查取消</text>
+  <path class="dash" marker-end="url(#a4)" d="M350,268 V186"/>
 </svg>

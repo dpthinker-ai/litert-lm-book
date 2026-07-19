@@ -1,32 +1,32 @@
-# 第 11 章 review.md
+# 第 11 章审校记录
 
-> 首稿验收留痕。状态：**初稿完成，Pass 1 部分完成，Pass 2 lint 已过、独立审校（§14）待做**。
+> 当前记录：2026-07-18，v4.8 独立审校。适用对象为当前第 11 章正文与图 11-1，源码基线为 LiteRT-LM v0.13.1。
 
-## Pass 1 · 事实核查（断言四级制 + 引用逐条核验）
+## 审校范围与当前结论
 
-引用核验（本会话用 `git show v0.13.1:<path>` 逐条比对，✅ 者已确认支撑断言）：
-- c/engine.h:41(LiteRtLmEngine)/44(LiteRtLmSession)/380(engine_create)/386(engine_delete)/396(create_session)/403(session_delete)/421(run_prefill) ✅
-- python/litert_lm/_ffi.py:24(c_string_p UTF-8)/36(LiteRtLmSamplerParams ctypes.Structure) ✅
-- kotlin/.../LiteRtLmJni.kt:19(object)/52(external fun nativeCreateEngine) ✅
-- swift/Engine.swift:17(import CLiteRTLM)/28(public actor Engine)/57(initialize) ✅
-- fake_llm_executor.h:37(FakeLlmExecutor : LlmExecutor，脚本化 token) ✅
+- [x] 语言：重写夸大的统一桥接叙事，拆分生命周期、编码与并发长句。
+- [x] 禁词与术语：检查禁词、退役叙事标签、C ABI、JNI、Embind 与所有权术语。
+- [x] 严谨度：核对三类原生边界、指针生命周期、缓冲复制、字符串编码、显式释放与测试替身边界。
+- [x] 叙事姿态：删除“所有语言同一路径”、自动后台执行和通用生命周期结论。
+- [x] 源码锚点语义：检查引用位置是否支撑具体绑定、对象与版本，不把 issue 外推到其他对象或版本。
 
-- `#2589`/`#2613`（Swift close 生命周期）：**open issue**，作缺陷案例研究、【文档】级引用，正文明标"不宣称已修复" ✅
-- WASM/双构建系统：概述级，不展开、指向附录 C ✅
-- Python 与 C++ 行为一致：作为设计承诺陈述，实测标注待环境 ✅
+本文件不记录整书 build 或 PDF 已通过；两项由主会话最终验收。
 
-## Pass 2 · 除 AI 味
+## 本轮已纠正的关键事实
 
-- [x] `scripts/lint_prose.sh chapters/ch11-bindings/chapter.md` —— 0 命中（2026-07-05）
-- [x] 除 AI 味清单第 1-13 条：撰写时自查（收尾避免自夸；deinit 案例落到具体机制而非泛谈）
-- [x] 第 14 条 独立审校：**已由独立审校会话执行（2026-07-05）**，判为"AI 味很淡、可放行"；升华式收尾格言/自我总结拔高/长句等问题已逐条修正，修后 lint 复跑 0 命中
+- Python 与 Swift 使用 C ABI；Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。它们复用同一 runtime，但不共用一条原生边界。
+- 实现复用不等于各语言行为一致；默认参数、错误翻译、调度和绑定层预处理均可能不同。
+- 流式回调字符串只在回调期间有效，多模态 C 输入由实现复制为独立数据；JNI 还需区分标准 UTF-8 与 modified UTF-8。
+- `LiteRT-LM#2589` 讨论 v0.12.0 Swift `Conversation` 的确定释放；`#2613` 讨论 `Engine` 析构的执行上下文。两者不能合并，也不能据前者证明 v0.13.1 核心引擎普遍只允许一个 session。
+- Swift actor 和 Kotlin `synchronized` 只提供访问隔离，不会自动把同步原生初始化移到后台线程。
+- `FakeLlmExecutor` 可验证编排与约束接口交互，不能验证真实模型数值、kernel 或设备性能。
 
-## 待清零（补读/数据）
-- [ ] 实测（Python/C++ 行为一致、给 FakeLlmExecutor 写新用例）待环境/基准 D
-- [ ] 表 11-1（各语言 FFI 机制对照）待补（本轮出签名图 11-1）
+## 当前仍存在的实验缺口
 
-## 验收自问
-- [x] 使命兑现（C ABI 通用桥 + 各语言 FFI + 生命周期坑 + 可测/可构建）
-- [x] 图 11-1 已落地并编号
-- [ ] 实验可复现
-- [x] 与 BOOK_PLAN 章卡一致；承接第 3 章 Engine/Session、第 5 章 LlmExecutor 接口、第 2 章接口隔离；收束第四部
+- Python/C++ 行为一致性对照尚未完成，仍需构建 C++ 示例并固定模型、参数和输出比较条件。
+- 多模态输入复制的时延与内存成本、actor 与锁的调用开销、真实 logits 上的约束集成均未隔离测量。
+
+## 历史记录
+
+- `2026-07-05 · 初稿验收`：旧文件记录了绑定、Swift 生命周期、测试与构建的早期审校状态。
+- 旧文件中“统一 C 桥”和两项 Swift issue 的合并表述已被 v4.8 取代；当前缺口以上一节为准。

@@ -1,0 +1,100 @@
+<svg viewBox="0 0 900 455" width="900" height="455" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="多模态输入从消息对象到 prefill embedding 的六个数据边界与错误检查点">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .box2 { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.6; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 15px; font-weight: 700; }
+      .head { fill: var(--fig-text, #1f2328); font-size: 12px; font-weight: 700; }
+      .soft { fill: var(--fig-text-soft, #57606a); font-size: 10.5px; }
+      .dim { fill: var(--fig-text-dim, #8b949e); font-size: 9.5px; }
+      .accent { fill: var(--fig-accent, #0b57d0); font-size: 10px; font-weight: 700; }
+      .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
+      .fail { stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+      .band { fill: var(--fig-bg, #ffffff); stroke: var(--fig-border-2, #e6eaef); stroke-width: 1; }
+    </style>
+    <marker id="a103" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/>
+    </marker>
+  </defs>
+  <text class="title" x="450" y="25" text-anchor="middle">多模态输入的表示变化与故障定位</text>
+  <text class="dim" x="450" y="44" text-anchor="middle">先记录本层输入、输出 shape 与第一条错误，再进入下一层</text>
+  <g transform="translate(30,72)">
+    <rect class="box" width="126" height="76" rx="7"/>
+    <text class="head" x="63" y="22" text-anchor="middle">① Message</text>
+    <text class="soft" x="63" y="42" text-anchor="middle">path / base64 blob</text>
+    <text class="dim" x="63" y="60" text-anchor="middle">文本 + 图像 + 音频</text>
+  </g>
+  <g transform="translate(174,72)">
+    <rect class="box" width="126" height="76" rx="7"/>
+    <text class="head" x="63" y="22" text-anchor="middle">② 数据处理器</text>
+    <text class="soft" x="63" y="42" text-anchor="middle">标记与对象配对</text>
+    <text class="dim" x="63" y="60" text-anchor="middle">vector&lt;InputData&gt;</text>
+  </g>
+  <g transform="translate(318,72)">
+    <rect class="box" width="126" height="76" rx="7"/>
+    <text class="head" x="63" y="22" text-anchor="middle">③ 预处理</text>
+    <text class="soft" x="63" y="42" text-anchor="middle">patch / log-mel</text>
+    <text class="dim" x="63" y="60" text-anchor="middle">TensorBuffer / map</text>
+  </g>
+  <g transform="translate(462,72)">
+    <rect class="box2" width="126" height="76" rx="7"/>
+    <text class="head" x="63" y="22" text-anchor="middle">④ 编码与适配</text>
+    <text class="soft" x="63" y="42" text-anchor="middle">encoder + adapter</text>
+    <text class="dim" x="63" y="60" text-anchor="middle">[..., T, D_model]</text>
+  </g>
+  <g transform="translate(606,72)">
+    <rect class="box2" width="126" height="76" rx="7"/>
+    <text class="head" x="63" y="22" text-anchor="middle">⑤ 组合与占位</text>
+    <text class="soft" x="63" y="42" text-anchor="middle">-1 / -2 共 T 个</text>
+    <text class="dim" x="63" y="60" text-anchor="middle">ExecutorInputs</text>
+  </g>
+  <g transform="translate(750,72)">
+    <rect class="box2" width="126" height="76" rx="7"/>
+    <text class="head" x="63" y="22" text-anchor="middle">⑥ prefill</text>
+    <text class="soft" x="63" y="42" text-anchor="middle">embedding 写入序列</text>
+    <text class="dim" x="63" y="60" text-anchor="middle">主干前向 + KV</text>
+  </g>
+  <path class="edge" marker-end="url(#a103)" d="M156,110 H172"/>
+  <path class="edge" marker-end="url(#a103)" d="M300,110 H316"/>
+  <path class="edge" marker-end="url(#a103)" d="M444,110 H460"/>
+  <path class="edge" marker-end="url(#a103)" d="M588,110 H604"/>
+  <path class="edge" marker-end="url(#a103)" d="M732,110 H748"/>
+  <text class="accent" x="93" y="182" text-anchor="middle">入口检查</text>
+  <text class="dim" x="93" y="200" text-anchor="middle">type / path / base64</text>
+  <text class="accent" x="237" y="182" text-anchor="middle">配对检查</text>
+  <text class="dim" x="237" y="200" text-anchor="middle">标记数 / 顺序</text>
+  <text class="accent" x="381" y="182" text-anchor="middle">数据检查</text>
+  <text class="dim" x="381" y="200" text-anchor="middle">解码 / patch / 帧</text>
+  <text class="accent" x="525" y="182" text-anchor="middle">模型检查</text>
+  <text class="dim" x="525" y="200" text-anchor="middle">signature / dtype</text>
+  <text class="accent" x="669" y="182" text-anchor="middle">契约检查</text>
+  <text class="dim" x="669" y="200" text-anchor="middle">embedding 行数</text>
+  <text class="accent" x="813" y="182" text-anchor="middle">容量检查</text>
+  <text class="dim" x="813" y="200" text-anchor="middle">序列长度 / buffer</text>
+  <path class="fail" d="M93,150 V169"/>
+  <path class="fail" d="M237,150 V169"/>
+  <path class="fail" d="M381,150 V169"/>
+  <path class="fail" d="M525,150 V169"/>
+  <path class="fail" d="M669,150 V169"/>
+  <path class="fail" d="M813,150 V169"/>
+  <rect class="band" x="30" y="236" width="846" height="154" rx="8"/>
+  <text class="head" x="54" y="264">对象与缓冲的有效期</text>
+  <line class="edge" x1="70" y1="305" x2="828" y2="305" marker-end="url(#a103)"/>
+  <circle cx="108" cy="305" r="7" fill="var(--fig-accent, #0b57d0)"/>
+  <circle cx="286" cy="305" r="7" fill="var(--fig-accent, #0b57d0)"/>
+  <circle cx="464" cy="305" r="7" fill="var(--fig-accent, #0b57d0)"/>
+  <circle cx="642" cy="305" r="7" fill="var(--fig-accent, #0b57d0)"/>
+  <circle cx="820" cy="305" r="7" fill="var(--fig-green, #1a7f37)"/>
+  <text class="soft" x="108" y="335" text-anchor="middle">映射文件 / 内存文件</text>
+  <text class="dim" x="108" y="352" text-anchor="middle">处理器局部队列</text>
+  <text class="soft" x="286" y="335" text-anchor="middle">owned string</text>
+  <text class="dim" x="286" y="352" text-anchor="middle">预处理调用期间</text>
+  <text class="soft" x="464" y="335" text-anchor="middle">TensorBuffer</text>
+  <text class="dim" x="464" y="352" text-anchor="middle">Duplicate 后内部移动</text>
+  <text class="soft" x="642" y="335" text-anchor="middle">ExecutorData</text>
+  <text class="dim" x="642" y="352" text-anchor="middle">单个移动 / 多个合并</text>
+  <text class="soft" x="820" y="335" text-anchor="middle">ExecutorInputs</text>
+  <text class="dim" x="820" y="352" text-anchor="middle">任务持有至 prefill</text>
+  <text class="dim" x="450" y="420" text-anchor="middle">string_view 不拥有源字节；TensorBuffer::Duplicate 复制句柄而非必然复制全部数据</text>
+</svg>

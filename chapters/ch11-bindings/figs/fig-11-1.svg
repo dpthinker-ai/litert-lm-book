@@ -1,37 +1,52 @@
-<svg viewBox="0 0 680 320" width="680" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="C ABI 桥与各语言绑定">
-  <style>
-    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    .core { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .abi  { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 2; }
-    .lang { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
-    .t  { fill: var(--fig-text, #1f2328); }
-    .ts { fill: var(--fig-text-soft, #57606a); }
-    .accent { fill: var(--fig-accent, #0b57d0); }
-    .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.4; fill: none; }
-  </style>
-  <defs><marker id="a11" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker></defs>
-  <text class="t" x="340" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">一套核心，六种语言：C ABI 当公约数</text>
-  <!-- 各语言 -->
+<svg viewBox="0 0 680 320" width="680" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Python 与 Swift 经 C ABI，Kotlin 经 JNI，Web 经 Embind 调用 C++ runtime">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .core { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .boundary { fill: var(--fig-bg, #fff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+      .lang { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .t { fill: var(--fig-text, #1f2328); }
+      .ts { fill: var(--fig-text-soft, #57606a); }
+      .accent { fill: var(--fig-accent, #0b57d0); }
+      .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.4; fill: none; }
+    </style>
+    <marker id="a11" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/>
+    </marker>
+  </defs>
+  <text class="t" x="340" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">多语言绑定采用三类原生边界</text>
   <g>
-    <rect class="lang" x="40"  y="52" width="130" height="42" rx="6"/><text class="t" x="105" y="70" text-anchor="middle" style="font-size:12px;font-weight:700">Python</text><text class="ts" x="105" y="85" text-anchor="middle" style="font-size:9.5px">ctypes</text>
-    <rect class="lang" x="190" y="52" width="130" height="42" rx="6"/><text class="t" x="255" y="70" text-anchor="middle" style="font-size:12px;font-weight:700">Kotlin</text><text class="ts" x="255" y="85" text-anchor="middle" style="font-size:9.5px">JNI (external fun)</text>
-    <rect class="lang" x="360" y="52" width="130" height="42" rx="6"/><text class="t" x="425" y="70" text-anchor="middle" style="font-size:12px;font-weight:700">Swift</text><text class="ts" x="425" y="85" text-anchor="middle" style="font-size:9.5px">C 互操作 (actor)</text>
-    <rect class="lang" x="510" y="52" width="130" height="42" rx="6"/><text class="t" x="575" y="70" text-anchor="middle" style="font-size:12px;font-weight:700">Web / JS</text><text class="ts" x="575" y="85" text-anchor="middle" style="font-size:9.5px">WASM</text>
+    <rect class="lang" x="35" y="52" width="130" height="42" rx="6"/>
+    <text class="t" x="100" y="70" text-anchor="middle" style="font-size:12px;font-weight:700">Python</text>
+    <text class="ts" x="100" y="85" text-anchor="middle" style="font-size:9.5px">ctypes</text>
+    <rect class="lang" x="185" y="52" width="130" height="42" rx="6"/>
+    <text class="t" x="250" y="70" text-anchor="middle" style="font-size:12px;font-weight:700">Swift</text>
+    <text class="ts" x="250" y="85" text-anchor="middle" style="font-size:9.5px">C 互操作</text>
+    <rect class="lang" x="365" y="52" width="130" height="42" rx="6"/>
+    <text class="t" x="430" y="70" text-anchor="middle" style="font-size:12px;font-weight:700">Kotlin</text>
+    <text class="ts" x="430" y="85" text-anchor="middle" style="font-size:9.5px">external fun</text>
+    <rect class="lang" x="515" y="52" width="130" height="42" rx="6"/>
+    <text class="t" x="580" y="70" text-anchor="middle" style="font-size:12px;font-weight:700">Web / JS</text>
+    <text class="ts" x="580" y="85" text-anchor="middle" style="font-size:9.5px">WebAssembly</text>
   </g>
-  <!-- C ABI -->
-  <rect class="abi" x="140" y="140" width="400" height="56" rx="8"/>
-  <text class="accent" x="340" y="164" text-anchor="middle" style="font-size:13px;font-weight:700">C ABI（c/engine.h）</text>
-  <text class="ts" x="340" y="182" text-anchor="middle" style="font-size:10.5px">不透明句柄 LiteRtLmEngine/Session · 纯 C 函数 · create/delete 成对</text>
-  <!-- 核心 -->
-  <rect class="core" x="200" y="238" width="280" height="50" rx="8"/>
-  <text class="t" x="340" y="262" text-anchor="middle" style="font-size:13px;font-weight:700">同一套 C++ runtime</text>
-  <text class="ts" x="340" y="279" text-anchor="middle" style="font-size:10px">第 1–10 章讲的全部</text>
-  <!-- edges 各语言 → C ABI -->
-  <path class="edge" marker-end="url(#a11)" d="M105,94 C 105,118 200,120 230,138"/>
-  <path class="edge" marker-end="url(#a11)" d="M255,94 C 255,115 290,120 300,138"/>
-  <path class="edge" marker-end="url(#a11)" d="M425,94 C 425,115 390,120 385,138"/>
-  <path class="edge" marker-end="url(#a11)" d="M575,94 C 575,118 470,120 450,138"/>
-  <!-- C ABI → core -->
-  <path class="edge" marker-end="url(#a11)" d="M340,196 V236"/>
-  <text class="ts" x="340" y="308" text-anchor="middle" style="font-size:10.5px">各语言 SDK 风格迥异，最终都进入同一套 runtime → 行为一致</text>
+  <rect class="boundary" x="35" y="140" width="280" height="56" rx="8"/>
+  <text class="accent" x="175" y="164" text-anchor="middle" style="font-size:13px;font-weight:700">C ABI（c/engine.h）</text>
+  <text class="ts" x="175" y="182" text-anchor="middle" style="font-size:10.5px">不透明句柄 · 纯 C 函数</text>
+  <rect class="boundary" x="365" y="140" width="130" height="56" rx="8"/>
+  <text class="accent" x="430" y="164" text-anchor="middle" style="font-size:13px;font-weight:700">JNI</text>
+  <text class="ts" x="430" y="182" text-anchor="middle" style="font-size:10px">C++ 胶水层</text>
+  <rect class="boundary" x="515" y="140" width="130" height="56" rx="8"/>
+  <text class="accent" x="580" y="164" text-anchor="middle" style="font-size:13px;font-weight:700">Embind</text>
+  <text class="ts" x="580" y="182" text-anchor="middle" style="font-size:10px">C++ 绑定层</text>
+  <rect class="core" x="110" y="238" width="460" height="50" rx="8"/>
+  <text class="t" x="340" y="262" text-anchor="middle" style="font-size:13px;font-weight:700">C++ runtime</text>
+  <text class="ts" x="340" y="279" text-anchor="middle" style="font-size:10px">Engine · Session · Conversation · Executor</text>
+  <path class="edge" marker-end="url(#a11)" d="M100,94 C100,116 125,120 135,138"/>
+  <path class="edge" marker-end="url(#a11)" d="M250,94 C250,116 225,120 215,138"/>
+  <path class="edge" marker-end="url(#a11)" d="M430,94 V138"/>
+  <path class="edge" marker-end="url(#a11)" d="M580,94 V138"/>
+  <path class="edge" marker-end="url(#a11)" d="M175,196 C175,220 250,220 280,236"/>
+  <path class="edge" marker-end="url(#a11)" d="M430,196 C430,220 400,220 390,236"/>
+  <path class="edge" marker-end="url(#a11)" d="M580,196 C580,220 505,220 480,236"/>
+  <text class="ts" x="340" y="308" text-anchor="middle" style="font-size:10.5px">路径复用同一套核心实现；绑定层的默认值、错误与调度语义仍可能不同</text>
 </svg>

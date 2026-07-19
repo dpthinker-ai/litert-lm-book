@@ -1,21 +1,21 @@
-<svg viewBox="0 0 640 300" width="640" height="300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KV cache 双缓冲指针互换">
-  <style>
-    text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    .buf { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-    .rd  { stroke: var(--fig-accent, #0b57d0); }
-    .wr  { stroke: var(--fig-accent-2, #6639ba); }
-    .t  { fill: var(--fig-text, #1f2328); }
-    .ts { fill: var(--fig-text-soft, #57606a); }
-    .rdt { fill: var(--fig-accent, #0b57d0); }
-    .wrt { fill: var(--fig-accent-2, #6639ba); }
-    .edge { fill: none; stroke-width: 2; }
-  </style>
+<svg viewBox="0 0 640 300" width="640" height="300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GPU out-of-place KV cache 路径中的输入与输出缓冲交换">
   <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .buf { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .rd  { stroke: var(--fig-accent, #0b57d0); }
+      .wr  { stroke: var(--fig-accent-2, #6639ba); }
+      .t  { fill: var(--fig-text, #1f2328); }
+      .ts { fill: var(--fig-text-soft, #57606a); }
+      .rdt { fill: var(--fig-accent, #0b57d0); }
+      .wrt { fill: var(--fig-accent-2, #6639ba); }
+      .edge { fill: none; stroke-width: 2; }
+    </style>
     <marker id="ard" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent, #0b57d0)"/></marker>
     <marker id="awr" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent-2, #6639ba)"/></marker>
     <marker id="asw" orient="auto" markerWidth="9" markerHeight="9" refX="6" refY="4"><path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-soft, #57606a)"/></marker>
   </defs>
-  <text class="t" x="320" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">KV cache 双缓冲：读旧写新，然后交换指针</text>
+  <text class="t" x="320" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">GPU out-of-place KV：分别读写两套缓冲，再交换指针</text>
   <!-- step N -->
   <text class="ts" x="150" y="60" text-anchor="middle" style="font-size:12px;font-weight:700">第 N 步</text>
   <rect class="buf" x="70" y="80" width="160" height="44" rx="6"/>
@@ -30,7 +30,7 @@
   <!-- swap arrow -->
   <path class="edge" style="stroke:var(--fig-text-soft,#57606a)" marker-end="url(#asw)" d="M250,137 H390"/>
   <text class="ts" x="320" y="128" text-anchor="middle" style="font-size:12px;font-weight:700">交换指针</text>
-  <text class="ts" x="320" y="155" text-anchor="middle" style="font-size:10px">（不拷数据）</text>
+  <text class="ts" x="320" y="155" text-anchor="middle" style="font-size:10px">不复制张量数据</text>
   <!-- step N+1 -->
   <text class="ts" x="490" y="60" text-anchor="middle" style="font-size:12px;font-weight:700">第 N+1 步</text>
   <rect class="buf" x="410" y="80" width="160" height="44" rx="6"/>
@@ -41,6 +41,6 @@
   <path class="edge wr" marker-end="url(#awr)" d="M600,102 H572" transform="translate(-28,0)"/>
   <text class="rdt" x="580" y="176" style="font-size:11px;font-weight:700">←读</text>
   <path class="edge rd" marker-end="url(#ard)" d="M600,172 H572" transform="translate(-28,0)"/>
-  <text class="ts" x="320" y="235" text-anchor="middle" style="font-size:12px">上一步的「新」，成为这一步的「旧」——避开 GPU「同缓冲读写」限制，且零拷贝</text>
-  <text class="ts" x="320" y="258" text-anchor="middle" style="font-size:10.5px">源码：kv_cache_buffers_1_ / _2_ + input_/output_ 指针（llm_litert_compiled_model_executor.h:329-333）</text>
+  <text class="ts" x="320" y="235" text-anchor="middle" style="font-size:12px">本步输出缓冲成为下一步输入缓冲；交换操作不复制 KV 数据</text>
+  <text class="ts" x="320" y="258" text-anchor="middle" style="font-size:10.5px">源码：kv_cache_buffers_1_ / _2_ 与 input_/output_ 指针（llm_litert_compiled_model_executor.h:327-333）</text>
 </svg>

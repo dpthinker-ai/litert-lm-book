@@ -1,23 +1,23 @@
-<svg viewBox="0 0 880 560" width="880" height="560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiteRT-LM 端到端流程：一次生成请求在各层之间的流动">
+<svg viewBox="0 0 880 560" width="880" height="560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiteRT-LM 一次生成请求的主数据流与辅助依赖">
   <defs>
     <marker id="ar" orient="auto-start-reverse" markerWidth="8" markerHeight="7" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent, #0b57d0)"/></marker>
     <marker id="ar2" orient="auto-start-reverse" markerWidth="8" markerHeight="7" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent-2, #6639ba)"/></marker>
     <marker id="ard" orient="auto-start-reverse" markerWidth="8" markerHeight="7" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-dim, #8b949e)"/></marker>
+    <style>
+      text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
+      .b{fill:var(--fig-surface, #f6f8fa);stroke:var(--fig-border, #d0d7de);stroke-width:1.5}
+      .bl{fill:var(--fig-accent-soft, #e8f0fe);stroke:var(--fig-accent, #0b57d0);stroke-width:1.6}
+      .hw{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border, #d0d7de);stroke-width:1.5}
+      .note{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border-2, #e6eaef);stroke-width:1.3}
+      .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
+      .tw{fill:var(--fig-accent, #0b57d0);font-size:14px;font-weight:700}
+      .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
+      .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
+      .edge{stroke:var(--fig-accent, #0b57d0);stroke-width:2;fill:none}
+      .edged{stroke:var(--fig-text-dim, #8b949e);stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+    </style>
   </defs>
-  <style>
-    text{font-family:-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif}
-    .b{fill:var(--fig-surface, #f6f8fa);stroke:var(--fig-border, #d0d7de);stroke-width:1.5}
-    .bl{fill:var(--fig-accent-soft, #e8f0fe);stroke:var(--fig-accent, #0b57d0);stroke-width:1.6}
-    .hw{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border, #d0d7de);stroke-width:1.5}
-    .note{fill:var(--fig-surface-2, #eef1f5);stroke:var(--fig-border-2, #e6eaef);stroke-width:1.3}
-    .t{fill:var(--fig-text, #1f2328);font-size:14px;font-weight:700}
-    .tw{fill:var(--fig-accent, #0b57d0);font-size:14px;font-weight:700}
-    .ts{fill:var(--fig-text-soft, #57606a);font-size:11.5px}
-    .td{fill:var(--fig-text-dim, #8b949e);font-size:10.5px}
-    .edge{stroke:var(--fig-accent, #0b57d0);stroke-width:2;fill:none}
-    .edged{stroke:var(--fig-text-dim, #8b949e);stroke-width:1.5;fill:none;stroke-dasharray:5 4}
-  </style>
-  <!-- spine forward arrows -->
+  <!-- 主流程箭头 -->
   <path class="edge" marker-end="url(#ar)" d="M440,56 V80"/>
   <path class="edge" marker-end="url(#ar)" d="M440,128 V150"/>
   <path class="edge" marker-end="url(#ar)" d="M440,192 V214"/>
@@ -46,7 +46,7 @@
   <text class="t"  x="440" y="41"  text-anchor="middle">用户 / App</text>
   <rect class="bl" x="290" y="80"  width="300" height="48" rx="10"/>
   <text class="tw" x="440" y="100" text-anchor="middle">对外接口层 · Engine/Session</text>
-  <text class="ts" x="440" y="116" text-anchor="middle">C++ · C API · CLI · 多语言绑定</text>
+  <text class="ts" x="440" y="116" text-anchor="middle">CLI · C API · 语言绑定（原生边界各异）</text>
   <rect class="b"  x="290" y="150" width="300" height="42" rx="10"/>
   <text class="t"  x="440" y="168" text-anchor="middle">对话与编排层 · Conversation</text>
   <text class="ts" x="440" y="184" text-anchor="middle">多轮 · 模板 · 角色 · 工具调用</text>
@@ -58,7 +58,7 @@
   <text class="ts" x="440" y="313" text-anchor="middle">组件层 · 每个 decode step 调用</text>
   <rect class="bl" x="290" y="344" width="300" height="48" rx="10"/>
   <text class="tw" x="440" y="364" text-anchor="middle">推理执行层 · LLM Executor</text>
-  <text class="ts" x="440" y="380" text-anchor="middle">Prefill / Decode · 屏蔽 CPU/GPU/NPU</text>
+  <text class="ts" x="440" y="380" text-anchor="middle">Prefill / Decode · 调用所选 CPU/GPU/NPU 后端</text>
   <rect class="b"  x="320" y="414" width="240" height="40" rx="10"/>
   <text class="t"  x="440" y="439" text-anchor="middle">LiteRT CompiledModel</text>
   <rect class="hw" x="300" y="476" width="88" height="40" rx="9"/>
@@ -69,7 +69,7 @@
   <text class="t"  x="536" y="501" text-anchor="middle">NPU</text>
   <!-- left notes -->
   <rect class="note" x="40" y="214" width="210" height="44" rx="9"/>
-  <text class="t"  x="145" y="232" text-anchor="middle" style="font-size:13px">Framework</text>
+  <text class="t"  x="145" y="232" text-anchor="middle" style="font-size:13px">运行设施</text>
   <text class="ts" x="145" y="248" text-anchor="middle">线程池 / 任务队列</text>
   <rect class="note" x="40" y="344" width="92" height="46" rx="9"/>
   <text class="ts" x="86" y="364" text-anchor="middle">.litertlm</text>
@@ -78,7 +78,7 @@
   <text class="ts" x="198" y="364" text-anchor="middle">Model</text>
   <text class="ts" x="198" y="379" text-anchor="middle">Resources</text>
   <rect class="note" x="40" y="414" width="210" height="40" rx="9"/>
-  <text class="t"  x="145" y="439" text-anchor="middle" style="font-size:13px">KV cache 双缓冲</text>
+  <text class="t"  x="145" y="439" text-anchor="middle" style="font-size:13px">KV cache 缓冲</text>
   <!-- right notes -->
   <rect class="note" x="620" y="300" width="170" height="30" rx="8"/>
   <text class="ts" x="705" y="320" text-anchor="middle">图像 / 音频</text>

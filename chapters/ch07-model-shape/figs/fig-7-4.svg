@@ -1,0 +1,53 @@
+<svg viewBox="0 0 820 430" width="820" height="430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="weight cache 路径派生、后端使用与失效边界">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .active { fill: var(--fig-accent-soft, #e8f0fe); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.7; }
+      .warn { fill: var(--fig-warn-soft, #fff4ce); stroke: var(--fig-warn, #9a6700); stroke-width: 1.5; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 15px; font-weight: 700; }
+      .head { fill: var(--fig-accent, #0b57d0); font-size: 12px; font-weight: 700; }
+      .warnhead { fill: var(--fig-warn, #9a6700); font-size: 11.5px; font-weight: 700; }
+      .body { fill: var(--fig-text-soft, #57606a); font-size: 10.5px; }
+      .small { fill: var(--fig-text-dim, #8b949e); font-size: 9.5px; }
+      .edge { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; fill: none; }
+      .dashed { stroke: var(--fig-warn, #9a6700); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+    </style>
+    <marker id="f74-arrow" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-accent, #0b57d0)"/>
+    </marker>
+    <marker id="f74-arrow-warn" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4">
+      <path d="M0,0 L8,4 L0,8 z" fill="var(--fig-warn, #9a6700)"/>
+    </marker>
+  </defs>
+  <text class="title" x="410" y="28" text-anchor="middle">weight cache 的派生与失效边界</text>
+  <rect class="box" x="26" y="68" width="185" height="100" rx="7"/>
+  <text class="head" x="118" y="92" text-anchor="middle">模型路径</text>
+  <text class="body" x="118" y="118" text-anchor="middle">basename</text>
+  <text class="body" x="118" y="138" text-anchor="middle">mtime（秒）</text>
+  <text class="body" x="118" y="157" text-anchor="middle">file size</text>
+  <rect class="active" x="260" y="68" width="222" height="100" rx="7"/>
+  <text class="head" x="371" y="92" text-anchor="middle">GetFileCacheIdentifier</text>
+  <text class="body" x="371" y="118" text-anchor="middle">标识 = mtime_seconds_size</text>
+  <text class="body" x="371" y="138" text-anchor="middle">按 path 在进程内保存结果</text>
+  <text class="small" x="371" y="157" text-anchor="middle">不是内容哈希</text>
+  <rect class="box" x="531" y="68" width="263" height="100" rx="7"/>
+  <text class="head" x="662" y="92" text-anchor="middle">后端编译选项</text>
+  <text class="body" x="662" y="118" text-anchor="middle">CPU：XNNPACK cache path / fd</text>
+  <text class="body" x="662" y="138" text-anchor="middle">GPU：cache key、目录、weight fd</text>
+  <text class="small" x="662" y="157" text-anchor="middle">由后端读写派生内容</text>
+  <path class="edge" d="M212,118 H253" marker-end="url(#f74-arrow)"/>
+  <path class="edge" d="M483,118 H524" marker-end="url(#f74-arrow)"/>
+  <rect class="active" x="257" y="224" width="306" height="66" rx="7"/>
+  <text class="head" x="410" y="249" text-anchor="middle">CompiledModel::Create</text>
+  <text class="body" x="410" y="273" text-anchor="middle">底层后端解释 cache 选项与读写语义</text>
+  <path class="edge" d="M662,170 V202 H410 V217" marker-end="url(#f74-arrow)"/>
+  <rect class="warn" x="32" y="340" width="355" height="62" rx="7"/>
+  <text class="warnhead" x="209" y="363" text-anchor="middle">盲区 A：同大小、同秒级 mtime 的内容替换</text>
+  <text class="body" x="209" y="385" text-anchor="middle">派生路径不变，当前 cache 存在时不触发清理</text>
+  <rect class="warn" x="433" y="340" width="355" height="62" rx="7"/>
+  <text class="warnhead" x="610" y="363" text-anchor="middle">盲区 B：同一进程原位替换同一路径</text>
+  <text class="body" x="610" y="385" text-anchor="middle">首次查询后的标识可继续复用</text>
+  <path class="dashed" d="M371,170 V316 H209 V333" marker-end="url(#f74-arrow-warn)"/>
+  <path class="dashed" d="M371,170 V316 H610 V333" marker-end="url(#f74-arrow-warn)"/>
+</svg>
