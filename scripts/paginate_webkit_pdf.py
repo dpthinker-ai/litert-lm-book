@@ -12,14 +12,28 @@ import argparse
 import bisect
 import json
 import math
+import os
 from pathlib import Path
 
 import fitz
 
-from finalize_pdf import UNITS as FINAL_PDF_UNITS
+from finalize_pdf import UNITS as FINAL_PDF_UNITS, get_font
 
 
 EPSILON = 0.75
+
+# content_bottom 边界检查的容差（px）：WebKit 按整像素落行，小数行距
+# （如 1.7 × 13.3px = 22.6px）会在连续 PDF 总高度上累计亚像素误差，
+# 允许一行级的高度差；真正的截断事故（字体/图片未加载）远超此量级。
+CONTENT_BOTTOM_TOLERANCE = 48.0
+
+# keep 块拆分校验的细条容差（px）：切点距块边界 3px 以内视为不可见的
+# padding/margin 细条（如封面底与下一单元起点的亚像素重叠），不判为拆分；
+# 真实拆分（切在块中部）远超此量级。
+SPLIT_SLIVER = 3.0
+
+# 允许在行边界跨页拆分的 keep 块类型（其余整块不拆）
+SPLITTABLE_TYPES = {"p", "pre"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -64,15 +78,25 @@ def adjust_boundary(
     # A range crosses the proposed cut if it starts on this page and ends
     # after the cut. Choose the earliest such start, including overlapping
     # heading-plus-following-block and paragraph ranges.
+    # 段落（p）与代码块（pre）允许在行边界跨页拆开：仅当当前页剩余空间
+    # 放不下其高度的 30% 时才整块推入下一页，避免页底大片空白；
+    # 图、表格、列表、标题、侧栏等保持整块不拆（或按行/条目拆）。
     while True:
         conflicts = [
-            top for top, bottom, _ in ranges
+            (top, bottom, typ) for top, bottom, typ in ranges
             if top > start + EPSILON and top < end - EPSILON and
             bottom > end + EPSILON
         ]
         if not conflicts:
             break
-        keep_end = min(conflicts)
+        keep_candidates = [
+            top for top, bottom, typ in conflicts
+            if typ not in SPLITTABLE_TYPES or
+            end - top < (bottom - top) * 0.3
+        ]
+        if not keep_candidates:
+            break
+        keep_end = min(keep_candidates)
         if keep_end >= end - EPSILON:
             break
         end = keep_end
@@ -80,7 +104,25 @@ def adjust_boundary(
     return end, reason
 
 
-def choose_pages(metadata: dict, total_height: float) -> tuple[list[dict], dict]:
+def snap_candidates(
+    line_bottoms: list[float], ranges: list[tuple[float, float, str]]
+) -> list[float]:
+    """页尾对齐候选：文本行底线 ∪ 不可拆 keep 块的顶/底。
+
+    纯文本行吸附在「无文本区域」（大图、SVG、空白）前会失效——图块内部没有
+    行底线，切点会被留在图前造成残页。块的顶/底是同样合法的页边界。"""
+    cands = set(line_bottoms)
+    for top, bottom, typ in ranges:
+        if typ in SPLITTABLE_TYPES:
+            continue
+        cands.add(top)
+        cands.add(bottom)
+    return sorted(cands)
+
+
+def choose_pages(
+    metadata: dict, total_height: float, line_bottoms: list[float]
+) -> tuple[list[dict], dict]:
     usable = float(metadata["contentHeight"])
     unit_starts = sorted(float(item["y"]) for item in metadata["unitStarts"])
     ranges = [
@@ -113,8 +155,13 @@ def choose_pages(metadata: dict, total_height: float) -> tuple[list[dict], dict]
     pages = []
     stats = {"unit_cuts": 0, "keep_cuts": 0, "footnote_cuts": 0}
     start = 0.0
+    cands = snap_candidates(line_bottoms, ranges)
     while start < total_height - EPSILON:
         nominal = min(total_height, start + usable)
+        # 页尾对齐到行边界或不可拆块的顶/底，避免切在行中间或图前残页
+        idx = bisect.bisect_right(cands, nominal + EPSILON) - 1
+        if idx >= 0 and cands[idx] > start + EPSILON:
+            nominal = cands[idx]
         end, reason = adjust_boundary(start, nominal, unit_starts, ranges)
 
         # If the provisional page contains too many notes, move the cut before
@@ -166,8 +213,39 @@ def choose_pages(metadata: dict, total_height: float) -> tuple[list[dict], dict]
                 end = adjusted
                 reason = adjusted_reason or "footnote"
 
+        # 脚注溢出等调整路径产生的页尾同样对齐到行边界。
+        # 对齐后复用 adjust_boundary 的迭代回退（会循环处理嵌套的 keep 冲突，
+        # 如「标题块 ⊃ 列表顶」的逐级回退）；仅当对齐位置落入「跨越页首的
+        # 不可拆块」（含亚像素重叠）时改推进到块底，且不得越过单元起点。
+        idx = bisect.bisect_right(cands, end + EPSILON) - 1
+        if idx >= 0 and cands[idx] > start + EPSILON:
+            snapped = cands[idx]
+            span_top = None
+            for top, bottom, typ in ranges:
+                if typ in SPLITTABLE_TYPES:
+                    continue
+                if top <= start + EPSILON and top < snapped < bottom:
+                    span_top = (top, bottom)
+                    break
+            if span_top is not None:
+                top, bottom = span_top
+                nxt = min(bottom, start + usable)
+                for u in unit_starts:
+                    if u > snapped - EPSILON and u < nxt - EPSILON:
+                        nxt = u
+                        break
+                end = nxt
+            else:
+                end, _ = adjust_boundary(start, snapped, unit_starts, ranges)
+
         if end <= start + EPSILON:
-            raise RuntimeError(f"pagination made no progress at source y={start:.3f}")
+            near = [(round(t, 1), round(b, 1), ty) for t, b, ty in ranges
+                    if t <= start + 50 and b >= start - 50]
+            raise RuntimeError(
+                f"pagination made no progress at source y={start:.3f}: "
+                f"snapped={snapped:.3f} nominal={nominal:.3f} "
+                f"near_ranges={near}"
+            )
 
         page_keys = ordered_note_keys(references, start, end)
         page_footnote_height = footnote_height(page_keys)
@@ -238,7 +316,9 @@ def validate_pages(pages: list[dict], metadata: dict) -> None:
         if height > usable + EPSILON:
             continue
         for cut in boundaries[1:-1]:
-            if top + EPSILON < cut < bottom - EPSILON:
+            if top + SPLIT_SLIVER < cut < bottom - SPLIT_SLIVER:
+                if item["type"] in {"p", "pre"}:
+                    continue  # 段落与代码块允许在行边界跨页拆分
                 page = next(item for item in pages if abs(item["end"] - cut) <= EPSILON)
                 nearby_units = [
                     unit["text"] for unit in metadata["unitStarts"]
@@ -355,6 +435,9 @@ def render_pages(
     usable = float(metadata["contentHeight"])
     gap = float(metadata.get("footnoteGap", 0.0))
     notes = {item["key"]: item for item in metadata.get("footnotes", [])}
+    references = metadata.get("footnoteRefs", [])
+    _, fname, fontfile = get_font()
+    seen_notes: set[str] = set()
     output = fitz.open()
 
     for spec in pages:
@@ -377,18 +460,35 @@ def render_pages(
                 width=0.55,
             )
             cursor_y = footnote_top + gap * scale
+            ref_nums = {
+                r["key"]: r["number"]
+                for r in references
+                if float(r["y"]) + EPSILON >= start and
+                float(r["y"]) < end - EPSILON
+            }
             for key in spec["footnotes"]:
                 note = notes[key]
-                place_source_range(
-                    page,
-                    source,
-                    offsets,
-                    page_width,
-                    float(note["top"]),
-                    float(note["bottom"]),
-                    cursor_y,
-                    scale,
-                )
+                if key in seen_notes:
+                    # 跨页重复引用：只给短指针，完整出处见首次引用页
+                    num = ref_nums.get(key)
+                    label = f"{num}. 出处同前注。" if num else "出处同前注。"
+                    page.insert_text(
+                        (side_margin + 2, cursor_y + 7),
+                        label, fontname=fname, fontfile=fontfile,
+                        fontsize=7.5, color=(0.34, 0.36, 0.42),
+                    )
+                else:
+                    seen_notes.add(key)
+                    place_source_range(
+                        page,
+                        source,
+                        offsets,
+                        page_width,
+                        float(note["top"]),
+                        float(note["bottom"]),
+                        cursor_y,
+                        scale,
+                    )
                 cursor_y += float(note["height"]) * scale
 
     return output
@@ -399,13 +499,35 @@ def main() -> None:
     metadata = json.loads(args.metadata.read_text(encoding="utf-8"))
     source = fitz.open(args.source)
     total_height = sum(page.rect.height for page in source)
-    content_bottom = float(metadata.get("bodyBottom") or max(
+    # 分页终点 = 最后一个正文 keep 块的底部。DOM 测得的 bodyBottom 可能
+    # 包含页尾的脚注银行区（银行区只供脚注切片引用，不得当正文分页），
+    # 因此以 keep 底部为硬上限。
+    keep_bottom = max(
         [float(item["bottom"]) for item in metadata["keepRanges"]] +
         [float(item["y"]) for item in metadata["unitStarts"]]
-    ))
-    if content_bottom > total_height + EPSILON:
+    )
+    content_bottom = min(
+        float(metadata.get("bodyBottom") or keep_bottom),
+        keep_bottom,
+        total_height,
+    )
+    if content_bottom > total_height + CONTENT_BOTTOM_TOLERANCE:
         raise RuntimeError("DOM content extends beyond the continuous PDF")
-    pages, stats = choose_pages(metadata, content_bottom)
+    # 容差内的亚像素/整像素差：把 DOM 测得的底部钳到画布高度，
+    # 超出的部分至多一行残线，分页按画布实际高度收尾。
+    content_bottom = min(content_bottom, total_height)
+    # 文本行底线（源 PDF 全局坐标），供页尾对齐使用
+    line_bottoms: list[float] = []
+    offsets = source_offsets(source)
+    for pno, page in enumerate(source):
+        dct = page.get_text("dict")
+        for block in dct["blocks"]:
+            for line in block.get("lines", []):
+                txt = "".join(span["text"] for span in line.get("spans", [])).strip()
+                if txt:
+                    line_bottoms.append(line["bbox"][3] + offsets[pno])
+    line_bottoms.sort()
+    pages, stats = choose_pages(metadata, content_bottom, line_bottoms)
     validate_pages(pages, metadata)
     output = render_pages(source, metadata, pages)
 

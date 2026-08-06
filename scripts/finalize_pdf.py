@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """把 Chrome 渲染的 book-raw.pdf 加工成成书 PDF：
    ① 封面后插一页「目录」（分部 + 章 + 页码）
-   ② 写入可跳转的 PDF 书签/大纲（分部 -> 章，两级）
+   ② 写入可跳转的 PDF 书签/大纲（分部 -> 章 -> 节 -> 小节，四级）
    ③ 每页底部盖「章名 · 页码」页脚（封面/目录页不盖）
 渲染仍由 Chrome 负责（MathJax、SVG 正确）；本脚本只做结构化后处理。
 用法：finalize_pdf.py <in.pdf> <out.pdf> [--debug]
@@ -121,35 +121,129 @@ def detect_starts(doc):
     return starts  # raw 0-based
 
 
-def draw_toc_page(page, font, entries):
-    """entries: [(kind, title, printed_no)]  kind in {part, chapter, plain}"""
-    W, H = page.rect.width, page.rect.height
-    ml, mr, mt = 62, 62, 70
-    tw = fitz.TextWriter(page.rect)
-    # 标题「目录」
-    tw.append((ml, mt), "目录", font=font, fontsize=26)
-    y = mt + 46
+def draw_toc_pages(doc, font, entries):
+    """entries: [(kind, title, printed_no)]  kind in {part, chapter, section, plain}
+    Draws TOC across as many pages as needed. Returns number of TOC pages used.
+    排版参照 llm-inference-handbook：分部/章/节三级，字号阶梯 13/11/9.5，
+    长标题与页码之间画点线引导；小节不进打印目录（PDF 书签大纲仍保留四级）。"""
+    W, H = doc[0].rect.width, doc[0].rect.height
+    ml, mr, mt, mb = 62, 62, 70, 50  # margins
+    page_idx = 0  # TOC page index (0 = first TOC page inserted after cover)
+
+    def new_toc_page():
+        nonlocal page_idx
+        page = doc.new_page(pno=1 + page_idx, width=W, height=H)
+        page_idx += 1
+        tw = fitz.TextWriter(page.rect)
+        if page_idx == 1:
+            tw.append((ml, mt), "目录", font=font, fontsize=26)
+        else:
+            tw.append((ml, mt), "目录（续）", font=font, fontsize=16)
+        page.draw_line((ml, mt + 12), (ml + 70, mt + 12), color=ACCENT, width=2)
+        return tw, mt + (46 if page_idx == 1 else 34)
+
+    tw, y = new_toc_page()
+
     for kind, title, no in entries:
+        # Determine layout
         if kind == "part":
-            y += 12
-            tw.append((ml, y), title, font=font, fontsize=13)
-            num = str(no)
-            num_w = font.text_length(num, fontsize=13)
-            tw.append((W - mr - num_w, y), num, font=font, fontsize=13)
-            y += 22
-            continue
-        indent = ml + (16 if kind == "chapter" else 0)
-        size = 10.5
-        # 标题
+            indent, size, dy = ml, 13, 22
+            y += 12  # extra gap before part
+        elif kind == "chapter":
+            indent, size, dy = ml + 16, 11, 20
+        elif kind == "section":
+            indent, size, dy = ml + 34, 9.5, 19
+            y += 2  # slight gap
+        else:  # plain：前言/尾声/附录
+            indent, size, dy = ml, 11, 20
+
+        # Check page overflow
+        if y + dy > H - mb:
+            tw.write_text(doc[1 + page_idx - 1], color=INK)
+            tw, y = new_toc_page()
+
+        # Title
         tw.append((indent, y), title, font=font, fontsize=size)
-        # 右对齐页码
+        # Page number（右对齐）
         num = str(no)
         num_w = font.text_length(num, fontsize=size)
         tw.append((W - mr - num_w, y), num, font=font, fontsize=size)
-        y += 19
-    tw.write_text(page, color=INK)
-    # 「目录」下方一条强调色细线
-    page.draw_line((ml, mt + 12), (ml + 70, mt + 12), color=ACCENT, width=2)
+        # 点线引导：标题右端到页码左端之间
+        xs = indent + font.text_length(title, fontsize=size) + 7
+        xe = W - mr - num_w - 7
+        if xe - xs > 12:
+            doc[1 + page_idx - 1].draw_line(
+                (xs, y - size * 0.3), (xe, y - size * 0.3),
+                color=DIM, width=0.9, dashes="[1] 7", lineCap=1,
+            )
+        y += dy
+
+    # Write last page
+    tw.write_text(doc[1 + page_idx - 1], color=INK)
+    return page_idx
+
+
+def load_section_titles():
+    """Parse SUMMARY.md to get section headings per chapter unit index.
+    Returns dict: unit_index -> [(section_number, section_title)]"""
+    import os
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    summary = os.path.join(repo, "SUMMARY.md")
+    sections = {}
+    current_ch = None
+    current_sec = None
+    ch_pattern = re.compile(r"第\s*(\d+)\s*章")
+    sec_pattern = re.compile(r"(\d+\.\d+(?:\.\d+)?)")
+    for line in open(summary):
+        line = line.strip()
+        m = ch_pattern.search(line)
+        if m and "[" in line:
+            current_ch = int(m.group(1))
+            sections[current_ch] = []
+            current_sec = None
+            continue
+        # Extract title from markdown link: "- [title]()" or "  - [title]()"
+        link_match = re.match(r"\s*-?\s*\[([^\]]+)\]\(\)", line)
+        if not link_match:
+            continue
+        title = link_match.group(1)
+        m = sec_pattern.match(title)
+        if m and current_ch:
+            sections[current_ch].append((m.group(1), title))
+    return sections
+
+
+def find_section_pages(doc, chapter_ranges, chapter_unit_indices, raw_starts):
+    """Search for known section headings within each chapter's page range.
+    Returns list of (unit_index, section_title, printed_page)."""
+    results = []
+    seen = set()
+    all_sections = load_section_titles()
+
+    for ch_idx, (start_page, end_page) in chapter_ranges.items():
+        title = UNITS[ch_idx][0]
+        m = re.search(r"第\s*(\d+)\s*章", title)
+        if not m:
+            continue
+        ch_num = int(m.group(1))
+        if ch_num not in all_sections:
+            continue
+        expected = all_sections[ch_num]
+
+        for sec_num, sec_title in expected:
+            if sec_num in seen:
+                continue
+            # Normalize the search text (PDF encoding may differ from source)
+            sec_title_nfkc = unicodedata.normalize("NFKC", sec_title)
+            found = False
+            for p in range(start_page, min(end_page + 1, doc.page_count)):
+                text = unicodedata.normalize("NFKC", doc[p].get_text("text"))
+                if sec_title_nfkc in text:
+                    seen.add(sec_num)
+                    results.append((chapter_unit_indices[ch_idx], sec_title, p))
+                    found = True
+                    break
+    return results
 
 
 def main():
@@ -166,12 +260,35 @@ def main():
         for (u, rs) in zip(UNITS, raw_starts):
             print(f"  raw p{rs:>3}  {u[0]}")
 
+    # Build chapter page ranges for section detection
+    chapter_ranges = {}     # unit_index -> (start_page, end_page)
+    chapter_unit_indices = {}  # unit_index -> unit_index in UNITS
+    for i in range(len(raw_starts)):
+        start = raw_starts[i]
+        end = raw_starts[i + 1] - 1 if i + 1 < len(raw_starts) else doc.page_count - 1
+        if UNITS[i][2] is not None:  # has a part (is a chapter)
+            chapter_ranges[i] = (start, end)
+            chapter_unit_indices[i] = i
+
+    # Find section pages within chapters
+    section_pages = find_section_pages(doc, chapter_ranges, chapter_unit_indices, raw_starts)
+    if debug:
+        for ui, title, page in section_pages:
+            print(f"  section p{page:>3}  {title}")
+
     # 插入一页目录（在封面之后，index=1）。插入后所有 raw 页后移 1。
     W, H = doc[0].rect.width, doc[0].rect.height
     # 印刷页码：封面=0(不印)、目录=不印、正文从前言起 = raw 0-based 索引本身
     #   （因 cover=raw0, preface=raw1 -> 印刷 1；插目录后物理页= raw+1）
     printed = {i: rs for i, rs in enumerate(raw_starts)}  # unit i -> printed no = raw index
     phys = {i: rs + 1 for i, rs in enumerate(raw_starts)}  # 插目录后物理页(0-based)
+
+    # Build section page mapping: unit_index -> [(section_title, printed_page)]
+    section_by_unit = {}
+    for ui, title, page in section_pages:
+        if ui not in section_by_unit:
+            section_by_unit[ui] = []
+        section_by_unit[ui].append((title, page))
 
     # 目录条目
     entries, cur_part = [], None
@@ -183,14 +300,25 @@ def main():
             if part != cur_part:
                 raise RuntimeError(f"章节缺少对应的部分导页：{title} -> {part}")
             entries.append(("chapter", title, printed[i]))
+            # Insert section entries for this chapter（小节不进打印目录，PDF 书签大纲仍保留）
+            if i in section_by_unit:
+                for sec_title, sec_page in section_by_unit[i]:
+                    if sec_title.count(".") >= 2:
+                        continue
+                    entries.append(("section", sec_title, sec_page))
         else:
             cur_part = None
             entries.append(("plain", title, printed[i]))
 
-    toc_page = doc.new_page(pno=1, width=W, height=H)
-    draw_toc_page(toc_page, font, entries)
+    toc_pages = draw_toc_pages(doc, font, entries)
 
-    # 书签/大纲（fitz 用 1-based 物理页）。分部为一级，章为二级；无部单元一级。
+    # Adjust phys: N TOC pages inserted instead of original 1-page assumption.
+    # phys was raw+1; now it should be raw + toc_pages.
+    for i in phys:
+        phys[i] = raw_starts[i] + toc_pages
+
+    # 书签/大纲（fitz 用 1-based 物理页）。分部一级、章二级、节三级、小节四级；
+    # 无部单元一级。与打印目录共用 section_by_unit，保证两侧一致。
     outline, cur_part = [], None
     outline.append([1, "封面", 1])
     outline.append([1, "目录", 2])
@@ -203,6 +331,10 @@ def main():
             if part != cur_part:
                 raise RuntimeError(f"章节缺少对应的部分导页：{title} -> {part}")
             outline.append([2, title, tgt])
+            if i in section_by_unit:
+                for sec_title, sec_page in section_by_unit[i]:
+                    level = 4 if sec_title.count(".") >= 2 else 3
+                    outline.append([level, sec_title, sec_page + toc_pages + 1])
         else:
             cur_part = None
             outline.append([1, title, tgt])
@@ -220,12 +352,12 @@ def main():
                 break
         return u
     for p in range(doc.page_count):
-        if p <= 1:  # 封面、目录
+        if p <= toc_pages:  # 封面 + 目录页
             continue
         ui = unit_of(p)
         if ui is None:
             continue
-        printed_no = p - 1  # 物理页(0-based) -> 印刷号：preface phys2 -> 1
+        printed_no = p - toc_pages  # 物理页(0-based) -> 印刷号
         short = UNITS[ui][3]
         text = f"{short} · {printed_no}"
         pg = doc[p]

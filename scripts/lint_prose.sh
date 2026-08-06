@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 文风机检：禁词表、填充词、内部标签、退役叙事词、中英文空格、连续破折号。
+# 文风机检：禁词表、填充词、内部标签、退役叙事词、中英文空格、破折号（一段至多一处）。
 # 用法：scripts/lint_prose.sh [文件...]   缺省检查 chapters/**/chapter.md + appendix/*.md + preface.md + cover.md
 # 退出码：有命中返回 1，干净返回 0（可挂 pre-commit / CI）。
 # 规则依据 AGENTS.md 第三、五节；此脚本只查成书源文件，不查 notes.md（含源码摘录）。
@@ -48,7 +48,8 @@ INTERNAL_LABEL_RE = re.compile(r'【(?:实证|文档|常识|推测)】')
 # 中英文之间应留半角空格：CJK 紧邻 ASCII 字母/数字（含反向），排除标点与代码围栏内。
 CJK = r'[一-鿿]'
 SPACE_RE = re.compile(rf'({CJK}[A-Za-z0-9]|[A-Za-z0-9]{CJK})')
-DASH_RE = re.compile(r'——.*——')  # 一段内两个破折号对（粗检，需人工确认是否成对插入语）
+# 破折号纪律：一段至多一处；成对插入语（——X——）算一处。
+# 因此一段内 1 处（单独）或 2 处（成对）都合法，只有 ≥3 处才超过「一段至多一处」。
 
 hits = 0
 def report(f, ln, kind, detail):
@@ -98,12 +99,12 @@ for path in sys.argv[1:]:
         if SPACE_RE.search(probe):
             m = SPACE_RE.search(probe)
             report(path, i, "中英文空格", m.group(0))
-        if DASH_RE.search(visible):
-            report(path, i, "破折号", "一段内出现两处破折号（成对插入语算一处，请人工确认）")
+        if visible.count("——") >= 3:
+            report(path, i, "破折号", "一段内出现多处破折号（成对插入语算一处，全段至多一处）")
 
 print("-" * 40)
 if hits:
-    print(f"共 {hits} 处命中，请逐条处理（空格/破折号需人工确认，其余必改）。")
+    print(f"共 {hits} 处命中，请逐条处理（空格需人工确认，其余必改）。")
     sys.exit(1)
 print("文风机检通过：0 命中。")
 PY

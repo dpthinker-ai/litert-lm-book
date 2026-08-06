@@ -4,7 +4,7 @@
 
 上一章末尾，输入文本已经变成一串 token id。`Prefill` 一次前向处理整段提示词，把注意力中间结果写入 KV cache。prefill 耗时是首 token 时延（TTFT，time-to-first-token）的主要组成之一。
 
-## prefill 的资源约束
+## 4.1　prefill 的资源约束
 
 沿用第 2 章的 Roofline 分析。对于稠密 Transformer，prefill 一次前向处理多个 token，同一批权重参与多个位置的计算。它的算术强度通常高于一次只处理一个 token 的 decode step。序列长度、模型结构和后端不同，prefill 可能处于计算受限区，也可能受内存访问或 host 侧开销影响。判断是否 compute-bound，需要读取目标设备的性能计数器或开展受控实验。
 
@@ -41,7 +41,7 @@ absl::StatusOr<Responses> Prefill(
 
 这两个探针只记录起止时间。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键保存 `absl::Now()`（`runtime/engine/io_types.cc:296`）。`TimePrefillTurnEnd` 再取一次时间并求差，把结果和 token 数存入 `prefill_turns_`（`runtime/engine/io_types.cc:306`）。测量范围覆盖整个 `executor.Prefill`，包括工作组循环、掩码填充、embedding 装配与 KV 缓冲交换。附录 D 的 prefill 吞吐由这对探针产生。
 
-### 固定 signature 如何影响吞吐曲线
+### 4.1.1　固定 signature 如何影响吞吐曲线
 
 本书使用同一设备，在 cpu 后端扫描了 100 至 4000 token 的输入长度。测试使用热磁盘缓存，decode 长度为 32，每个点运行一次，完整结果见附录 D 第七节。基准模型只有 `prefill_128` 和 `prefill_1024` 两个固定 signature。吞吐以真实 token 数作分子，执行成本则由选中的固定 signature 决定。
 
@@ -53,7 +53,7 @@ gpu 主基准也有相同现象。256 与 1024 token 的 prefill 墙钟时间约
 
 按探针定义，prefill 吞吐等于 token 数除以墙钟时间。cpu/4096 的 prefill 时间约为 4096 ÷ 226.5 tokens/s = 18.08 s〔基准 D〕。`GetTimeToFirstToken` 在此基础上加一次平均 decode step 的耗时，得到表中的 18.13 s（`runtime/engine/io_types.cc:455`）。因此，这项复算只能检查指标定义和表中数字，不能证明模型加载或采样开销可以忽略。在相同模型和条件下，减少 prefill token 数或选择实测时间更短的后端，都能降低 TTFT。本书测得 gpu/4096 的 TTFT 为 4.45 s。
 
-## 设计权衡：固定形状还是动态形状
+## 4.2　设计权衡：固定形状还是动态形状
 
 executor 需要把长度可变的提示词映射到模型可执行的输入形状。
 
@@ -170,7 +170,7 @@ std::transform(prefill_input_pos_ptr, prefill_input_pos_ptr + prefill_length,
 
 (1) 这里把处理长度减一。首次 prefill 留下一个 token，作为下一次 prefill 或 decode 的 pending token。这也解释了前面的 `>=` 越界判断。(2) `current_step` 随每个已处理 token 递增，用于填充 position 张量并确定 KV cache 位置。decode 延续同一个计数器，详见第 5 章。
 
-### prefill 的 host 侧 CPU 开销
+### 4.2.1　prefill 的 host 侧 CPU 开销
 
 `PrefillInternal` 除了调用 LiteRT 执行 signature，还包含三类 host 侧工作。这些操作不计入模型 FLOPs，但会进入墙钟时间。
 
@@ -190,7 +190,7 @@ KV 缓冲交换。双缓冲路径在 prefill 结尾交换两组缓冲的指针�
 <figcaption>图 4-1　静态与动态 prefill 最终都更新 KV cache。v0.13.1 不会在正在执行的 prefill 工作组或 chunk 之间中断；decode 在下一次迭代开始前检查取消标志。</figcaption>
 </figure>
 
-## 取消语义：prefill 与 decode 的检查点
+## 4.3　取消语义：prefill 与 decode 的检查点
 
 `TaskController::Cancel()` 将共享的原子变量设为 true（`runtime/core/session_advanced.h:67`）。任务是否立即停止，取决于执行路径在何处读取该原子量。prefill 与 decode 的检查位置不同。
 
@@ -237,7 +237,7 @@ while (true) {
 
 (1) 当前迭代开始时读取原子标志，(2) 为 true 时返回 `CancelledError`。如果 `Cancel()` 发生在一次 decode step 中，当前 step 不会中止。循环在下一次迭代开始前才观察到取消。因此，响应时间取决于当前 step 和流式回调的剩余耗时。第 5 章继续分析 decode 循环。
 
-## 任务调度：在工作线程执行 prefill
+## 4.4　任务调度：在工作线程执行 prefill
 
 framework 层提供了单工作线程的顺序队列 `ExecutionQueue`（`runtime/framework/execution_queue.cc`）。它的 `Enqueue` 把任务保存到两个结构中：
 
@@ -262,7 +262,7 @@ if (current_task) {
 
 v0.13.1 的会话路径由 `ThreadedExecutionManager` 调度 prefill 和 decode。`ExecutionQueue` 是 framework 中的另一项独立原语。任务之间的排队与依赖属于 inter-op 顺序；算子内部的线程数和绑核属于 intra-op 并行度，见第 8 章。
 
-### 按需扩容的 ThreadPool
+### 4.4.1　按需扩容的 ThreadPool
 
 底层原语是按需扩容的线程池。`Schedule` 提交任务时判断是否创建工作线程（`runtime/framework/threadpool.cc:78`）：
 
@@ -289,7 +289,7 @@ v0.13.1 的会话路径由 `ThreadedExecutionManager` 调度 prefill 和 decode�
 
 (1) 任务数不少于现有线程数，且尚未达到 `max_num_threads_` 时，线程池尝试创建一个工作线程。线程池从零个线程开始按需增长。(2) 第一个工作线程创建失败时返回错误。后续扩容失败只记录警告，任务仍由现有线程处理。(3) 无论是否扩容，任务都会进入队列。`RunWorker` 也在锁外执行任务（`runtime/framework/threadpool.cc:180`）。
 
-### 两个单线程池
+### 4.4.2　两个单线程池
 
 `ThreadedExecutionManager` 创建两个线程池，并把各自的上限设为 1（`runtime/framework/resource_management/threaded_execution_manager.cc:74`）：
 
@@ -304,7 +304,7 @@ v0.13.1 的会话路径由 `ThreadedExecutionManager` 调度 prefill 和 decode�
 
 两个池都只有一个工作线程。(1) prefill、decode 与克隆任务进入同一个执行池。因此，同一 `ThreadedExecutionManager` 中的模型任务串行运行。(2) 终态回调会投递到单独的回调池，但执行线程仍会等待回调完成。
 
-### 回调线程边界与背压
+### 4.4.3　回调线程边界与背压
 
 流式回调与终态回调使用不同路径。`Tasks::Decode` 产生文本后直接调用流式回调，此时仍在执行池线程上（`runtime/core/tasks.cc:564`）。慢回调会延长当前 decode 迭代。任务结束时，`FinishTask` 把终态回调投递到回调池（`runtime/framework/resource_management/threaded_execution_manager.cc:434`）：
 

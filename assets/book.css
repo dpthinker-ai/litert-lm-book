@@ -140,7 +140,7 @@ figcaption { color: var(--fig-text-dim, #8b949e); font-size: 0.9em; margin-top: 
   column-gap: 4px;
   padding: 2px 0;
   color: #57606a;
-  font-size: 10.5px;
+  font-size: 10px;
   line-height: 1.38;
   text-align: left;
   break-inside: avoid;

@@ -4,13 +4,13 @@
 
 第 6、7 章已经分析内存容量与内存带宽约束。本章讨论异构执行。手机 SoC 同时包含 CPU、GPU 与 NPU，各自支持的算子、数值路径和部署条件不同。运行时需要选择相应的执行路径，同时保持上层接口稳定。
 
-## 后端选择改变执行路径
+## 8.1　后端选择改变执行路径
 
 上游 issue `LiteRT-LM#2281` 报告：同一个 `.litertlm` 文件分别使用 `--backend=cpu` 和 `--backend=gpu` 时，速度不同，输出文本也可能不同。[^ch08-issue-2281] 这也是第 2 章第 17 问的来源。
 
 后端选择会改变实际计算路径。算子内核、数值精度处理和反量化实现都可能随之变化。LiteRT-LM 因此需要在运行时选择后端，并将这些差异封装在共同接口内。
 
-## Backend 工厂分派
+## 8.2　Backend 工厂分派
 
 LiteRT-LM 用一个枚举表示后端（`runtime/executor/executor_settings_base.h:34`）：
 
@@ -54,7 +54,7 @@ llama.cpp 维护后端注册表，按编译选项注册 CUDA、Metal、SYCL、Vu
 
 </div>
 
-### 静态与动态形状分派
+### 8.2.1　静态与动态形状分派
 
 CPU/GPU 创建函数还会根据导出模型的形状类型分派静态或动态执行器（`runtime/executor/llm_litert_compiled_model_executor_factory.cc:138`）：
 
@@ -89,7 +89,7 @@ return is_kv_cache_dynamic;
 
 两条路径的缓冲管理不同。静态执行器使用导出时确定的 prefill、decode 与 KV cache 形状；动态执行器按 `kv_increment_size` 扩展 KV cache，默认每次增加 16 个位置（`runtime/executor/llm_executor_settings.h:110`）。动态形状允许缓冲区随当前序列长度增长，但底层 delegate 可能需要重新准备张量；实际峰值内存仍取决于 delegate 的分配策略。`prefill_chunk_size` 的注释注明它只适用于动态导出的模型（`runtime/executor/llm_executor_settings.h:113`）。两种执行器都实现 `LlmExecutor`，上层不需要按形状类型分支。
 
-### 后端枚举如何下沉为编译选项
+### 8.2.2　后端枚举如何下沉为编译选项
 
 工厂分支只决定创建哪一种执行器。CPU 与 GPU 的硬件请求继续下沉到 `CreateCompilationOptions`。GPU 分支设置激活精度、缓冲模式与 GPU 专属选项，最后请求 `kGpu`；CPU 分支设置线程数与 XNNPack 缓存，最后请求 `kCpu`（`runtime/executor/llm_executor_settings_utils.cc:76-86`、`runtime/executor/llm_executor_settings_utils.cc:214-255`）：
 
@@ -128,11 +128,11 @@ CPU、GPU 与 NPU 分支都返回 `absl::StatusOr<std::unique_ptr<LlmExecutor>>`
 <figcaption>图 8-1　工厂按 Backend 选择 CPU/GPU 通用执行器或 NPU 专用执行器，两条路径都返回 LlmExecutor 接口。</figcaption>
 </figure>
 
-## CPU：线程配置与 Pixel 亲和性
+## 8.3　CPU：线程配置与 Pixel 亲和性
 
 CPU 通常具有较宽的算子覆盖范围，也是没有可用加速器时的后备执行单元。LiteRT-LM 为 CPU 路径提供线程数配置，并在部分 Pixel Tensor 设备上设置线程亲和性。这两项配置影响调度方式，但不能脱离具体设备推导出统一的性能最优值。
 
-### CPU 亲和性：Pixel Tensor 的硬编码核表
+### 8.3.1　CPU 亲和性：Pixel Tensor 的硬编码核表
 
 移动 SoC 常把不同性能特征的 CPU 核组合在一起。LiteRT-LM 提供亲和性工具，用于限制推理线程可运行的 CPU 集合。相关接口分别识别 Pixel Tensor 设备（`runtime/engine/cpu_affinity_utils.h:25`）、查询预设的性能核编号（`runtime/engine/cpu_affinity_utils.h:29`），以及设置当前线程的 affinity mask（`runtime/engine/cpu_affinity_utils.h:35`）。核编号不是运行时推导的，而是按芯片型号硬编码（`runtime/engine/cpu_affinity_utils.cc:57`）：
 
@@ -188,7 +188,7 @@ if (sched_setaffinity(0, sizeof(mask), &mask) != 0) {  // (2)
 
 亲和性设置在引擎创建时执行一次，不在 decode 循环内。`EngineFactory::Create` 先判断 `IsPixelTensorDevice()`，再对调用线程设置 mask；该调用不按 CPU、GPU 或 NPU 后端分支。Linux 新建线程会继承创建线程的 affinity mask，因此随后由该线程创建的工作线程通常继承相同集合。这个结论不覆盖此前已存在的线程，也不排除子线程之后重新设置自己的 mask。
 
-### 线程数：默认值与设备扫描
+### 8.3.2　线程数：默认值与设备扫描
 
 CPU 算子通过线程池并行执行（`runtime/framework/threadpool.h:51`），构造参数 `max_num_threads` 给出线程数上限（`runtime/framework/threadpool.h:57`）。增加线程数可能提高矩阵运算吞吐，也会增加调度开销，并逐步受到内存带宽限制。线程数对功耗、温度和持续性能的影响需要在目标设备上同时测量，本章的扫描只记录吞吐。
 
@@ -212,7 +212,7 @@ if (backend == Backend::CPU) {
 
 本书在一台 Qualcomm 设备上扫描了 1、2、4、8 个线程，context 为 1024，每个条件运行 3 次并取中位数（见附录 D 第十三节）。decode 吞吐依次为 4.4、7.4、10.1、13.4 tokens/s，prefill 吞吐依次为 22.8、45.3、77.9、131.6 tokens/s。把线程数从 4 加倍到 8，decode 提高约 33%，prefill 提高约 69%，都低于理想的 100% 增幅。相对 1 线程，8 线程的加速比分别约为 3.0 倍和 5.8 倍，对应约 38% 和 72% 的并行效率。数据只表明 8 线程在这四个测试点中吞吐最高，默认 4 线程不是该设备上的最高吞吐测试点。它不能证明 8 线程尚未饱和，也不能确定全局最优值。`--num_cpu_threads` 允许针对目标设备继续扫描，并把功耗、温度与持续性能纳入选择。
 
-## GPU：并行执行与设备侧采样
+## 8.4　GPU：并行执行与设备侧采样
 
 GPU 适合并行执行矩阵运算。第 5 章介绍过设备侧采样（device-side sampling）：采样器直接消费 GPU 产生的 logits，避免在每个 decode step 把完整 logits 张量传递给 host 采样器。
 
@@ -243,7 +243,7 @@ sampler_handles_input_ =
 
 `(1)` 采样器通过独立的 `sampler_backend` 创建，主执行器使用 GPU 时可以同时选择 GPU sampler，使完整 logits 无需返回 host。`(2)` 只有采样器声明 `CanHandleInput()`、模型具有 `input_tokens`，并且 embedding 不在主 GPU 图中执行时，`sampler_handles_input_` 才会为 true。源码注释把 `embedding_lookup_ == nullptr` 定义为 embedding 在 GPU 图内执行（`runtime/executor/llm_litert_compiled_model_executor.cc:1358`）。因此，"GPU 采样"和"采样器接管下一步输入"是两个不同条件，前者成立不保证后者成立。
 
-### 避免完整 logits 回传：采样器接管下一步输入
+### 8.4.1　避免完整 logits 回传：采样器接管下一步输入
 
 `sampler_handles_input_` 为 true 时，采样器除输出 token id 外，还可以填写下一步 decode 的输入张量。这个机制减少输入准备中的往返，但不会取消 token id 返回 host 的步骤。
 
@@ -286,7 +286,7 @@ position 和 mask 张量需要保留当前轮与上一轮两组缓冲。`SwapSam
 
 附录 D 的整机基准使用 Apple M5 Pro、Gemma 4 E4B、context 1024，并生成 128 个 token。GPU 的 decode 吞吐约为 50.6 tokens/s，CPU 约为 24.7 tokens/s；prefill 分别约为 999 与 259 tokens/s〔基准 D〕。该结果同时包含算子、内存、delegate 与采样路径差异，不能据此计算设备侧采样的单独收益。
 
-## 缓冲驻留：共享条件与退化路径
+## 8.5　缓冲驻留：共享条件与退化路径
 
 后端名称回答“由哪条执行路径处理”，buffer 类型则回答“数据目前能被谁直接访问”。两者不能互相替代。图 8-3 把配置、编译与缓冲绑定放在同一条链上。CPU/GPU 共用执行器类型，不表示它们共用缓冲策略；NPU 使用专用执行器，也不表示整条链只经过 NPU。
 
@@ -341,13 +341,13 @@ KV cache 也有明确的深复制路径。多候选 decode 在首次 prefill/dec
 <figcaption>图 8-4　buffer 只有在存储、布局与完成事件均相容时才可直接交接，否则会出现重分配、回读回写或显式同步。</figcaption>
 </figure>
 
-### 源码中的 buffer 类型不相容案例
+### 8.5.1　源码中的 buffer 类型不相容案例
 
 NPU 创建路径包含一个具体修正。Gemma3n 的第 19 组 prefill KV cache 没有连接到模型算子，LiteRT 因而为它分配 host memory。源码注释明确指出，该 buffer 与 NPU transformer 不相容。执行器改从 decode signature 创建 `cache_k19` 与 `cache_v19`，清零后替换原 buffer（`runtime/executor/llm_litert_npu_compiled_model_executor.cc:2976-2988`）。
 
 这个案例说明，张量名称和形状相同仍不足以复用。buffer 的来源 signature 会影响实际 storage。若诊断只比较地址或 `Duplicate()` 调用次数，就会遗漏这类后端可访问性问题。适当的检查顺序是先记录 `BufferType()`、元素类型、shape 与 stride，再核对 producer/consumer 的 signature，最后观察 delegate 是否接受绑定。
 
-### 如何观察同步与复制成本
+### 8.5.2　如何观察同步与复制成本
 
 LiteRT-LM 的 `BenchmarkInfo` 记录 executor 初始化、整次 prefill、整次 decode 与 TTFT。prefill/decode 计时从 turn start 到 turn end，因而适合作为端到端基线（`runtime/engine/io_types.h:427-510`、`runtime/engine/io_types.cc:306-347`）。它不自动拆分 kernel、等待、采样和复制。要定位边界成本，需要在同一设备、同一模型和同一输入上做成对实验，并且每次只改变一个路径条件。
 
@@ -369,11 +369,11 @@ $$
 
 NPU 执行器提供更细的内置分项。`LatencyStats` 分别累计输入准备、embedder、mask、RoPE、主 LLM、cache update、sampling 和 token queue 时间（`runtime/executor/llm_litert_npu_compiled_model_executor.h:58-90`）。prefill 对各子图调用前后使用 `absl::Now()` 计时（`runtime/executor/llm_litert_npu_compiled_model_executor.cc:1978-2086`）。这些字段能帮助定位阶段，但本书两台设备都没有进入推理，因而没有可报告的 NPU 分项数据。
 
-## NPU：专用多子图路径与部署约束
+## 8.6　NPU：专用多子图路径与部署约束
 
 LiteRT-LM v0.13.1 的 NPU 专用执行器包含 Qualcomm QNN/HTP 与 Google Tensor 配置，并使用专门的多子图路径（`runtime/executor/llm_litert_npu_compiled_model_executor.cc:444-463`）。本书的两台探测设备均为 Qualcomm 平台。它们都未完成一次 NPU 推理，也没有采集功耗数据，因此本章不比较 NPU 与 CPU、GPU 的能效。
 
-### NPU executor 仍是一条异构流水线
+### 8.6.1　NPU executor 仍是一条异构流水线
 
 主 transformer 的编译选项允许 NPU 与 CPU，embedder 则显式采用 CPU 选项。`NpuConfig` 还分别控制 mask、KV cache update、per-layer embedding 与 greedy sampling 的实现选择（`runtime/executor/llm_executor_settings.h:124-139`）。构造函数根据这些配置切换 `MaskUpdateMethod`、`KVCacheUpdateMethod` 和 per-layer lookup 路径（`runtime/executor/llm_litert_npu_compiled_model_executor.h:371-386`）。所以，NPU executor 的性能取决于多段计算和交接，不等于一个 transformer NPU kernel 的耗时。
 
@@ -383,7 +383,7 @@ logits 路径也不同。主 NPU 模型的 decode 输出可以带 per-tensor 量
 
 工厂通过 `CreateNpuLlmLiteRtCompiledModelExecutor` 创建 `LlmLiteRtNpuCompiledModelExecutor`（`runtime/executor/llm_litert_npu_compiled_model_executor.h:51`）。冻结版源码的类注释把它限定为 Gemma3 的 NPU 变体（`runtime/executor/llm_litert_npu_compiled_model_executor.h:50`），不能据此推断任意模型都可进入这条路径。
 
-### CPU/GPU embedder 与 NPU 多子图
+### 8.6.2　CPU/GPU embedder 与 NPU 多子图
 
 CPU/GPU 执行器并非总把 embedding 融入主图。初始化时，`InitializeEmbeddingLookups` 查询 `ModelType::kTfLiteEmbedder`；模型包包含该段时，它创建独立的 `EmbeddingLookupManager`（`runtime/executor/llm_litert_compiled_model_executor.cc:103`）。`EmbeddingLookupText::Initialize` 又为 embedder 创建自己的 `CompiledModel`（`runtime/components/embedding_lookup/embedding_lookup_text.cc:273`）。包内没有独立 embedder 时，`embedding_lookup_` 保持为 null；此时主图必须提供 `input_tokens`，否则输入缓冲初始化返回失败（`runtime/executor/llm_litert_compiled_model_executor.cc:370`）。`InitializeSampler` 把 GPU 后端上的这个分支称为 embedding 在 GPU 图内执行（`runtime/executor/llm_litert_compiled_model_executor.cc:1358`）。因此，CPU/GPU 路径同时支持独立 embedder 与主图内 embedding，具体形式由模型包和主图签名决定。
 
@@ -409,7 +409,7 @@ struct NpuAuxiliaryContext {                         // (3)
 
 延迟统计字段按阶段记录 `prefill_embedder_inference_latency_us`、`prefill_mask_inference_latency_us`、`prefill_rope_inference_latency_us`、`prefill_llm_inference_latency_us` 与 `prefill_cache_update_inference_latency_us`（`runtime/executor/llm_litert_npu_compiled_model_executor.h:60-82`）。prefill 实现也依次调用 embedder、RoPE、mask、主 LLM 与 cache update 路径（`runtime/executor/llm_litert_npu_compiled_model_executor.cc:1978-2086`），确认了分段执行结构。源码没有说明每个子图拆分的完整设计理由。本书据此只陈述调用边界，不把它归因于未经验证的算子限制。
 
-### 两台真机到达的初始化阶段
+### 8.6.3　两台真机到达的初始化阶段
 
 第一台设备是 nubia P0210（canoe，HTP V81）。测试使用 `gemma-4-E2B-it_qualcomm_sm8750.litertlm`，过程记录在 `experiments/data/npu_enablement.md`。在这台设备上，dispatch 桥加载、QNN manager 初始化、模型分段读取与 DispatchDelegate 解析均已通过，1.18 GB 的 QNN context 也创建成功。随后没有进入模型推理。独立运行 `qnn-platform-validator` 时，DSP 测试返回 "Please use testsig if using unsigned images"；同时，设备 `/vendor` 中的厂商库对 shell 不可读。两项现象与当前 ROM 和 DSP 镜像签名或访问限制一致。这次实验没有改变 ROM，也没有使用厂商签名产物，因而不能进一步分离各项安全策略的影响。
 
@@ -421,7 +421,7 @@ struct NpuAuxiliaryContext {                         // (3)
 
 第一台设备完成了 QNN context 创建，第二台设备在 backend/device 创建阶段停止；两者均未完成 prefill 或 decode。因此，本书没有 NPU 吞吐、时延或功耗数据。NPU 执行行为仍以冻结版源码分析为主，真机记录只用于界定部署链路和已观察到的失败阶段。
 
-## 后端差异为何可能改变输出
+## 8.7　后端差异为何可能改变输出
 
 `LiteRT-LM#2281` 报告了 CPU 与 GPU 后端输出不同的现象。[^ch08-issue-2281] 本节从冻结版代码路径和浮点计算常识解释可能机制。issue 中的具体样例没有在本书设备上复现，因此本节不判断该报告的具体根因。
 
@@ -429,7 +429,7 @@ struct NpuAuxiliaryContext {                         // (3)
 
 当两个候选 token 的 logits 接近时，微小数值差异可能改变 argmax 或采样结果。某一步选择不同 token 后，两次运行的后续上下文和计算输入也随之不同。不同硬件路径不保证逐比特一致，但输出差异也不能自动视为正常。排查时应固定模型、prompt、后端配置、采样参数、随机种子和线程设置，再比较 logits 与中间张量。按第 5 章核验的 `TopPSampler` 实现，greedy 由 `k == 1` 决定；单独把温度设为 0 不等于 greedy。若排除随机采样后差异仍在，还需检查数值容差、算子实现和确定性设置。
 
-### 从首个分叉 step 开始诊断
+### 8.7.1　从首个分叉 step 开始诊断
 
 只比较两段最终文本会放大自回归效应，却不能定位起点。诊断应记录每个 step 的输入 token、输出 token 和候选 logits，先找到首个 token id 不同的位置。该位置以前的上下文完全一致，才适合比较两条后端路径。
 

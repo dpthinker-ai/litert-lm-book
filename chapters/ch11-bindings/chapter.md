@@ -4,7 +4,7 @@
 
 LiteRT-LM v0.13.1 的 `README.md:99-106` 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。这些绑定并不共用同一条原生调用路径。Python 与 Swift 使用 `c/engine.h` 提供的 C ABI；Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章选择前四种绑定分析三类边界模式，Flutter 不在本章展开。
 
-## C ABI：C 兼容的原生边界
+## 11.1　C ABI：C 兼容的原生边界
 
 C++ 的名字修饰（name mangling）、异常、模板和对象布局受编译器及标准库 ABI 影响。Python `ctypes` 与 Swift C 互操作需要 C 兼容的符号和数据类型，不能直接导入任意 C++ 类的方法。
 
@@ -56,7 +56,7 @@ void litert_lm_engine_delete(LiteRtLmEngine* engine);                           
 <figcaption>图 11-1　Python 与 Swift 经 C ABI 调用 runtime，Kotlin 与 Web 分别经 JNI 和 Embind 直接调用 C++；三条边界路径复用同一套核心实现。</figcaption>
 </figure>
 
-## 创建与释放必须配对
+## 11.2　创建与释放必须配对
 
 不透明句柄隐藏了对象布局，也要求 API 明确对象的所有权。
 
@@ -89,7 +89,7 @@ void litert_lm_engine_delete(LiteRtLmEngine* engine) { delete engine; }  // (4)
 
 绑定层需要把 create/delete 契约映射为本语言的资源管理接口。Python 提供上下文管理器和 `__del__`，Kotlin 使用 `AutoCloseable`，Swift v0.13.1 则主要依赖 `deinit`。
 
-## 三类原生边界
+## 11.3　三类原生边界
 
 四种绑定采用三类原生边界：Python 与 Swift 使用 C ABI，Kotlin 使用 JNI，Web 使用 Embind。
 
@@ -133,7 +133,7 @@ Web 将核心编译为 WebAssembly，并在 `js/packages/core` 中提供 TypeScr
 
 三类边界最终调用同一套 C++ runtime 实现，但这不足以证明各语言 API 的行为逐项一致。默认参数、错误翻译、调度方式和绑定层预处理都可能造成差异。本书也没有进行跨语言逐输出对照实验。图 11-1 表达的是实现复用关系，不是行为等价结论。
 
-## JNI 与 Embind 直接调用 C++
+## 11.4　JNI 与 Embind 直接调用 C++
 
 Kotlin 和 Web 不经过 `c/engine.h`。Kotlin JNI 的原生实现包含 runtime 的 C++ 头文件（`kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:37-38`）：
 
@@ -178,7 +178,7 @@ Web 的 Embind 也在编译期从 C++ 导出 JavaScript 可见对象。源码可
 
 > 表 11-1　四种语言绑定采用三类原生边界，并以不同类型保存原生句柄。
 
-## 流式生成如何跨越 FFI 边界
+## 11.5　流式生成如何跨越 FFI 边界
 
 阻塞式接口在函数返回时交付结果，流式生成则需要多次传递增量文本和终止状态。C ABI 使用回调表达这组异步事件，并为回调参数规定明确的生命周期。
 
@@ -247,7 +247,7 @@ int litert_lm_session_run_decode_async(LiteRtLmSession* session,
 
 该函数先把 C 回调和 `callback_data` 传递给 `CreateCallback`，然后调用 `RunDecodeAsync`。(1) 在参数无效时返回 `-1`，(2) 在启动失败时返回 `absl::StatusCode` 的整数值，(3) 在成功启动时返回 0。返回码只描述启动结果。后续文本和终止状态均由回调传递。绑定层还需保证回调上下文至少存活到最终回调完成。
 
-## 多模态输入在 C 边界的扁平化
+## 11.6　多模态输入在 C 边界的扁平化
 
 第 10 章说明了图像和音频如何进入 KV cache。本节只考察文本、图像和音频如何表示为 C ABI 可接收的数据。
 
@@ -308,7 +308,7 @@ std::vector<litert::lm::InputData> ToEngineInputData(
 
 接口不接管调用方缓冲的所有权，也不要求缓冲在函数返回后继续存活。实现会复制数据，使 `InputData` 独立拥有内容。若要避免复制，C ABI 需要增加可验证的生命周期契约，例如所有权转移或释放回调。v0.13.1 没有实现这些方案。本书也没有测量这次复制在端到端时延中的占比。
 
-## 跨语言字符串的所有权与编码
+## 11.7　跨语言字符串的所有权与编码
 
 跨 FFI 返回 `const char*` 时，接口必须规定指针的有效期和字符编码。LiteRT-LM 分别在 C ABI 与 JNI 层处理这两个问题。
 
@@ -374,7 +374,7 @@ jstring NewStringStandardUTF(JNIEnv* env, std::string standard_utf8_str) {
 
 (1) 创建 `byte[]`，(2) 写入标准 UTF-8 字节。(3) 获取 `String(byte[], String charsetName)` 构造器。(4) 创建 ASCII 字符串 `"UTF-8"`，(5) 显式按该字符集构造 Java `String`。省略的代码调用 `DeleteLocalRef` 清理 JNI 局部引用。该辅助函数用于响应文本、错误消息和渲染结果等多处 C++ 到 Kotlin 的字符串转换。
 
-## Swift 中两个不同的显式释放问题
+## 11.8　Swift 中两个不同的显式释放问题
 
 `LiteRT-LM#2589`[^ch11-issue-2589] 与 `LiteRT-LM#2613`[^ch11-issue-2613] 都要求 Swift 提供显式释放，但涉及的对象和故障条件不同。前者讨论 `Conversation`，后者讨论 `Engine`，不能合并为同一个生命周期缺陷。
 
@@ -423,7 +423,7 @@ class Conversation(
 
 两个 issue[^ch11-issue-2589][^ch11-issue-2613] 都反映了自动释放接口的同一项限制：调用方不能直接指定原生删除的时点或隔离域。Conversation 与 Engine 的故障条件不同，修复接口仍需分别设计。
 
-## 并发隔离：actor 与 synchronized
+## 11.9　并发隔离：actor 与 synchronized
 
 Swift 和 Kotlin 都限制对 Engine 句柄的并发访问，但采用不同的语言机制。Swift 在 `swift/Engine.swift:28-38` 把 `Engine` 声明为 actor，并把 `handle` 定义为其可变状态。actor 外部调用隔离方法时需要 `await`。`await` 是潜在挂起点，但不保证发生 OS 线程切换，也不表示 actor 拥有专用后台线程。
 
@@ -442,7 +442,7 @@ Kotlin 的 `Engine` 定义一把锁和 `@Volatile` 句柄（`kotlin/java/com/goo
 
 源码可以确认两种隔离方式的语义差异：Swift 使用编译器检查的 actor 隔离，Kotlin 使用运行时锁。没有基准数据时，不能据此比较跨 actor 调用与锁的性能，也不能推断哪一种机制在本场景中开销更低。
 
-## 测试替身：FakeLlmExecutor
+## 11.10　测试替身：FakeLlmExecutor
 
 真实模型推理依赖模型文件和后端环境，不适合承担全部单元测试。LiteRT-LM 提供测试替身 `FakeLlmExecutor`，见 `runtime/executor/fake_llm_executor.h:37-59`：
 
@@ -517,7 +517,7 @@ absl::Status FakeLlmExecutor::Prefill(const ExecutorInputs& inputs) {
 
 (7) 是无约束分支，直接返回预定 token。约束分支在 (4) 用 `DecodeIdsToLogits` 构造 logits，在 (5) 调用 `MaskLogits`，再由 (6) 转回 token。(2)、(3) 在连续 decode 时先用上一轮 token 更新约束状态。(8) 记录上一项操作的类型。`FakeLlmExecutor` 因而能确定性测试状态更新与 logits mask 的接口交互，但不能替代真实模型 logits 上的集成测试。
 
-## 跨平台构建
+## 11.11　跨平台构建
 
 LiteRT-LM 为 Android、iOS、Linux、macOS、Windows 和 Web 提供构建目标，并依赖 sentencepiece、llguidance、Skia 等第三方组件。仓库以 Bazel 构建文件为主，同时提供 CMake 构建入口。不同绑定还要分别生成 Android 原生库、Swift package 或 WebAssembly 产物。相关复现命令见附录 C。
 

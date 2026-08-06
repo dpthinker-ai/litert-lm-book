@@ -4,7 +4,7 @@
 
 第 1 章在明确的假设下推导了 decode 的带宽侧上限。本章把同一分析方法用于实测数据。第 1 章的 25 tokens/s 是示意点值，不能直接用来验证另一台设备。
 
-## 运行命令行工具
+## 2.1　运行命令行工具
 
 使用官方 Python 包就无需本地编译 C++。v0.13.1 的 README 给出以下安装与运行方式。[^ch02-litertlm-readme]
 
@@ -118,7 +118,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 
 按主生成路径，输入先进入对话与 Session，再经过 prefill、decode，最后由回调返回结果。第 3 至 5 章分别分析状态管理、两阶段执行和输出处理。
 
-## benchmark 输出的四项指标
+## 2.2　benchmark 输出的四项指标
 
 `litert-lm benchmark` 以固定输入触发一次生成，并通过 benchmark 参数指定 prefill 与 decode 的 token 数。Python 包装层把输入文本设为 `benchmark`，再调用 C API 的同步生成函数（`python/litert_lm/benchmark.py:74`）。命令完成后输出四项指标（`python/litert_lm_cli/commands/benchmark.py:102`）：
 
@@ -170,7 +170,7 @@ v0.13.1 的 TTFT 是计算值，并非从请求发起直接计时至首个流式
 
 prefill 与 decode 的吞吐对应不同阶段，不能合并为单一吞吐值。同模型、同设备、同后端时，两者仍会受序列长度、固定 prefill signature 的填充率和 kernel 实现影响。附录 D 的主矩阵来自 Apple M5 Pro；Android 真机数据作为扩展实验单列。引用基准数据时，正文会同时给出设备、模型、后端与上下文等条件。
 
-## 计时器与测量语义
+## 2.3　计时器与测量语义
 
 `BenchmarkInfo` 保存各阶段的计时记录（`runtime/engine/io_types.h:420`）。源码把一次 `RunPrefill` 或 `RunDecode` 调用定义为一个 turn；每条 `BenchmarkTurnData` 包含持续时间和 token 数（`runtime/engine/io_types.h:409`）。prefill 的结束计时如下（`runtime/engine/io_types.cc:306`）：
 
@@ -217,7 +217,7 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 3. 对 prefill，对照序列长度、signature 形状和后端，以区分计算效率与填充效率；不能仅凭 tokens/s 判定算力瓶颈。
 4. 对 decode，先记录上下文长度、采样配置和后端，再与带宽侧上限对照。上下文扫描只能显示相关成本随长度变化；若要区分 KV 流量与计算，应增加硬件计数器或更小范围的探针。
 
-## Roofline 分析框架
+## 2.4　Roofline 分析框架
 
 Roofline 用算术强度连接计算吞吐与内存带宽。沿用第 1 章的记号：每个 token 的计算量为 \\(F\\)，数据搬运量为 \\(D\\)，工作负载可用的有效计算吞吐和内存带宽分别为 \\(P_{\mathrm{eff}}\\) 与 \\(B_{\mathrm{eff}}\\)。token 率满足
 
@@ -236,7 +236,7 @@ prefill 一次处理一段 token，同一份权重可在序列维度复用，因
 <figcaption>图 2-1　Roofline 给出计算侧和带宽侧两条上限；prefill 与 decode 的工作点位置取决于序列、模型、缓存和 kernel 条件。</figcaption>
 </figure>
 
-### 用吞吐差异估算上下文相关开销
+### 2.4.1　用吞吐差异估算上下文相关开销
 
 附录 D 中，cpu 后端的 decode 吞吐从 context 256 时的 24.8 tokens/s 降到 context 4096 时的 20.7 tokens/s；gpu 后端从 50.6 降到 45.6 tokens/s。模型、设备与后端在各自对照中保持不变，输入上下文长度发生变化〔基准 D〕。
 
@@ -246,7 +246,7 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{L}\left(\frac{R_s}{R_l}-1\right) $$
 
 代入 cpu 数据得到约 107 KiB/token；代入 gpu 数据得到约 59 KiB/token。第 6 章按模型张量形状计算的逻辑 KV 容量是 28 KiB/token。这三个数不应相等：`d_{\mathrm{eq}}` 把注意力计算、带宽利用率变化、缓存行为和其他随上下文变化的成本都折算成字节。它不是实际 DRAM 流量的测量值，也不能单独证明降速全部来自 KV cache。这个对照只说明上下文相关成本不能从权重 payload 一项解释；第 6 章再按 KV 张量形状和访问路径核算。
 
-## 二十个问题
+## 2.5　二十个问题
 
 表 2-2 把后续章节的核心问题与解答位置对应起来。表中只给出索引，各章仍会说明结论的适用条件。
 
@@ -275,7 +275,7 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{L}\left(\frac{R_s}{R_l}-1\right) $$
 
 > 表 2-2　二十个推理与运行时问题。不同语言绑定如何复用核心 runtime，同时采用不同的原生边界，见第 11 章。
 
-## 五层职责视图
+## 2.6　五层职责视图
 
 本书按主要职责把生成路径整理为五层，供后续章节定位实现位置。这是分析视图，不是仓库声明的强制依赖规则。主调用路径大体自上而下；工厂、元数据、日志与工具代码仍可能跨越相邻层。
 
@@ -352,7 +352,7 @@ class LlmExecutorBase {
 
 `SessionInterface` 与 `LlmExecutorBase` 提供抽象边界，但不保证所有模块只依赖相邻层。工厂和设置对象把后端选择传递给 executor 与 delegate；上层编排可以复用，具体能力仍要逐后端检查。会话相关状态由 Session 及其 executor 上下文持有。Clone、checkpoint 与 rewind 分别复制或调整哪些状态，需按第 6 章的具体实现判断。
 
-## `.litertlm` 文件的组成
+## 2.7　`.litertlm` 文件的组成
 
 `.litertlm` 是 LiteRT-LM 定义的容器格式。一个文件可以包含 TFLite 模型、tokenizer、LLM 元数据和通用二进制数据等 section；具体 section 组合由模型文件决定。`litertlm_print` 读取文件头（`schema/core/litertlm_print.cc:110`），输出系统元数据（`schema/core/litertlm_print.cc:133`），再遍历 section（`schema/core/litertlm_print.cc:159`）：
 

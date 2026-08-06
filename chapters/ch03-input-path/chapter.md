@@ -9,7 +9,7 @@
 <figcaption>图 3-1　处理器与模板先生成本轮文本，tokenizer 再编码为 token id；全历史回退需先通过前缀校验。</figcaption>
 </figure>
 
-## 公共 API 分层：Engine 与 Session
+## 3.1　公共 API 分层：Engine 与 Session
 
 LiteRT-LM 的底层生成接口以 `Engine` 与 `Session` 为核心。`Engine` 初始化模型、tokenizer 与 embedder 等共享资源。它还负责创建 Session（`runtime/engine/engine.h:33`）。`SessionInterface` 保存一次交互的内部状态，并提供生成、prefill 与 decode 操作（`runtime/engine/engine.h:65`）。
 
@@ -47,7 +47,7 @@ Engine 的具体实现由 `EngineFactory` 选择。以下逻辑都位于 `runtim
 
 注册宏 `LITERT_LM_REGISTER_ENGINE` 会生成文件级静态 `EngineRegisterer`（`runtime/engine/engine_factory.h:227-242`）。`engine_advanced_impl.cc` 用这个宏注册 `kAdvancedLiteRTCompiledModel`（`runtime/core/engine_advanced_impl.cc:370`）。可用类型取决于相应实现是否链接进最终程序；头文件也要求调用方确保目标引擎已经注册（`runtime/engine/engine_factory.h:51`）。
 
-### 共享前缀：基于同一上下文创建分支
+### 3.1.1　共享前缀：基于同一上下文创建分支
 
 `SessionInterface::Clone` 要求新 Session 取得调用点之前的设置与上下文（`runtime/engine/engine.h:231`）。接口示例先对公共问题前缀执行 prefill，再克隆 Session（`runtime/engine/engine.h:237`）。两条分支随后补入不同后缀，从相同的已处理上下文开始。
 
@@ -98,7 +98,7 @@ NPU 执行器覆写了 `CloneContext()`。它在 prefill 输入缓冲中匹配 K
 
 `Clone` 的初始成本不能按一次完整 KV cache 拷贝估算。后续分支的 prefill 行为决定 buffer 是否以及何时复制。
 
-## 对话层：消息与模板文本
+## 3.2　对话层：消息与模板文本
 
 `Conversation` 是面向多轮消息的高层接口。它负责模板渲染、角色消息、多模态输入、历史管理与模型特定处理（`runtime/conversation/conversation.h:366`）。`Conversation::Create` 先请求 Engine 创建一个 Session（`runtime/conversation/conversation.cc:299`、`runtime/conversation/conversation.cc:305`）。构造完成后，Conversation 保存对 Engine 的引用，并独占它创建的 Session（`runtime/conversation/conversation.h:639`、`runtime/conversation/conversation.h:665`）。
 
@@ -138,7 +138,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 > 表 3-1　模型特定 data processor 配置的默认差异。各配置类的字段定义见 `runtime/conversation/model_data_processor/` 目录下对应的头文件。
 
-### MiniJinja 与模板兼容性改写
+### 3.2.1　MiniJinja 与模板兼容性改写
 
 `PromptTemplate` 通过生成的 FFI 头调用 Rust MiniJinja（`runtime/components/prompt_template.cc:26`）。MiniJinja 不支持任意 Python 方法调用，而模型模板可能包含 `s.startswith("foo")` 一类写法。构造 `PromptTemplate` 时，LiteRT-LM 默认先调用 `EditTemplateForMinijinja`，再创建 MiniJinja 模板对象（`runtime/components/prompt_template.cc:73-78`）。改写函数使用 RE2 做文本替换（`runtime/components/prompt_template.cc:40`）：
 
@@ -158,7 +158,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 `PromptTemplateInput` 还包含 `now`，默认值取对象构造时的当前时间（`runtime/components/prompt_template.h:89-91`）。不能因此假定模板的渲染结果总是确定的。LiteRT-LM 在同一次差分中复用模板输入对象的非消息字段，并对渲染结果做前缀校验。
 
-## 增量文本：单轮模板与全历史回退
+## 3.3　增量文本：单轮模板与全历史回退
 
 Session 已经保留先前 prefill 和 decode 形成的上下文。下一轮只应提交新增输入，不应把旧历史再次提交给同一个 Session。`Conversation::GetSingleTurnText` 先检查模板是否支持单轮渲染（single-turn rendering，`runtime/conversation/conversation.cc:251`）：
 
@@ -231,7 +231,7 @@ return new_string.substr(old_string.length());                       // (4)
 
 `SendMessageAsync` 把本轮文本传递给 `ModelDataProcessor::ToInputDataVector`（`runtime/conversation/conversation.cc:506`），再调用 `Session::RunPrefillAsync`（`runtime/conversation/conversation.cc:573`）。旧上下文能否复用，取决于单轮语义或前缀校验，而不是 `PromptTemplateInput` 的复制操作。
 
-## 文本编码：两种 tokenizer
+## 3.4　文本编码：两种 tokenizer
 
 文本处理完成后，tokenizer 将字符串编码为 token id 序列。LiteRT-LM 的实现都遵循 `Tokenizer` 接口（`runtime/components/tokenizer.h:41`）：
 
@@ -288,7 +288,7 @@ absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
 
 输出侧还需处理 token 边界。SentencePiece 解码会暂存被 `HasBpeSuffix` 判定为不完整的 byte token。后续 token 到来后，代码再解码该缓冲（`runtime/components/sentencepiece_tokenizer.cc:84`、`runtime/components/sentencepiece_tokenizer.cc:94`）。第 5 章说明这条输出路径。
 
-## prefill 输入：token id 与 embedding
+## 3.5　prefill 输入：token id 与 embedding
 
 主模型可以在内部根据 token id 查找向量。运行时也可以先把 id 转换为 embedding（嵌入）。`LlmLiteRtCompiledModelExecutorBase::Prefill` 根据 `use_token_as_lookup` 选择路径。该值为 true 时，代码把 id 写入 token 输入缓冲；否则调用 `EmbeddingLookupManager` 填充 embedding 输入缓冲（`runtime/executor/llm_litert_compiled_model_executor.cc:624`、`runtime/executor/llm_litert_compiled_model_executor.cc:647`）。主机侧 embedding lookup 不是所有模型都必经的步骤。
 
@@ -312,7 +312,7 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
 
 `input_idx` 描述本次缓冲区中的布局位置。若已有 pending token，代码先将它从 0 增至 1（`runtime/executor/llm_litert_compiled_model_executor.cc:589`、`runtime/executor/llm_litert_compiled_model_executor.cc:612`）。`input_idx` 不是跨轮 embedding 缓存标志，也不表示旧对话的 embedding 仍在这张输出张量中。
 
-### 编译 embedding 模型与批量写入
+### 3.5.1　编译 embedding 模型与批量写入
 
 `EmbeddingLookupText::LookupInternal` 对非负 token 运行一个已经编译的 embedding 模型（`runtime/components/embedding_lookup/embedding_lookup_text.cc:50`）：
 

@@ -90,13 +90,44 @@ style.textContent = `${printRules.join('\n')}
     --fig-text:#1f2328; --fig-text-soft:#57606a;
     --fig-text-dim:#8b949e; --fig-green:#1a7f37;
   }
-  pre, pre code { font-size: 12px; line-height: 1.5; }
+  pre, pre code { font-size: 11px; line-height: 1.5; }
   pre code { white-space: pre-wrap !important; overflow-wrap: anywhere; }
   .table-wrapper { overflow: visible !important; }
-  table { width: 100% !important; font-size: 10px !important; line-height: 1.45; }
+  table { width: 100% !important; font-size: 9.5px !important; line-height: 1.45; }
   th, td { word-break: break-word; padding: 4px 7px !important; }
-  table code { white-space: normal !important; word-break: break-all; font-size: 9px; }
+  table code { white-space: normal !important; word-break: break-all; font-size: 8.5px; }
   .book-cover { padding-top: 90px !important; }
+  /* ── 排印：正文 10pt、行距 1.7、两端对齐（PDF 专属） ──
+     参照 llm-inference-handbook 的版式：正文约 10pt、行距 1.6-1.7、
+     标题层级拉大（章 24pt / 节 17pt / 小节 14pt）、代码与表格收紧。
+     正文字体沿用 book.css 的黑体系（PingFang SC），不在此覆盖。
+     调整密度：字号改 13.3px（10pt）可换 14px（10.5pt）/ 12px（9pt）；行距改 1.7。 */
+  #mdbook-content > main {
+    font-size: 13.3px !important;
+    line-height: 1.7 !important;
+  }
+  #mdbook-content > main h1 { font-size: 2.4em !important; }
+  #mdbook-content > main h2 { font-size: 1.7em !important; }
+  #mdbook-content > main h3 { font-size: 1.4em !important; }
+  #mdbook-content > main h4 { font-size: 1.15em !important; }
+  #mdbook-content > main p, #mdbook-content > main li,
+  #mdbook-content > main blockquote {
+    text-align: justify !important;
+    -webkit-text-justify: inter-ideograph;
+    text-justify: inter-ideograph;
+  }
+  /* 行内代码超长兜底：仅当整段放不下时才在任意字符处断开 */
+  #mdbook-content > main :not(pre) > code { overflow-wrap: break-word !important; }
+  /* 标题、代码、表格单元格、图注、脚注不参与两端对齐，保持左对齐/居中 */
+  #mdbook-content > main h1, #mdbook-content > main h2,
+  #mdbook-content > main h3, #mdbook-content > main h4,
+  #mdbook-content > main pre, #mdbook-content > main code,
+  #mdbook-content > main th, #mdbook-content > main td,
+  #mdbook-content > main figcaption,
+  #mdbook-content > main .pdf-footnote-bank-item,
+  #mdbook-content > main .pdf-footnote-bank-content p {
+    text-align: left !important;
+  }
 `;
 document.head.append(style);
 await nextTwoFrames();
@@ -206,6 +237,32 @@ if (definitions.size > 0) {
   main.append(footnoteBank);
   await nextTwoFrames();
 }
+
+// 行内代码的断行优化：在 /、:、_ 之后插入 <wbr>（:: 整体不拆），让文件路径与
+// 长标识符只在分隔符处断行。否则长路径会被整段挤到下一行，上一行在两端对齐下
+// 被拉出巨幅字距，或路径在中途被拦腰截断。必须在测量布局之前执行。
+const addWbrAfterSeparators = node => {
+  const parts = node.nodeValue.split(/([\/:_])/);
+  if (parts.length < 3) return;
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part === '') continue;
+    frag.append(part);
+    if (part === '/' || part === '_' ||
+        (part === ':' && parts[i + 1] !== ':')) {
+      frag.append(document.createElement('wbr'));
+    }
+  }
+  node.replaceWith(frag);
+};
+for (const el of main.querySelectorAll(':not(pre) > code')) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  for (const node of textNodes) addWbrAfterSeparators(node);
+}
+await nextTwoFrames();
 
 const unitMarkers = [...main.children].filter(element =>
   element.tagName === 'DIV' &&

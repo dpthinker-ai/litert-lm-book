@@ -29,7 +29,7 @@ while (true) {
 
 取消检查不会中断正在执行的 `Run`。如果标志在本轮计算期间置位，本轮结果仍会继续处理；循环最早在下一次调用 `Run` 前观察到它（`runtime/core/tasks.cc:486-519`）。外部采样路径还会先同步最后一个采样 token，再返回取消错误（`runtime/core/tasks.cc:495-512`）。取消不属于 `ShouldStop` 的判断条件。
 
-## 单步解码的完整流程
+## 5.1　单步解码的完整流程
 
 一次 decode step 依次执行以下操作：
 
@@ -46,7 +46,7 @@ while (true) {
 <figcaption>图 5-1　取消在迭代开始时检查；内部与外部采样汇合后，代码先处理文本与流式回调，再执行 `ShouldStop`。</figcaption>
 </figure>
 
-## 两条路径：内部采样与外部采样
+## 5.2　两条路径：内部采样与外部采样
 
 采样分成内部与外部两条控制路径。`DecodeOneStep` 的注释明确列出了这两种情形（`runtime/core/tasks.cc:109-111`）。
 
@@ -82,7 +82,7 @@ absl::StatusOr<std::vector<std::vector<int>>> DecodeAndSample(
 
 两条路径的返回类型都是 `std::vector<std::vector<int>>`：外层对应输出候选，内层是本次调用为该候选生成的 token id。`Run` 随后用同一套停止检测和文本解码逻辑处理它们（`runtime/core/tasks.cc:147-179`）。
 
-### CPU 外部采样的数据传输量
+### 5.2.1　CPU 外部采样的数据传输量
 
 `DecodeAndSample` 的外部路径分别记录执行器和采样器阶段（`runtime/core/tasks.cc:338-360`）：
 
@@ -112,7 +112,7 @@ RETURN_IF_ERROR(sampler_.value()->SampleToIdAndScoreBuffer(
 
 第 1 章的同一示例中，约 30 亿个 4 bit 权重对应约 1.4 GiB 权重数据；1 MiB 约为它的 0.7‰。这个比例只能比较字节量，不能换算成时延比例。权重读取、设备到宿主复制、同步和 CPU 采样经过不同的数据通路，也可能存在重叠。设备侧采样是否降低单步时延，必须在同一模型、后端和设备上对照测量。
 
-## 从 logits 选择 token
+## 5.3　从 logits 选择 token
 
 采样策略规定如何从 logits 中选出 token。LiteRT-LM 的采样器实现同一个 `Sampler` 接口（`runtime/components/sampler.h:34`），其中的核心方法如下：
 
@@ -124,7 +124,7 @@ virtual absl::Status SampleToIdAndScoreBuffer(
 
 接口规定 `logits_tensor` 的形状为 `[batch_size, sequence_size, vocab_size]`，`ids_tensor` 为 `[batch_size, sequence_size]`。`scores_tensor` 可以为空；非空时，采样器写入所选 token 的对数概率（`runtime/components/sampler.h:38-47`）。这些张量均以 `TensorBuffer` 传递，因此 CPU 与设备侧采样实现可以共享同一接口。
 
-### 采样器工厂与后端降级
+### 5.3.1　采样器工厂与后端降级
 
 具体实现由 `CreateSampler` 按请求的后端分派（`runtime/components/sampler_factory.cc:707-740`）。GPU 分支先调用 `CreateGpuSampler`；只有它返回 `kUnavailable` 时，工厂才转入 CPU 分支：
 
@@ -193,7 +193,7 @@ static absl::StatusOr<std::unique_ptr<TopPSampler>> Create(int k, float p,  // (
 
 > 表 5-1　`TopPSampler` 以 `k`、`p` 和温度组合候选截断与随机采样；`k = 1` 时选择退化为 greedy。
 
-### CPU 采样实现：候选选择与数值边界
+### 5.3.2　CPU 采样实现：候选选择与数值边界
 
 `TopPSampler` 调用 `runtime/components/sampling_cpu_util.cc` 中的三个函数：`TopKTokenIds` 取候选集，`Softmax` 归一化，`TopKTopPSampling` 完成 top-p 截断与随机选择。
 
@@ -284,7 +284,7 @@ for (int i = 0; i < k; ++i) {
 
 代码随后在 `[0, cumulative_prob)` 上取均匀随机数，并按累计区间选择 token（`runtime/components/sampling_cpu_util.cc:241-284`）。整条路径包含 O(vocab) 的部分选择、O(k log k) 的候选排序和 O(k) 的累计过程。
 
-## 停止条件
+## 5.4　停止条件
 
 每个 decode step 结束后都要检查停止条件。判断集中在纯函数 `ShouldStop` 中（`runtime/core/tasks.cc:85-107`）：
 
@@ -318,7 +318,7 @@ bool ShouldStop(bool hit_stop_tokens, int benchmark_decode_token_count,
 
 循环结束后，`DecodeStreaming` 再调用一次最终回调（`runtime/core/pipeline.cc:75-96`）。其状态为 `kDone`、`kMaxNumTokensReached` 或错误状态。
 
-## 未完整文本序列与停止序列暂存
+## 5.5　未完整文本序列与停止序列暂存
 
 流式输出要处理两类暂存：token id 序列尚不能解码成有效文本，以及若干 token id 可能构成停止序列的前缀。两者都发生在 `DecodeOneStep::Run` 中，但判断顺序不同。
 

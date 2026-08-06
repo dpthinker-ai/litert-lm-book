@@ -4,7 +4,7 @@
 
 第 1 章讨论了缓解 decode 内存带宽约束的两类方法。硬件可以提高带宽，量化可以减少每 token 读取的字节数。第三种方法是投机解码（speculative decoding）。基础模型每读取一次权重，尽可能确认多个 token。本章据此定量分析第 2 章第 19 问：投机解码为什么可能加速，又会在什么条件下减速。
 
-## 投机解码的目标：一次验证多个候选 token
+## 9.1　投机解码的目标：一次验证多个候选 token
 
 dense 模型在 decode 阶段通常每生成一个 token 就读取一次模型权重。普通 decode 前向只确定一个 token。投机解码试图增加每次基础模型权重读取所确认的 token 数。
 
@@ -12,7 +12,7 @@ dense 模型在 decode 阶段通常每生成一个 token 就读取一次模型�
 
 投机解码有多种实现。drafter 可以是独立模型，也可以来自与基础模型联合训练的预测头。这类预测头称为多 token 预测（Multi-Token Prediction，MTP）头。Google 发布的 Gemma 4 MTP drafter 使用目标模型的 activation，并与目标模型共享 KV cache。[^ch09-google-mtp] LiteRT-LM 在运行时把 drafter 装载为独立模型，对应成员是 `mtp_drafter_model_`。验证使用基础模型的 `"verify"` signature。常量定义见 `runtime/executor/llm_litert_mtp_drafter.cc:63`。`base_model.FindSignature(kVerifySignatureRunner)` 的调用见 `runtime/executor/llm_litert_mtp_drafter.cc:227-228`。
 
-## 机制：串行草拟，批量验证
+## 9.2　机制：串行草拟，批量验证
 
 一次 `Draft()`（`runtime/executor/llm_litert_mtp_drafter.cc:453-469`）包含三个阶段：
 
@@ -74,7 +74,7 @@ return id_vector;
 <figcaption>图 9-1　一次 `Draft()` 调用执行 G 次 drafter 前向和一次基础模型 verify，返回匹配前缀及一个 bonus token，即 1 到 G+1 个 token；首次 `Decode()` 还包含一次普通 decode。</figcaption>
 </figure>
 
-## 接受循环：匹配前缀与 bonus token
+## 9.3　接受循环：匹配前缀与 bonus token
 
 第三步处理接受与回退（`Draft()` 接受循环，`runtime/executor/llm_litert_mtp_drafter.cc:471-484`）：
 
@@ -111,7 +111,7 @@ drafted_tokens.push_back(bonus_token);       // (2)
 
 一次 `Draft()` 至少返回 1 个 token。即使第一个草稿不匹配，函数也会返回基础模型在该位置的输出。这个结论只是每轮输出数量的下界，不是运行成本的上界。该轮还包含 G 次 drafter 前向和缓冲操作。prefill 后的首次 `Decode()` 另有一次普通基础模型前向，也不属于这个稳态下界。
 
-## 采样约束：当前 MTP 路径采用贪心接受
+## 9.4　采样约束：当前 MTP 路径采用贪心接受
 
 接受循环使用严格相等比较 `verifier_id_vector[i] != drafted_tokens[i]`。这与带概率接受步骤的经典推测采样不同。Leviathan 等（2023）采用 rejection sampling。[^ch09-leviathan] Chen 等（2023）也采用保留目标模型分布的修正 rejection sampling。[^ch09-chen] LiteRT-LM 当前 MTP 路径没有该步骤；drafter 与 verifier 均采用贪心采样，接受条件是两个 token id 相等。
 
@@ -133,7 +133,7 @@ return CreateSampler(backend, output_heads, std::move(sampler_params),
 
 保持采样分布不变的推测采样需要 verifier 提供各位置的概率分布。接受阶段按概率比值决定是否采用草稿；拒绝后还要从残差分布重新采样。LiteRT-LM 的 verifier 只回传形状为 `[1, G+1]` 的 token id。接受循环执行整数比较，不处理完整 logits 分布。这省去了完整概率分布的回传和逐位处理，但适用范围限于贪心 token 比较。当前代码没有实现随机采样所需的概率接受与残差重采样。即使设置 temperature 或 top-p，MTP 路径也无法保持非推测路径的采样分布。
 
-## 验证输入的构造：位置、mask 与 KV cache 的复制
+## 9.5　验证输入的构造：位置、mask 与 KV cache 的复制
 
 verify 使用包含 G+1 个位置的批量输入，而不是普通 decode 的单位置输入。`PrepareVerifierInputBuffers`（`runtime/executor/llm_litert_mtp_drafter.cc:374-421`）负责构造这组缓冲：
 
@@ -172,7 +172,7 @@ if (active_verifier_input_buffers_.contains("param_tensor")) {   // (1)
 
 `(1)` 单缓冲 KV cache 把读写位置参数放在 `param_tensor` 中。这里从 `position` 开始填入 G+1 步对应的参数，使 verify 写入相应缓存区间。双缓冲路径传入复制后的句柄，单缓冲路径则额外设置 `param_tensor`。输出侧由 `PrepareVerifierOutputBuffers` 处理，见 `runtime/executor/llm_litert_mtp_drafter.cc:424-434`。它复制各个 KV cache 输出句柄，并调用 `ClearEvent()` 清除旧的完成事件。
 
-## drafter 的隐藏态拼接：两条 activation 来源
+## 9.6　drafter 的隐藏态拼接：两条 activation 来源
 
 MTP drafter 每步都把词嵌入与隐藏态拼接后输入模型。前文给出的示例形状为 `[1536+1536=3072]`。`RunDraftingLoop` 的以下分支选择隐藏态来源（`runtime/executor/llm_litert_mtp_drafter.cc:346-353`）：
 
@@ -193,7 +193,7 @@ if (activations_ptr) {
 
 `ConcatenateEmbeddingsAndActivations`（`runtime/executor/llm_litert_mtp_drafter.cc:79-99`）先把词嵌入复制到输出缓冲前半段，再把 activation 复制到后半段。两段各含 `model_dimension` 个 float，组成 drafter signature 的双倍宽度输入。本书基准模型的形状为 2560 + 2560 = 5120，记录见附录 D。这段函数本身只执行两次内存复制，不含矩阵计算；它在端到端时延中的占比仍需测量，不能仅凭代码结构判定为可忽略。
 
-## 集成：`Draft()` 的调用与 token 回写
+## 9.7　集成：`Draft()` 的调用与 token 回写
 
 执行器的 `Decode()` 负责把 drafter 接入推理流程，入口见 `runtime/executor/llm_litert_compiled_model_executor.cc:1003`。`mtp_drafter_ == nullptr` 时执行普通 decode，判断位置见 `runtime/executor/llm_litert_compiled_model_executor.cc:1007`；否则执行 MTP 路径。MTP 路径还会根据当前调用是否为 prefill 后的第一次 decode 选择不同分支：
 
@@ -237,7 +237,7 @@ output_tokens_vector[0].insert(output_tokens_vector[0].begin(), token_id); // (4
 
 首轮与稳态的基础模型调用次数也不同。第一次 `Decode()` 执行一次普通 decode 和一次 verify，共两次基础模型前向；稳态的每次 `Decode()` 只执行一次 verify。两种分支都执行 G 次 drafter 前向。分析长期吞吐时通常采用稳态口径，但测量短输出时，首轮的额外基础模型前向不能省略。
 
-## 接受比例与加速比
+## 9.8　接受比例与加速比
 
 MTP 是否加速，取决于每轮产出的 token 数和该轮的运行成本。`Draft()` 在每轮结束时累加两个计数（`runtime/executor/llm_litert_mtp_drafter.cc:494-495`）：
 
@@ -321,7 +321,7 @@ $$ \text{speedup}(p,c) \approx
 
 投机解码是否加速由 r 和 q 共同决定。聚合接受比例 r 决定每轮平均产出，归一化成本 q 表示取得这些输出所需的时间。两者都会随模型、输入内容、生成位置、设备和后端变化。评估目标负载时，需要在同一次测试中记录接受比例与吞吐。
 
-## 多 token 返回后的停止检测与回退
+## 9.9　多 token 返回后的停止检测与回退
 
 MTP 还改变了 executor 的返回形态。普通 decode 通常返回一个 token，一次 MTP `Decode()` 则可能返回一段序列。任务层必须按顺序处理这段序列，因为停止序列可能在批次中间命中，BPE 片段也可能跨越两次 MTP 调用。
 
@@ -392,7 +392,7 @@ compiled executor 的 `SetCurrentStep` 检查新位置不超过已处理 token �
 
 一次 executor `Decode()` 表示一轮运行调用，`current_step` 增量表示本轮推进的 token 位置数。MTP 性能分析用前者计算轮次成本，用后者计算产出和数值终止条件。流式接口还要区分可见 token 与因 BPE 或停止前缀而暂存的 token。
 
-## 开启条件：模型能力与固定草拟步数
+## 9.10　开启条件：模型能力与固定草拟步数
 
 模型文件需要同时包含 MTP drafter 和相应的 verify signature；调用方还必须显式启用投机解码。草拟步数 G 由 verify signature 的形状固定。
 

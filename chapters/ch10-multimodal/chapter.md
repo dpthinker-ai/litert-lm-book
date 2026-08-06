@@ -4,7 +4,7 @@
 
 文本推理以 token 序列为输入，并逐 token 输出文本。多模态路径在 prefill 前增加模态编码与 embedding 查找。图像和音频由此转换为主干模型接收的向量序列。工具调用路径则在 decode 采样时增加约束状态与 logit 掩码，以产生可解析的结构化文本。
 
-## 从 Message 到 InputData：入口类型与所有权
+## 10.1　从 Message 到 InputData：入口类型与所有权
 
 Conversation API 接收的 `Message` 是 `nlohmann::ordered_json`。一条消息可以同时包含文本、图像和音频项。`JsonPreface` 中的 `messages`、`tools` 与 `extra_context` 也使用同一 JSON 类型（`runtime/conversation/io_types.h:26-59`）。这层接口表达的是消息语义，还不是主干模型的张量输入。
 
@@ -55,7 +55,7 @@ using InputData = std::variant<InputText, InputImage, InputAudio,
 
 > 表 10-1　多模态输入在各阶段改变表示；排查悬空视图和 shape 错误时，应先确定对象处于哪一层。
 
-## 图像输入的编码与 embedding 替换
+## 10.2　图像输入的编码与 embedding 替换
 
 Transformer 主干处理 token 序列（第 3 章），不能直接接收像素。图像需要先转换为与文本 embedding 兼容的向量序列。
 
@@ -193,7 +193,7 @@ absl::StatusOr<ExecutorVisionData> VisionLiteRtCompiledModelExecutor::Encode(
 <figcaption>图 10-1　图像经 patchify、视觉编码器与适配器得到 embedding；prefill 查表再按 `kSpecialToken` 位置写入对应行。</figcaption>
 </figure>
 
-### 变分辨率的视觉编码
+### 10.2.1　变分辨率的视觉编码
 
 另一个 `Encode` 重载接收含 `images` 与 `positions_xy` 的 `input_maps`。它从 `images` 张量的第 1 维读取实际 patch 数，并分别为视觉编码器和适配器选择 signature（`runtime/executor/vision_litert_compiled_model_executor.cc:499-535`）：
 
@@ -228,7 +228,7 @@ for (int i = 0; i < model.GetNumSignatures(); ++i) {
 
 附录 D 对 Gemma 4 E4B 模型文件的检查记录显示，视觉编码器段包含 `vision_70`、`vision_140`、`vision_280`，适配器段包含对应的 `vision_adapter_70/140/280`。关键输入张量 `images[1, 1260, 768]` 表明，该入口的每个 patch 有 768 个值。结合预处理配置可得 \\(768=16\times16\times3\\)，对应 16 × 16 的 RGB patch。`[1, 1260, 768]` 只是一条已记录的 signature 形状，不能据此把 1260 当成所有入口的统一容量上限。
 
-### visual token budget 如何作用于 patchify
+### 10.2.2　visual token budget 如何作用于 patchify
 
 Gemma 4 的逐轮参数可以设置 `visual_token_budget`。处理器先要求该值为正，再乘以 9，最后与模型配置中的 `max_num_patches` 取较小值。得到的 patch 上限写入 `PatchifyConfig`（`runtime/conversation/model_data_processor/gemma4_data_processor.cc:381-400`）：
 
@@ -257,7 +257,7 @@ P_{limit}=\min(P_{cfg},9T_{budget}).
 
 预算过小与预算过大导致的问题不同。小预算减少图像空间采样点，可能丢失细节；这是模型质量问题，运行时不会把它报告为错误。大预算若超过模型最长视觉 signature，`GetVitSignatureIndex` 会返回错误，并报告可用的最大长度，避免静默截断（`runtime/executor/vision_litert_compiled_model_executor.cc:181-195`）。本书尚未完成同一图像在不同预算下的真机质量与时延对照，因此不提供推荐数值。
 
-### 多图组合不是 batch
+### 10.2.3　多图组合不是 batch
 
 一条消息可以包含多幅图。每幅图分别执行预处理与视觉编码，得到各自的 `ExecutorVisionData`。执行管理器随后调用 `CombineExecutorVisionData`，沿 token 维拼接 embedding（`runtime/framework/resource_management/serial_execution_manager.cc:640-648`、`runtime/util/executor_data_util.cc:35-126`）。
 
@@ -267,7 +267,7 @@ P_{limit}=\min(P_{cfg},9T_{budget}).
 
 组合一个对象时，函数直接移动原有 `ExecutorVisionData`。组合多个对象时，它创建新的 host `TensorBuffer`，依次锁定每个源缓冲并复制其 packed bytes（`runtime/util/executor_data_util.cc:40-104`）。因此，单图和多图经过的内存路径不同。源码只能证明多图存在一次组合复制，不能据此估计它在端到端时延中的占比。
 
-### 视觉 token 折算成的 prefill 与 KV cache 开销
+### 10.2.4　视觉 token 折算成的 prefill 与 KV cache 开销
 
 视觉编码器输出的 visual token 数决定占位符数量。它还会增加 prefill 序列长度与有效 KV 数据量。visual token 写入 embedding 序列后，与文本 token 一样通过主干前向。各层都会为这些位置产生 K/V。
 
@@ -288,11 +288,11 @@ P_{limit}=\min(P_{cfg},9T_{budget}).
 
 三次同样的输入会增加 768 个序列位置，对应 21 MiB 的活动 KV 数据。这里计算的是有效上下文对应的数据量或容量需求。固定宽度实现可能已经按最大序列长度预分配 KV buffer。此时，插入图像未必使进程驻留内存再增长 7 MiB。prefill 时延还受注意力、后端与 padding 影响，需要真机测量。图像预算应同时考虑 `max_num_patches` 与 `patch_num_shrink_factor`，前者不能直接等同于 visual token 数。
 
-## 音频输入的频谱编码与 embedding 替换
+## 10.3　音频输入的频谱编码与 embedding 替换
 
 音频 embedding 采用另一种占位符：`ExecutorAudioData::kSpecialToken` 为 -2，且 embedding 行数应与音频占位符数量一致（`runtime/executor/llm_executor_io_types.h:263-297`）。执行管理器根据 `GetValidTokens()` 插入相同数量的 -2（`runtime/framework/resource_management/serial_execution_manager.cc:615-625`），prefill 查表再由 `EmbeddingLookupMultiModal` 复制音频 embedding。文本、视觉和音频由不同查找器提供向量，但主干接收的都是 embedding 序列。
 
-### DSP（数字信号处理）前端与分块编码
+### 10.3.1　DSP（数字信号处理）前端与分块编码
 
 编码器接收的不是原始波形，而是 log-mel 频谱。预处理器先对分帧信号加窗，调用 `kiss_fftr` 计算实数 FFT，再保存复数结果的平方幅度（`runtime/components/preprocessor/audio_preprocessor_miniaudio.cc:224-274`）。`MelFilterbank` 把每个平方幅度谱切片转换为三角 mel 加权的滤波器组输出；初始化参数包括 FFT bin 数、采样率、mel 通道数和频率上下限（`runtime/components/preprocessor/mel_filterbank.h:25-53`）。随后，代码按配置在取对数前加 `mel floor`，或在取对数后用该阈值截断，并可继续做标准化（`runtime/components/preprocessor/audio_preprocessor_miniaudio.cc:277-308`）。最终张量形状为 `[1, num_frames, num_mel_bins]`（`runtime/components/preprocessor/audio_preprocessor_miniaudio.cc:347-365`）。这里的 `num_frames` 是 log-mel 频谱的时间帧数。
 
@@ -312,7 +312,7 @@ P_{limit}=\min(P_{cfg},9T_{budget}).
 
 附录 D 的模型文件检查记录显示，音频编码器与 `audio_adapter` 分属两个模型段；适配器输入 `features` 的形状为 `[1, 204, 1536]`。其中 1536 是每个位置的特征维度，204 是编码器输出的特征序列位置数。204 不是原始波形帧数，也不能仅凭该张量形状还原 log-mel 输入帧数；二者还隔着编码器的缩减过程。该记录只能支持“编码器输出再进入适配器”。适配器输出形状仍须检查输出张量，不能由 1536 维的输入直接推出。
 
-### 音频状态、分块边界与有效 token
+### 10.3.2　音频状态、分块边界与有效 token
 
 音频预处理器可能保存跨调用状态。`AudioPreprocessorMiniAudio::Reset` 会清空 `input_queue_`，再按是否采用半因果 padding 重设下一帧所需样本数（`runtime/components/preprocessor/audio_preprocessor_miniaudio.h:69-77`）。Gemma 4 数据处理器每处理完一个音频对象便调用 `Reset`，然后插入 `InputAudioEnd`（`runtime/conversation/model_data_processor/gemma4_data_processor.cc:425-440`）。因此，同一消息中的两个完整音频文件不会在 DSP 输入队列中直接相接。
 
@@ -344,7 +344,7 @@ N_{chunk}=\left\lceil\frac{S}{C}\right\rceil.
 
 > 表 10-2　多模态 shape 只能支撑相邻阶段的结论；跨过编码器、池化或适配器反推时需要额外配置。
 
-## 约束解码：按文法屏蔽 token
+## 10.4　约束解码：按文法屏蔽 token
 
 自由采样可能生成缺少引号、括号不闭合或分隔符错误的结构化文本，下游解析器会因此拒绝输入。约束解码把文法状态加入采样过程，限制每一步可选择的 token 集合。
 
@@ -364,7 +364,7 @@ N_{chunk}=\left\lceil\frac{S}{C}\right\rceil.
 
 (1) `MaskLogits` 屏蔽当前状态不允许的 token。(2) 采样器从剩余候选中选出下一个 token。(3) `UpdateConstraintState` 用该 token 推进状态。构造函数为 batch 中的每条序列分别调用 `constraint_->Start()`，因此各序列维护独立状态。
 
-### 状态推进发生在下一次采样之前
+### 10.4.1　状态推进发生在下一次采样之前
 
 约束状态与模型 KV 状态不是同一个对象。KV cache 保存主干前向所需的 K/V；`Constraint::State` 保存文法解析进度。`Constraint` 接口只定义 `Start`、`IsEnded`、`ComputeNext` 和 `ComputeBitmap`，没有访问模型张量或 KV cache 的方法（`runtime/components/constrained_decoding/constraint.h:25-56`）。
 
@@ -412,7 +412,7 @@ mask_vector.push_back(sample_mask[i / 32] & (1 << (i % 32)));  // (1)
 
 (1) 第 `i` 个 token 对应第 `i / 32` 个字中的第 `i % 32` 位。llguidance 负责维护约束状态并计算掩码，`ConstrainedDecoder` 负责把掩码应用到 logits。
 
-### 工具声明生成的文法覆盖到哪里
+### 10.4.2　工具声明生成的文法覆盖到哪里
 
 解析器文法与采样文法用途不同。`AntlrFcParser.g4` 是模型生成完之后使用的通用 FC parser，它把任意合法 `ID` 解析为函数名或参数名。约束生成器则读取本次 Conversation 的工具声明，构造更窄的 llguidance 文法。二者不能混为同一层保证。
 
@@ -451,7 +451,7 @@ llama.cpp 在 b9873 中把视觉投影器作为独立 mmproj 文件，由 `--mmp
 <figcaption>图 10-2　约束解码按当前文法状态屏蔽 token；图中只表示 FC 结构约束，不表示函数存在、参数语义正确或调用可执行。</figcaption>
 </figure>
 
-## 按数据边界定位多模态输入失败
+## 10.5　按数据边界定位多模态输入失败
 
 多模态请求报错时，最后出现的 `prefill failed` 往往只说明任务没有完成，不能定位最初的错误。有效的排查顺序应沿数据变换方向进行：消息对象、模板标记、预处理张量、模态执行器、embedding 组合、主干 prefill。每跨一层，数据表示和责任方都会变化。
 
@@ -471,7 +471,7 @@ llama.cpp 在 b9873 中把视觉投影器作为独立 mmproj 文件，由 `--mmp
 
 音频可以用同一方法分层。消息与模板数量错误发生在数据处理器；音频格式解码、PCM 分帧和 log-mel 计算发生在预处理器；频谱宽度与 mask 长度检查发生在音频执行器；最后才是 audio embedding 与 -2 占位符组合。`ProcessAndCombineContents` 若收到未经预处理的 `InputAudio`，会返回 `The audio is not a preprocessed tensor.`（`runtime/framework/resource_management/serial_execution_manager.cc:604-625`）。
 
-### 一份可复现的最小诊断记录
+### 10.5.1　一份可复现的最小诊断记录
 
 多模态问题需要同时保存控制面和数据面信息。控制面包括模型文件哈希、后端、模型类型、模板配置、visual token budget 和是否启用音频模态。数据面至少包括各阶段 shape、元素类型、模态项与标记计数、选中的 signature 名称，以及完整的第一条错误状态。
 
@@ -484,7 +484,7 @@ llama.cpp 在 b9873 中把视觉投影器作为独立 mmproj 文件，由 `--mmp
 <figcaption>图 10-3　多模态输入依次经过六个数据边界；每层应记录输入表示、输出 shape 与第一条错误。</figcaption>
 </figure>
 
-## Tool Use：结构解析与应用执行
+## 10.6　Tool Use：结构解析与应用执行
 
 Tool Use（工具调用或函数调用）把模型生成的结构化文本转换为函数名和参数。函数由应用实现并执行，LiteRT-LM 负责格式化工具声明、检测输出并解析调用。
 
@@ -524,7 +524,7 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 
 > 表 10-4　Tool Use 各环节的职责边界；约束生成、结构解析与应用执行是三个不同阶段。
 
-### parser 输出仍位于信任边界之外
+### 10.6.1　parser 输出仍位于信任边界之外
 
 模型输出不是函数调用对象。`FunctionGemmaDataProcessor::ToMessageImpl` 先取得完整响应文本，只有 `Preface` 中存在工具时才调用 `ParseTextAndToolCalls`。解析成功后，它分别把普通文本与 `tool_calls` 放进 assistant message（`runtime/conversation/model_data_processor/function_gemma_data_processor.cc:305-330`）。
 
@@ -534,7 +534,7 @@ array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 
 工具声明本身也不等于当前执行能力。声明通常在 Conversation 创建时进入 `Preface.tools`，而权限、登录状态和设备连接可能在后续轮次变化。宿主应在每次执行前重新查询授权和可用性。若工具已不可用，应返回受控错误结果，而不是因为它曾出现在 prompt 中就继续执行。
 
-### 端到端案例：受控地修改设备模式
+### 10.6.2　端到端案例：受控地修改设备模式
 
 下面的 `set_device_mode` 是应用侧集成示例，不是 LiteRT-LM 内置工具。它修改外部设备状态，因而适合展示结构约束与执行授权之间的距离。工具声明可以写成：
 

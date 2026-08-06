@@ -65,6 +65,9 @@ python3 "$BOOK/scripts/finalize_pdf.py" \
   "$PDF_TMP/book.pdf" \
   "$@"
 
+echo "==> 校验侧边栏目录（书签）"
+python3 "$BOOK/scripts/check_pdf_outline.py" "$PDF_TMP/book.pdf"
+
 mv -f "$PDF_TMP/book-raw.pdf" "$BOOK/dist/book-raw.pdf"
 mv -f "$PDF_TMP/book.pdf" "$BOOK/dist/book.pdf"
 
