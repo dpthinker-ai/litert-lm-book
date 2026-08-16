@@ -1,14 +1,40 @@
-# 第 1 章 端侧 LLM：三类物理约束与运行时版图
+# 第 1 章 端侧 LLM 与 LiteRT-LM：三类物理约束与运行时版图
 
-> 本章目标：在明确假设的前提下，估算 batch=1、稠密模型 decode 的带宽侧吞吐上限。这个结果是分析基线，不是具体设备的性能承诺。
+> 本章目标：先讲清 LiteRT-LM 是什么、它与 LiteRT 的分工，再在明确假设的前提下，估算 batch=1、稠密模型 decode 的带宽侧吞吐上限。这个结果是分析基线，不是具体设备的性能承诺。
 
-## 1.1　为什么要在端侧部署
+## 1.1　LiteRT-LM 是什么：与 LiteRT 的分工
+
+本书的分析对象是 LiteRT-LM，一个在手机、手表和浏览器等受限设备上运行 LLM 的推理运行时。进入约束分析之前，这一节先回答两个问题：LiteRT-LM 是什么，它和 LiteRT 是什么关系。1.2 节说明为什么要把模型部署到端侧，1.3 至 1.5 节量化三类物理约束，1.6 节对照同类运行时。后续各章讨论实现时，会反复回到这一节建立的软件栈分层。
+
+Google 官方将 LiteRT‑LM 定义为“使用 LiteRT 运行 LLM 的编排层”。[^ch01-litertlm-overview] 这里的“编排”界定了一条清晰的职责边界：LiteRT‑LM 负责 LLM 特有的模型容器、tokenizer、提示模板、会话状态、prefill/decode 循环、采样、约束解码、工具调用和多模态输入；LiteRT 则负责通用模型的加载、编译、张量缓冲和执行，并将计算分派给 CPU、GPU 或 NPU 对应的实现。LiteRT 的 `CompiledModel` API 通过编译选项选择硬件加速器，然后提供同步或异步的模型调用。[^ch01-litert-overview]
+
+二者并非并列关系。LiteRT‑LM 调用 LiteRT，其使用者通常不直接操作 `CompiledModel`；反过来，只使用 LiteRT 也不会自动获得对话历史、停止条件或工具调用——这些属于 LLM 的上层语义。
+
+| 层级           | 主要职责                                                     |
+| :------------- | :----------------------------------------------------------- |
+| 应用与语言 API | 负责业务输入、生命周期、权限与产品交互                       |
+| LiteRT‑LM      | 读取 `.litertlm`，创建 Engine/Session，组织输入、prefill、decode、采样和输出；将 backend 配置传递给执行器 |
+| LiteRT         | 创建 `Environment`、`Model`、`CompiledModel` 与 `TensorBuffer`，按选项编译并执行模型 signature |
+| 平台后端       | 负责 CPU/GPU/NPU 的 kernel、后端委托、厂商运行时与驱动       |
+
+> 表 1-1　LiteRT‑LM 管理 LLM 生成过程，LiteRT 管理模型图和张量的设备执行；平台后端决定具体算子最终如何落到硬件。
+
+在代码中，这条调用链清晰可循。`Engine` 初始化时，先取得 LiteRT 的 `Environment`，再创建专用执行器；执行器从 `.litertlm` 模型包中读取 prefill/decode 子模型，并调用 `CompiledModel::Create` 完成编译。进入运行阶段后，LiteRT‑LM 负责准备 token、position、attention mask 与 KV cache buffer，真正的 prefill 和 decode 计算则分别交给 LiteRT 的 `CompiledModel::Run` 与 `RunAsync` 完成。具体实现位置可在 `runtime/executor/llm_litert_compiled_model_executor.cc` 等文件中逐一核对。
+
+<figure>
+{{#include figs/fig-1-1.svg}}
+<figcaption>图 1-1　LiteRT‑LM 位于应用与 LiteRT 之间：上层组织 LLM 生成语义，下层把模型 signature 和张量提交给硬件后端。</figcaption>
+</figure>
+
+本书对 LiteRT 的介绍，只限定在解释 LiteRT‑LM 所必需的边界内：`Model`、`CompiledModel`、`TensorBuffer`、编译选项、signature 调用，以及后端委托与 buffer 交接。LiteRT 的通用模型转换、算子开发、完整 C/C++ API 和编译器内部实现，不在本书讨论范围内。如果性能或兼容性问题进入后端委托、驱动或厂商运行时，本书会明确标注证据停止在哪一层，不会把下层行为归为 LiteRT‑LM 自身的机制。
+
+## 1.2　为什么要在端侧部署
 
 以离线邮件改写为例：模型和输入都在手机上。用户需要等待片刻才能看到第一个 token，之后以每秒几个 token 的速度生成。模型结构可以完全一致，但手机的内存、算力和功耗预算远不及服务器，因此响应速度可能相差很大。
 
 选择端侧部署，通常出于以下几方面考虑：
 
-- 数据边界：当模型、输入与后处理均在设备上执行时，业务数据不必发送给推理服务。具体应用仍需单独审查日志、同步和遥测行为。
+- 数据边界：当模型、输入与后处理均在设备上执行时，业务数据不必发送给推理服务。
 - 网络时延：本地执行可以去掉推理请求的网络往返。模型加载、prefill 和 decode 本身的耗时仍然存在。
 - 服务成本：一部分推理计算与能耗转移到用户设备，可减少服务端 GPU 请求。商业模式、下载流量和设备能耗仍是独立成本。
 - 离线可用性：模型文件、运行时和所需数据均已在本地时，推理可以不依赖网络连接。
@@ -18,11 +44,11 @@
 本章使用便于验算的示例参数，每处假设都会标出。模型文件大小不等于进程峰值内存，硬件标称带宽不等于有效带宽，单项能耗估算也不等于整机续航。附录 D 给出本书的实测数据，第 6 至第 9 章再结合 LiteRT-LM 的实现分析这些差异。
 
 <figure>
-{{#include figs/fig-1-1.svg}}
-<figcaption>图 1-1　端侧 LLM 的三类约束分别影响配置可行性、batch=1 稠密 decode 的带宽上限和持续性能。</figcaption>
+{{#include figs/fig-1-2.svg}}
+<figcaption>图 1-2　端侧 LLM 的三类约束分别影响配置可行性、batch=1 稠密 decode 的带宽上限和持续性能。</figcaption>
 </figure>
 
-## 1.2　第一类约束：内存容量
+## 1.3　第一类约束：内存容量
 
 模型能否运行，取决于进程可用内存能否容纳权重、KV cache、激活张量、后端工作区和运行时开销。设备的物理内存还要供操作系统与其他进程使用，不能全部计入模型预算。
 
@@ -32,7 +58,7 @@ $$ 4 \times 10^{9} \text{ 参数} \times 0.5 \text{ 字节/参数} = 2 \times 10
 
 其中 1 GiB = \\(2^{30}\\) 字节。这个 1.86 GiB 只表示理想的 int4 权重 payload。实际文件还可能包含量化 scale、zero point、对齐填充和元数据，也可能包含其他模型段。参数量乘位宽不能直接代表文件大小。
 
-LiteRT-LM 可以从只读 `MemoryMappedFile` 创建模型，接口见 `runtime/util/memory_mapped_file.h:46`。`ModelResources` 的注释说明，内存映射模型在实际使用时才分配物理页。对应代码见 `runtime/components/model_resources.h:148`。它还为“不应 mmap 的外部权重”保留独立文件接口，见 `runtime/components/model_resources.h:163`。
+LiteRT-LM 可以从只读 `MemoryMappedFile` 创建模型，接口见 `runtime/util/memory_mapped_file.h:46`。`ModelResources` 的注释说明，内存映射模型在实际使用时才分配物理页（`runtime/components/model_resources.h:148`）。它还为“不应 mmap 的外部权重”保留独立文件接口，见 `runtime/components/model_resources.h:163`。
 
 mmap 建立虚拟地址映射，不会保证 1.86 GiB 始终全部常驻，也不会消除运行期工作集。在 batch=1 的稠密 decode 中，如果模型远大于片上缓存，每一步通常会访问大部分有效权重。后端还可能复制或重排权重，并分配编译产物与工作区。因此，模型文件大小、虚拟映射大小、RSS 和进程峰值内存是四个不同口径。是否满足内存预算必须以目标后端的运行时测量为准。
 
@@ -65,9 +91,9 @@ LiteRT-LM 对动态导出的 CPU 模型提供增量扩容参数。decode 时按 
 > 对照视野
 > 服务器可以通过更大显存或模型并行扩展容量；固定移动设备无法在运行时增加物理内存。端侧运行时因此需要同时管理权重表示、KV cache 预留和后端工作区。第 6、7 章分别分析前两项在 LiteRT-LM 中的实现。
 
-## 1.3　第二类约束：内存带宽
+## 1.4　第二类约束：内存带宽
 
-LLM 生成包含 prefill 与 decode。prefill 一次处理多个输入 token，同一份权重可服务于多个 token。因此，它的算术强度通常高于 decode。具体工作点仍可能受内存、signature 填充率和 kernel 效率影响。decode 按自回归顺序生成 token。第 \\(N+1\\) 步依赖第 \\(N\\) 步的结果，单个会话不能任意并行这些步骤。
+LLM 生成包含 prefill 与 decode。prefill 一次处理多个输入 token，同一份权重可服务于多个 token，因此算术强度通常高于 decode；但具体工作点的算术强度仍可能受内存访问模式、signature 填充率和 kernel 效率影响。decode 按自回归顺序生成 token。第 \\(N+1\\) 步依赖第 \\(N\\) 步的结果，单个会话不能任意并行这些步骤。
 
 这里先限定 batch=1、稠密且所有参数均参与计算的 Transformer。若有效权重远大于片上缓存，每个 decode step 通常需要从主存访问大部分权重。MoE、结构化稀疏、权重常驻片上缓存或分层卸载会改变这项假设。
 
@@ -83,7 +109,7 @@ $$ R \leq \min\left(\frac{B_{\mathrm{eff}}}{D},\frac{P_{\mathrm{eff}}}{F}\right)
 
 $$ R_{\mathrm{bw}}=\frac{50 \times 10^{9}\ \text{字节/s}}{2 \times 10^{9}\ \text{字节/token}}=25\ \text{tokens/s} $$
 
-25 tokens/s 只在上述假设下成立。算力侧上限、低比特 kernel、同步或采样开销若更低，实际吞吐还会下降。提高 TOPS 不会改变 \\(B_{\mathrm{eff}}/D\\) 这一项，但在工作点尚未进入带宽约束区时仍可能提高实测吞吐。
+25 tokens/s 只在上述假设下成立。若算力侧上限更低，或量化解包、同步与采样引入额外开销，实际吞吐还会下降。提高 TOPS 不会改变 \\(B_{\mathrm{eff}}/D\\) 这一项，但在工作点尚未进入带宽约束区时仍可能提高实测吞吐。
 
 上下文增长后，还要计算 KV cache。对普通全上下文注意力，先假设每步从 DRAM 读取全部逻辑 K/V。4096-token KV cache 会为本例增加约 0.5 GiB 的读取量。若后端只回写新增 K/V，写入量为 128 KiB，本例可暂时忽略。示例分母从 1.86 GiB 增至 2.36 GiB：
 
@@ -100,7 +126,7 @@ KV cache 的缓冲策略还会影响容量。支持原地更新的后端可以�
 > 版本注记
 > 4B、理想 int4 payload 与 50 GB/s 有效带宽均为示意假设，用于展示计算方法。附录 D 的 Mac、模型与后端参数不同；其实测值不能用来验证“25 tokens/s”这个点值，只能用于检验同一分析方法。
 
-## 1.4　第三类约束：功耗与异构后端
+## 1.5　第三类约束：功耗与异构后端
 
 峰值吞吐不等于持续吞吐。移动设备依赖电池供电，持续高负载可能提高芯片温度并触发系统的功耗或温控策略。评估端侧推理时，需要记录稳态吞吐、功率和温度随时间的变化，而不能只报告短时峰值。
 
@@ -116,7 +142,7 @@ $$ 2 \times 10^{9}\ \text{字节} \times 20 \times 10^{-12}\ \text{J/字节} = 0
 
 减少 DRAM 流量可以同时降低带宽占用和搬运能耗，但只有在这些成本占主要部分时，收益才接近线性。线程数、核心绑定和异步调度会改变吞吐、功率与温度，参数选择应依据持续负载实验。
 
-LiteRT-LM 的 Android 路径提供一个设备相关的绑核实例。`cpu_affinity_utils.cc` 读取 SoC 厂商与型号属性，逻辑见 `runtime/engine/cpu_affinity_utils.cc:64`。固定的中核和大核编号定义在 `kTensorAffinities` 中，见 `runtime/engine/cpu_affinity_utils.cc:56`。例如 G4 返回 `{4,5,6,7}`，G5/G6 返回 `{2,3,4,5,6,7}`。`SetCpuAffinity` 再调用 `sched_setaffinity`，见 `runtime/engine/cpu_affinity_utils.cc:103`。源码注释只说明该选择用于性能优化，没有给出能耗或温控测量。不能据此断言该配置在所有负载下最省电。
+LiteRT-LM 的 Android 路径提供一个设备相关的绑核实例。`cpu_affinity_utils.cc` 读取 SoC 厂商与型号属性，逻辑见 `runtime/engine/cpu_affinity_utils.cc:64`。固定的中核和大核编号定义在 `kTensorAffinities` 中（`runtime/engine/cpu_affinity_utils.cc:56`）。例如 G4 返回 `{4,5,6,7}`，G5/G6 返回 `{2,3,4,5,6,7}`。`SetCpuAffinity` 再调用 `sched_setaffinity`（`runtime/engine/cpu_affinity_utils.cc:103`）。源码注释只说明该选择用于性能优化，没有给出能耗或温控测量。不能据此断言该配置在所有负载下最省电。
 
 异构后端的可用性还取决于设备和模型。CPU 的通用性较强；GPU 与 NPU 的可用算子、驱动和内存路径随设备而变。专用加速器在受支持的图上可能具有能效优势。离开模型、量化格式、delegate 和设备测量，不能给 CPU、GPU、NPU 作固定排序。
 
@@ -126,9 +152,9 @@ LiteRT-LM 定义了 `Backend` 枚举，见 `runtime/executor/executor_settings_b
 
 配置评估必须同时检查内存预算、Roofline 工作点、持续功耗和后端支持。量化减少权重 payload，也可能增加解包计算或改变后端支持范围。投机解码试图用一次目标模型调用确认多个 token，但 drafter 与验证也有额外成本；`LiteRT-LM#2227` 记录了特定 GPU 条件下的负收益。[^ch01-issue-2227]
 
-## 1.5　同类项目对照
+## 1.6　同类项目对照
 
-多个开源项目都支持在受限设备上运行 LLM。表 1-1 按各项目的官方仓库与文档记录接口侧重、后端和模型产物。
+多个开源项目都支持在受限设备上运行 LLM。表 1-2 按各项目的官方仓库与文档记录接口侧重、后端和模型产物。对其他项目的讨论只用于比较实现选择，不据此给出统一的优劣结论。
 
 | 运行时 | 接口与实现 | 文档侧重 | 官方列出的执行后端 | 典型模型产物 |
 |---|---|---|---|---|
@@ -137,15 +163,11 @@ LiteRT-LM 定义了 `Backend` 枚举，见 `runtime/executor/executor_settings_b
 | **ExecuTorch**[^ch01-executorch] | PyTorch 导出与 C++ 端侧运行时 | PyTorch 模型的端侧部署 | portable CPU 与设备 delegate | `.pte` |
 | **LiteRT-LM**[^ch01-litertlm] | C++ LLM 运行时 | Engine/Session 编排与 LiteRT 执行 | `Backend` 枚举中的 CPU、GPU、NPU 与 Artisan 路径 | `.litertlm` |
 
-> 表 1-1　端侧 LLM 运行时对照：各项目的接口、后端抽象和分发产物不同，表中不作性能排序。
-
-LiteRT-LM 在 LiteRT 之上提供面向 LLM 的模型加载、Engine/Session 和生成编排。Google Developers Blog 列出的部署包括 Chrome、Chromebook Plus 与 Pixel Watch。[^ch01-litertlm-deploy] 仓库 README 还提供 Google AI Edge Gallery 的应用入口。[^ch01-edge-gallery] 这些材料说明项目已有公开部署，但不能替代特定设备、模型和版本的基准测试。
-
-本书选择 LiteRT-LM，是因为其核心代码公开，且可以把文字说明锚定到冻结的 `v0.13.1`。对其他项目的讨论只用于比较实现选择，不据此给出统一的优劣结论。
+> 表 1-2　端侧 LLM 运行时对照：各项目的接口、后端抽象和分发产物不同，表中不作性能排序。
 
 ## 小结
 
-内存预算必须同时覆盖权重 payload、KV cache、激活、后端工作区和运行时开销。低比特量化是减少权重 payload 的常用选择，但是否可运行仍要以目标后端的峰值内存为准。
+1.1 节建立的软件栈分层在后续章节反复用到：LiteRT‑LM 组织 LLM 生成语义，LiteRT 负责模型编译与张量执行，平台后端决定算子如何落到硬件。内存预算必须同时覆盖权重 payload、KV cache、激活、后端工作区和运行时开销。低比特量化是减少权重 payload 的常用选择，但是否可运行仍要以目标后端的峰值内存为准。
 
 在 batch=1、稠密模型、权重远大于片上缓存且 kernel 有效的条件下，decode 通常主要受内存带宽约束。本章的题设是 4B 理想 int4 payload 和 50 GB/s 有效带宽。据此算得的 25 tokens/s 是带宽侧上限。完整 Roofline 上限还要与算力侧比较，真实上下文还要加入 KV cache 与其他流量。
 
@@ -164,6 +186,7 @@ LiteRT-LM 在 LiteRT 之上提供面向 LLM 的模型加载、Engine/Session 和
 3. **能耗假设变体。** 题设明确假定 \\(e_{\mathrm{byte}}=20\\) pJ/byte。若 int4 2B 模型每 token 产生约 1 GB DRAM 流量，计算搬运能耗。再计算把 15 Wh 全部用于这一项时的算术上界，并说明它为什么不代表设备续航。
 4. **Roofline 判断。** 解释为什么 batch=1 的稠密模型通常表现为 prefill 算术强度较高、decode 算术强度较低。再列出一个会破坏该简化判断的条件。
 5. **条件判断。** 某 decode 工作点已确认受带宽约束。若芯片计算吞吐翻倍而有效内存带宽不变，带宽侧上限是否变化？若尚未确认瓶颈，为什么不能直接作答？
+6. **层级判断。** 某次部署中，模型加载与编译成功，首次调用 `Run` 时返回硬件驱动错误。这个错误落在软件栈的哪一层？排查时应从哪个运行时开始看？
 
 [^ch01-issue-2281]: 4ntoine，[*Different inference result depending on backend*](https://github.com/google-ai-edge/LiteRT-LM/issues/2281)，LiteRT-LM issue #2281，2026-05-15；访问日期：2026-07-18。
 [^ch01-issue-2227]: Shoolife，[*MTP / speculative decoding regresses decode tok/s on PowerVR GPU (Tensor G6) — even with GPU sampler fully loaded*](https://github.com/google-ai-edge/LiteRT-LM/issues/2227)，LiteRT-LM issue #2227，2026-05-11；访问日期：2026-07-18。
@@ -171,5 +194,5 @@ LiteRT-LM 在 LiteRT 之上提供面向 LLM 的模型加载、Engine/Session 和
 [^ch01-mlc]: MLC LLM，[*Welcome to MLC LLM*](https://llm.mlc.ai/docs/)，文档版本 0.1.0；访问日期：2026-07-18。
 [^ch01-executorch]: PyTorch，[ExecuTorch](https://github.com/pytorch/executorch)，GitHub 仓库；访问日期：2026-07-18。
 [^ch01-litertlm]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/tree/v0.13.1)，版本 v0.13.1；访问日期：2026-07-18。
-[^ch01-litertlm-deploy]: Google Developers Blog，Yu-hui Chen、Ram Iyengar，[*On-device GenAI in Chrome, Chromebook Plus, and Pixel Watch with LiteRT-LM*](https://developers.googleblog.com/on-device-genai-in-chrome-chromebook-plus-and-pixel-watch-with-litert-lm/)，2025-09-24；访问日期：2026-07-18。
-[^ch01-edge-gallery]: Google AI Edge，[Google AI Edge Gallery](https://github.com/google-ai-edge/gallery)，GitHub 仓库；访问日期：2026-07-18。
+[^ch01-litertlm-overview]: Google AI Edge，[*LiteRT-LM Overview*](https://developers.google.com/edge/litert-lm/overview)，文档对应 LiteRT‑LM v0.14.0；访问日期：2026-08-15。该页对 LiteRT‑LM 与 LiteRT 的层级定义也与本书冻结的 v0.13.1 代码调用关系一致。
+[^ch01-litert-overview]: Google AI Edge，[*LiteRT overview*](https://developers.google.com/edge/litert/overview)，LiteRT 2.x `CompiledModel` API；访问日期：2026-08-15。

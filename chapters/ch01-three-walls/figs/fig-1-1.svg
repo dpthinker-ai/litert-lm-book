@@ -1,43 +1,62 @@
-<svg viewBox="0 0 720 360" width="720" height="360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="端侧 LLM 的三类约束及带宽侧吞吐示例">
+<svg viewBox="0 0 720 500" width="720" height="500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LiteRT-LM 与 LiteRT 在端侧推理软件栈中的层级和分工">
   <defs>
     <style>
       text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-      .panel { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
-      .divider { stroke: var(--fig-border, #d0d7de); stroke-width: 1; }
+      .box { stroke: var(--fig-border, #d0d7de); stroke-width: 1.5; }
+      .app { fill: var(--fig-bg, #ffffff); }
+      .lm { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.8; }
+      .lrt { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.8; }
+      .hw { fill: var(--fig-bg, #ffffff); }
+      .artifact { fill: var(--fig-bg, #ffffff); stroke: var(--fig-green, #1a7f37); stroke-width: 1.5; }
       .t { fill: var(--fig-text, #1f2328); }
       .ts { fill: var(--fig-text-soft, #57606a); }
-      .accent { fill: var(--fig-accent, #0b57d0); }
-      .keybox { fill: var(--fig-bg, #ffffff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.5; }
+      .blue { fill: var(--fig-accent, #0b57d0); }
+      .purple { fill: var(--fig-accent-2, #6639ba); }
+      .green { fill: var(--fig-green, #1a7f37); }
+      .edge { stroke: var(--fig-text-soft, #57606a); stroke-width: 1.5; fill: none; }
+      .data { stroke: var(--fig-green, #1a7f37); stroke-width: 1.4; fill: none; }
+      .dash { stroke-dasharray: 5 4; }
     </style>
+    <marker id="arrow" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/>
+    </marker>
+    <marker id="data-arrow" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-green, #1a7f37)"/>
+    </marker>
   </defs>
-  <text class="t" x="360" y="28" text-anchor="middle" style="font-size:16px;font-weight:700">端侧 LLM 的三类约束</text>
-  <g>
-    <rect class="panel" x="40" y="62" width="190" height="208" rx="8"/>
-    <rect class="panel" x="265" y="62" width="190" height="208" rx="8"/>
-    <rect class="panel" x="490" y="62" width="190" height="208" rx="8"/>
-    <line class="divider" x1="56" y1="112" x2="214" y2="112"/>
-    <line class="divider" x1="281" y1="112" x2="439" y2="112"/>
-    <line class="divider" x1="506" y1="112" x2="664" y2="112"/>
-  </g>
-  <text class="t" x="135" y="94" text-anchor="middle" style="font-size:15px;font-weight:700">① 内存容量约束</text>
-  <text class="ts" x="135" y="142" text-anchor="middle" style="font-size:12px">权重 + KV cache</text>
-  <text class="ts" x="135" y="162" text-anchor="middle" style="font-size:12px">+ 激活/工作区</text>
-  <text class="ts" x="135" y="182" text-anchor="middle" style="font-size:12px">&lt; 进程可用内存</text>
-  <text class="ts" x="135" y="218" text-anchor="middle" style="font-size:12px">判断配置是否可行</text>
-  <text class="accent" x="135" y="248" text-anchor="middle" style="font-size:12px;font-weight:700">需测后端峰值内存</text>
-  <text class="t" x="360" y="94" text-anchor="middle" style="font-size:15px;font-weight:700">② 内存带宽约束</text>
-  <text class="ts" x="360" y="142" text-anchor="middle" style="font-size:12px">batch=1 稠密 decode</text>
-  <text class="ts" x="360" y="162" text-anchor="middle" style="font-size:12px">每步访问大部分权重</text>
-  <text class="ts" x="360" y="182" text-anchor="middle" style="font-size:12px">并读取上下文 K/V</text>
-  <text class="ts" x="360" y="218" text-anchor="middle" style="font-size:12px">给出带宽侧上限</text>
-  <text class="accent" x="360" y="248" text-anchor="middle" style="font-size:12px;font-weight:700">通常主要受带宽约束</text>
-  <text class="t" x="585" y="94" text-anchor="middle" style="font-size:15px;font-weight:700">③ 功耗与异构约束</text>
-  <text class="ts" x="585" y="142" text-anchor="middle" style="font-size:12px">持续负载与温控策略</text>
-  <text class="ts" x="585" y="162" text-anchor="middle" style="font-size:12px">CPU/GPU/NPU 路径</text>
-  <text class="ts" x="585" y="182" text-anchor="middle" style="font-size:12px">随设备和模型而变</text>
-  <text class="ts" x="585" y="218" text-anchor="middle" style="font-size:12px">影响持续性能</text>
-  <text class="accent" x="585" y="248" text-anchor="middle" style="font-size:12px;font-weight:700">需测吞吐/功率/温度</text>
-  <rect class="keybox" x="205" y="294" width="310" height="50" rx="7"/>
-  <text class="t" x="360" y="315" text-anchor="middle" style="font-size:12px;font-weight:700">带宽侧上限 = 有效带宽 ÷ 每步字节量</text>
-  <text class="accent" x="360" y="335" text-anchor="middle" style="font-size:12px;font-weight:700">示例：50 GB/s ÷ 2 GB/token = 25 tokens/s</text>
+  <text class="t" x="360" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">LiteRT-LM 与 LiteRT 的主调用链</text>
+  <rect class="box app" x="90" y="45" width="540" height="58" rx="7"/>
+  <text class="t" x="360" y="69" text-anchor="middle" style="font-size:13px;font-weight:700">应用与语言 API</text>
+  <text class="ts" x="360" y="88" text-anchor="middle" style="font-size:10.5px">产品逻辑 · C++ / Kotlin / Swift / Python / Web · 生命周期与权限</text>
+  <rect class="box lm" x="90" y="137" width="540" height="104" rx="7"/>
+  <text class="blue" x="360" y="163" text-anchor="middle" style="font-size:14px;font-weight:700">LiteRT-LM：LLM 编排层</text>
+  <text class="t" x="360" y="185" text-anchor="middle" style="font-size:11px">Conversation · Engine / Session · prompt / tokenizer · prefill / decode</text>
+  <text class="t" x="360" y="204" text-anchor="middle" style="font-size:11px">KV 状态 · sampling · constrained decoding · tool use · 多模态路由</text>
+  <text class="ts" x="360" y="224" text-anchor="middle" style="font-size:10px">通过 LlmExecutor 传递模型、TensorBuffer 与 backend 配置</text>
+  <rect class="box lrt" x="90" y="279" width="540" height="94" rx="7"/>
+  <text class="purple" x="360" y="305" text-anchor="middle" style="font-size:14px;font-weight:700">LiteRT：通用模型编译与执行层</text>
+  <text class="t" x="360" y="328" text-anchor="middle" style="font-size:11px">Environment · Model · CompiledModel · TensorBuffer · Options</text>
+  <text class="ts" x="360" y="349" text-anchor="middle" style="font-size:10px">编译模型 signature · 选择硬件加速器 · 管理输入输出 buffer · Run / RunAsync</text>
+  <rect class="box hw" x="90" y="411" width="540" height="58" rx="7"/>
+  <text class="t" x="360" y="435" text-anchor="middle" style="font-size:13px;font-weight:700">平台后端与硬件</text>
+  <text class="ts" x="360" y="454" text-anchor="middle" style="font-size:10.5px">CPU / XNNPack · GPU delegate / Metal / Vulkan · NPU runtime / driver</text>
+  <path class="edge" marker-end="url(#arrow)" d="M360,104 V133"/>
+  <path class="edge" marker-end="url(#arrow)" d="M360,242 V275"/>
+  <path class="edge" marker-end="url(#arrow)" d="M360,374 V407"/>
+  <rect class="artifact" x="8" y="151" width="68" height="76" rx="6"/>
+  <text class="green" x="42" y="174" text-anchor="middle" style="font-size:11px;font-weight:700">.litertlm</text>
+  <text class="ts" x="42" y="192" text-anchor="middle" style="font-size:9px">元数据</text>
+  <text class="ts" x="42" y="207" text-anchor="middle" style="font-size:9px">tokenizer</text>
+  <text class="ts" x="42" y="222" text-anchor="middle" style="font-size:9px">模型子图</text>
+  <path class="data" marker-end="url(#data-arrow)" d="M77,174 H87"/>
+  <path class="data dash" marker-end="url(#data-arrow)" d="M42,228 V326 H87"/>
+  <text class="green" x="18" y="268" style="font-size:8.5px">提取模型后</text>
+  <text class="green" x="18" y="280" style="font-size:8.5px">交给 LiteRT</text>
+  <text class="ts" x="650" y="192" style="font-size:9px">上层不直接</text>
+  <text class="ts" x="650" y="205" style="font-size:9px">实现 delegate</text>
+  <path class="edge dash" d="M633,190 H645"/>
+  <text class="ts" x="650" y="330" style="font-size:9px">下层不理解</text>
+  <text class="ts" x="650" y="343" style="font-size:9px">对话与工具语义</text>
+  <path class="edge dash" d="M633,328 H645"/>
+  <text class="ts" x="360" y="492" text-anchor="middle" style="font-size:9.5px">主线表示 v0.13.1 的 LiteRT compiled-model 路径；其他引擎类型见正文说明</text>
 </svg>
