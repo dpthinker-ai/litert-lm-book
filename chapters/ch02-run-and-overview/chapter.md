@@ -236,9 +236,9 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 
 附录 D 中，cpu 后端的 decode 吞吐从 context 256 时的 24.8 tokens/s 降到 context 4096 时的 20.7 tokens/s；gpu 后端从 50.6 降到 45.6 tokens/s。模型、设备与后端在各自对照中保持不变，输入上下文长度发生变化〔基准 D〕。
 
-这里仅估算等效字节数。假设两档使用相同的 \\(B_{\mathrm{eff}}\\)，全部时间都能表示为字节数除以该带宽，并忽略 256-token 档的上下文相关流量。取主 decode 段 \\(D_w=2.26\\) GB。若长上下文为 \\(L\\)，短、长两档吞吐分别为 \\(R_s\\) 和 \\(R_l\\)，则每个上下文 token 的等效附加项为
+这里仅估算等效字节数。假设两档使用相同的 \\(B_{\mathrm{eff}}\\)，全部时间都能表示为字节数除以该带宽，并忽略 256-token 档的上下文相关流量。取主 decode 段 \\(D_w=2.26\\) GB。若长上下文为 \\(S\\)，短、长两档吞吐分别为 \\(R_s\\) 和 \\(R_l\\)，则每个上下文 token 的等效附加项为
 
-$$ d_{\mathrm{eq}}=\frac{D_w}{L}\left(\frac{R_s}{R_l}-1\right) $$
+$$ d_{\mathrm{eq}}=\frac{D_w}{S}\left(\frac{R_s}{R_l}-1\right) $$
 
 代入 cpu 数据得到约 107 KiB/token；代入 gpu 数据得到约 59 KiB/token。第 6 章按模型张量形状计算的逻辑 KV 容量是 28 KiB/token。这三个数不应相等：\\(d_{\mathrm{eq}}\\) 把注意力计算、带宽利用率变化、缓存行为和其他随上下文变化的成本都折算成字节。它不是实际 DRAM 流量的测量值，也不能单独证明降速全部来自 KV cache。这个对照只说明上下文相关成本不能从权重 payload 一项解释；第 6 章再按 KV 张量形状和访问路径核算。
 

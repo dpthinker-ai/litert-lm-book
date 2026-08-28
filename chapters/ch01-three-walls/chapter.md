@@ -19,7 +19,7 @@ Google 官方将 LiteRT‑LM 定义为“使用 LiteRT 运行 LLM 的编排层�
 
 > 表 1-1　LiteRT‑LM 管理 LLM 生成过程，LiteRT 管理模型图和张量的设备执行；平台后端决定算子最终落到哪块硬件。
 
-代码里能清楚地看到这条调用链。`Engine` 初始化时先取得 LiteRT 的 `Environment`，再创建专用执行器；执行器从 `.litertlm` 模型包中读取 prefill/decode 子模型，并调用 `CompiledModel::Create` 完成编译。运行阶段，LiteRT‑LM 负责准备 token、position、attention mask 与 KV cache buffer，真正的 prefill 和 decode 计算则分别交给 LiteRT 的 `CompiledModel::Run` 与 `RunAsync`。具体实现位置可在 `runtime/executor/llm_litert_compiled_model_executor.cc` 等文件中逐一核对。
+代码里能清楚地看到这条调用链。`Engine` 初始化时先取得 LiteRT 的 `Environment`，再创建专用执行器（`runtime/core/engine_advanced_impl.cc:279-287`）；执行器从 `.litertlm` 模型包中读取 prefill/decode 子模型，并调用 `CompiledModel::Create` 完成编译（`runtime/executor/llm_litert_compiled_model_executor.cc:1651`）。运行阶段，LiteRT‑LM 负责准备 token、position、attention mask 与 KV cache buffer，真正的 prefill 和 decode 计算则分别交给 LiteRT 的 `CompiledModel::Run` 与 `RunAsync`（`runtime/executor/llm_litert_compiled_model_executor.cc:730-734`、`runtime/executor/llm_litert_compiled_model_executor.cc:943`）。这些调用点的完整上下文分别见第 7 章（编译与加载）和第 8 章（缓冲绑定与执行）。
 
 <figure>
 {{#include figs/fig-1-1.svg}}
