@@ -1,6 +1,6 @@
 # 第 10 章 多模态与工具调用：视觉/音频编码、约束解码与函数调用
 
-> 本章目标：说明图像、音频输入的 embedding 转换路径，以及约束解码的 token 屏蔽过程。前者扩展 prefill 输入，后者限制 decode 输出；文法只保证其中编码的结构条件，工具校验与执行仍由应用负责。
+> 本章说明图像、音频输入的 embedding 转换路径，以及约束解码的 token 屏蔽过程。前者扩展 prefill 输入，后者限制 decode 输出；文法只保证其中编码的结构条件，工具校验与执行仍由应用负责。
 
 文本推理以 token 序列为输入，并逐 token 输出文本。多模态路径在 prefill 前增加模态编码与 embedding 查找。图像和音频由此转换为主干模型接收的向量序列。工具调用路径则在 decode 采样时增加约束状态与 logit 掩码，以产生可解析的结构化文本。
 
@@ -83,10 +83,10 @@ int target_width =
 
 目标尺寸确定后，记 patch 数为 \\(N_{patch}\\)：
 
-\\[
+$$
 N_{patch}=\frac{\text{target\_height}\times\text{target\_width}}
 {\text{patch\_height}\times\text{patch\_width}}.
-\\]
+$$
 
 该值不是通用的 visual token 数公式。对带 `patch_num_shrink_factor` 的 ViT 路径，编码器可能不返回 mask。此时，执行器按 \\(\lceil N_{patch}/\text{patch\_num\_shrink\_factor}\rceil\\) 计算有效输出行数（`runtime/executor/vision_litert_compiled_model_executor.cc:604-624`）。序列中的 `kSpecialToken` 数最终以视觉 embedding 的行数为准。`pooling_kernel_size` 影响目标尺寸对齐，不能单独用来推导占位符数量。
 
@@ -226,7 +226,7 @@ for (int i = 0; i < model.GetNumSignatures(); ++i) {
 
 当模型只有一个 signature 时，`GetVitSignatureIndex` 直接返回索引 0（`runtime/executor/vision_litert_compiled_model_executor.cc:138-144`）。这只能说明无需比较入口长度；模型是否支持变分辨率，还要结合输入张量与预处理配置判断。
 
-附录 D 对 Gemma 4 E4B 模型文件的检查记录显示，视觉编码器段包含 `vision_70`、`vision_140`、`vision_280`，适配器段包含对应的 `vision_adapter_70/140/280`。关键输入张量 `images[1, 1260, 768]` 表明，该入口的每个 patch 有 768 个值。结合预处理配置可得 \\(768=16\times16\times3\\)，对应 16 × 16 的 RGB patch。`[1, 1260, 768]` 只是一条已记录的 signature 形状，不能据此把 1260 当成所有入口的统一容量上限。
+附录 D 对 Gemma 4 E4B 模型文件的检查记录显示，视觉编码器段包含 `vision_70`、`vision_140`、`vision_280`，适配器段包含对应的 `vision_adapter_70/140/280`〔基准 D〕。关键输入张量 `images[1, 1260, 768]` 表明，该入口的每个 patch 有 768 个值。结合预处理配置可得 \\(768=16\times16\times3\\)，对应 16 × 16 的 RGB patch。`[1, 1260, 768]` 只是一条已记录的 signature 形状，不能据此把 1260 当成所有入口的统一容量上限。
 
 ### 10.2.2　visual token budget 如何作用于 patchify
 
@@ -247,9 +247,9 @@ if (args.visual_token_budget) {
 
 这里的 9 来自 3 × 3 patch 池化约定。设模型配置的 patch 上限为 \\(P_{cfg}\\)，调用方给出的 visual token budget 为 \\(T_{budget}\\)，则预处理实际使用
 
-\\[
+$$
 P_{limit}=\min(P_{cfg},9T_{budget}).
-\\]
+$$
 
 这个式子限制的是进入视觉编码器的 patch 数，而不是直接截取适配器输出。`GetAspectRatioPreservingSize` 还会保持长宽比，并把宽高向下对齐到 `pooling_kernel_size × patch_width` 的整数倍。因此，实际 \\(N_{patch}\\) 一般不超过 \\(P_{limit}\\)，但不一定等于它。
 
@@ -273,18 +273,18 @@ P_{limit}=\min(P_{cfg},9T_{budget}).
 
 一幅图像产生 \\(T_{vis}\\) 个 visual token 时，prefill 序列会增加 \\(T_{vis}\\) 个位置。对应的 KV 数据量不能用 `model_dimension` 计算。对各层 KV 形状可能不同的模型，增量为
 
-\\[
+$$
 \Delta B_{KV}=2T_{vis}\sum_{l=1}^{L}\left(H_{kv,l}D_l b_l\right),
-\\]
+$$
 
 其中，2 表示 K 和 V。\\(H_{kv,l}\\) 是第 \\(l\\) 层的 KV 头数，\\(D_l\\) 是每个 KV 头的维度；\\(b_l\\) 是每个元素的字节数。若所有层形状和类型相同，公式简化为 \\(2L H_{kv}D T_{vis}b\\)。`model_dimension` 是主干 embedding 宽度，不一定等于 \\(H_{kv}\times D\\)。
 
-附录 D 记录的 Gemma 4 E4B 有 24 层 INT8 KV。20 层为 \\(H_{kv}=2,D=256\\)，其余 4 层为 \\(H_{kv}=2,D=512\\)。若一次图像输入增加 256 个 visual token，活动 KV 数据量增加
+附录 D 记录的 Gemma 4 E4B 有 24 层 INT8 KV。20 层为 \\(H_{kv}=2,D=256\\)，其余 4 层为 \\(H_{kv}=2,D=512\\)〔基准 D〕。若一次图像输入增加 256 个 visual token，活动 KV 数据量增加
 
-\\[
+$$
 2\times256\times2\times(20\times256+4\times512)\times1\ \text{B}
 =7\ \text{MiB}.
-\\]
+$$
 
 三次同样的输入会增加 768 个序列位置，对应 21 MiB 的活动 KV 数据。这里计算的是有效上下文对应的数据量或容量需求。固定宽度实现可能已经按最大序列长度预分配 KV buffer。此时，插入图像未必使进程驻留内存再增长 7 MiB。prefill 时延还受注意力、后端与 padding 影响，需要真机测量。图像预算应同时考虑 `max_num_patches` 与 `patch_num_shrink_factor`，前者不能直接等同于 visual token 数。
 
@@ -310,7 +310,7 @@ P_{limit}=\min(P_{cfg},9T_{budget}).
 
 音频预处理包含分帧、FFT 与 mel 滤波，编码器还可能运行多个顺序块。视觉与音频进入主干后都增加 prefill 序列位置，并按上一节的公式增加有效 KV 数据量。两种预处理在端到端时延中的占比不能只由代码结构比较，仍需在相同设备和后端上 profile。
 
-附录 D 的模型文件检查记录显示，音频编码器与 `audio_adapter` 分属两个模型段；适配器输入 `features` 的形状为 `[1, 204, 1536]`。其中 1536 是每个位置的特征维度，204 是编码器输出的特征序列位置数。204 不是原始波形帧数，也不能仅凭该张量形状还原 log-mel 输入帧数；二者还隔着编码器的缩减过程。该记录只能支持“编码器输出再进入适配器”。适配器输出形状仍须检查输出张量，不能由 1536 维的输入直接推出。
+附录 D 的模型文件检查记录显示，音频编码器与 `audio_adapter` 分属两个模型段；适配器输入 `features` 的形状为 `[1, 204, 1536]`〔基准 D〕。其中 1536 是每个位置的特征维度，204 是编码器输出的特征序列位置数。204 不是原始波形帧数，也不能仅凭该张量形状还原 log-mel 输入帧数；二者还隔着编码器的缩减过程。该记录只能支持“编码器输出再进入适配器”。适配器输出形状仍须检查输出张量，不能由 1536 维的输入直接推出。
 
 ### 10.3.2　音频状态、分块边界与有效 token
 
@@ -320,9 +320,9 @@ P_{limit}=\min(P_{cfg},9T_{budget}).
 
 设有效频谱长度为 \\(S\\)，编码器固定块长为 \\(C\\)，缩减因子为 \\(R\\)。代码按 `[pos,min(pos+C,S))` 顺序处理，因此块数为
 
-\\[
+$$
 N_{chunk}=\left\lceil\frac{S}{C}\right\rceil.
-\\]
+$$
 
 没有输出 mask 时，第 \\(i\\) 个块的有效输出长度是 \\(\lceil S_i/R\rceil\\)，总 audio token 数为各块结果之和，而不一定等于 \\(\lceil S/R\rceil\\)。只有当块边界与缩减因子对齐时，两式才相等。实现按块累加 `chunk_valid_tokens`，并用总和创建 `[1,total_valid_tokens,audio_embedding_dimensions]` 张量（`runtime/executor/audio_litert_compiled_model_executor.cc:985-1027`）。
 
@@ -370,11 +370,11 @@ N_{chunk}=\left\lceil\frac{S}{C}\right\rceil.
 
 第一个生成 token 的允许集合由起始状态计算。采样得到 \\(y_0\\) 后，运行时不会在同一步再次提交它。下一次 decode 开始前，才以 \\(y_0\\) 调用 `ComputeNext`，得到状态 \\(s_1\\)，然后根据 \\(s_1\\) 屏蔽产生 \\(y_1\\) 的 logits。对第 \\(t\\) 个输出 token，可写为
 
-\\[
+$$
 A_t=\operatorname{Bitmap}(s_t),\qquad
 y_t=\operatorname{Sample}(z_t\mid A_t),\qquad
 s_{t+1}=\operatorname{Next}(s_t,y_t).
-\\]
+$$
 
 这里 \\(z_t\\) 是模型 logits，\\(A_t\\) 是允许 token 集合。公式中的三个动作分属约束引擎、采样器和状态推进，顺序不能交换。若先采样再屏蔽，非法 token 已经选出；若漏掉 `Next`，每一步都会重复使用起始状态。
 
@@ -444,7 +444,7 @@ llama.cpp 在 b9873 中把视觉投影器作为独立 mmproj 文件，由 `--mmp
 
 约束解码只能保证采样结果满足当前约束所编码的条件。通用 ANTLR FC parser 中的 `ID` 只规定词法形式；由工具声明生成的采样文法更窄，可以限制函数名、顶层参数名和部分类型。两者都不能证明当前用户有权限调用函数，也不验证未编码的 schema 条件、外部可用性和执行结果。应用仍须在解析后重新核对工具白名单、完整参数 schema 与授权策略，并处理执行错误。
 
-附录 D 记录了一组 Python SDK 对照，模型为 Gemma 4 E4B，后端为 GPU。`enable_constrained_decoding` 开启与关闭时各生成 6 次，共 12 次。单参数工具在温度 0 下生成 4 次；三参数工具在温度 0 和 1.0 下各生成 4 次。12 个样本都得到结构可解析的调用，未观察到开关差异。每种开关设置仅 6 次，样本量不足以估计失败率，也不能支持“关闭约束同样可靠”的结论。实验没有覆盖多工具混淆、嵌套 JSON、参数语义和真实函数执行。
+附录 D 记录了一组 Python SDK 对照，模型为 Gemma 4 E4B，后端为 GPU。`enable_constrained_decoding` 开启与关闭时各生成 6 次，共 12 次。单参数工具在温度 0 下生成 4 次；三参数工具在温度 0 和 1.0 下各生成 4 次。12 个样本都得到结构可解析的调用，未观察到开关差异〔基准 D〕。每种开关设置仅 6 次，样本量不足以估计失败率，也不能支持“关闭约束同样可靠”的结论。实验没有覆盖多工具混淆、嵌套 JSON、参数语义和真实函数执行。
 
 <figure>
 {{#include figs/fig-10-2.svg}}
@@ -626,8 +626,11 @@ absl::StatusOr<ordered_json> ExecuteToolCall(
 <figcaption>图 10-4　模型文本和 parser JSON 均属于不可信输入；宿主校验、授权与受控适配器共同构成执行边界。</figcaption>
 </figure>
 
-> 版本注记
-> 工具调用格式与 parser 会随版本变化，本节描述的是 v0.13.1。上游 `LiteRT-LM#2418` 记录过特定模型的嵌套 JSON 参数解析问题。[^ch10-issue-2418] 排查时先保存模型原始输出。确认生成文本符合文法后，再检查 parser 是否覆盖该格式，并核对应用是否因参数校验而拒绝调用。
+<div class="aside-version">
+
+工具调用格式与 parser 会随版本变化，本节描述的是 v0.13.1。上游 `LiteRT-LM#2418` 记录过特定模型的嵌套 JSON 参数解析问题。[^ch10-issue-2418] 排查时先保存模型原始输出。确认生成文本符合文法后，再检查 parser 是否覆盖该格式，并核对应用是否因参数校验而拒绝调用。
+
+</div>
 
 ## 小结
 
@@ -650,4 +653,4 @@ absl::StatusOr<ordered_json> ExecuteToolCall(
 7. 故障定位。一条消息含两幅图，而渲染 prompt 只有一个图像标记。写出最先返回错误的模块，并说明为什么无需运行视觉执行器。
 8. 执行边界。为一个具有文件写入副作用的工具设计宿主检查项。至少覆盖路径范围、授权、幂等、超时和结果回填。
 
-[^ch10-issue-2418]: schwartz1375，*Gemma 4 tool call parser fails on nested JSON string parameters (`<|"|>` tokens)*，LiteRT-LM issue #2418，2026-05-31，<https://github.com/google-ai-edge/LiteRT-LM/issues/2418>（访问 2026-07-18）。
+[^ch10-issue-2418]: schwartz1375，[*Gemma 4 tool call parser fails on nested JSON string parameters (`<|"|>` tokens)*](https://github.com/google-ai-edge/LiteRT-LM/issues/2418)，LiteRT-LM issue #2418，2026-05-31；访问日期：2026-07-18。

@@ -68,8 +68,8 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 
 > Android 扩展基准首次采集未保存 build fingerprint、RAM、温度与功耗模式，现有结果只能按附录 D 所列条件解释。已保存的元信息见 `experiments/data/_meta_android.txt`。
 
-[^appc-google-model]: Google，*gemma-4-E4B-it* 模型卡，<https://huggingface.co/google/gemma-4-E4B-it>（访问 2026-07-18）。
+[^appc-google-model]: Google，[*gemma-4-E4B-it* 模型卡](https://huggingface.co/google/gemma-4-E4B-it)；访问日期：2026-07-18。
 
-[^appc-hf-auth]: Hugging Face，*Command Line Interface (CLI)*，`hf auth login`，<https://huggingface.co/docs/huggingface_hub/en/guides/cli>（访问 2026-07-18）。
+[^appc-hf-auth]: Hugging Face，[*Command Line Interface (CLI)*](https://huggingface.co/docs/huggingface_hub/en/guides/cli)，`hf auth login`；访问日期：2026-07-18。
 
-[^appc-build-guide]: google-ai-edge/LiteRT-LM，*Build and Run LiteRT-LM*，v0.13.1，<https://github.com/google-ai-edge/LiteRT-LM/blob/v0.13.1/docs/getting-started/build-and-run.md>（访问 2026-07-18）。
+[^appc-build-guide]: google-ai-edge/LiteRT-LM，[*Build and Run LiteRT-LM*](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.13.1/docs/getting-started/build-and-run.md)，v0.13.1；访问日期：2026-07-18。

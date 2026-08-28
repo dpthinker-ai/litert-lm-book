@@ -1,8 +1,8 @@
 # 第 2 章 从运行到架构：benchmark、Roofline 与五层视图
 
-> 本章目标：运行 LiteRT-LM，按源码定义解释 benchmark 的四项指标，并建立后续章节使用的五层架构视图。
+> 本章运行 LiteRT-LM，按源码定义解释 benchmark 的四项指标，并建立后续章节使用的五层架构视图。
 
-第 1 章在明确的假设下推导了 decode 的带宽侧上限。本章把同一分析方法用于实测数据。第 1 章的 25 tokens/s 是示意点值，不能直接用来验证另一台设备。
+第 1 章在明确的假设下推导了 decode 的带宽侧上限。本章把同一分析方法用于实测数据。
 
 ## 2.1　运行命令行工具
 
@@ -19,10 +19,10 @@ litert-lm run \
 `litert-lm` 的 CLI 入口使用 click，并注册八个子命令模块（`python/litert_lm_cli/main.py:52`）。本章使用 `run` 和 `benchmark`；同一入口还注册 `convert`、`list`、`import`、`delete`、`rename` 与 `serve`。
 
 ```python
-_serve_module.register(cli)      // (1)
+_serve_module.register(cli)      # (1)
 _convert_module.register(cli)
 _list_module.register(cli)
-_import_module.register(cli)     // (2)
+_import_module.register(cli)     # (2)
 _delete_module.register(cli)
 _rename_module.register(cli)
 _benchmark_module.register(cli)
@@ -34,7 +34,7 @@ _run_module.register(cli)
 `run` 在解析模型与后端参数后创建 `Engine`，再用上下文管理器限定其生命周期（`python/litert_lm_cli/commands/run.py:240`）：
 
 ```python
-      engine_cm = litert_lm.Engine(       // (1)
+      engine_cm = litert_lm.Engine(       # (1)
           model_obj.model_path,
           backend=backend_val,
           enable_speculative_decoding=enable_speculative_decoding,
@@ -44,7 +44,7 @@ _run_module.register(cli)
           cache_dir=cache_dir_val,
       )
 
-    with engine_cm as engine:             // (2)
+    with engine_cm as engine:             # (2)
 ```
 
 (1) 把模型路径、后端与生成配置传入 `Engine`。(2) 进入上下文后，`run` 再调用 `engine.create_session`（`python/litert_lm_cli/commands/run.py:252`）。`SessionInterface` 的注释说明，Session 保存每次独立交互的内部状态（`runtime/engine/engine.h:65`）。Python `Engine.__exit__` 调用 `close`（`python/litert_lm/engine.py:137`），后者删除原生 Engine 句柄（`python/litert_lm/engine.py:129`）。各后端何时释放设备资源仍由其实现决定。
@@ -56,7 +56,7 @@ _run_module.register(cli)
 ```python
   stream = conversation.send_message_async(prompt)
   try:
-    for chunk in stream:                          // (1)
+    for chunk in stream:                          # (1)
       content_list = chunk.get("content", [])
       for item in content_list:
         if item.get("type") == "text":
@@ -77,7 +77,7 @@ _run_module.register(cli)
       pass
 ```
 
-运行时只在预设检查点读取取消标志。decode 在下一次循环迭代开始前读取该标志；若请求发生在当前 decode step 内，必须先等该 step 返回。v0.13.1 的 `Prefill` 函数没有接收取消标志（`runtime/core/tasks.cc:413`），正在执行的 prefill 不会轮询该请求。详细调用链见第 4 章。
+取消标志只在预设检查点被读取，decode 侧的检查点位置见 2.6 节，完整调用链见第 4 章。v0.13.1 的 `Prefill` 函数没有接收取消标志（`runtime/core/tasks.cc:413`），正在执行的 prefill 不会轮询取消请求。
 
 从源码构建后，还可以运行 C++ 示例程序 `litert_lm_main`。完整构建命令见第 11 章与附录 C；这里先看两个基本参数：
 
@@ -123,7 +123,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 `litert-lm benchmark` 以固定输入触发一次生成，并通过 benchmark 参数指定 prefill 与 decode 的 token 数。Python 包装层把输入文本设为 `benchmark`，再调用 C API 的同步生成函数（`python/litert_lm/benchmark.py:74`）。命令完成后输出四项指标（`python/litert_lm_cli/commands/benchmark.py:102`）：
 
 ```python
-    result = benchmark_obj.run()                            // (1)
+    result = benchmark_obj.run()                            # (1)
 
     click.echo("----- Results -----")
     click.echo(
@@ -134,13 +134,13 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
         f"Decode speed:         {result.last_decode_tokens_per_second:.2f}"
         " tokens/s"
     )
-    click.echo(f"Init time:            {result.init_time_in_second:.4f} s")     // (2)
+    click.echo(f"Init time:            {result.init_time_in_second:.4f} s")     # (2)
     click.echo(
-        f"Time to first token:  {result.time_to_first_token_in_second:.4f} s"  // (3)
+        f"Time to first token:  {result.time_to_first_token_in_second:.4f} s"  # (3)
     )
 ```
 
-(1) 返回 Python 的 `BenchmarkInfo`。其中字段名虽然带 `last_`，当前包装层实际读取 C API 的第 0 个 turn；本命令只触发一次生成，因此二者指向同一条记录（`python/litert_lm/benchmark.py:94`）。(2) 初始化时间单列，单位为秒。(3) TTFT 也以秒输出，而且不含初始化时间。下面是附录 D 主矩阵的一组中位数，条件为 Apple M5 Pro、Gemma 4 E4B、cpu 后端、prefill 256 token、decode 128 token。
+(1) 返回 Python 的 `BenchmarkInfo`。其中字段名虽然带 `last_`，当前包装层实际读取 C API 的第 0 个 turn；本命令只触发一次生成，因此二者指向同一条记录（`python/litert_lm/benchmark.py:94`）。(2) 初始化时间单列，单位为秒。(3) TTFT 也以秒输出，而且不含初始化时间。下面是附录 D 主矩阵的一组中位数，条件为 Apple M5 Pro、Gemma 4 E4B、cpu 后端、prefill 256 token、decode 128 token〔基准 D〕。
 
 ```text
 Backend                    : cpu
@@ -219,15 +219,11 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 
 ## 2.4　Roofline 分析框架
 
-Roofline 用算术强度连接计算吞吐与内存带宽。沿用第 1 章的记号：每个 token 的计算量为 \\(F\\)，数据搬运量为 \\(D\\)，工作负载可用的有效计算吞吐和内存带宽分别为 \\(P_{\mathrm{eff}}\\) 与 \\(B_{\mathrm{eff}}\\)。token 率满足
+第 1 章已经用 Roofline 记号写出一组上限：token 率由算力侧与带宽侧两项中较低者决定（公式见 1.4 节）。若带宽项更低，称这个工作点 memory-bound，即第 1 章所说的带宽约束区；若计算项更低，称 compute-bound，即算力约束区。端到端测得一个 tokens/s 点值，还不足以判定哪一项更低。
 
-$$ R \leq \min\left(\frac{P_{\mathrm{eff}}}{F},\frac{B_{\mathrm{eff}}}{D}\right) $$
+第 1 章按算术强度给出分层判断：prefill 通常更接近算力约束区，batch=1 稠密 decode 更接近带宽约束区。下面的数据用于检查这个判断在本章工作点上的适用性。
 
-较低的一项决定这个工作点的 Roofline 上限。若带宽项更低，称为 memory-bound；若计算项更低，称为 compute-bound。端到端测得一个 tokens/s 点值，还不足以判定哪一项更低。
-
-prefill 一次处理一段 token，同一份权重可在序列维度复用，因此算术强度通常高于 decode。较长的 prefill 在 kernel 利用率足够时，可能进入计算约束区。batch=1 的稠密 decode 每次只生成一个新 token。若每步激活全部权重，且权重工作集超过可用片上缓存，它通常更接近带宽约束区。这个判断还要求量化解包、采样与同步没有先成为瓶颈。每步只激活部分参数、稀疏计算、权重常驻缓存、分层卸载或 kernel 利用率不足都会改变这个判断。
-
-附录 D 的 Apple M5 Pro 主矩阵提供一组后端敏感度数据。Gemma 4 E4B、context 1024、decode 128 token 时，prefill 从 cpu 的 259.2 tokens/s 变为 gpu 的 999.1 tokens/s，约为 3.9 倍；decode 从 24.7 变为 50.6 tokens/s，约为 2.0 倍。切换后端同时改变了有效计算吞吐、有效带宽、delegate 和 kernel。这组比例表明两个阶段的后端敏感度不同，不能单独证明 prefill 已受算力约束、decode 已受带宽约束。
+附录 D 的 Apple M5 Pro 主矩阵提供一组后端敏感度数据。Gemma 4 E4B、context 1024、decode 128 token 时，prefill 从 cpu 的 259.2 tokens/s 变为 gpu 的 999.1 tokens/s，约为 3.9 倍；decode 从 24.7 变为 50.6 tokens/s，约为 2.0 倍〔基准 D〕。切换后端同时改变了有效计算吞吐、有效带宽、delegate 和 kernel。这组比例表明两个阶段的后端敏感度不同，不能单独证明 prefill 已受算力约束、decode 已受带宽约束。
 
 第 1 章的 25 tokens/s 来自假想手机的题设，不能直接套到这台 Mac。对本书基准模型，`.litertlm` 整文件为 3.66 GB，并包含多个模型段；附录 D 识别出的主 decode 段 payload 为 2.26 GB。若额外假设每个 decode step 恰好读取这 2.26 GB 一次，并忽略其他流量，那么 gpu/256 档的等效主干 payload 速率为 `50.6 × 2.26 ≈ 114 GB/s`，cpu/256 档为 `24.8 × 2.26 ≈ 56 GB/s`。这两个数是吞吐与假设 payload 的乘积，不是硬件计数器测得的 DRAM 带宽，也不能用来核验设备标称带宽。
 
@@ -244,7 +240,7 @@ prefill 一次处理一段 token，同一份权重可在序列维度复用，因
 
 $$ d_{\mathrm{eq}}=\frac{D_w}{L}\left(\frac{R_s}{R_l}-1\right) $$
 
-代入 cpu 数据得到约 107 KiB/token；代入 gpu 数据得到约 59 KiB/token。第 6 章按模型张量形状计算的逻辑 KV 容量是 28 KiB/token。这三个数不应相等：`d_{\mathrm{eq}}` 把注意力计算、带宽利用率变化、缓存行为和其他随上下文变化的成本都折算成字节。它不是实际 DRAM 流量的测量值，也不能单独证明降速全部来自 KV cache。这个对照只说明上下文相关成本不能从权重 payload 一项解释；第 6 章再按 KV 张量形状和访问路径核算。
+代入 cpu 数据得到约 107 KiB/token；代入 gpu 数据得到约 59 KiB/token。第 6 章按模型张量形状计算的逻辑 KV 容量是 28 KiB/token。这三个数不应相等：\\(d_{\mathrm{eq}}\\) 把注意力计算、带宽利用率变化、缓存行为和其他随上下文变化的成本都折算成字节。它不是实际 DRAM 流量的测量值，也不能单独证明降速全部来自 KV cache。这个对照只说明上下文相关成本不能从权重 payload 一项解释；第 6 章再按 KV 张量形状和访问路径核算。
 
 ## 2.5　二十个问题
 
@@ -254,7 +250,7 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{L}\left(\frac{R_s}{R_l}-1\right) $$
 |---|---|---|
 | 1 | 同样的模型，为什么云端可以流畅运行，手机端通常更受限制？ | 1 |
 | 2 | 8 GiB 内存的手机能否容纳 4B 参数模型？ | 1、6、7 |
-| 3 | prefill 每秒几千 token、decode 只有几十，为什么？ | 2 初讲、6 深化 |
+| 3 | prefill 每秒几千 token、decode 只有几十，为什么？ | 1 初讲、2 检验、6 深化 |
 | 4 | time-to-first-token 由哪几段时间构成？ | 2 |
 | 5 | Engine 和 Session 为什么要分成两层？ | 3 |
 | 6 | 多轮对话的历史，每一轮都要重新计算吗？ | 3（单轮渲染或前缀后缀提取）、6（KV cache） |
@@ -277,13 +273,18 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{L}\left(\frac{R_s}{R_l}-1\right) $$
 
 ## 2.6　五层职责视图
 
-本书按主要职责把生成路径整理为五层，供后续章节定位实现位置。这是分析视图，不是仓库声明的强制依赖规则。主调用路径大体自上而下；工厂、元数据、日志与工具代码仍可能跨越相邻层。
+第 1 章 1.1 节的分层把 LiteRT-LM 放进应用与 LiteRT 之间的软件栈；本节换一个视角，按主要职责把 LiteRT-LM 的生成路径整理为五层，供后续章节定位实现位置。这是分析视图，不是仓库声明的强制依赖规则。主调用路径大体自上而下；工厂、元数据、日志与工具代码仍可能跨越相邻层。
 
 1. 对外接口层。包括 Engine、Session、CLI、C API 与各语言绑定，应用通常从这里进入（第 3、11 章）。
 2. 对话与编排层。把多轮消息转换为模型输入，并组织 prefill、decode、取消和回调（第 3 至 5 章）。
 3. 推理执行层。通过 executor 和 LiteRT 模型执行操作管理推理状态，并适配不同后端（第 6、8、9 章）。
 4. 组件层。包括 tokenizer、采样器和约束解码等可复用组件（第 5、10 章）。
 5. 格式与基础设施层。包括 `.litertlm` 文件格式、模型资源和通用运行设施（第 7 章）。
+
+<figure>
+{{#include figs/fig-2-2.svg}}
+<figcaption>图 2-2　本书用于定位职责的五层视图；主生成路径自接口向执行与模型资源传递，跨层辅助依赖未在图中展开。</figcaption>
+</figure>
 
 以下用前三层的接口和调用点说明这套划分。
 
@@ -337,11 +338,6 @@ class LlmExecutorBase {
 ```
 
 (1) 定义基本 prefill 接口。`runtime/core/tasks.cc` 使用的参数化重载位于 `runtime/executor/llm_executor_base.h:51`；基类默认返回未实现，支持该路径的具体 executor 需要覆盖它。(2) 定义基本 decode 接口。(3) 返回 executor 的后端名称。工厂选择的 executor 与 delegate 配置可因 CPU、GPU、NPU 路径而异，但上层编排仍通过这些公共方法调用。组件层主要位于 `runtime/components/`；文件格式实现位于 `schema/`。
-
-<figure>
-{{#include figs/fig-2-2.svg}}
-<figcaption>图 2-2　本书用于定位职责的五层视图；主生成路径自接口向执行与模型资源传递，跨层辅助依赖未在图中展开。</figcaption>
-</figure>
 
 图 2-3 沿调用方向展开一次生成请求的主数据流：
 
@@ -416,7 +412,7 @@ benchmark 指标必须按 `BenchmarkInfo` 的源码定义解释，Roofline 结�
 ## 练习与自查
 
 1. TTFT 验算。用附录 D 的 gpu/1024 档数据（prefill 999.1 tokens/s、decode 50.6 tokens/s）按 `GetTimeToFirstToken` 的公式复算 TTFT，并说明为什么这不是独立计时。
-2. 等效字节估算。用 gpu 的 context 256 与 4096 两档 decode 吞吐（50.6 与 45.6 tokens/s）和 2.26 GB 主段 payload 计算 `d_{\mathrm{eq}}`，再说明它为何不能当作 KV cache 的实测 DRAM 流量。
+2. 等效字节估算。用 gpu 的 context 256 与 4096 两档 decode 吞吐（50.6 与 45.6 tokens/s）和 2.26 GB 主段 payload 计算 \\(d_{\mathrm{eq}}\\)，再说明它为何不能当作 KV cache 的实测 DRAM 流量。
 3. 条件检查。某设备报告 Init 1.8 s、TTFT 4.4 s、decode 45 tokens/s，上下文加倍后 decode 下降 8%。列出判断异常前仍需补充的模型、输入、后端和测量条件。
 4. 代码定位。找到 benchmark 模式要求 prefill 等待完成的语句，并说明不等待时计时可能覆盖什么范围。
 5. 架构归位。约束解码的 `MaskLogits` 调用属于五层视图中的哪一层？它接收的 logits 来自哪一层？

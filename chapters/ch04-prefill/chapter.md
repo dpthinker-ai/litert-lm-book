@@ -1,12 +1,12 @@
 # 第 4 章 Prefill：并行处理提示词
 
-> 本章目标：说明 prefill 的算术强度和固定 signature 对吞吐测量的影响，比较静态与动态路径的权衡。同时明确 v0.13.1 中任务调度、回调与取消的边界。
+> 本章说明 prefill 的算术强度和固定 signature 对吞吐测量的影响，比较静态与动态路径的权衡。同时明确 v0.13.1 中任务调度、回调与取消的边界。
 
-上一章末尾，输入文本已经变成一串 token id。`Prefill` 一次前向处理整段提示词，把注意力中间结果写入 KV cache。prefill 耗时是首 token 时延（TTFT，time-to-first-token）的主要组成之一。
+上一章末尾，输入文本已经变成一串 token id。`Prefill` 一次前向处理整段提示词，把注意力中间结果写入 KV cache。prefill 耗时是 TTFT 的主要组成之一。
 
 ## 4.1　prefill 的资源约束
 
-沿用第 2 章的 Roofline 分析。对于稠密 Transformer，prefill 一次前向处理多个 token，同一批权重参与多个位置的计算。它的算术强度通常高于一次只处理一个 token 的 decode step。序列长度、模型结构和后端不同，prefill 可能处于计算受限区，也可能受内存访问或 host 侧开销影响。判断是否 compute-bound，需要读取目标设备的性能计数器或开展受控实验。
+沿用 1.4 节与 2.4 节的 Roofline 分析。对于稠密 Transformer，prefill 一次前向处理多个 token，同一批权重参与多个位置的计算。它的算术强度通常高于一次只处理一个 token 的 decode step。序列长度、模型结构和后端不同，prefill 可能处于算力约束区，也可能受内存访问或 host 侧开销影响。判断是否 compute-bound，需要读取目标设备的性能计数器或开展受控实验。
 
 主基准使用 Apple M5 Pro（24 GiB）、macOS 26.5 和 LiteRT-LM v0.13.1。模型是 Gemma 4 E4B 的公开 LiteRT-LM 产物，未另做量化转换；数据取 `litert-lm benchmark` 中位数。上下文为 1024 时，gpu 后端的 prefill 为 999.1 tokens/s，decode 为 50.6 tokens/s，相差约 20 倍。cpu 后端分别为 259.2 tokens/s 和 24.7 tokens/s，相差约 10 倍〔基准 D〕。这组数据描述端到端吞吐，不能单独证明两段分别受算力和带宽约束。代码路径从 `Tasks::Prefill` 进入 executor。测量中同时包含模型执行、固定形状填充和 host 侧开销。
 
@@ -51,7 +51,7 @@ gpu 主基准也有相同现象。256 与 1024 token 的 prefill 墙钟时间约
 
 2000 和 3000 token 分别调用两个、三个 1024 signature。prefill 墙钟时间约为 7.67 s 和 11.48 s，折合每组约 3.83 s。4000 token 需要四组，墙钟时间增至约 17.45 s，吞吐降到 229.3 tokens/s〔基准 D〕。后续工作组开始时，已处理上下文更长。但仅凭这次扫描，还无法区分注意力计算、掩码写入、热状态和调度抖动各自的影响。若要判断瓶颈，需要分别记录各 signature 的耗时并读取硬件性能计数器。
 
-按探针定义，prefill 吞吐等于 token 数除以墙钟时间。cpu/4096 的 prefill 时间约为 4096 ÷ 226.5 tokens/s = 18.08 s〔基准 D〕。`GetTimeToFirstToken` 在此基础上加一次平均 decode step 的耗时，得到表中的 18.13 s（`runtime/engine/io_types.cc:455`）。因此，这项复算只能检查指标定义和表中数字，不能证明模型加载或采样开销可以忽略。在相同模型和条件下，减少 prefill token 数或选择实测时间更短的后端，都能降低 TTFT。本书测得 gpu/4096 的 TTFT 为 4.45 s。
+按探针定义，prefill 吞吐等于 token 数除以墙钟时间。cpu/4096 的 prefill 时间约为 4096 ÷ 226.5 tokens/s = 18.08 s〔基准 D〕。`GetTimeToFirstToken` 在此基础上加一次平均 decode step 的耗时，得到表中的 18.13 s（`runtime/engine/io_types.cc:455`）。因此，这项复算只能检查指标定义和表中数字，不能证明模型加载或采样开销可以忽略。在相同模型和条件下，减少 prefill token 数或选择实测时间更短的后端，都能降低 TTFT。本书测得 gpu/4096 的 TTFT 为 4.45 s〔基准 D〕。
 
 ## 4.2　设计权衡：固定形状还是动态形状
 
@@ -181,9 +181,6 @@ embedding 装配。除了 token 到 embedding 的查表，带 per-layer embeddin
 KV 缓冲交换。双缓冲路径在 prefill 结尾交换两组缓冲的指针，不复制 KV 数据（`runtime/executor/llm_litert_compiled_model_executor.cc:737`）。单缓冲路径为每个工作组填写 int32 参数张量。`FillSingleBufferCacheParamTensor` 的实现见第 6 章。
 
 现有探针没有分别记录这三类操作的耗时，附录 D 的曲线不能给出各项占比。250、500 和 1000 token 都执行同一个 1024 signature，短输入的低吞吐主要反映填充率口径。若要判断 host 侧开销，需要在 `PrefillInternal` 内分别插桩。
-
-> 对照视野
-> 固定 signature 使形状在编译期确定，但会增加入口数量与填充计算。动态形状减少填充和入口数量，但要求后端支持运行时形状。两者的执行速度取决于模型、编译器和硬件，需在目标设备上测量。
 
 <figure>
 {{#include figs/fig-4-1.svg}}
@@ -345,8 +342,8 @@ prefill 完成后，KV cache 中已有提示词对应的 K/V。decode 如何读�
 
 ## 练习与自查
 
-1. **工作组计算。** 本书基准模型的入口集是 {1024, 128}。输入 700 个 token，按贪心策略算出工作组与填充率；再计算允许连续使用多个 128 signature 时的填充量。
-2. **参数推演。** 把动态路径的 `prefill_chunk_size` 从 -1 改为 512。代码能确认 2048 token 会被拆成几块？激活峰值和 TTFT 的变化为什么还需要实测？
-3. **异步边界。** 静态路径在什么条件下异步提交中间工作组？Metal 缓冲为何构成例外？
-4. **曲线解读。** 附录 D 第七节中，250、500 和 1000 token 的 TTFT 近似相同，吞吐却接近按 token 数成比例增长。结合入口集 {1024, 128} 解释原因。
-5. **取消语义。** 若取消发生在一次 prefill signature 执行期间和一次 decode step 执行期间，v0.13.1 分别会在何时观察到取消标志？
+1. 工作组计算。本书基准模型的入口集是 {1024, 128}。输入 700 个 token，按贪心策略算出工作组与填充率；再计算允许连续使用多个 128 signature 时的填充量。
+2. 参数推演。把动态路径的 `prefill_chunk_size` 从 -1 改为 512。代码能确认 2048 token 会被拆成几块？激活峰值和 TTFT 的变化为什么还需要实测？
+3. 异步边界。静态路径在什么条件下异步提交中间工作组？Metal 缓冲为何构成例外？
+4. 曲线解读。附录 D 第七节中，250、500 和 1000 token 的 TTFT 近似相同，吞吐却接近按 token 数成比例增长。结合入口集 {1024, 128} 解释原因。
+5. 取消语义。若取消发生在一次 prefill signature 执行期间和一次 decode step 执行期间，v0.13.1 分别会在何时观察到取消标志？

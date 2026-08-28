@@ -7,7 +7,7 @@
 ---
 
 - [第一部分 · 约束、指标与系统概览](parts/part01-foundations.md)
-  - [第 1 章 端侧 LLM 与 LiteRT-LM：三类物理约束与运行时版图](chapters/ch01-three-walls/chapter.md)
+  - [第 1 章 端侧 LLM 与 LiteRT-LM：三类物理约束与同类运行时对照](chapters/ch01-three-walls/chapter.md)
     - [1.1　LiteRT-LM 是什么：与 LiteRT 的分工]()
     - [1.2　为什么要在端侧部署]()
     - [1.3　第一类约束：内存容量]()

@@ -1,6 +1,6 @@
 # 第 11 章 多语言绑定：C ABI、JNI 与 Embind
 
-> 本章目标：分析 Python、Kotlin、Swift 与 Web 如何经 C ABI、JNI 或 Embind 进入同一套 C++ runtime，并说明流式回调、数据复制、字符串所有权和显式释放的边界契约。本章还比较绑定层的并发隔离方式，并介绍测试替身与跨平台构建。
+> 本章分析 Python、Kotlin、Swift 与 Web 如何经 C ABI、JNI 或 Embind 进入同一套 C++ runtime，并说明流式回调、数据复制、字符串所有权和显式释放的边界契约。本章还比较绑定层的并发隔离方式，并介绍测试替身与跨平台构建。
 
 LiteRT-LM v0.13.1 的 `README.md:99-106` 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。这些绑定并不共用同一条原生调用路径。Python 与 Swift 使用 `c/engine.h` 提供的 C ABI；Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章选择前四种绑定分析三类边界模式，Flutter 不在本章展开。
 
@@ -537,6 +537,6 @@ LiteRT-LM 的多语言 API 采用三类原生边界。Python 与 Swift 经 C ABI
 4. 测试设计。`FakeLlmExecutor` 不含神经网络，为什么仍能单测停止序列和采样编排？哪些内容不在其测试范围内？
 5. 设计题。为 Go 语言编写一个最小绑定，至少需要包装哪些 C 函数？按“创建、使用、销毁”三个阶段列出。
 
-[^ch11-issue-2589]: google-ai-edge/LiteRT-LM，Issue #2589，*[Swift] Add a public `close()` method to `Conversation` for deterministic session release*，2026-06-16，<https://github.com/google-ai-edge/LiteRT-LM/issues/2589>（访问 2026-07-18）。
+[^ch11-issue-2589]: google-ai-edge/LiteRT-LM，[*[Swift] Add a public `close()` method to `Conversation` for deterministic session release*](https://github.com/google-ai-edge/LiteRT-LM/issues/2589)，LiteRT-LM issue #2589，2026-06-16；访问日期：2026-07-18。
 
-[^ch11-issue-2613]: google-ai-edge/LiteRT-LM，Issue #2613，*[Swift] Engine teardown crashes with `litert_lm_engine_delete` running on an arbitrary thread in `deinit` - adding a public `close()` to solve*，2026-06-19，<https://github.com/google-ai-edge/LiteRT-LM/issues/2613>（访问 2026-07-18）。
+[^ch11-issue-2613]: google-ai-edge/LiteRT-LM，[*[Swift] Engine teardown crashes with `litert_lm_engine_delete` running on an arbitrary thread in `deinit` - adding a public `close()` to solve*](https://github.com/google-ai-edge/LiteRT-LM/issues/2613)，LiteRT-LM issue #2613，2026-06-19；访问日期：2026-07-18。

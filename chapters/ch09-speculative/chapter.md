@@ -1,6 +1,6 @@
 # 第 9 章 一次前向，多个 token：投机解码与 MTP
 
-> 本章目标：说明 MTP 如何让 drafter 草拟多个 token，再由基础模型一次验证。分析接受比例与每轮运行成本如何共同决定加速比。
+> 本章说明 MTP 如何让 drafter 草拟多个 token，再由基础模型一次验证。分析接受比例与每轮运行成本如何共同决定加速比。
 
 第 1 章讨论了缓解 decode 内存带宽约束的两类方法。硬件可以提高带宽，量化可以减少每 token 读取的字节数。第三种方法是投机解码（speculative decoding）。基础模型每读取一次权重，尽可能确认多个 token。本章据此定量分析第 2 章第 19 问：投机解码为什么可能加速，又会在什么条件下减速。
 
@@ -292,16 +292,16 @@ $$ \text{speedup}(p,c) \approx
 
 聚合接受比例 r 增大时，平均每轮产出 `1+Gr` 随之增加。轮次成本 q 同样影响加速比。即使 r 很高，较大的 q 仍会限制收益。r 较低时，MTP 可能只返回 1 个或少量 token。该轮仍要执行 drafter 与 verify，吞吐可能低于普通 decode。Google 报告 Gemma 4 MTP drafter 在其跨模型、硬件与运行时测试中最高达到约 3 倍。[^ch09-google-mtp] 该数字不是本书设备上的预期值。
 
-附录 D 保存了 Gemma 4 E4B 的两组 Mac 记录。测试条件为 context 1024、decode 128 token，参数分别设为 `false` 与 `auto`。本章“开启条件”一节核对的设置链路表明，v0.13.1 的 `auto` 最终沿用 C++ 默认值 `false`。两组记录都来自关闭 MTP 后的独立采样。CPU 中位数为 22.8 和 24.9 tokens/s；`false` 组的三次运行分布在 20.1 到 24.9 tokens/s。GPU 中位数为 50.0 和 50.2 tokens/s。两组差异只能反映这几次运行的波动，不能估计 MTP 的开关收益。当前没有可核查的 Mac 强制开启记录。
+附录 D 保存了 Gemma 4 E4B 的两组 Mac 记录。测试条件为 context 1024、decode 128 token，参数分别设为 `false` 与 `auto`。本章“开启条件”一节核对的设置链路表明，v0.13.1 的 `auto` 最终沿用 C++ 默认值 `false`。两组记录都来自关闭 MTP 后的独立采样。CPU 中位数为 22.8 和 24.9 tokens/s；`false` 组的三次运行分布在 20.1 到 24.9 tokens/s。GPU 中位数为 50.0 和 50.2 tokens/s〔基准 D〕。两组差异只能反映这几次运行的波动，不能估计 MTP 的开关收益。当前没有可核查的 Mac 强制开启记录。
 
 | 模式 | cpu decode tokens/s | gpu decode tokens/s | 说明 |
 |---|---|---|---|
 | 关（`false`） | 22.8 | 50.0 | 基线 |
 | `auto` | 24.9 | 50.2 | v0.13.1 实为关，与基线同行为的再采样 |
 
-> 表 9-1　Mac 归档记录中的 `false` 与 `auto` 均为关闭行为，各列为 3 次运行的中位数；该表不能用于估计 MTP 收益。
+> 表 9-1　Mac 归档记录中的 `false` 与 `auto` 均为关闭行为，各列为 3 次运行的中位数〔基准 D〕；该表不能用于估计 MTP 收益。
 
-附录 D 还记录了 drafter 析构时输出的计数器。实验通过 Python SDK 把日志级别设为 VERBOSE；计数器代码见 `runtime/executor/llm_litert_mtp_drafter.cc:165-172`。故事提示词产生 213 个草稿，其中 56 个匹配，故 `r̂=56/213≈0.263`。平均每次 `Draft()` 返回 `1+3r̂≈1.79` 个 token。代码提示词产生 3069 个草稿，其中 3054 个匹配。对应的 `r̂≈0.995`，平均返回约 3.99 个 token。
+附录 D 还记录了 drafter 析构时输出的计数器。实验通过 Python SDK 把日志级别设为 VERBOSE；计数器代码见 `runtime/executor/llm_litert_mtp_drafter.cc:165-172`。故事提示词产生 213 个草稿，其中 56 个匹配，故 `r̂=56/213≈0.263`。平均每次 `Draft()` 返回 `1+3r̂≈1.79` 个 token。代码提示词产生 3069 个草稿，其中 3054 个匹配。对应的 `r̂≈0.995`，平均返回约 3.99 个 token〔基准 D〕。
 
 在图 9-2 的示意假设 `q=1.45` 下，两个样本对应的加速比分别约为 1.23 和 2.75。把 r̂ 误作 p 会得到 0.93；该结果混用了两种口径。这两次计数实验没有同时测量 q，所以上述示意值不是实测速率。两次实验的提示词也与固定长度 benchmark 不同。故事样本的 r̂ 因而不能用于推断该 benchmark 开启 MTP 后的吞吐。
 
@@ -311,11 +311,11 @@ $$ \text{speedup}(p,c) \approx
 
 `LiteRT-LM#2227` 报告了 PowerVR GPU 上开启 MTP 后 decode 吞吐下降的案例。[^ch09-issue-2227] 该 issue 使用 LiteRT-LM 0.11.0、Gemma 4 E2B 和俄文分类负载；其中关于 GPU 路径的原因分析明确标为假设。本章的公式只说明两类可能条件：r 偏低，或归一化轮次成本 q 偏高。它不能从吞吐数据中区分二者，也不能据此确认 issue 的根因。
 
-附录 D 第十三节记录了一台 Qualcomm 机型上的 MTP 减速。合成负载使用 `benchmark_prefill_tokens=1024`。强制开启 MTP 后，CPU decode 从 10.0 降到 2.8 tokens/s；GPU 从 18.0 降到 12.6 tokens/s。在该设备和负载的这次测试中，MTP 组吞吐更低。实验没有同步记录 r 或分解 q，不能把原因归到其中一个参数。
+附录 D 第十三节记录了一台 Qualcomm 机型上的 MTP 减速。合成负载使用 `benchmark_prefill_tokens=1024`。强制开启 MTP 后，CPU decode 从 10.0 降到 2.8 tokens/s；GPU 从 18.0 降到 12.6 tokens/s〔基准 D〕。在该设备和负载的这次测试中，MTP 组吞吐更低。实验没有同步记录 r 或分解 q，不能把原因归到其中一个参数。
 
-同一台手机另有自然代码提示词的记录，参数为 `benchmark_prefill_tokens=0`。GPU 的单次观测从 16.0 变为 32.0 tokens/s，decode 长度为 128。CPU 的单次观测从 11.6 变为 12.6 tokens/s，decode 长度为 64。每个条件只运行 1 次，两种后端的 decode 长度也不同。记录只能说明这些测试中存在观测差异，不能估计稳定加速比或比较后端绝对值。自然代码吞吐测试与 r̂ 计数也不是同一次运行。现有数据不能把差异分解为接受比例和轮次成本两部分。
+同一台手机另有自然代码提示词的记录，参数为 `benchmark_prefill_tokens=0`。GPU 的单次观测从 16.0 变为 32.0 tokens/s，decode 长度为 128。CPU 的单次观测从 11.6 变为 12.6 tokens/s，decode 长度为 64〔基准 D〕。每个条件只运行 1 次，两种后端的 decode 长度也不同。记录只能说明这些测试中存在观测差异，不能估计稳定加速比或比较后端绝对值。自然代码吞吐测试与 r̂ 计数也不是同一次运行。现有数据不能把差异分解为接受比例和轮次成本两部分。
 
-本书基准模型的 verify signature 中，`input_pos` 形状为 `[4]`，故 G=3。一次 `Draft()` 最多返回 4 个 token。附录 D 另有两组自然代码长生成的单次记录。Mac GPU 从 58.7 变为 133.9 tokens/s，比值为 2.28。手机 GPU 从 18.62 变为 37.38 tokens/s，比值为 2.01。两组记录使用不同采集入口，没有重复运行，也没有在同一次运行中记录 r。吞吐比因而不能唯一确定 q 或 c，也不能估计跨设备的稳定差异。
+本书基准模型的 verify signature 中，`input_pos` 形状为 `[4]`，故 G=3。一次 `Draft()` 最多返回 4 个 token。附录 D 另有两组自然代码长生成的单次记录。Mac GPU 从 58.7 变为 133.9 tokens/s，比值为 2.28。手机 GPU 从 18.62 变为 37.38 tokens/s，比值为 2.01〔基准 D〕。两组记录使用不同采集入口，没有重复运行，也没有在同一次运行中记录 r。吞吐比因而不能唯一确定 q 或 c，也不能估计跨设备的稳定差异。
 
 在 `r=1`、`q=1+3c` 的假设下，2.28 倍和 2.01 倍分别对应 c≈0.25 和 c≈0.33。这里的 c 是由端到端结果反推的有效参数。它包含 verify、drafter 和运行时操作，不是 drafter 模型的实测单步成本。若实际 r 小于 1，反推出的 c 也会更小。这些数值不能证明两台设备已经达到吞吐上限。在相同简化模型下，即使 r=1，3 倍加速也要求 c≤1/9≈0.11。现有数据不足以把官方结果[^ch09-google-mtp] 归因于某种硬件路径。drafter 文件约 45 MB 也不能推出 c≈0.02，因为模型存储大小不是端到端时延的比例尺。
 
@@ -330,7 +330,7 @@ MTP 还改变了 executor 的返回形态。普通 decode 通常返回一个 tok
 ```cpp
 for (size_t step = 0; step < sequence_length; ++step) {             // (1)
   std::vector<std::vector<int>> step_tokens;
-  // ... 每个候选在当前位置取一个 token
+  // ...
   RETURN_IF_ERROR(stop_token_detector_.ProcessTokens(step_tokens)); // (2)
   ASSIGN_OR_RETURN(step_tokens, tokenizer_.MergeTokenIds(           // (3)
                                     bpe_partial_token_ids_, step_tokens));
@@ -338,7 +338,7 @@ for (size_t step = 0; step < sequence_length; ++step) {             // (1)
       tokenizer_.TokenIdsToTexts(num_output_candidates_, step_tokens);
 ```
 
-`(1)` 将本轮返回序列展开为逐位置处理。`(2)` 先推进停止序列检测器，`(3)` 再合并未完成的 BPE token id。即使 executor 一次返回多个 token，停止检测与文本解码仍按 token 顺序推进。
+`(1)` 将本轮返回序列展开为逐位置处理，省略的几行从每个候选取出当前位置的 token，填入 `step_tokens`。`(2)` 先推进停止序列检测器，`(3)` 再合并未完成的 BPE token id。即使 executor 一次返回多个 token，停止检测与文本解码仍按 token 顺序推进。
 
 停止序列在批次中间命中时，v0.13.1 会调整 executor 的逻辑位置。代码以 `sequence_length - step` 计算回退量，再调用 `SetCurrentStep`（`runtime/core/tasks.cc:223-233`）：
 
@@ -461,16 +461,16 @@ LiteRT-LM 的 MTP 路径让基础模型一次 verify 前向确认多个草稿位
 
 ## 练习与自查
 
-1. 盈亏平衡：设 G=3、有效开销参数 c=0.1，逐位条件匹配概率为恒定 p。一轮期望产出为 `1+p+p²+p³`，归一化成本为 `1+3c`。求加速比达到 1 时的 p。
-2. 返回下界：第一次草稿不匹配时，`Draft()` 为什么仍返回 1 个 token？这个结论为什么不等于“端到端成本不会增加”？
-3. 形状约束：草拟步数 G 为什么在模型导出时固定？从 verify signature 的哪一个维度读出？
-4. 口径换算：G=3、日志聚合比例 `r̂=0.4` 时，平均每轮接受多少草稿、返回多少 token？为什么不能把 0.4 直接代入理论曲线中的 p？
-5. 结构对照：drafter 输入形状为 `[1, 1, 5120]`。5120 由哪两部分组成？它们分别来自哪里？
+1. 盈亏平衡。设 G=3、有效开销参数 c=0.1，逐位条件匹配概率为恒定 p。一轮期望产出为 `1+p+p²+p³`，归一化成本为 `1+3c`。求加速比达到 1 时的 p。
+2. 返回下界。第一次草稿不匹配时，`Draft()` 为什么仍返回 1 个 token？这个结论为什么不等于“端到端成本不会增加”？
+3. 形状约束。草拟步数 G 为什么在模型导出时固定？从 verify signature 的哪一个维度读出？
+4. 口径换算。G=3、日志聚合比例 `r̂=0.4` 时，平均每轮接受多少草稿、返回多少 token？为什么不能把 0.4 直接代入理论曲线中的 p？
+5. 结构对照。drafter 输入形状为 `[1, 1, 5120]`。5120 由哪两部分组成？它们分别来自哪里？
 
-[^ch09-google-mtp]: Olivier Lacombe、Maarten Grootendorst，*Accelerating Gemma 4: faster inference with multi-token prediction drafters*，Google，2026-05-05，<https://blog.google/innovation-and-ai/technology/developers-tools/multi-token-prediction-gemma-4/>（访问 2026-07-18）。
+[^ch09-google-mtp]: Olivier Lacombe、Maarten Grootendorst，[*Accelerating Gemma 4: faster inference with multi-token prediction drafters*](https://blog.google/innovation-and-ai/technology/developers-tools/multi-token-prediction-gemma-4/)，Google，2026-05-05；访问日期：2026-07-18。
 
-[^ch09-leviathan]: Yaniv Leviathan、Matan Kalman、Yossi Matias，*Fast Inference from Transformers via Speculative Decoding*，ICML 2023，arXiv:2211.17192，<https://arxiv.org/abs/2211.17192>（访问 2026-07-18）。
+[^ch09-leviathan]: Yaniv Leviathan、Matan Kalman、Yossi Matias，[*Fast Inference from Transformers via Speculative Decoding*](https://arxiv.org/abs/2211.17192)，ICML 2023，arXiv:2211.17192；访问日期：2026-07-18。
 
-[^ch09-chen]: Charlie Chen、Sebastian Borgeaud、Geoffrey Irving、Jean-Baptiste Lespiau、Laurent Sifre、John Jumper，*Accelerating Large Language Model Decoding with Speculative Sampling*，2023，arXiv:2302.01318，<https://arxiv.org/abs/2302.01318>（访问 2026-07-18）。
+[^ch09-chen]: Charlie Chen、Sebastian Borgeaud、Geoffrey Irving、Jean-Baptiste Lespiau、Laurent Sifre、John Jumper，[*Accelerating Large Language Model Decoding with Speculative Sampling*](https://arxiv.org/abs/2302.01318)，2023，arXiv:2302.01318；访问日期：2026-07-18。
 
-[^ch09-issue-2227]: Shoolife，*MTP / speculative decoding regresses decode tok/s on PowerVR GPU (Tensor G6) — even with GPU sampler fully loaded*，LiteRT-LM issue #2227，2026-05-11，<https://github.com/google-ai-edge/LiteRT-LM/issues/2227>（访问 2026-07-18）。
+[^ch09-issue-2227]: Shoolife，[*MTP / speculative decoding regresses decode tok/s on PowerVR GPU (Tensor G6) — even with GPU sampler fully loaded*](https://github.com/google-ai-edge/LiteRT-LM/issues/2227)，LiteRT-LM issue #2227，2026-05-11；访问日期：2026-07-18。

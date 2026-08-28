@@ -1,8 +1,8 @@
 # 第 3 章 输入侧：从 Engine API 到 token 序列
 
-> 本章目标：说明模板如何从消息中取得增量文本，并由 tokenizer 编码。执行器按模型签名直接提交所得 token id，或先生成 prefill embedding。
+> 本章划清 Engine、Session 与 Conversation 的所有权分层，说明 Clone 如何共享上下文、何时才复制 KV cache；再说明模板如何从消息中取得增量文本，并由 tokenizer 编码。执行器按模型签名直接提交所得 token id，或先生成 prefill embedding。
 
-调用方提交文本或多模态数据，模型执行器最终接收 token id 或 embedding。中间还需处理对象生命周期、消息历史、模板渲染与分词。图 3-1 列出这条路径；其中，跨轮上下文复用与单次 prefill 缓冲区内的数据放置属于不同问题。
+调用方提交文本或多模态数据，模型执行器最终接收 token id 或 embedding。中间还需处理对象生命周期、消息历史、模板渲染与分词。图 3-1 列出这条路径。跨轮上下文复用（3.1.1 与 3.3 节）与单次 prefill 缓冲区内的数据放置（3.5 节）是两个不同问题，后文分开处理。
 
 <figure>
 {{#include figs/fig-3-1.svg}}
@@ -15,7 +15,7 @@ LiteRT-LM 的底层生成接口以 `Engine` 与 `Session` 为核心。`Engine` �
 
 `EngineT::CreateSession` 接收 `SessionConfig`，返回一个由调用方持有的 Session（`runtime/engine/engine.h:308`）。同一个 Engine 可以创建多个 Session。生成入口位于 Session，而不是 Engine。共享模型资源与每次交互的状态分属不同的所有权边界。
 
-接口本身不给两类对象的固定内存占用或创建时延。这些数值应随具体模型、后端与设备一起测量。
+接口不约定两类对象的内存占用或创建时延。这些数值应随具体模型、后端与设备一起测量。
 
 `SessionInterface` 同时提供高层生成接口与拆分后的 prefill、decode 接口。高层的两个入口如下（`runtime/engine/engine.h:112`、`runtime/engine/engine.h:128`）：
 
@@ -156,7 +156,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 (1) 与 (2) 把若干 Python 风格的方法改写为 MiniJinja 测试或过滤器。(3) 删除 MiniJinja 不识别的 generation 标记。该函数只处理字符串，不分析 Jinja 语法树，因此只转换列出的模式。未覆盖的模板语法会原样进入 `Apply`，并可能在 MiniJinja 渲染时返回错误（`runtime/components/prompt_template.cc:112-127`）。
 
-`PromptTemplateInput` 还包含 `now`，默认值取对象构造时的当前时间（`runtime/components/prompt_template.h:89-91`）。不能因此假定模板的渲染结果总是确定的。LiteRT-LM 在同一次差分中复用模板输入对象的非消息字段，并对渲染结果做前缀校验。
+`PromptTemplateInput` 还包含 `now`，默认值取对象构造时的当前时间（`runtime/components/prompt_template.h:89-91`）。不能因此假定模板的渲染结果总是确定的。LiteRT-LM 在同一对新旧渲染中复用模板输入对象的非消息字段，并对渲染结果做前缀校验。
 
 ## 3.3　增量文本：单轮模板与全历史回退
 
@@ -227,7 +227,7 @@ return new_string.substr(old_string.length());                       // (4)
 
 `include_preface` 只控制该辅助函数在旧消息为空时是否渲染 Preface。值为 true 时，`old_string` 留空，返回值包含 Preface。值为 false 时，代码先渲染 Preface，再从新字符串中减去它（`runtime/conversation/conversation.cc:778-786`）。调用方根据 `prefill_preface_on_init` 传入相反条件（`runtime/conversation/conversation.cc:862`）。
 
-全历史回退会向模板引擎重复提交旧消息。若每轮增加近似固定长度的消息，前 n 轮累计提交的历史文本量随轮数呈二次增长。这里只能推导待渲染输入量，不能由此给出具体时延。单轮路径不重复渲染全历史。是否为回退路径增加缓存，要在目标模板与设备上测量；缓存还需定义 Preface、模板或 `extra_context` 变化时的失效规则。
+全历史回退会向模板引擎重复提交旧消息。若每轮增加近似固定长度的消息，前 n 轮累计提交的历史文本量随轮数呈二次增长。以每轮渲染出约 500 字符估算：第 10 轮的回退先渲染约 4500 字符的旧串，再渲染约 5000 字符的新串；前 10 轮累计提交约 5 万字符，而十轮的新增输入合计只有 5000 字符。这里只能推导待渲染输入量，不能由此给出具体时延。单轮路径不重复渲染全历史。是否为回退路径增加缓存，要在目标模板与设备上测量；缓存还需定义 Preface、模板或 `extra_context` 变化时的失效规则。
 
 `SendMessageAsync` 把本轮文本传递给 `ModelDataProcessor::ToInputDataVector`（`runtime/conversation/conversation.cc:506`），再调用 `Session::RunPrefillAsync`（`runtime/conversation/conversation.cc:573`）。旧上下文能否复用，取决于单轮语义或前缀校验，而不是 `PromptTemplateInput` 的复制操作。
 
@@ -285,6 +285,8 @@ absl::StatusOr<std::vector<int>> HuggingFaceTokenizer::TextToTokenIds(
 ```
 
 (1) 源码注释说明，Google 的默认泄漏检查器不能正确处理 Rust `lazy_static` 初始化。代码只在该调用作用域内禁用检查。(2) `Encode` 接收一份 `std::string`。上层调用方只依赖 `Tokenizer`，不需要区分 SentencePiece 与 HuggingFace 实现。
+
+使用哪种实现由模型文件与构建配置共同决定。`ModelResourcesLitertLm::GetTokenizer` 先查 `.litertlm` 中的 SentencePiece section，命中即创建对应实现（`runtime/components/model_resources_litert_lm.cc:115`）；否则再查 HuggingFace section，从其 JSON 数据创建（`runtime/components/model_resources_litert_lm.cc:123`）。这两段数据由 loader 按 section 类型取出（`runtime/util/litert_lm_loader.h:115`、`runtime/util/litert_lm_loader.cc:316`），对应 2.7 节 section 类型清单中的 `SP_Tokenizer` 与 `HF_Tokenizer_Zlib`。两个分支各由编译宏门控；section 存在而对应支持未编译进程序时，该函数返回 `UnimplementedError`（`runtime/components/model_resources_litert_lm.cc:127-134`）。
 
 输出侧还需处理 token 边界。SentencePiece 解码会暂存被 `HasBpeSuffix` 判定为不完整的 byte token。后续 token 到来后，代码再解码该缓冲（`runtime/components/sentencepiece_tokenizer.cc:84`、`runtime/components/sentencepiece_tokenizer.cc:94`）。第 5 章说明这条输出路径。
 
@@ -366,8 +368,8 @@ Session Clone 与模板后缀提取都涉及跨轮上下文复用，但实现不
 
 ## 练习与自查
 
-1. 设计一个聊天模板，使新渲染不再以旧渲染为前缀，并说明 `runtime/conversation/conversation.cc:241` 会返回什么结果。
-2. 沿代码列出 Session Clone 的初始共享路径与分支分离路径。哪一步才调用 `CopyTensorBuffer`？
-3. 比较单轮渲染与全历史回退：各自需要模板或处理器提供什么能力，失败时如何处理？
-4. 假设每个 embedding 含 2048 个 `float`，当前 `token_offset` 为 3。根据 `runtime/components/embedding_lookup/embedding_lookup_manager.cc:185` 计算 `byte_offset`，并说明它为何不能代表跨轮复用。
-5. 构造一个未被 `EditTemplateForMinijinja` 规则覆盖的 Python 风格模板片段，说明错误会在哪次调用中暴露。
+1. 模板前缀反例。设计一个聊天模板，使新渲染不再以旧渲染为前缀，并说明 `runtime/conversation/conversation.cc:241` 会返回什么结果。
+2. 克隆路径梳理。沿代码列出 Session Clone 的初始共享路径与分支分离路径。哪一步才调用 `CopyTensorBuffer`？
+3. 渲染路径对比。比较单轮渲染与全历史回退：各自需要模板或处理器提供什么能力，失败时如何处理？
+4. 写入偏移计算。假设每个 embedding 含 2048 个 `float`，当前 `token_offset` 为 3。根据 `runtime/components/embedding_lookup/embedding_lookup_manager.cc:185` 计算 `byte_offset`，并说明它为何不能代表跨轮复用。
+5. 模板改写盲区。构造一个未被 `EditTemplateForMinijinja` 规则覆盖的 Python 风格模板片段，说明错误会在哪次调用中暴露。

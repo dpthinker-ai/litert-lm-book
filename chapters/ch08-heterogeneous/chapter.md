@@ -1,6 +1,6 @@
 # 第 8 章 异构算力：CPU、GPU 与 NPU
 
-> 本章目标：说明 CPU、GPU、NPU 的适用条件与运行时路径。重点分析 buffer 交接、同步成本，以及后端变化为何可能改变输出。
+> 本章说明 CPU、GPU、NPU 的适用条件与运行时路径。重点分析 buffer 交接、同步成本，以及后端变化为何可能改变输出。
 
 第 6、7 章已经分析内存容量与内存带宽约束。本章讨论异构执行。手机 SoC 同时包含 CPU、GPU 与 NPU，各自支持的算子、数值路径和部署条件不同。运行时需要选择相应的执行路径，同时保持上层接口稳定。
 
@@ -210,7 +210,7 @@ if (backend == Backend::CPU) {
 
 `(1)` 只有正值才覆盖默认的 4；传 0 或不传时保留默认值。`(2)` 同一分支还设置 `prefill_chunk_size`，而该参数只对动态导出的模型生效。整个分支由 `backend == Backend::CPU` 守卫，`CpuConfig` 不会用于 GPU 或 NPU 路径。
 
-本书在一台 Qualcomm 设备上扫描了 1、2、4、8 个线程，context 为 1024，每个条件运行 3 次并取中位数（见附录 D 第十三节）。decode 吞吐依次为 4.4、7.4、10.1、13.4 tokens/s，prefill 吞吐依次为 22.8、45.3、77.9、131.6 tokens/s。把线程数从 4 加倍到 8，decode 提高约 33%，prefill 提高约 69%，都低于理想的 100% 增幅。相对 1 线程，8 线程的加速比分别约为 3.0 倍和 5.8 倍，对应约 38% 和 72% 的并行效率。数据只表明 8 线程在这四个测试点中吞吐最高，默认 4 线程不是该设备上的最高吞吐测试点。它不能证明 8 线程尚未饱和，也不能确定全局最优值。`--num_cpu_threads` 允许针对目标设备继续扫描，并把功耗、温度与持续性能纳入选择。
+本书在一台 Qualcomm 设备上扫描了 1、2、4、8 个线程，context 为 1024，每个条件运行 3 次并取中位数（见附录 D 第十三节）。decode 吞吐依次为 4.4、7.4、10.1、13.4 tokens/s，prefill 吞吐依次为 22.8、45.3、77.9、131.6 tokens/s〔基准 D〕。把线程数从 4 加倍到 8，decode 提高约 33%，prefill 提高约 69%，都低于理想的 100% 增幅。相对 1 线程，8 线程的加速比分别约为 3.0 倍和 5.8 倍，对应约 38% 和 72% 的并行效率。数据只表明 8 线程在这四个测试点中吞吐最高，默认 4 线程不是该设备上的最高吞吐测试点。它不能证明 8 线程尚未饱和，也不能确定全局最优值。`--num_cpu_threads` 允许针对目标设备继续扫描，并把功耗、温度与持续性能纳入选择。
 
 ## 8.4　GPU：并行执行与设备侧采样
 
@@ -466,16 +466,16 @@ LiteRT-LM 通过 `Backend` 枚举和工厂函数选择 CPU/GPU 通用执行器�
 
 ## 练习与自查
 
-1. 设备侧采样避免回传完整 logits，但 token id 仍需返回 host。分别说明这两条数据路径承担的职责。
-2. `sched_setaffinity` 成功后限制的是什么？为什么不能把它描述成调度器的软性建议？
-3. 线程数从 4 增至 8 时吞吐仍提高，为什么这组数据仍不能证明 8 线程未饱和或已经达到全局最优？
-4. 更换后端后，同一 prompt 的输出为什么可能不同？哪些控制变量应先固定，才能判断差异是否来自实现缺陷？
-5. 为运行时接入新后端 XPU，需要修改哪些执行器、模型资源、配置与工厂分支？列出至少三处，并说明哪些上层接口可以保持不变。
-6. 一处代码用 `Duplicate()` 连接两个子图。还需要收集哪些证据，才能把这条路径称为端到端零拷贝？
-7. GPU 主模型搭配 CPU/GPU sampler 的两组运行相差 128 ms，共生成 256 个 token。计算每步差值，并解释为什么它不能直接当成互连带宽。
+1. 采样数据路径。设备侧采样避免回传完整 logits，但 token id 仍需返回 host。分别说明这两条数据路径承担的职责。
+2. 绑核语义。`sched_setaffinity` 成功后限制的是什么？为什么不能把它描述成调度器的软性建议？
+3. 线程扫描解读。线程数从 4 增至 8 时吞吐仍提高，为什么这组数据仍不能证明 8 线程未饱和或已经达到全局最优？
+4. 输出分叉排查。更换后端后，同一 prompt 的输出为什么可能不同？哪些控制变量应先固定，才能判断差异是否来自实现缺陷？
+5. 新后端接入清单。为运行时接入新后端 XPU，需要修改哪些执行器、模型资源、配置与工厂分支？列出至少三处，并说明哪些上层接口可以保持不变。
+6. 证据边界判断。一处代码用 `Duplicate()` 连接两个子图。还需要收集哪些证据，才能把这条路径称为端到端零拷贝？
+7. 采样开销折算。GPU 主模型搭配 CPU/GPU sampler 的两组运行相差 128 ms，共生成 256 个 token。计算每步差值，并解释为什么它不能直接当成互连带宽。
 
-[^ch08-issue-2281]: 4ntoine，*Different inference result depending on backend*，LiteRT-LM issue #2281，2026-05-15，<https://github.com/google-ai-edge/LiteRT-LM/issues/2281>（访问 2026-07-18）。
+[^ch08-issue-2281]: 4ntoine，[*Different inference result depending on backend*](https://github.com/google-ai-edge/LiteRT-LM/issues/2281)，LiteRT-LM issue #2281，2026-05-15；访问日期：2026-07-18。
 
-[^ch08-mlc-compile]: MLC-LLM，*Compile Model Libraries*，MLC-LLM 0.1.0 文档，<https://llm.mlc.ai/docs/compilation/compile_models.html>（访问 2026-07-18）。
+[^ch08-mlc-compile]: MLC-LLM，[*Compile Model Libraries*](https://llm.mlc.ai/docs/compilation/compile_models.html)，MLC-LLM 0.1.0 文档；访问日期：2026-07-18。
 
-[^ch08-issue-2505]: Yegorsh，*Add an option to use custom number of CPU threads in the CLI app*，LiteRT-LM issue #2505，2026-06-08，<https://github.com/google-ai-edge/LiteRT-LM/issues/2505>（访问 2026-07-18）。
+[^ch08-issue-2505]: Yegorsh，[*Add an option to use custom number of CPU threads in the CLI app*](https://github.com/google-ai-edge/LiteRT-LM/issues/2505)，LiteRT-LM issue #2505，2026-06-08；访问日期：2026-07-18。
