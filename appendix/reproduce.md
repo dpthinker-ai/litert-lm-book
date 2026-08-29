@@ -53,10 +53,10 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 |---|---|---|---|
 | 2 | benchmark 主矩阵 | 已做 | `experiments/bench_baseline.sh`；`experiments/data/baseline.csv` |
 | 2、7 | 分析 `.litertlm` 分段 | 已做 | `experiments/data/model_anatomy.md` |
-| 4 | prefill 长度扫描 | 已做 | `experiments/prefill_sweep.sh`；附录 D「prefill 长度扫描」 |
+| 4 | prefill 长度扫描 | 已做 | `experiments/prefill_sweep.sh`；附录 D“prefill 长度扫描” |
 | 4 | 异步开/关 | 未做 | C++ `litert_lm_main --async=true/false`；Python benchmark 无此参数 |
 | 5 | 温度与种子 | 已做 | `experiments/data/temperature_test.md` |
-| 6 | `max_num_tokens` 扫描 | 已做 | `experiments/max_tokens_sweep.sh`；附录 D「预留宽度扫描」 |
+| 6 | `max_num_tokens` 扫描 | 已做 | `experiments/max_tokens_sweep.sh`；附录 D“预留宽度扫描” |
 | 7 | 编译缓存冷启动 | 部分记录 | `experiments/data/baseline.csv` 记录了 Init API 聚合值的批内变化；缺少 cache 开/关与外部墙钟对照 |
 | 7 | 分段并行加载 | 未做 | 开关仅 C API 暴露 |
 | 8 | CPU/GPU 与线程扫描 | 已做 | `experiments/android_bench.sh`；`experiments/data/android_threads.csv` |

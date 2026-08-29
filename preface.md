@@ -21,7 +21,7 @@
 
 ## Google 的端侧布局
 
-光有模型还不够，还需要一整套把它们送上设备的平台。从模型训练、操作系统到开发者生态，Google 是少数同时掌控模型、运行时与部署平台的厂商。Gemma 4 是 Google DeepMind 在 2026 年推出的主力开放模型家族，官方将其定位为“可在云端、笔记本电脑和手机上部署的开放模型”，其中 E 系列专门面向边缘设备。[^preface-gemma-family] 发布当日，Google Developers Blog 同步公布了端侧配套方案：AI Edge Gallery 示例应用、Agent Skills 技能库以及 LiteRT‑LM 部署路径。[^preface-gemma4-edge] 在 Android 侧，AICore 预览版已将 Gemma 4 定位为下一代 Gemini Nano 的基础模型。[^preface-gemma4-aicore] 同一时期，GDG China 的 Gemma 4 开发者大赛还设有 Edge AI 赛道，要求用 E2B/E4B 在真实硬件上演示完全离线的端侧部署。[^preface-gemma4-hackathon]
+光有模型还不够，还需要一整套把它们送上设备的平台。从模型训练、操作系统到开发者生态，Google 是少数同时掌控模型、运行时与部署平台的厂商。Gemma 4 是 Google DeepMind 在 2026 年推出的主力开放模型家族，官方将其定位为“可在云端、笔记本电脑和手机上部署的开放模型”，其中 E 系列专门面向边缘设备。[^preface-gemma-family] 发布当日，Google Developers Blog 同步公布了端侧配套方案：AI Edge Gallery 示例应用、Agent Skills 技能库以及 LiteRT‑LM 部署路径。[^preface-gemma4-edge] 在 Android 侧，AICore 预览版已将 Gemma 4 定位为下一代 Gemini Nano 的基础模型。[^preface-gemma4-aicore] 同一时期，GDG China 的 Gemma 4 开发者大赛要求用 E2B/E4B 在真实硬件上演示完全离线的端侧部署。[^preface-gemma4-hackathon]
 
 这种全栈布局使 LiteRT‑LM 值得作为研究样本。它需要解决的问题——内存容量与带宽约束、异构后端调度、投机解码的接受率、多模态 embedding 路径、约束解码的信任边界——并非 LiteRT‑LM 独有，任何想在受限设备上运行大模型的系统都必须面对。
 
@@ -29,7 +29,7 @@
 
 ## 这本书讲什么
 
-截至 2026 年 7 月，据我们检索，还没有一本中文系统性专著以生产级端侧运行时为对象，把这套技术讲到可逐行核对的深度。本书尝试补上这个空档。它并非 Google 官方出版物，书中的所有观点及可能存在的错漏，均由作者负责。
+截至 2026 年 7 月，据我们检索，还没有一本中文专著系统分析过生产级端侧运行时。本书尝试补上这个空档。它并非 Google 官方出版物，书中的所有观点及可能存在的错漏，均由作者负责。
 
 本书以 LiteRT‑LM v0.13.1 为主要分析对象，回答一个核心问题：大语言模型如何在手机、手表和浏览器等受限设备上运行。主基准模型 Gemma 4 E4B 在 4B 有效参数规模下提供多模态理解与函数调用能力，模型产物以单文件 `.litertlm` 形式分发。[^preface-gemma-e4b]
 
@@ -49,19 +49,19 @@
 
 本书面向从事端侧模型产品集成的工程师，也面向想读懂一个生产级推理运行时实现的学生与研究者。读完后，读者应能沿源码追踪一次完整的生成请求，从 `GenerateContentStream` 一直定位到逐 token 输出；能够在给定设备、模型和测量口径下解释性能数据，并判断新增后端、采样策略或语言绑定会对哪些接口产生影响。
 
-如果仅需调用 API，LiteRT‑LM 官方文档更为直接。[^preface-litertlm-docs] 而当遇到部署失败或性能偏离预期时，本书提供了一种按输入编排、执行器、模型资源和硬件后端逐层定位问题的方法。
+如果仅需调用 API，LiteRT‑LM 官方文档更为直接。[^preface-litertlm-docs] 而当遇到部署失败或性能没有达到预期时，本书提供了一种按输入编排、执行器、模型资源和硬件后端逐层定位问题的方法。
 
 ## 阅读路径
 
-- 顺序阅读时，可按四个部分依次推进，各部分覆盖的内容见「推理流水线」一节；尾声单独列出实践入口与待验证问题。
+- 顺序阅读时，可按四个部分依次推进，各部分覆盖的内容见“推理流水线”一节；尾声单独列出实践入口与待验证问题。
 - 第 2 章列出二十个问题，每个问题均指向后续章节中的对应分析，可作为阅读索引。
 - 阅读前无需先完成源码编译。第 2 章会先用一条命令运行模型；涉及实现细节时，正文会标出关键机制的源码位置（引用体例见下一节），读者可直接对照冻结版本。
 
 ## 关于代码引用与数字
 
-全书对 LiteRT‑LM 的代码引用统一锁定在 `v0.13.1` 版本，正文中写作 `runtime/core/tasks.cc:413` 这类格式，不再逐处重复版本号；对其他项目的引用则显式标注版本，例如 llama.cpp 的 `@ b9873`。代码之外的来源，在相关断言后以页下注给出。锁定冻结版本，可以保证文件、行号与实现描述保持一致；上游后续变化只收入「版本注记」侧栏。
+全书对 LiteRT‑LM 的代码引用统一锁定在 `v0.13.1` 版本，正文中写作 `runtime/core/tasks.cc:413` 这类格式，不再逐处重复版本号；对其他项目的引用则显式标注版本，例如 llama.cpp 的 `@ b9873`。代码之外的来源，在相关断言后以页下注给出。锁定冻结版本，可以保证文件、行号与实现描述保持一致；上游后续变化只收入“版本注记”侧栏。
 
-书中的理论上限，例如 decode 上限公式，均在正文中逐步推导，读者可据此验算。实测数据来自两套分别标注的基准：主基准为一台 Mac，运行 Gemma 4 E4B，decode 实测每秒可生成数十个 token；扩展基准为一台 Qualcomm 手机，使用自编译二进制。方法与全部数据见附录 D；所有标注「〔基准 D〕」之处均出自这套数据，纸面推算与真机实测明确区分，不混用。对于仅有代码分析、尚未经真机验证的部分，如 NPU 的执行行为，书中均就地标明。
+书中的理论上限，例如 decode 上限公式，均在正文中逐步推导，读者可据此验算。实测数据来自两套分别标注的基准：主基准为一台 Mac，运行 Gemma 4 E4B，decode 实测每秒可生成数十个 token；扩展基准为一台 Qualcomm 手机，使用自编译二进制。方法与全部数据见附录 D；所有标注“〔基准 D〕”之处均出自这套数据，纸面推算与真机实测明确区分，不混用。对于仅有代码分析、尚未经真机验证的部分，如 NPU 的执行行为，书中均就地标明。
 
 [^preface-tinyllama]: Hugging Face，[TinyLlama/TinyLlama-1.1B-Chat-v1.0 模型卡](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)，2023-09 发布；访问日期：2026-08-04。
 [^preface-gemma4-launch]: Google DeepMind，Clement Farabet、Olivier Lacombe，[*Gemma 4: Byte for byte, the most capable open models*](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/)，2026-04-02；访问日期：2026-08-04。
