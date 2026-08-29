@@ -2,23 +2,23 @@
 
 > 本章计算 KV cache 的容量与带宽成本。说明 LiteRT-LM 的双缓冲、会话克隆、检查点回退和序列化能力边界。
 
-第 1 章估算的 25 tokens/s 只计算了权重读取。KV cache、采样和其他算子均未计入。本章补充 KV cache 部分的成本计算，并回答第 2 章第 13、14 问。
+第 1 章估算的 25 tokens/s 只计算了权重读取，KV cache、采样和其他算子均未计入。本章补上 KV cache 这部分的成本，并回答第 2 章第 13、14 问。
 
 ## 6.1　KV cache 的内存占用估算
 
-注意力机制生成新 token 时，需要使用该位置的 query。计算还会读取此前各 token 的 key/value。不使用缓存时，第 1000 步会重算前 999 个 token 的 key/value。第 1001 步又会重复这项计算。单步开销随上下文长度线性增加，生成整段序列的累计开销呈二次增长。
+注意力机制生成新 token 时，要用该位置的 query 与此前所有 token 的 key/value 计算。不使用缓存时，第 1000 步会重算前 999 个 token 的 key/value。第 1001 步又会重复这项计算。单步开销随上下文长度线性增加，生成整段序列的累计开销呈二次增长。
 
 KV cache 保存已经计算出的 key/value。后续 decode step 可以直接读取这些缓存，用内存容量减少重复计算。
 
-KV cache 的容量沿用 1.3 节的逻辑容量公式：
+KV cache 的大小沿用 1.3 节的理论公式：
 
 $$ \text{KV 字节} = 2 \times L \times n_{kv} \times d_{head} \times S \times b $$
 
-其中 \\(L\\) 是层数，\\(n_{kv}\\) 是 KV 头数，\\(d_{head}\\) 是每头维度，\\(S\\) 是缓存的 token 数，\\(b\\) 是每个元素的字节数；最前面的 2 表示 key 和 value 各一份。1.3 节的示意参数（\\(L=32\\)、\\(n_{kv}=8\\)、\\(d_{head}=128\\)、fp16）给出 128 KiB/token；真实参数应从模型文件读取，下面直接对本书基准模型代入。
+其中 \\(L\\) 是层数，\\(n_{kv}\\) 是 KV 头数，\\(d_{head}\\) 是每头维度，\\(S\\) 是缓存的 token 数，\\(b\\) 是每个元素的字节数；最前面的 2 表示 key 和 value 各一份。1.3 节的示意参数（\\(L=32\\)、\\(n_{kv}=8\\)、\\(d_{head}=128\\)、FP16）给出 128 KiB/token；真实参数应从模型文件读取，下面直接对本书基准模型代入。
 
 附录 D 记录了 Gemma 4 E4B 的模型检查结果。decode signature 有 48 个 KV 输入张量，即 24 层各一对 K/V。20 层的 K 张量为 `[1, 2, 32003, 256]`，V 张量为 `[1, 2, 256, 32003]`。其余 4 层的最后两维分别为 `[32003, 512]` 与 `[512, 32003]`。数据类型均为 INT8，因此 \\(b=1\\)。转置布局不改变元素数。代入公式，每 token 占用 `2 × 2 × (20 × 256 + 4 × 512) × 1 = 28672` 字节，即 28 KiB。4096 个 token 合计 112 MiB。
 
-该结果小于 1.3 节的 fp16 示意值。该模型采用 GQA（grouped-query attention，分组查询注意力）。KV cache 的存储类型为 INT8。相对于 fp16，INT8 将同一形状的容量和理论传输字节数减半。KV cache 精度、权重精度与激活精度是三个不同的配置维度。
+该结果小于 1.3 节的 FP16 示意值：该模型采用 GQA，KV cache 的存储类型又是 INT8，同一形状的容量和传输字节数相对 FP16 减半。KV cache 精度、权重精度与激活精度是三个不同的配置维度。
 
 <div class="aside-compare">
 
@@ -26,17 +26,17 @@ llama.cpp 与 LiteRT-LM 在不同阶段确定 KV cache 精度。llama.cpp 提供
 
 </div>
 
-第 1 章的内存估算不能只计入权重。以本书基准模型为例，4096 个 token 的 KV cache 为 112 MiB；若 32003 个静态槽位全部预留，则约为 875 MiB。其他模型的形状和精度不同，应按本节公式分别计算。
+内存预算不能只计入权重。以本书基准模型为例，4096 个 token 的 KV cache 为 112 MiB；若 32003 个静态槽位全部预留，则约为 875 MiB。其他模型的形状和精度不同，应按本节公式分别计算。
 
 ## 6.2　KV cache 对解码带宽的影响
 
 标准全注意力的每个 decode step 都要读取模型权重和此前位置的 KV cache。它还要写入新 token 的 key/value。上下文越长，这部分数据访问越多。
 
-第 1 章的 25 tokens/s 只包含权重读取，不能单独用它来解释实测吞吐。本机 CPU 的 24.8 tokens/s 与该估算接近，但这不构成对估算模型的验证。两者的带宽条件和未计成本不同。附录 D 记录了同组基准。测试将上下文从 256 增至 4096。CPU decode 从 24.8 降到 20.7 tokens/s；GPU 从 50.6 降到 45.6 tokens/s。这组数据与 KV 访问量随上下文增长的机制一致，但没有分别测出 KV、采样和其他算子的贡献。
+第 1 章的 25 tokens/s 只包含权重读取，不能单独用它来解释实测吞吐。主基准 CPU 的 24.8 tokens/s 与它接近，但这不构成验证：两者的带宽条件和未计成本都不同。附录 D 记录了同组基准。测试将上下文从 256 增至 4096。CPU decode 从 24.8 降到 20.7 tokens/s；GPU 从 50.6 降到 45.6 tokens/s。这组数据与 KV 访问量随上下文增长的机制一致，但没有分别测出 KV、采样和其他算子的贡献。
 
-### 6.2.1　从容量公式推导逻辑扫描量
+### 6.2.1　从容量公式推导理论扫描量
 
-容量公式还能给出注意力侧的逻辑扫描量。设每个 token 的 K/V 条目合计为 \\(E\\) 字节，当前上下文长度为 \\(S\\)。若标准全注意力的每一层都访问此前全部位置，一次 decode step 扫描的 K/V 工作集约为 \\(E\\times S\\) 字节。decode 吞吐为 \\(T\\) tokens/s 时，对应的逻辑扫描速率为：
+容量公式还能给出注意力侧的理论扫描量。设每个 token 的 K/V 条目合计为 \\(E\\) 字节，当前上下文长度为 \\(S\\)。若标准全注意力的每一层都访问此前全部位置，一次 decode step 扫描的 K/V 工作集约为 \\(E\\times S\\) 字节。decode 吞吐为 \\(T\\) tokens/s 时，对应的理论扫描速率为：
 
 $$ B_{KV,\mathrm{scan}} \approx E \times S \times T $$
 
@@ -44,24 +44,24 @@ $$ B_{KV,\mathrm{scan}} \approx E \times S \times T $$
 
 若进一步假定每个 decode step 从主存读取一次 \\(W\\) 字节的权重和 \\(E\\times S\\) 字节的 KV，可以继续估算吞吐。计算还忽略写回与其他流量。此时带宽侧的乐观上限为 \\(B_{\mathrm{eff}}/(W+E\\times S)\\)。该式的每项假设都必须随设备和后端重新核对。
 
-基准模型的 \\(E\\) 为 28 KiB/token。暂取 \\(T=25\\) tokens/s，可得到以下逻辑扫描量：
+基准模型的 \\(E\\) 为 28 KiB/token。暂取 \\(T=25\\) tokens/s，可得到以下理论扫描量：
 
-| 上下文 S | 有效 KV 容量 | 每步逻辑扫描量 | 25 tokens/s 对应的 KV 逻辑扫描速率 |
+| 上下文 S | 有效 KV 容量 | 每步理论扫描量 | 25 tokens/s 对应的 KV 理论扫描速率 |
 |---:|---:|---:|---:|
 | 512 | 14 MiB | 约 14 MiB | 约 0.37 GB/s |
 | 4096 | 112 MiB | 约 112 MiB | 约 2.94 GB/s |
 | 8192 | 224 MiB | 约 224 MiB | 约 5.87 GB/s |
 | 32003 | 约 875 MiB | 约 875 MiB | 约 22.9 GB/s |
 
-> 表 6-1　KV 逻辑扫描量使用 28 KiB/token 和固定的 25 tokens/s 复算。它不是 Gemma 4 E4B 各层 kernel 的实测流量。带宽按 GB/s（\\(10^9\\) 字节每秒）计算。
+> 表 6-1　KV 理论扫描量使用 28 KiB/token 和固定的 25 tokens/s 复算。它不是 Gemma 4 E4B 各层 kernel 的实测流量。带宽按 GB/s（\\(10^9\\) 字节每秒）计算。
 
-上下文从 4096 增至 8192，KV 容量和注意力侧的逻辑扫描量均翻倍。双缓冲不改变注意力需要访问的逻辑 K/V 集合，但它可能增加输出 cache 的写入量和常驻容量。表 6-1 不把这部分计入扫描速率。
+上下文从 4096 增至 8192，KV 容量和注意力侧的理论扫描量均翻倍。双缓冲不改变注意力需要访问的已缓存 K/V 集合，但它可能增加输出 cache 的写入量和常驻容量。表 6-1 不把这部分计入扫描速率。
 
-附录 D 识别出的主 decode 模型段 payload 为 2.26 GB。若进一步假定每个 decode step 恰好读取该段一次，则 25 tokens/s 对应的权重数据量为 56.5 GB/s。4096 上下文的 KV 逻辑扫描速率为 2.94 GB/s；到 32003 时增至约 22.9 GB/s。`.litertlm` 整文件为 3.66 GB，但其中包含 10 个模型段，不能把整文件大小当作每步读取的权重 payload。
+附录 D 识别出的主 decode 模型段 payload 为 2.26 GB。若进一步假定每个 decode step 恰好读取该段一次，则 25 tokens/s 对应的权重读取速率为 56.5 GB/s。4096 上下文的 KV 理论扫描速率为 2.94 GB/s；到 32003 时增至约 22.9 GB/s。`.litertlm` 整文件为 3.66 GB，但其中包含 10 个模型段，不能把整文件大小当作每步读取的权重字节数。
 
 ### 6.2.2　`--max-num-tokens` 如何决定预留大小
 
-第 13 问涉及 `LiteRT-LM#2568` 报告的现象：`--max-num-tokens` 会影响 decode 吞吐。[^ch06-issue-2568] 该参数设定 KV cache 可容纳的 token 数。在固定形状路径上，attention mask 屏蔽尚未使用的位置，但输入张量的宽度仍由预留长度决定。表 6-2 的同 prompt 对照显示，扩大预留长度会降低吞吐。
+第 13 问涉及 `LiteRT-LM#2568` 报告的现象：`--max-num-tokens` 会影响 decode 吞吐。[^ch06-issue-2568] 该参数设定 KV cache 可容纳的 token 数。在固定形状路径上，attention mask 屏蔽尚未使用的位置，但输入张量的宽度仍由预留宽度决定。表 6-2 的同 prompt 对照显示，扩大预留宽度会降低吞吐。
 
 未显式指定该参数时（`GetMaxNumTokens()` 返回 0），LiteRT-LM 根据 prompt 长度计算默认值。对应代码见 `runtime/engine/engine_settings.cc:293-301`：
 
@@ -76,9 +76,9 @@ if (main_executor_settings_.GetMaxNumTokens() == 0) {
 }
 ```
 
-`(1)` 等价于把 `prompt token 数 + 1024` 向上对齐到 4096 的整数倍。prompt 为 100 个 token 时得到 4096；prompt 为 4000 个 token 时得到 8192。因此，默认预留长度按 4096 分段变化，而不是随 prompt 长度连续变化。`(2)` 表示模型元数据中的 `max_num_tokens` 可以覆盖这项推导结果。
+`(1)` 等价于把 `prompt token 数 + 1024` 向上对齐到 4096 的整数倍。prompt 为 100 个 token 时得到 4096；prompt 为 4000 个 token 时得到 8192。因此，默认预留宽度按 4096 分段变化，而不是随 prompt 长度连续变化。`(2)` 表示模型元数据中的 `max_num_tokens` 可以覆盖这项推导结果。
 
-预留长度对应 6.1 节公式中的 S。固定形状模型预留 4096 时，KV cache 张量包含 4096 个位置。当前上下文可能只使用其中一部分。增大 `--max-num-tokens` 不会改变 prompt，但会扩大这些张量的静态宽度。
+预留宽度对应 6.1 节公式中的 S。固定形状模型预留 4096 时，KV cache 张量包含 4096 个位置。当前上下文可能只使用其中一部分。增大 `--max-num-tokens` 不会改变 prompt，但会扩大这些张量的静态宽度。
 
 扫描条件为 CPU、`-d 128`，且磁盘缓存已经预热。完整记录见附录 D：
 
@@ -91,9 +91,9 @@ if (main_executor_settings_.GetMaxNumTokens() == 0) {
 
 > 表 6-2　`--max-num-tokens` 扫描（Gemma 4 E4B，CPU，各 2 次）。只有 4096 与 8192 两行使用相同 prompt 和 prefill 分块计划；预留宽度加倍后，decode 从 26.4 降至 21.5 tokens/s，下降约 19%。
 
-1024 宽度、prompt 100 的 33.9 tokens/s 来自不同输入，只能作为单独样本。它不能参与 4096 到 8192 的百分比计算。容量设置过小可能直接失败。本次测试的 prompt 为 256，prefill 分块计划为 `[1024]`。prefill 阶段触发 `dynamic_update_slice` 越界，而不是截断输入。排查 decode 吞吐时，应同时记录 prompt、prefill 分块计划和最终预留宽度。
+1024 宽度、prompt 100 的 33.9 tokens/s 来自不同输入，只能作为单独样本。它不能参与 4096 到 8192 的百分比计算。容量设置过小则可能直接失败：表中第 4 行的 prompt 为 256、prefill 分块计划为 `[1024]`，prefill 阶段触发 `dynamic_update_slice` 越界，而不是截断输入。排查 decode 吞吐时，应同时记录 prompt、prefill 分块计划和最终预留宽度。
 
-预留长度还是解码循环的终止条件之一。`ShouldStop` 判定何时停止解码（`runtime/core/tasks.cc:99-100`）：
+预留宽度还是解码循环的终止条件之一。`ShouldStop` 判定何时停止解码（`runtime/core/tasks.cc:99-100`）：
 
 ```cpp
 } else if (current_step >= max_num_tokens) {
@@ -101,7 +101,7 @@ if (main_executor_settings_.GetMaxNumTokens() == 0) {
   return true;
 ```
 
-`current_step` 表示当前写入位置。达到 `max_num_tokens` 后，KV cache 没有剩余槽位，decode 停止。执行器未提供配置时，`TryGetMaxNumTokens` 使用 `kDefaultMaxNumTokens = 4096`。两处代码分别见 `runtime/core/tasks.cc:73` 和 `runtime/core/tasks.cc:72`。旁边的 `TODO(b/423364170)` 计划在所有执行器都返回最大 token 数后移除该回退。代码中的两个 4096 作用不同：前者是默认预留长度的对齐粒度，后者是读取配置失败时的回退上限。
+`current_step` 表示当前写入位置。达到 `max_num_tokens` 后，KV cache 没有剩余槽位，decode 停止。执行器未提供配置时，`TryGetMaxNumTokens` 使用 `kDefaultMaxNumTokens = 4096`。两处代码分别见 `runtime/core/tasks.cc:73` 和 `runtime/core/tasks.cc:72`。旁边的 `TODO(b/423364170)` 计划在所有执行器都返回最大 token 数后移除该回退。代码中的两个 4096 作用不同：前者是默认预留宽度的对齐粒度，后者是读取配置失败时的回退上限。
 
 ### 6.2.3　固定形状与动态 KV cache
 
@@ -160,7 +160,7 @@ if (!gpu_optimized_single_buffer_cache_) {   // (1)
 
 `(2)` 只交换指针，不复制缓冲内容。本步写入的输出缓冲成为下一步的输入缓冲，原输入缓冲成为下一步的输出目标。`(1)` 在 `gpu_optimized_single_buffer_cache_` 为真时跳过交换。decode 路径在 `runtime/executor/llm_litert_compiled_model_executor.cc:946-947` 执行同样的操作。
 
-这两个 map 不一定对应两块独立分配。创建执行器时，CPU 路径用 `TensorBuffer::Duplicate()` 把输入缓冲放入输出 map。源码注释将其称为单缓冲，见 `runtime/executor/llm_litert_compiled_model_executor.cc:1664-1695`。GPU 在签名没有 int32 参数张量时分别创建输入和输出缓冲。签名包含该参数时则进入原地更新路径，见 `runtime/executor/llm_litert_compiled_model_executor.cc:1621-1622`。因此，不能仅凭成员名称就将 KV 常驻容量固定乘以二。
+这两个 map 不一定对应两块独立分配。创建执行器时，CPU 路径用 `TensorBuffer::Duplicate()` 把输入缓冲放入输出 map。源码注释将其称为单缓冲，见 `runtime/executor/llm_litert_compiled_model_executor.cc:1664-1695`。GPU 在 signature 没有 int32 参数张量时分别创建输入和输出缓冲；signature 包含该参数时则进入原地更新路径，见 `runtime/executor/llm_litert_compiled_model_executor.cc:1621-1622`。因此，不能仅凭成员名称就将 KV 常驻容量固定乘以二。
 
 <figure>
 {{#include figs/fig-6-1.svg}}
@@ -169,16 +169,16 @@ if (!gpu_optimized_single_buffer_cache_) {   // (1)
 
 ### 6.3.1　单缓冲路径的额外代价
 
-部分模型签名支持同缓冲原地更新（in-place update）。GPU 创建路径在签名含 int32 参数张量时不再创建独立的输入 KV 缓冲；CPU 另行通过 `Duplicate()` 复用缓冲。执行阶段还需要提供本步的写入区间。
+部分模型 signature 支持同缓冲原地更新（in-place update）。GPU 创建路径在 signature 含 int32 参数张量时不再创建独立的输入 KV 缓冲；CPU 另行通过 `Duplicate()` 复用缓冲。执行阶段还需要提供本步的写入区间。
 
-启用的判据是模型签名里有没有一个 int32 参数张量（`runtime/executor/llm_litert_compiled_model_executor.cc:428-429`）：
+启用的判据是模型 signature 里有没有一个 int32 参数张量（`runtime/executor/llm_litert_compiled_model_executor.cc:428-429`）：
 
 ```cpp
 if (signatures_.input_int32_param.has_value()) {
   gpu_optimized_single_buffer_cache_ = true;
 ```
 
-模型签名包含该参数张量时，执行器启用原地更新，并由前述条件跳过指针交换。Gemma 4 E4B 的记录中存在 `param_tensor[1,1,1,7]`〔基准 D〕，所以不能把它的 GPU 路径按两块独立 KV 缓冲估算。
+模型 signature 包含该参数张量时，执行器启用原地更新，并由前述条件跳过指针交换。Gemma 4 E4B 的记录中存在 `param_tensor[1,1,1,7]`〔基准 D〕，所以不能把它的 GPU 路径按两块独立 KV 缓冲估算。
 
 同一缓冲既读又写时，kernel 需要知道本步更新的槽位区间。单缓冲路径因此在每次 prefill 和 decode 前填充参数张量。两个调用位置分别见 `runtime/executor/llm_litert_compiled_model_executor.cc:673-677` 和 `runtime/executor/llm_litert_compiled_model_executor.cc:904-907`：
 
@@ -200,7 +200,7 @@ LITERT_RETURN_IF_ERROR(sizeof(params) <= packed_size);
 std::memcpy(param_tensor_lock_and_addr.second, params, sizeof(params));
 ```
 
-`start_index` 和 `end_index` 标明更新区间。源码注释说明前两个参数供 `add_values_to_cache` kernel 使用。第三个参数供 `runtime_batched_matmul` kernel 检查 channel 结束位置。辅助函数先清零参数缓冲，再复制这三个值（`runtime/executor/litert_compiled_model_executor_utils.cc:326-335`）。双缓冲通过两套缓冲和指针交换避免原地更新；单缓冲减少一份 KV 内存，但要求模型签名、host 代码和 kernel 共同处理更新区间。
+`start_index` 和 `end_index` 标明更新区间。源码注释说明前两个参数供 `add_values_to_cache` kernel 使用。第三个参数供 `runtime_batched_matmul` kernel 检查 channel 结束位置。辅助函数先清零参数缓冲，再复制这三个值（`runtime/executor/litert_compiled_model_executor_utils.cc:326-335`）。双缓冲通过两套缓冲和指针交换避免原地更新；单缓冲减少一份 KV 内存，但要求模型 signature、host 代码和 kernel 共同处理更新区间。
 
 对 GPU 而言，out-of-place 路径需要独立的输入、输出缓冲，不需要原地更新参数；参数化的 in-place 路径只保留一套 KV 数据，但增加更新区间的接口与执行约束。CPU 的缓冲复用由 `Duplicate()` 路径处理，不能直接套用 GPU 的两套分配口径。
 
@@ -282,7 +282,7 @@ NPU executor 的 `CloneContext` 扫描 prefill 输入缓冲。它只复制名称
 
 ## 6.5　容量案例：公共前缀分出两条会话
 
-用一个条件化案例同时计算容量、双缓冲与写时分离。KV 张量形状取自本书基准模型，存储类型为 INT8，上下文宽度为 4096。执行器假定为 GPU out-of-place 路径，签名不含 int32 参数张量。该条件与 Gemma 4 E4B 的实际 GPU 签名不同。案例只核算双缓冲路径，计算值不代表实测结果。
+用一个条件化案例同时计算容量、双缓冲与写时分离。KV 张量形状取自本书基准模型，存储类型为 INT8，上下文宽度为 4096。执行器假定为 GPU out-of-place 路径，signature 不含 int32 参数张量。该条件与 Gemma 4 E4B 的实际 GPU signature 不同。案例只核算双缓冲路径，计算值不代表实测结果。
 
 一套 K/V 缓冲约为 112 MiB。out-of-place 路径分别创建输入、输出缓冲，因此两套常驻 KV 数据约为 224 MiB。这里只计算 LLM KV 张量，不含权重、激活、采样器、后端工作区和内存分配器开销。
 
@@ -493,7 +493,7 @@ return execution_manager_lock->SetCurrentStep(*session_info_, target_step);   //
 
 ## 小结
 
-KV cache 以容量和带宽换取较少的重复计算。其占用由层数、KV 头维度、序列长度和存储类型共同决定；固定形状路径中的 `--max-num-tokens` 还会改变预留张量的宽度。本章记录了相同 prompt 下的对照数据。预留宽度从 4096 增至 8192。decode 吞吐从 26.4 降至 21.5 tokens/s，降幅约为 19%。
+KV cache 以容量和带宽换取较少的重复计算。其占用由层数、KV 头维度、序列长度和存储类型共同决定；固定形状路径中的 `--max-num-tokens` 还会改变预留张量的宽度。本章的同 prompt 对照显示：预留宽度从 4096 增至 8192，decode 吞吐从 26.4 降至 21.5 tokens/s，降幅约 19%。
 
 LiteRT-LM 用双缓冲处理部分 GPU 后端的输入输出别名限制。支持原地更新的模型还可以使用单缓冲路径。`Session::Clone` 初始共享 `SharedProcessedContext`，并按值复制运行配置与状态对象；它不立即搬运 LLM KV 字节。较短分支需要截断或改写共享历史时，资源管理器才调用 executor `CloneContext` 完成写时分离。
 

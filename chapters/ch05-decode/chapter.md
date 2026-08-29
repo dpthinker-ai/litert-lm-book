@@ -2,7 +2,7 @@
 
 > 本章说明一个 decode step 如何从 logits 得到 token id，再形成可发送的文本，并核对取消、停止与回调的边界。
 
-prefill 已经把提示词写进 KV cache，第一次前向传播也完成了。接下来是 decode 阶段：模型逐 token 生成，直到满足停止条件。第 1 章在明确题设（4B 理想 int4 payload、50 GB/s 有效带宽）下估算的 25 tokens/s 是 decode 阶段的带宽侧上限。对于 batch=1 的稠密模型，decode 通常受权重访存约束；实际瓶颈仍取决于后端实现和运行条件。
+prefill 已经把提示词写进 KV cache，第一次前向传播也完成了。接下来是 decode 阶段：模型逐 token 生成，直到满足停止条件。第 1 章在明确题设（4B 理想 INT4 权重、50 GB/s 有效带宽）下估算的 25 tokens/s 是 decode 阶段的带宽侧上限。对于 batch=1 的稠密模型，decode 通常受权重访存约束；实际瓶颈仍取决于后端实现和运行条件。
 
 decode 阶段的单步操作在代码里叫 `DecodeOneStep`（`runtime/core/tasks.cc:111`）。`Decode` 在循环中反复调用它，直到满足停止条件（`runtime/core/tasks.cc:446`）。循环的主干如下：
 
@@ -110,7 +110,7 @@ RETURN_IF_ERROR(sampler_.value()->SampleToIdAndScoreBuffer(
 
 这 1 MiB 只在 CPU 采样器需要把设备数据复制到宿主时构成额外传输。`TopPSampler` 会先尝试直接取得宿主可访问的 span。失败后才调用 `CopyFromTensorBuffer`；float16 输入则经 `Read` 后转换为 float32（`runtime/components/top_p_cpu_sampler.cc:111-130`）。
 
-第 1 章的同一示例中，4B 模型的理想 int4 权重 payload 约为 1.86 GiB；1 MiB 约为它的 0.5‰。这个比例只能比较字节量，不能换算成时延比例。权重读取、设备到宿主复制、同步和 CPU 采样经过不同的数据通路，也可能存在重叠。设备侧采样是否降低单步时延，必须在同一模型、后端和设备上对照测量。
+第 1 章的同一示例中，4B 模型的理想 INT4 权重约为 1.86 GiB；1 MiB 约为它的 0.5‰。这个比例只能比较字节量，不能换算成时延比例。权重读取、设备到宿主复制、同步和 CPU 采样经过不同的数据通路，也可能存在重叠。设备侧采样是否降低单步时延，必须在同一模型、后端和设备上对照测量。
 
 ## 5.3　从 logits 选择 token
 
@@ -305,7 +305,7 @@ bool ShouldStop(bool hit_stop_tokens, int benchmark_decode_token_count,
 
 (3) 和 (4) 使用不同计数器，因此长提示词可能先触及执行器上限，短输出配置则可能先触发 `max_output_tokens`。取消不在 `ShouldStop` 中；循环只在下一次迭代开始时检查 `cancelled`。它不会抢占已经开始的前向或采样（`runtime/core/tasks.cc:486-519`）。
 
-流式回调发生在 `ShouldStop` 之前。代码先收集本轮可发送的文本。至少一个候选产生非空文本时，才以 `TaskState::kProcessing` 调用回调（`runtime/core/tasks.cc:523-567`）。因此，未完整 BPE 序列或停止序列的部分匹配可能让某个 decode step 不产生回调。
+流式回调发生在 `ShouldStop` 之前。代码先收集本轮可发送的文本。至少一个候选产生非空文本时，才以 `TaskState::kProcessing` 调用回调（`runtime/core/tasks.cc:523-567`）。因此，未完整 BPE（byte-pair encoding）序列或停止序列的部分匹配可能让某个 decode step 不产生回调。
 
 循环结束后，`DecodeStreaming` 再调用一次最终回调（`runtime/core/pipeline.cc:75-96`）。其状态为 `kDone`、`kMaxNumTokensReached` 或错误状态。
 
@@ -378,7 +378,7 @@ for (int i = 0; i < num_output_candidates_; ++i) {
 
 (1) 先把此前暂存的 id 与本轮 id 合并，再整体解码。`IsIncompleteBpeSequence` 只检查返回状态是否为 `kDataLoss`（`runtime/components/tokenizer.h:128-130`）。若仍不完整，(3) 保存合并后的 id，本轮不产生文本；解码成功后，(4) 清空 BPE 暂存，再进入停止序列的暂存逻辑。
 
-停止检测先于 BPE 合并执行：`ProcessTokens` 读取本轮原始 token id，随后 tokenizer 才尝试合并和解码（`runtime/core/tasks.cc:163-179`）。停止检测按原始 token id 推进；只有成功解码且尚未完整命中停止序列的文本，才可能进入 `pending_stop_tokens_`。
+停止检测先于 BPE 合并执行，按本轮原始 token id 推进：`ProcessTokens` 先读取原始 id，随后 tokenizer 才尝试合并和解码（`runtime/core/tasks.cc:163-179`）。只有成功解码且尚未完整命中停止序列的文本，才可能进入 `pending_stop_tokens_`。
 
 模型元数据中的停止字符串会先尝试映射成单个 token id。失败时再调用 `TextToTokenIds` 得到一段 id（`runtime/engine/engine_settings.cc:241-253`）。会话配置以 `std::vector<std::vector<int>>` 保存停止序列（`runtime/engine/engine_settings.h:286-290`）。某个停止字符串最终对应一个还是多个 id，取决于模型 tokenizer，不能从聊天模板文本直接推断。
 
@@ -394,7 +394,7 @@ BPE 暂存等待 tokenizer 成功解码；停止序列暂存避免提前发送�
 
 ## 练习与自查
 
-1. 传输量变体。若 logits 以 fp16 传输（词表仍为 262144），单步数据量是多少？它占 1.86 GiB 权重数据的比例是多少？为什么这个比例不能直接换算为时延比例？
+1. 传输量变体。若 logits 以 FP16 传输（词表仍为 262144），单步数据量是多少？它占 1.86 GiB 权重数据的比例是多少？为什么这个比例不能直接换算为时延比例？
 2. 停止条件推理。benchmark 模式指定 decode 128 步，第 20 步命中停止序列，循环会停吗？依据 `ShouldStop` 的哪个分支？
 3. 暂存时序。停止序列最长 3 个 token。模型依次产出 A、B、C，其中 A、B 是某停止序列的前缀而 C 使匹配失败。写出每一步用户实际收到的文本。
 4. BPE 暂存。为什么流式解码要把此前暂存的 token id 与新 id 合并后整体转换？

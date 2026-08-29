@@ -2,7 +2,7 @@
 
 > 本章说明 CPU、GPU、NPU 的适用条件与运行时路径。重点分析 buffer 交接、同步成本，以及后端变化为何可能改变输出。
 
-第 6、7 章已经分析内存容量与内存带宽约束。本章讨论异构执行。手机 SoC 同时包含 CPU、GPU 与 NPU，各自支持的算子、数值路径和部署条件不同。运行时需要选择相应的执行路径，同时保持上层接口稳定。
+第 6、7 章分析了 KV cache 与模型文件两笔内存账；本章转向三类约束中的异构后端。手机 SoC 同时包含 CPU、GPU 与 NPU，各自支持的算子、数值路径和部署条件不同。运行时需要选择相应的执行路径，同时保持上层接口稳定。
 
 ## 8.1　后端选择改变执行路径
 
@@ -91,7 +91,7 @@ return is_kv_cache_dynamic;
 
 ### 8.2.2　后端枚举如何下沉为编译选项
 
-工厂分支只决定创建哪一种执行器。CPU 与 GPU 的硬件请求继续下沉到 `CreateCompilationOptions`。GPU 分支设置激活精度、缓冲模式与 GPU 专属选项，最后请求 `kGpu`；CPU 分支设置线程数与 XNNPack 缓存，最后请求 `kCpu`（`runtime/executor/llm_executor_settings_utils.cc:76-86`、`runtime/executor/llm_executor_settings_utils.cc:214-255`）：
+工厂分支只决定创建哪一种执行器。CPU 与 GPU 的硬件请求继续下沉到 `CreateCompilationOptions`。GPU 分支设置激活精度、缓冲模式与 GPU 专属选项，最后请求 `kGpu`；CPU 分支设置线程数与 XNNPACK 缓存，最后请求 `kCpu`（`runtime/executor/llm_executor_settings_utils.cc:76-86`、`runtime/executor/llm_executor_settings_utils.cc:214-255`）：
 
 ```cpp
 switch (executor_settings.GetBackend()) {
@@ -117,7 +117,7 @@ switch (executor_settings.GetBackend()) {
 
 GPU 的 `external_tensor_mode` 来自 `GpuConfig`，默认值为 false（`runtime/executor/llm_executor_settings.h:92-103`）。false 不表示所有张量都成为 delegate 内部张量。代码仍把名称匹配 `kv_cache_` 的张量标为 external；采用单缓冲 KV cache 时，还把 `param_tensor` 标为 external 和 buffer storage。GPU sampler 启用后，`logits` 也成为 external tensor（`runtime/executor/llm_executor_settings_utils.cc:139-160`）。这些规则使跨 signature 复用和设备侧采样有可绑定的缓冲，但不能单凭名称证明底层没有格式转换。
 
-CPU 路径没有对应的 external tensor 开关。它把 `CpuConfig::number_of_threads` 传给 CPU 编译选项，并启用 XNNPack 的动态 fully connected 标志（`runtime/executor/llm_executor_settings_utils.cc:217-245`）。因此，`--backend=cpu` 不只是工厂选择，还会改变线程池、delegate 与权重缓存路径。比较 CPU 和 GPU 时，初始化时间也必须分开记录；GPU program cache 与 CPU XNNPack weight cache 并非同一项缓存。
+CPU 路径没有对应的 external tensor 开关。它把 `CpuConfig::number_of_threads` 传给 CPU 编译选项，并启用 XNNPACK 的动态 fully connected 标志（`runtime/executor/llm_executor_settings_utils.cc:217-245`）。因此，`--backend=cpu` 不只是工厂选择，还会改变线程池、delegate 与权重缓存路径。比较 CPU 和 GPU 时，初始化时间也必须分开记录；GPU program cache 与 CPU XNNPACK weight cache 并非同一项缓存。
 
 NPU 不经过上述 CPU/GPU switch。专用执行器创建的主模型选项同时允许 `kNpu | kCpu`，Android 上还为 Qualcomm HTP 与 Google Tensor 设置 burst 模式（`runtime/executor/llm_litert_npu_compiled_model_executor.cc:444-463`）。同一执行器里的 text embedder 则用仅含 `kCpu` 的选项单独编译（`runtime/executor/llm_litert_npu_compiled_model_executor.cc:478-494`）。因此，配置成 `Backend::NPU` 只说明进入 NPU 专用执行器，不能据此声称每个子图和每个算子都驻留在 NPU。
 
@@ -216,7 +216,7 @@ if (backend == Backend::CPU) {
 
 GPU 适合并行执行矩阵运算。第 5 章介绍过设备侧采样（device-side sampling）：采样器直接消费 GPU 产生的 logits，避免在每个 decode step 把完整 logits 张量传递给 host 采样器。
 
-decode 每一步都会产生长度等于词表大小的 logits。以本书基准模型的 262144 词表和 FP32 logits 计算，张量大小为 262144 × 4 字节 = 1 MiB。host 采样需要让这 1 MiB 数据对 CPU 可见；设备侧采样则在 GPU 侧消费它。生成 512 个 token 时，前者需要处理 512 份完整 logits。设备侧采样只减少完整 logits 的跨设备传输量。选中的少量 token id 仍会复制到 host，用于返回结果和更新运行时状态。本书没有隔离测量该优化的吞吐或时延收益，因此不能从 CPU/GPU 整机结果中单独归因。
+decode 每一步都会产生长度等于词表大小的 logits。以本书基准模型的 262144 词表和 FP32 logits 计算，张量大小为 262144 × 4 字节 = 1 MiB。host 采样需要让这 1 MiB 数据对 CPU 可见；设备侧采样则在 GPU 侧消费它。生成 512 个 token 时，host 采样要处理 512 份完整 logits。设备侧采样只减少完整 logits 的跨设备传输量。选中的少量 token id 仍会复制到 host，用于返回结果和更新运行时状态。本书没有隔离测量该优化的吞吐或时延收益，因此不能从 CPU/GPU 整机结果中单独归因。
 
 <figure>
 {{#include figs/fig-8-2.svg}}
@@ -241,7 +241,7 @@ sampler_handles_input_ =
     !runs_embedding_on_gpu;
 ```
 
-`(1)` 采样器通过独立的 `sampler_backend` 创建，主执行器使用 GPU 时可以同时选择 GPU sampler，使完整 logits 无需返回 host。`(2)` 只有采样器声明 `CanHandleInput()`、模型具有 `input_tokens`，并且 embedding 不在主 GPU 图中执行时，`sampler_handles_input_` 才会为 true。源码注释把 `embedding_lookup_ == nullptr` 定义为 embedding 在 GPU 图内执行（`runtime/executor/llm_litert_compiled_model_executor.cc:1358`）。因此，"GPU 采样"和"采样器接管下一步输入"是两个不同条件，前者成立不保证后者成立。
+`(1)` 采样器通过独立的 `sampler_backend` 创建，主执行器使用 GPU 时可以同时选择 GPU sampler，使完整 logits 无需返回 host。`(2)` 只有采样器声明 `CanHandleInput()`、模型具有 `input_tokens`，并且 embedding 不在主 GPU 图中执行时，`sampler_handles_input_` 才会为 true。源码注释把 `embedding_lookup_ == nullptr` 定义为 embedding 在 GPU 图内执行（`runtime/executor/llm_litert_compiled_model_executor.cc:1358`）。因此，"GPU 采样"和"采样器接管下一步输入"是两个不同条件；GPU 采样成立，不保证输入接管也成立。
 
 ### 8.4.1　避免完整 logits 回传：采样器接管下一步输入
 
@@ -454,7 +454,7 @@ struct NpuAuxiliaryContext {                         // (3)
 
 | 后端 | 底层栈 | 实现特点 | 约束 | 本书证据 |
 |---|---|---|---|---|
-| CPU | LiteRT CPU / XNNPack | 算子覆盖较宽，线程数可配置 | Pixel 亲和性依赖硬编码 SoC 表；4 线程只是默认值，需按设备扫描 | decode ≈ 24.7、prefill ≈ 259 tokens/s |
+| CPU | LiteRT CPU / XNNPACK | 算子覆盖较宽，线程数可配置 | Pixel 亲和性依赖硬编码 SoC 表；4 线程只是默认值，需按设备扫描 | decode ≈ 24.7、prefill ≈ 259 tokens/s |
 | GPU | LiteRT GPU delegate | 并行执行；设备侧采样避免完整 logits 回传 | token id 仍返回 host；缓冲与 delegate 行为依平台而异 | decode ≈ 50.6、prefill ≈ 999 tokens/s |
 | NPU | LiteRT NPU；本书真机为 QNN（HTP） | 专用多子图执行路径 | 模型包、加速器代际、运行时组件与签名/访问条件需匹配 | 两台 Qualcomm 设备到达初始化失败阶段；未完成推理，无吞吐与功耗数据 |
 
@@ -467,7 +467,7 @@ LiteRT-LM 通过 `Backend` 枚举和工厂函数选择 CPU/GPU 通用执行器�
 ## 练习与自查
 
 1. 采样数据路径。设备侧采样避免回传完整 logits，但 token id 仍需返回 host。分别说明这两条数据路径承担的职责。
-2. 绑核语义。`sched_setaffinity` 成功后限制的是什么？为什么不能把它描述成调度器的软性建议？
+2. 核心绑定语义。`sched_setaffinity` 成功后限制的是什么？为什么不能把它描述成调度器的软性建议？
 3. 线程扫描解读。线程数从 4 增至 8 时吞吐仍提高，为什么这组数据仍不能证明 8 线程未饱和或已经达到全局最优？
 4. 输出分叉排查。更换后端后，同一 prompt 的输出为什么可能不同？哪些控制变量应先固定，才能判断差异是否来自实现缺陷？
 5. 新后端接入清单。为运行时接入新后端 XPU，需要修改哪些执行器、模型资源、配置与工厂分支？列出至少三处，并说明哪些上层接口可以保持不变。

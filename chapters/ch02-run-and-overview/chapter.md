@@ -166,7 +166,7 @@ Time to first token:  3.9400 s
 
 初始化时间必须按实现口径解释。C API 遍历 `GetInitPhases()`，把每条 duration 换算为毫秒后求和，最后除以 1000 返回秒（`c/engine.cc:821`）。`EngineAdvancedImpl::Create` 先开始记录 `kTotal`，紧接着开始 `kModelAssets` 子阶段（`runtime/core/engine_advanced_impl.cc:180`）。后续还记录 `kLlmMetadata` 子阶段（`runtime/core/engine_advanced_impl.cc:193`）。因此，这些 duration 并非互斥区间，CLI 的 `Init time` 不能直接视为一条无重叠的端到端墙钟计时。附录 D 保留 API 原始口径；分析单个初始化步骤时，应读取各 phase 或另设外部墙钟计时。
 
-v0.13.1 的 TTFT 是计算值，并非从请求发起直接计时至首个流式回调。cpu/256 档按同一批 turn 数据复算为 `256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s`。这与表中 3.94 s 一致，是对指标定义和数据记录的内部一致性检查，不是一次独立测量。cpu/4096 档同理：`4096 ÷ 226.5 + 1 ÷ 20.7 ≈ 18.13 s`〔基准 D〕。
+v0.13.1 的 TTFT 是计算值，并非从请求发起直接计时至首个流式回调。cpu/256 档按同一批 turn 数据复算为 `256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s`。这与上面输出的 3.94 s 一致，是对指标定义和数据记录的内部一致性检查，不是一次独立测量。cpu/4096 档同理：`4096 ÷ 226.5 + 1 ÷ 20.7 ≈ 18.13 s`〔基准 D〕。
 
 prefill 与 decode 的吞吐对应不同阶段，不能合并为单一吞吐值。同模型、同设备、同后端时，两者仍会受序列长度、固定 prefill signature 的填充率和 kernel 实现影响。附录 D 的主矩阵来自 Apple M5 Pro；Android 真机数据作为扩展实验单列。引用基准数据时，正文会同时给出设备、模型、后端与上下文等条件。
 
@@ -213,15 +213,15 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 解读一组结果时，可按以下顺序检查：
 
 1. 对 Init，先区分冷缓存与热缓存，并核对模型文件、delegate 初始化和编译缓存；第 7 章讨论这些阶段。
-2. 按源码公式把 TTFT 拆成首轮 prefill 耗时和首轮 decode 的平均单 token 耗时。只有前者占主要比例时，才把后续分析集中到 prefill。
+2. 按源码公式把 TTFT 拆成首轮 prefill 耗时和首轮 decode 的平均单 token 耗时。只有 prefill 一段占主要比例时，才把后续分析集中到 prefill。
 3. 对 prefill，对照序列长度、signature 形状和后端，以区分计算效率与填充效率；不能仅凭 tokens/s 判定算力瓶颈。
 4. 对 decode，先记录上下文长度、采样配置和后端，再与带宽侧上限对照。上下文扫描只能显示相关成本随长度变化；若要区分 KV 流量与计算，应增加硬件计数器或更小范围的探针。
 
 ## 2.4　Roofline 分析框架
 
-第 1 章已经用 Roofline 记号写出一组上限：token 率由算力侧与带宽侧两项中较低者决定（公式见 1.4 节）。若带宽项更低，称这个工作点 memory-bound，即第 1 章所说的带宽约束区；若计算项更低，称 compute-bound，即算力约束区。端到端测得一个 tokens/s 点值，还不足以判定哪一项更低。
+第 1 章已经用 Roofline 模型写出一组上限：token 率由算力侧与带宽侧两项中较低者决定（公式见 1.4 节）。若带宽项更低，称这个工作点 memory-bound（受带宽约束）；若计算项更低，称 compute-bound（受算力约束）。端到端测得一个 tokens/s 点值，还不足以判定哪一项更低。
 
-第 1 章按算术强度给出分层判断：prefill 通常更接近算力约束区，batch=1 稠密 decode 更接近带宽约束区。下面的数据用于检查这个判断在本章工作点上的适用性。
+第 1 章按算术强度给出分阶段判断：prefill 通常受算力约束，batch=1 稠密 decode 通常受带宽约束。下面的数据用于检查这个判断在本章工作点上的适用性。
 
 附录 D 的 Apple M5 Pro 主矩阵提供一组后端敏感度数据。Gemma 4 E4B、context 1024、decode 128 token 时，prefill 从 cpu 的 259.2 tokens/s 变为 gpu 的 999.1 tokens/s，约为 3.9 倍；decode 从 24.7 变为 50.6 tokens/s，约为 2.0 倍〔基准 D〕。切换后端同时改变了有效计算吞吐、有效带宽、delegate 和 kernel。这组比例表明两个阶段的后端敏感度不同，不能单独证明 prefill 已受算力约束、decode 已受带宽约束。
 
@@ -240,7 +240,7 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 
 $$ d_{\mathrm{eq}}=\frac{D_w}{S}\left(\frac{R_s}{R_l}-1\right) $$
 
-代入 cpu 数据得到约 107 KiB/token；代入 gpu 数据得到约 59 KiB/token。第 6 章按模型张量形状计算的逻辑 KV 容量是 28 KiB/token。这三个数不应相等：\\(d_{\mathrm{eq}}\\) 把注意力计算、带宽利用率变化、缓存行为和其他随上下文变化的成本都折算成字节。它不是实际 DRAM 流量的测量值，也不能单独证明降速全部来自 KV cache。这个对照只说明上下文相关成本不能从权重 payload 一项解释；第 6 章再按 KV 张量形状和访问路径核算。
+代入 cpu 数据得到约 107 KiB/token；代入 gpu 数据得到约 59 KiB/token。第 6 章按模型张量形状计算的 KV cache 理论大小是 28 KiB/token。这三个数不应相等：\\(d_{\mathrm{eq}}\\) 把注意力计算、带宽利用率变化、缓存行为和其他随上下文变化的成本都折算成字节。它不是实际 DRAM 流量的测量值，也不能单独证明降速全部来自 KV cache。这个对照只说明上下文相关成本不能从权重读取一项解释；第 6 章再按 KV 张量形状和访问路径核算。
 
 ## 2.5　二十个问题
 
@@ -250,7 +250,7 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{S}\left(\frac{R_s}{R_l}-1\right) $$
 |---|---|---|
 | 1 | 同样的模型，为什么云端可以流畅运行，手机端通常更受限制？ | 1 |
 | 2 | 8 GiB 内存的手机能否容纳 4B 参数模型？ | 1、6、7 |
-| 3 | prefill 每秒几千 token、decode 只有几十，为什么？ | 1 初讲、2 检验、6 深化 |
+| 3 | prefill 每秒近千 token、decode 只有几十，为什么？ | 1 初讲、2 检验、6 深化 |
 | 4 | time-to-first-token 由哪几段时间构成？ | 2 |
 | 5 | Engine 和 Session 为什么要分成两层？ | 3 |
 | 6 | 多轮对话的历史，每一轮都要重新计算吗？ | 3（单轮渲染或前缀后缀提取）、6（KV cache） |
@@ -262,7 +262,7 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{S}\left(\frac{R_s}{R_l}-1\right) $$
 | 12 | 停止序列只有前缀匹配时，哪些 token 需要暂缓输出？ | 5 |
 | 13 | KV cache 占多少内存？`--max-num-tokens` 为什么影响速度？ | 6（`LiteRT-LM#2568`[^ch02-issue-2568]） |
 | 14 | 克隆对话并创建分支时，需要重算公共前缀吗？ | 3、6 |
-| 15 | int4 量化减少的是体积、带宽需求还是计算量？ | 7 |
+| 15 | INT4 量化减少的是文件大小、带宽需求还是计算量？ | 7 |
 | 16 | `.litertlm` 单文件包含哪些分段？ | 7 |
 | 17 | 切换后端后，速度和输出为什么可能变化？ | 8（`LiteRT-LM#2281`[^ch02-issue-2281]） |
 | 18 | GPU 设备侧采样（device-side sampling）减少了哪些 host/device 数据传输？ | 8 |
@@ -277,7 +277,7 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{S}\left(\frac{R_s}{R_l}-1\right) $$
 
 1. 对外接口层。包括 Engine、Session、CLI、C API 与各语言绑定，应用通常从这里进入（第 3、11 章）。
 2. 对话与编排层。把多轮消息转换为模型输入，并组织 prefill、decode、取消和回调（第 3 至 5 章）。
-3. 推理执行层。通过 executor 和 LiteRT 模型执行操作管理推理状态，并适配不同后端（第 6、8、9 章）。
+3. 推理执行层。由 executor 管理推理状态、调用 LiteRT 执行模型，并适配不同后端（第 6、8、9 章）。
 4. 组件层。包括 tokenizer、采样器和约束解码等可复用组件（第 5、10 章）。
 5. 格式与基础设施层。包括 `.litertlm` 文件格式、模型资源和通用运行设施（第 7 章）。
 
@@ -346,7 +346,7 @@ class LlmExecutorBase {
 <figcaption>图 2-3　一次生成请求的主数据流；侧框列出各阶段使用的输入、组件和后端资源。</figcaption>
 </figure>
 
-`SessionInterface` 与 `LlmExecutorBase` 提供抽象边界，但不保证所有模块只依赖相邻层。工厂和设置对象把后端选择传递给 executor 与 delegate；上层编排可以复用，具体能力仍要逐后端检查。会话相关状态由 Session 及其 executor 上下文持有。Clone、checkpoint 与 rewind 分别复制或调整哪些状态，需按第 6 章的具体实现判断。
+`SessionInterface` 与 `LlmExecutorBase` 提供抽象边界，但不保证所有模块只依赖相邻层。工厂和设置对象把后端选择传递给 executor 与 delegate；上层编排代码可以跨后端复用，具体能力仍要逐后端检查。会话相关状态由 Session 及其 executor 上下文持有。Clone、checkpoint 与 rewind 分别复制或调整哪些状态，需按第 6 章的具体实现判断。
 
 ## 2.7　`.litertlm` 文件的组成
 

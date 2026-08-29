@@ -59,7 +59,7 @@ using InputData = std::variant<InputText, InputImage, InputAudio,
 
 Transformer 主干处理 token 序列（第 3 章），不能直接接收像素。图像需要先转换为与文本 embedding 兼容的向量序列。
 
-文本 token 通过词嵌入（embedding）查表得到向量。图像没有可直接查表的 token ID，需由视觉编码器与适配器生成同维度的 embedding。执行管理器随后插入视觉占位符，prefill 查找器再把这些向量写入对应位置。
+文本 token 通过 embedding 查表得到向量。图像没有可直接查表的 token ID，需由视觉编码器与适配器生成同维度的 embedding。执行管理器随后插入视觉占位符，prefill 查找器再把这些向量写入对应位置。
 
 图像预处理通过 patchify（切块）把图像划分为 patch。执行 patchify 前，`GetAspectRatioPreservingSize` 根据原图宽高、patch 大小和 patch 数上限计算目标尺寸（`runtime/components/preprocessor/image_preprocessor_utils.cc:26-75`）：
 
@@ -274,12 +274,12 @@ $$
 一幅图像产生 \\(T_{vis}\\) 个 visual token 时，prefill 序列会增加 \\(T_{vis}\\) 个位置。对应的 KV 数据量不能用 `model_dimension` 计算。对各层 KV 形状可能不同的模型，增量为
 
 $$
-\Delta B_{KV}=2T_{vis}\sum_{l=1}^{L}\left(H_{kv,l}D_l b_l\right),
+\Delta B_{KV}=2T_{vis}\sum_{l=1}^{L}\left(n_{kv,l}\,d_{head,l}\,b_l\right),
 $$
 
-其中，2 表示 K 和 V。\\(H_{kv,l}\\) 是第 \\(l\\) 层的 KV 头数，\\(D_l\\) 是每个 KV 头的维度；\\(b_l\\) 是每个元素的字节数。若所有层形状和类型相同，公式简化为 \\(2L H_{kv}D T_{vis}b\\)。`model_dimension` 是主干 embedding 宽度，不一定等于 \\(H_{kv}\times D\\)。
+其中，2 表示 K 和 V。\\(n_{kv,l}\\) 是第 \\(l\\) 层的 KV 头数，\\(d_{head,l}\\) 是该层每个 KV 头的维度；\\(b_l\\) 是每个元素的字节数。若所有层形状和类型相同，公式简化为 \\(2L\,n_{kv}\,d_{head}\,T_{vis}\,b\\)，即 6.1 节公式在 \\(S=T_{vis}\\) 时的形式。`model_dimension` 是主干 embedding 宽度，不一定等于 \\(n_{kv}\times d_{head}\\)。
 
-附录 D 记录的 Gemma 4 E4B 有 24 层 INT8 KV。20 层为 \\(H_{kv}=2,D=256\\)，其余 4 层为 \\(H_{kv}=2,D=512\\)〔基准 D〕。若一次图像输入增加 256 个 visual token，活动 KV 数据量增加
+附录 D 记录的 Gemma 4 E4B 有 24 层 INT8 KV。20 层为 \\(n_{kv}=2,d_{head}=256\\)，其余 4 层为 \\(n_{kv}=2,d_{head}=512\\)〔基准 D〕。若一次图像输入增加 256 个 visual token，活动 KV 数据量增加
 
 $$
 2\times256\times2\times(20\times256+4\times512)\times1\ \text{B}
@@ -636,7 +636,7 @@ absl::StatusOr<ordered_json> ExecuteToolCall(
 
 图像和音频从 `Message` 进入模型数据处理器，依次变为预处理张量、模态 embedding 和主干输入。执行管理器插入模态占位符，prefill 查找器再写入对应向量。排错时应沿相同顺序检查对象数量、shape、signature 与 embedding 行数。
 
-视觉输入长度还会增加 prefill 序列与有效 KV 数据量。计算时必须使用 \\(H_{kv}\times D\\)，不能用 `model_dimension` 代替。多图在 token 维拼接，不等于 batch；音频分块后的有效 token 数要按每块结果累加。
+视觉输入长度还会增加 prefill 序列与有效 KV 数据量。计算时必须使用 \\(n_{kv}\times d_{head}\\)，不能用 `model_dimension` 代替。多图在 token 维拼接，不等于 batch；音频分块后的有效 token 数要按每块结果累加。
 
 约束解码按状态计算允许 token 位图，并在采样前屏蔽其他候选。tools-derived 文法可以编码函数名、顶层参数和部分类型，但不覆盖完整 schema。Tool Use 还需要 parser 把文本还原为函数名和参数。parser 结果仍是不可信输入；应用随后完成白名单、完整 schema、权限、幂等与实际执行。
 

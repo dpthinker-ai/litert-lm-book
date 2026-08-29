@@ -13,13 +13,14 @@
 | 内存容量约束 | — | 1 | 权重、KV cache、激活与系统占用之和不得超过可用物理内存 |
 | 内存带宽约束 | — | 1 | batch=1 的稠密模型 decode 往往需要每步读取主干权重；当算力与其他开销不先到顶时，带宽限制吞吐 |
 | quantization | 量化 | 1 | 用较低比特数表示权重；存储位宽下降可减少体积与权重搬运量，实际收益还取决于 kernel 和硬件支持 |
-| scale | 缩放系数 | 1 | 量化整数格每格代表的实数步长；反量化公式 x ≈ s × (q − z)，可按整层、通道或分组共享 |
+| scale | 缩放系数 | 1 | 量化整数每差 1 对应的实数步长；反量化公式 x ≈ s × (q − z)，可按整层、通道或分组共享 |
 | zero point | 零点 | 1 | 实数 0 对应的量化整数；对称量化中恒为 0 可省略，非对称量化需与 scale 一起保存 |
+| 稠密模型 | dense model | 1 | 所有参数每步前向都参与计算的模型；与 MoE 等稀疏激活架构相对 |
 | MoE | 混合专家 | 1 | Mixture of Experts，稀疏激活的架构；每个 token 只经过部分专家参数，以较少的有效计算换取更大的总参数量 |
 | Roofline | 屋顶线 | 1 | 根据算术强度与硬件上限判断计算或带宽约束的分析框架 |
 | 算术强度 | arithmetic intensity | 1 | 每次数据搬运对应的运算量；Roofline 用它判断工作点靠近算力还是带宽约束 |
 | memory-bound / compute-bound | 带宽受限 / 算力受限 | 2 | 工作点的上限由带宽项或计算项决定：带宽项更低称 memory-bound，计算项更低称 compute-bound |
-| TTFT | 首 token 时延 | 2 | time-to-first-token，从发起请求到首个输出 token 可用的时间 |
+| TTFT | 首 token 时延 | 1 | time-to-first-token，从发起请求到首个输出 token 可用的时间 |
 | Engine | — | 3 | 持有模型、tokenizer 与执行器等可共享资源，并创建 Session |
 | Session | 会话 | 3 | 保存一次交互的独立状态，包括 KV cache、当前位置与生成配置 |
 | Conversation | 对话层 | 3 | 面向使用者的多轮对话 API，维护历史并应用聊天模板 |
@@ -33,10 +34,10 @@
 | sampler | 采样器 | 5 | 根据 logits 选择下一个 token 的策略：greedy / temperature / top-k / top-p |
 | 内部/外部采样 | — | 5 | 执行器内部直接返回 token id，或把 logits 交给上层处理后再采样；前者可接设备侧采样实现，后者便于组合重复惩罚与约束解码 |
 | 重复惩罚 | repetition penalty | 5 | 降低近期已出现 token 的 logits 以减少重复输出；该操作需要修改 logits，只能走外部采样路径 |
-| KV cache | 键值缓存 | 1 | 缓存历史 token 的注意力 Key/Value，以额外内存避免重复计算 |
-| 逻辑容量 | — | 1 | KV cache 按模型结构公式算出的理论字节数（2×L×n_kv×d_head×b×T）；假定恰好按已缓存 token 数分配、无填充与多缓冲，实际占用以运行时测量为准 |
-| GQA | 分组查询注意力 | 6 | grouped-query attention，多个查询头共享较少的 KV 头；相对每个查询头各有一组 K/V，可按头数比例减少 KV cache |
-| 双缓冲 | — | 6 | 维护两套 KV 缓冲，读旧写新后交换指针，适配不允许就地更新的后端 |
+| KV cache | 键值缓存 | 1 | 缓存历史 token 的注意力 Key/Value，以额外内存避免重复计算；理论大小为 2×L×n_kv×d_head×S×b，实际分配另含预留与多缓冲 |
+| 预留宽度 | — | 1 | KV cache 预先分配的 token 槽位数（由 `--max-num-tokens` 等参数决定）；固定形状路径下决定张量静态宽度，与已缓存 token 数 S 是两个量 |
+| GQA | 分组查询注意力 | 1 | grouped-query attention，多个查询头共享较少的 KV 头；相对每个查询头各有一组 K/V，可按头数比例减少 KV cache |
+| 双缓冲 | — | 1 | 维护两套 KV 缓冲，读旧写新后交换指针，适配不允许就地更新的后端 |
 | 写时复制 | copy-on-write，COW | 3 | 多个会话先共享已处理上下文；较短分支需要截断或改写共享历史时，才复制执行器上下文并分离所有权 |
 | channel | 通道 | 6 | 将思考等内容与最终回复分开；启用相应配置时，可在下一轮输入前回退并重建需保留的 KV 状态 |
 | .litertlm | — | 2 | 单文件模型容器：FlatBuffer 头描述一组具名分段，分段可承载 TFLite 模型、tokenizer、`LlmMetadataProto` 等数据 |
@@ -45,7 +46,7 @@
 | weight cache | 权重缓存 | 7 | 后端编译阶段使用的派生缓存；v0.13.1 以模型 mtime 与文件大小参与命名，不等同于模型权重段或内容哈希 |
 | LoRA | — | 7 | 在基座模型之外加载增量权重；v0.13.1 的管理器按已使用的 adapter id 保留资源，未提供卸载接口 |
 | mmap | — | 7 | 把文件区域映射到进程地址空间；页面何时读入由访问模式、操作系统与 `madvise` 等条件决定 |
-| Backend | 后端 | 8 | 执行后端：CPU / GPU / NPU（及 ARTISAN 手写算子路径） |
+| 后端 | backend | 1 | 设备内某类处理器加上驱动它的软件实现；同一设备可有 CPU/GPU/NPU 多个后端，`Backend` 枚举（含 ARTISAN 路径）见第 8 章 |
 | zero-copy | 零拷贝 | 8 | 生产者与消费者复用同一底层存储；还需满足 buffer 类型、布局与完成事件相容，不能由一次 `Duplicate()` 单独证明 |
 | 设备侧采样 | device-side sampling | 5 | 由设备后端消费完整 logits 并选出 token；可避免把整个 logits 张量传回 host，仍会回传少量 token 结果 |
 | CPU 亲和性 | — | 8 | 限制线程允许运行的 CPU 集合；LiteRT-LM 的 Pixel 路径使用预置核编号 |

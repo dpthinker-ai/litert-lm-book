@@ -8,7 +8,7 @@ KV cache 属于运行时状态，模型文件则由 Engine 加载；二者的生
 
 ## 7.1　量化收益取决于表示、算子与瓶颈
 
-权重有效载荷可以直接计算。若同一组参数原来以 fp16 保存，每个参数占 2 字节；改成紧密打包的 int4 后，理想占用是 0.5 字节，二者之比为 4。这个比例不包含分组 scale、zero point 和对齐填充。文件头与 tokenizer 也不在计算范围内。该比例不能直接套到整个 `.litertlm` 文件上。
+权重大小可以直接计算。若同一组参数原来以 FP16 保存，每个参数占 2 字节；改成紧密打包的 INT4 后，理想占用是 0.5 字节，二者之比为 4。这个比例不包含分组 scale、zero point 和对齐填充。文件头与 tokenizer 也不在计算范围内。该比例不能直接套到整个 `.litertlm` 文件上。
 
 带宽收益还需要两个条件。第一，低比特权重从主存传输至计算单元时仍要保持压缩形态。如果启动时已经展开为更高位宽，decode 的主存流量就不会按 4 倍缩小。第二，在给定设备、模型、上下文长度和后端下，decode 必须主要受权重带宽限制。
 
@@ -16,15 +16,15 @@ KV cache 属于运行时状态，模型文件则由 Engine 加载；二者的生
 
 量化对计算量的影响也不固定。原生低比特矩阵核可能减少运算和访存，动态反量化则会增加指令。实际结果取决于算子融合、向量指令、线程划分和后端实现。
 
-质量是另一项独立指标。int8 或 int4 的位宽本身不能限定质量损失，评估时必须给出模型、量化方法、校准数据与评测集。本书没有同一模型的 fp16、int8、int4 对照实验。因此，本书不报告质量收益，也不把质量损失分成“低”或“可接受”。
+质量是另一项独立指标。INT8 或 INT4 的位宽本身不能限定质量损失，评估时必须给出模型、量化方法、校准数据与评测集。本书没有同一模型的 FP16、INT8、INT4 对照实验。因此，本书不报告质量收益，也不把质量损失分成“低”或“可接受”。
 
 | 表示变化 | 可直接计算的结论 | 仍需确认的条件 | 本章不据此断言 |
 |---|---|---|---|
-| fp16 → int8 | 不计额外元数据时，权重有效载荷减半 | 打包格式、后端是否保持 int8、运行瓶颈 | decode 吞吐提高 2 倍、质量基本不变 |
-| fp16 → int4 | 不计额外元数据时，权重有效载荷降至四分之一 | scale/zero point、对齐、低比特算子与设备支持 | decode 吞吐提高 4 倍、质量风险可接受 |
+| FP16 → INT8 | 不计额外元数据时，权重大小减半 | 打包格式、后端是否保持 INT8、运行瓶颈 | decode 吞吐提高 2 倍、质量基本不变 |
+| FP16 → INT4 | 不计额外元数据时，权重大小降至四分之一 | scale/zero point、对齐、低比特算子与设备支持 | decode 吞吐提高 4 倍、质量风险可接受 |
 | 激活类型变化 | 单个标量的表示宽度随类型改变 | 图中实际张量类型、后端支持、转换开销 | 峰值内存和吞吐按位宽同比变化 |
 
-> 表 7-1　低比特表示能直接确定的是理想权重有效载荷比例；端到端内存、速度与质量都需要在完整条件下测量。
+> 表 7-1　低比特表示能直接确定的是理想权重大小比例；端到端内存、速度与质量都需要在完整条件下测量。
 
 ### 7.1.1　权重位宽与激活类型是两个配置维度
 
@@ -48,19 +48,19 @@ enum class ActivationDataType {
 
 这个枚举说明运行时设置可以区分 FLOAT32、FLOAT16、INT16 与 INT8。它不保证每个后端都按该类型保存所有中间张量，也不说明转换成本和质量。`Backend` 枚举另行列出 CPU、GPU、NPU 及三条 ARTISAN 路径（`runtime/executor/executor_settings_base.h:34-54`）。
 
-激活设置到编译选项和算子的映射随后端而变。当前 GPU 编译选项只在 FLOAT32 与其他枚举值之间选择 fp32 或 fp16 精度（`runtime/executor/llm_executor_settings_utils.cc:76-86`）。
+激活设置到编译选项和算子的映射随后端而变。当前 GPU 编译选项只在 FLOAT32 与其他枚举值之间选择 FP32 或 FP16 精度（`runtime/executor/llm_executor_settings_utils.cc:76-86`）。
 
-权重量化也不能从激活枚举推断。相邻的 `FakeWeightsMode` 声明了两种合成权重配置：所有层使用 int8；或者注意力使用 int8、FFN 与 embedding 使用 int4（`runtime/executor/executor_settings_base.h:81-92`）。它可以表达待测的位宽组合，却没有给出真实模型的分组方式、scale、校准过程或质量结果。枚举名也不能证明“注意力层必须用 8 比特”或真实 `.litertlm` 文件采用同一策略。
+权重量化也不能从激活枚举推断。相邻的 `FakeWeightsMode` 声明了两种合成权重配置：所有层使用 INT8；或者注意力使用 INT8、FFN 与 embedding 使用 INT4（`runtime/executor/executor_settings_base.h:81-92`）。它可以表达待测的位宽组合，却没有给出真实模型的分组方式、scale、校准过程或质量结果。枚举名也不能证明“注意力层必须用 INT8”或真实 `.litertlm` 文件采用同一策略。
 
 ### 7.1.2　从低比特文件到低比特 kernel 要经过四层
 
-判断一个 int4 模型能否在目标设备上运行，至少要区分四层。第一层是文件中的权重表示，包括位宽、分组、scale 和对齐。第二层是 TFLite 图如何描述这些常量与算子。第三层是编译时选定的后端及其选项。第四层才是后端生成或选择的 kernel，以及它是否保留压缩权重、何时转换布局。
+判断一个 INT4 模型能否在目标设备上运行，至少要区分四层。第一层是文件中的权重表示，包括位宽、分组、scale 和对齐。第二层是 TFLite 图如何描述这些常量与算子。第三层是编译时选定的后端及其选项。第四层才是后端生成或选择的 kernel，以及它是否保留压缩权重、何时转换布局。
 
-这四层不能互相替代。文件中存在 int4 常量，不代表图中的每个矩阵乘都能由同一个低比特算子处理。图能表达某种量化形式，也不代表 CPU、GPU 与 NPU 都接受它。后端完成编译后，权重还可能转换成设备相关布局；此时文件大小不再等于运行时权重缓冲大小。
+这四层不能互相替代。文件中存在 INT4 常量，不代表图中的每个矩阵乘都能由同一个低比特算子处理。图能表达某种量化形式，也不代表 CPU、GPU 与 NPU 都接受它。后端完成编译后，权重还可能转换成设备相关布局；此时文件大小不再等于运行时权重缓冲大小。
 
 v0.13.1 的 GPU 编译选项提供了两个可观察的例子。`convert_weights_on_gpu` 控制 OpenCL 与 WebGPU 路径是否在 GPU 上转换权重，其他后端会忽略该开关。`allow_src_quantized_fc_conv_ops` 决定是否允许源量化的 FC/Conv，默认设置会允许该路径（`runtime/executor/llm_executor_settings.h:197-212`、`runtime/executor/llm_executor_settings.h:231-238`、`runtime/executor/llm_executor_settings_utils.cc:164-172`）。这些开关说明“量化权重存在”和“量化算子被采用”是两个判断。源码没有给出它们在每款 GPU 上对应的 kernel 清单。
 
-CPU 路径配置 XNNPACK、动态 fully connected 标志和量化 zero point 压缩，再把硬件加速器设为 CPU（`runtime/executor/llm_executor_settings_utils.cc:217-255`）。这里同样没有一个通用的“int4 已启用”布尔值。是否能编译，要由模型图、LiteRT、XNNPACK 版本和目标 CPU 共同决定。
+CPU 路径配置 XNNPACK、动态 fully connected 标志和量化 zero point 压缩，再把硬件加速器设为 CPU（`runtime/executor/llm_executor_settings_utils.cc:217-255`）。这里同样没有一个通用的“INT4 已启用”布尔值。是否能编译，要由模型图、LiteRT、XNNPACK 版本和目标 CPU 共同决定。
 
 <figure>
 {{#include figs/fig-7-1.svg}}
@@ -81,21 +81,21 @@ CPU 路径配置 XNNPACK、动态 fully connected 标志和量化 zero point 压
 
 ### 7.1.3　可复算案例：2B 参数模型的部署容量
 
-这组部署预算不对应某个已发布模型。假定模型共有 20 亿个参数，其中 90% 使用 int4，10% 使用 int8。int4 部分每 32 个权重共用一个 fp16 scale，不使用 zero point。TFLite 图、tokenizer、元数据等其余内容合计 80 MiB，容器共有 5 个 section。
+这组部署预算不对应某个已发布模型。假定模型共有 20 亿个参数，其中 90% 使用 INT4，10% 使用 INT8。INT4 部分每 32 个权重共用一个 FP16 scale，不使用 zero point。TFLite 图、tokenizer、元数据等其余内容合计 80 MiB，容器共有 5 个 section。
 
-int4 有效载荷为：
+INT4 权重大小为：
 
 $$
 1.8\times 10^9\times 0.5\ \mathrm{B}=900{,}000{,}000\ \mathrm{B}.
 $$
 
-int8 有效载荷为：
+INT8 权重大小为：
 
 $$
 0.2\times 10^9\times 1\ \mathrm{B}=200{,}000{,}000\ \mathrm{B}.
 $$
 
-int4 分组共有 \\(1.8\times 10^9/32=56{,}250{,}000\\) 组，每个 fp16 scale 占 2 字节，所以 scale 共 112,500,000 B。加上 80 MiB 的其余内容，文件在对齐填充前约为：
+INT4 分组共有 \\(1.8\times 10^9/32=56{,}250{,}000\\) 组，每个 FP16 scale 占 2 字节，所以 scale 共 112,500,000 B。加上 80 MiB 的其余内容，文件在对齐填充前约为：
 
 $$
 900{,}000{,}000+200{,}000{,}000+112{,}500{,}000+80\times 2^{20}
@@ -104,7 +104,7 @@ $$
 
 builder 把第一个 section 和后续 section 的起点向上对齐到 16 KiB。5 个 section 在本题中最多引入不足 \\(5\times16\ \mathrm{KiB}=80\ \mathrm{KiB}\\) 的起点填充，因而不会改变 1.21 GiB 的两位小数结果。这里没有计入文件系统块、签名包或应用安装包的额外开销。
 
-文件能放入存储空间，不等于进程内存足够。再假定模型有 28 层、8 个 KV 头、每头维度 128，KV cache 使用 fp16，最大上下文为 4096。按第 6 章的公式，单会话 KV cache 为：
+文件能放入存储空间，不等于进程内存足够。再假定模型有 28 层、8 个 KV 头、每头维度 128，KV cache 使用 FP16，最大上下文为 4096。按第 6 章的公式，单会话 KV cache 为：
 
 $$
 28\times2\times8\times128\times4096\times2\ \mathrm{B}
@@ -226,7 +226,7 @@ POSIX 实现用 `MAP_PRIVATE` 建立映射。随后，Apple 平台调用 `MADV_D
 
 ### 7.3.4　weight cache 的标识不是内容哈希
 
-CPU 与 GPU 后端会为权重或程序缓存派生文件名。`CacheSuffix` 的注释列出 XNNPACK、MlDrift 程序缓存和 MlDrift weight cache。各自的命名形态见 `runtime/executor/executor_settings_base.h:168-186`。`GetWeightCacheFile` 处理 `:nocache`、scoped cache file、路径派生与旧缓存清理（`runtime/executor/executor_settings_base.cc:301-354`）。
+CPU 与 GPU 后端会为权重或程序缓存派生文件名。`CacheSuffix` 的注释列出 XNNPACK、MlDrift 程序缓存（program cache）和 MlDrift weight cache。各自的命名形态见 `runtime/executor/executor_settings_base.h:168-186`。`GetWeightCacheFile` 处理 `:nocache`、scoped cache file、路径派生与旧缓存清理（`runtime/executor/executor_settings_base.cc:301-354`）。
 
 cache 文件不是 `.litertlm` 中某个 section 的原样副本。LiteRT-LM 先派生路径，或者取得调用者提供的文件描述符，再把配置传递给后端。CPU 路径设置 XNNPACK weight cache 的路径或 fd。GPU 的路径模式传入序列化目录、模型 cache key 与外部张量序列化开关；只有文件描述符模式才显式传入 weight cache 与 program cache 的 fd（`runtime/executor/litert_compiled_model_executor_utils.cc:460-488`、`runtime/executor/litert_compiled_model_executor_utils.cc:491-554`）。路径模式下 GPU weight cache 的实际文件名、格式与命中判断属于下层 LiteRT 后端，不能从 LiteRT-LM 的候选路径单独确定。
 
@@ -259,7 +259,7 @@ CPU 和 GPU 的 cache 内容也不能互换。主 CPU 路径使用 `.xnnpack_cac
 
 ### 7.3.5　mmap 下的内存口径
 
-mmap 先增加虚拟地址映射，物理驻留随后受页面访问、`madvise` 和内核回收策略影响。它可以避免把整个模型再复制到一块普通堆缓冲，但不会自动缩小推理阶段需要访问的权重工作集。对稠密 decoder 而言，每个 decode step 通常会访问大部分权重；实际驻留规模还取决于后端预打包、缓存和系统内存压力。
+mmap 先增加虚拟地址映射，物理驻留随后受页面访问、`madvise` 和内核回收策略影响。它可以避免把整个模型再复制到一块普通堆缓冲，但不会自动缩小推理阶段需要访问的权重工作集。对稠密模型而言，每个 decode step 通常会访问大部分权重；实际驻留规模还取决于后端预打包、缓存和系统内存压力。
 
 LiteRT-LM 的内存日志提供多种口径（`runtime/engine/litert_lm_lib.cc:427-451`）。日志记录 peak system RAM、physical footprint 与非 mmap 堆；还记录 in-use heap 和 private footprint。判断模型能否运行时，应同时看私有内存、KV cache、激活、后端工作区和文件映射的驻留工作集。虚拟映射大小不是峰值物理内存，二者之差也不能全部视为节省量。
 
@@ -273,9 +273,9 @@ LoRA 用两个低秩矩阵表示某个线性层的权重增量。对于 `d_in ×
 
 设 LoRA 的增量为 \\(\Delta W=sBA\\)，其中 \\(A\\) 与 \\(B\\) 是低秩矩阵，\\(s\\) 是训练或导出约定的缩放系数。离线合并先计算 \\(W^{\prime}=W+\Delta W\\)，再把 \\(W^{\prime}\\) 量化并导出为新的模型产物。运行时适配则保留基座权重不变，让模型图把 LoRA 张量作为额外输入参与计算。
 
-离线合并不需要运行时切换接口，但每个适配器都会产生一份新的完整模型。若基座权重已经量化，先合并还是先量化会改变数值结果，不能把 fp16 合并后的差分直接等同于量化模型上的差分。运行时适配只分发增量文件，却要求基座模型的 signature 预先暴露匹配的 LoRA 输入，后端还要能为这些输入创建 buffer。
+离线合并不需要运行时切换接口，但每个适配器都会产生一份新的完整模型。若基座权重已经量化，先合并还是先量化会改变数值结果，不能把 FP16 合并后的差分直接等同于量化模型上的差分。运行时适配只分发增量文件，却要求基座模型的 signature 预先暴露匹配的 LoRA 输入，后端还要能为这些输入创建 buffer。
 
-v0.13.1 可追踪到的 `LoRA` 组件属于运行时适配路径。主文本 compiled executor 会识别 LoRA 输入名，并跳过普通 decode buffer 的创建，把这些输入留给 `LoraManager`（`runtime/executor/llm_litert_compiled_model_executor.cc:1708-1719`）。不过，该文件没有创建或调用 `LoraManager` 的实现点。仓库内可直接追踪的 `LoadLoRA` 与 `UseLoRA` 调用位于音频编码器。因此，不能仅凭主文本图中存在 LoRA 输入，就断定 v0.13.1 的文本生成 API 已完成同样的热切换链路。
+v0.13.1 可追踪到的 `LoRA` 组件属于运行时适配路径。主文本 compiled executor 会识别 LoRA 输入名，并跳过普通 decode buffer 的创建，把这些输入留给 `LoraManager`（`runtime/executor/llm_litert_compiled_model_executor.cc:1708-1719`）。不过，该文件里没有创建或调用 `LoraManager` 的调用点。仓库内可直接追踪的 `LoadLoRA` 与 `UseLoRA` 调用位于音频编码器。因此，不能仅凭主文本图中存在 LoRA 输入，就断定 v0.13.1 的文本生成 API 已完成同样的热切换链路。
 
 仓库中也没有一条由上述运行时组件执行 \\(W^{\prime}=W+\Delta W\\) 的原位合并路径。若产品选择离线合并，应把它视为模型导出流程。量化、后端约束、cache 标识和质量都要重新验证，不能把 `LoadLoRA` 当作合并工具。
 
@@ -329,7 +329,7 @@ ID 还需要由调用者保持全生命周期唯一。`LoadLoRA` 的重复检查
 
 | 失败位置 | 可观察线索 | 首要检查 | 不应先归因于 |
 |---|---|---|---|
-| Engine 设置校验 | `backend constraint mismatch` | section 的后端约束与请求后端 | int4 kernel 性能 |
+| Engine 设置校验 | `backend constraint mismatch` | section 的后端约束与请求后端 | INT4 kernel 性能 |
 | 外挂权重接入 | 非 GPU 使用 `TFLiteWeights` 时返回错误 | 容器是否拆分模型与权重 | cache 命中率 |
 | `CompiledModel::Create` | delegate 或算子编译错误 | 图、算子、激活类型、目标后端 | tokenizer 并行 |
 | cache 启用后才失败 | 无 cache 可成功初始化 | 路径、权限、mtime、size、进程重启 | 模型质量 |
@@ -337,7 +337,7 @@ ID 还需要由调用者保持全生命周期唯一。`LoadLoRA` 的重复检查
 
 > 表 7-5　初始化诊断按容器契约、产物布局、后端编译和资源占用逐层推进。
 
-这个案例没有假定 CPU 一定支持或不支持 int4。它只利用错误发生的位置缩小范围。后端真正采用何种 kernel，仍要结合 delegate 日志、编译结果和目标设备实测判断。
+这个案例没有假定 CPU 一定支持或不支持 INT4。它只利用错误发生的位置缩小范围。后端真正采用何种 kernel，仍要结合 delegate 日志、编译结果和目标设备实测判断。
 
 ## 7.7　部署核验：从模型文件到可回滚版本
 
@@ -372,9 +372,9 @@ section 的资源角色由目录属性中的 `model_type` 区分，例如主文�
 
 ### 7.7.2　目录可解析不等于容器完整
 
-固定前缀、FlatBuffer 头、section 目录和 section 内容是四层不同的结构。固定前缀正确，只能说明读取器找到了预期魔数和版本字段。当前读取器比较 major 版本，minor 与 patch 会被读出，但不参与兼容性拒绝；字节 20—23 也会被直接跳过（`schema/core/litertlm_read.cc:70-105`）。当前格式常量是 1.5.0（`schema/core/litertlm_header.h:31-38`）。
+固定前缀、FlatBuffer 头、section 目录和 section 内容是四层不同的结构。固定前缀正确，只能说明读取器找到了预期魔数和版本字段。当前读取器比较 major 版本，minor 与 patch 会被读出，但不参与兼容性拒绝；字节 20-23 也会被直接跳过（`schema/core/litertlm_read.cc:70-105`）。当前格式常量是 1.5.0（`schema/core/litertlm_header.h:31-38`）。
 
-字节 24—31 给出 FlatBuffer 头部的结束位置。普通读取器要求结束位置不小于 32，并检查相应字节能否读出（`schema/core/litertlm_read.cc:108-139`）。Engine 的主 loader 最多映射文件开头 16 KiB，再把这段传递给读取器（`runtime/util/litert_lm_loader.h:42`、`runtime/util/litert_lm_loader.cc:196-224`）。流式 loader 另有显式的 32 字节至 16 KiB 范围检查（`runtime/util/litert_lm_streaming_loader.cc:35-80`）。两个入口的防护位置不同，损坏文件不一定返回同一种错误。
+字节 24-31 给出 FlatBuffer 头部的结束位置。普通读取器要求结束位置不小于 32，并检查相应字节能否读出（`schema/core/litertlm_read.cc:108-139`）。Engine 的主 loader 最多映射文件开头 16 KiB，再把这段传递给读取器（`runtime/util/litert_lm_loader.h:42`、`runtime/util/litert_lm_loader.cc:196-224`）。流式 loader 另有显式的 32 字节至 16 KiB 范围检查（`runtime/util/litert_lm_streaming_loader.cc:35-80`）。两个入口的防护位置不同，损坏文件不一定返回同一种错误。
 
 头部读完后，`LitertlmHeader::reset` 直接取得生成的根对象访问器（`schema/core/litertlm_read.h:89-97`）。这条路径没有建立 `flatbuffers::Verifier`。schema 中的 `(required)` 字段定义了合法文件应有的结构，但不能据此认为主 loader 已经验证了所有 vector 边界、必需字段和 union 类型。外部取得的模型文件若不受发布链信任，应在调用 Engine 前执行独立的 FlatBuffer 与 section 范围校验。这是由当前边界推导出的应用要求，不是 v0.13.1 已提供的验证接口。
 
@@ -524,7 +524,7 @@ $$
 
 这个公式只能计算矩阵 payload。运行时不拿 `lora_rank` metadata 直接判断兼容性。`LoRA::Init` 先按基座 signature 创建输入 buffer，再比较 `TensorBuffer::PackedSize()` 与适配器 tensor 的实际字节数；不同就返回错误（`runtime/components/lora.cc:64-103`）。两个适配器即使 rank 都是 32，也可能因隐藏维度、GQA 投影宽度、元素类型或导出命名不同而不兼容。
 
-仓库测试资产 `litert_dummy_lora32_f16_model.tflite` 提供了可复算的规模。本书对二进制的静态解析表明，`decode` signature 有 35 层、280 个 fp16 LoRA 输入；完整命令与逐类统计见 `experiments/data/ch07_lora_capacity.md`。单元测试另行确认 rank 为 32，一个 `32 × 2048` 的 query tensor 占 `32 × 2048 × 2 = 131072` 字节，即 128 KiB（`runtime/util/lora_data_test.cc:94-118`）；物化后返回的 buffer 数量也是 280（`runtime/components/lora_test.cc:139-152`）。
+仓库测试资产 `litert_dummy_lora32_f16_model.tflite` 提供了可复算的规模。本书对二进制的静态解析表明，`decode` signature 有 35 层、280 个 FP16 LoRA 输入；完整命令与逐类统计见 `experiments/data/ch07_lora_capacity.md`。单元测试另行确认 rank 为 32，一个 `32 × 2048` 的 query tensor 占 `32 × 2048 × 2 = 131072` 字节，即 128 KiB（`runtime/util/lora_data_test.cc:94-118`）；物化后返回的 buffer 数量也是 280（`runtime/components/lora_test.cc:139-152`）。
 
 | 投影与矩阵 | 每层个数 | 单个形状 | 单个大小 | 35 层合计 |
 |---|---:|---:|---:|---:|
@@ -536,7 +536,7 @@ $$
 | value right | 1 | `32 × 512` | 32 KiB | 1.09375 MiB |
 | 合计 | 8 | 每层 832 KiB | 不适用 | 28.4375 MiB |
 
-> 表 7-11　静态解析得到的 280 个 LoRA 输入按 shape 计算为 28.4375 MiB 逻辑 payload；物化后的 `PackedSize()`、allocator 对齐和运行时开销仍需实测。
+> 表 7-11　静态解析得到的 280 个 LoRA 输入按 shape 计算为 28.4375 MiB 理论大小；物化后的 `PackedSize()`、allocator 对齐和运行时开销仍需实测。
 
 同一份静态解析记录显示，配套适配器 `test_lora_rank32_f16_all_ones.tflite` 只保存 220 个匹配 tensor。前 20 层包含 query、key、value 与 post，后 15 层只包含 query 和 post，因此文件 tensor payload 为：
 
@@ -544,7 +544,7 @@ $$
 20\times832\ \mathrm{KiB}+15\times512\ \mathrm{KiB}=23.75\ \mathrm{MiB}.
 $$
 
-后 15 层缺少 60 个 key/value tensor，共 4.6875 MiB。`LoRA::Init` 仍按基座 signature 创建全部 280 个 buffer；找不到同名 tensor 时，它把对应 buffer 清零。单元测试检查了缺失的 `value_w_prime_left_20`，返回内容全为零（`runtime/components/lora.cc:70-101`、`runtime/components/lora_test.cc:111-130`）。按基座 shape 计算，这 280 个输入对应 28.4375 MiB 逻辑 payload，其中 4.6875 MiB 是清零的输入；后端实际分配仍应读取 `PackedSize()` 并测量。
+后 15 层缺少 60 个 key/value tensor，共 4.6875 MiB。`LoRA::Init` 仍按基座 signature 创建全部 280 个 buffer；找不到同名 tensor 时，它把对应 buffer 清零。单元测试检查了缺失的 `value_w_prime_left_20`，返回内容全为零（`runtime/components/lora.cc:70-101`、`runtime/components/lora_test.cc:111-130`）。按基座 shape 计算，这 280 个输入对应 28.4375 MiB 理论大小，其中 4.6875 MiB 是清零的输入；后端实际分配仍应读取 `PackedSize()` 并测量。
 
 清零是字节层面的已验证行为。它是否在任意导出图中都等价于“不施加增量”，还取决于图如何使用该输入，不能只根据 `memset` 推广。尺寸不匹配会使首次 `UseLoRA` 失败；v0.13.1 尚无对应单元测试，部署前应加入适配器与基座 signature 的逐 tensor 兼容性检查。
 
@@ -559,9 +559,9 @@ $$
 <figcaption>图 7-7　首次 `UseLoRA` 把待用数据物化为后端 buffer；切换当前 ID 不会释放已经物化的适配器。</figcaption>
 </figure>
 
-假设音频服务依次加载 A、B、C 三个适配器，三者都采用表 7-11 的测试形状。状态与逻辑 payload 如下：
+假设音频服务依次加载 A、B、C 三个适配器，三者都采用表 7-11 的测试形状。状态与理论大小 如下：
 
-| 操作结束后 | `lora_data_` | `loras_` | 当前 ID | 输入 buffer 逻辑 payload |
+| 操作结束后 | `lora_data_` | `loras_` | 当前 ID | 输入 buffer 理论大小 |
 |---|---|---|---|---:|
 | `Load(A/B/C)` | A、B、C | 空 | 无 | 0 |
 | `Use(A)` | B、C | A | A | 28.4375 MiB |
@@ -571,7 +571,7 @@ $$
 
 > 表 7-12　切回已物化 ID 只更新 `current_lora_id_`；管理器仍保留此前创建的对象和 buffer。
 
-测试覆盖了 `0 → 1 → 0` 的切换，并验证切回后仍能读取 ID 0 的原内容（`runtime/components/lora_manager_test.cc:169-220`）。若同形状的 8 个适配器都至少使用过一次，仅 LoRA 输入 buffer 的逻辑 payload 就是 \\(8\times28.4375=227.5\\) MiB。还需计入 8 份源数据视图与运行时开销。`LoraManager` 没有逐 ID 卸载接口，容量预算应按“生命周期内启用过的不同 ID 数量”计算，而不是只按当前 ID 计算。
+测试覆盖了 `0 → 1 → 0` 的切换，并验证切回后仍能读取 ID 0 的原内容（`runtime/components/lora_manager_test.cc:169-220`）。若同形状的 8 个适配器都至少使用过一次，仅 LoRA 输入 buffer 的理论大小 就是 \\(8\times28.4375=227.5\\) MiB。还需计入 8 份源数据视图与运行时开销。`LoraManager` 没有逐 ID 卸载接口，容量预算应按“生命周期内启用过的不同 ID 数量”计算，而不是只按当前 ID 计算。
 
 ID 也不能当作可覆盖的槽位。`LoadLoRA` 的重复检查只查 `lora_data_`，不查 `loras_`。A 以 ID 7 物化后，再用 ID 7 加载 B 会成功把 B 放回待用表；随后的 `UseLoRA(7)` 发现旧对象已经存在，仍选择 A，不会用 B 替换它（`runtime/components/lora_manager.cc:46-68`）。管理器此时同时持有旧对象 A 和待用数据 B。调用方应保证 ID 在 manager 生命周期内唯一。
 
@@ -689,7 +689,7 @@ LoRA 报告只在产品启用该能力时生成。对 v0.13.1 的文本生成路
 
 ## 小结
 
-低比特权重能按位宽计算理想有效载荷比例，但带宽、吞吐和质量要结合图表示、后端编译、kernel 与实测判断。`.litertlm` 用 FlatBuffer 头部描述 section；`model_type`、`backend_constraint` 与 `prefer_activation_type` 会参与资源选择和设置校验。当前 Engine 通过 `LitertLmLoader` 建立索引并按请求取段；schema 中的 TFLite 提取函数只是辅助 API。
+低比特权重能按位宽计算理想权重大小比例，但带宽、吞吐和质量要结合图表示、后端编译、kernel 与实测判断。`.litertlm` 用 FlatBuffer 头部描述 section；`model_type`、`backend_constraint` 与 `prefer_activation_type` 会参与资源选择和设置校验。当前 Engine 通过 `LitertLmLoader` 建立索引并按请求取段；schema 中的 TFLite 提取函数只是辅助 API。
 
 weight cache 由 LiteRT-LM 配置、底层后端解释。其模型标识使用修改时间和文件大小，不是内容哈希，同路径的进程内记忆还会扩大失效盲区。LoRA 的离线合并与运行时适配具有不同的产物和验证要求。当前管理器按 ID 懒创建后端对象，但已使用 ID 的资源会保留，且调用者不能依赖复用 ID 更新适配器。
 
@@ -699,14 +699,14 @@ CPU、GPU 与 NPU 的执行路径对照见第 8 章。该章继续区分配置�
 
 ## 练习与自查
 
-1. 收益偏离因素。某模型权重从 fp16 改为 int4。列出至少三项会使整个文件大小或 decode 吞吐偏离 4 倍比例的因素。
+1. 收益偏离因素。某模型权重从 FP16 改为 INT4。列出至少三项会使整个文件大小或 decode 吞吐偏离 4 倍比例的因素。
 2. 对齐偏移计算。某 section 的 `begin_offset = 49152`，平台对齐值为 65536。计算 `alignment_gap`、实际映射起点，以及返回给上层的指针偏移。
 3. 缓存标识盲区。两个模型文件大小相同、修改时间精确到秒也相同，但内容不同。说明 `GetFileCacheIdentifier` 能否区分它们，并分析同一进程内的路径缓存会带来什么影响。
 4. LoRA 状态追踪。依次对 ID 0 和 ID 1 调用 `LoadLoRA`、`UseLoRA`，再切回 ID 0。说明 `lora_data_`、`loras_` 与 `current_lora_id_` 的变化，以及哪些资源仍被保留。
 5. 元数据打印路径。`litertlm_print` 对 `LlmMetadataProto` 多做了哪一步？遇到合法的 UInt8 元数据值时会打印什么？
-6. 分组参数重算。把本章 2B 参数案例的 int4 分组从 32 改为 64，其他条件不变。重新计算 scale、模型文件与 3.0 GiB 运行预算，并说明哪一项结论没有变化。
+6. 分组参数重算。把本章 2B 参数案例的 INT4 分组从 32 改为 64，其他条件不变。重新计算 scale、模型文件与 3.0 GiB 运行预算，并说明哪一项结论没有变化。
 7. 后端约束诊断。某 `.litertlm` 的 `backend_constraint` 为 `cpu,gpu`，含独立 `TFLiteWeights`，GPU 可初始化而 CPU 返回错误。根据本章加载链路指出失败层级，并说明为什么删除 XNNPACK cache 不能解决该问题。
 8. 容器校验判断。某容器的魔数、版本和 FlatBuffer 头均可读取，但两个 section 的字节范围互相重叠。说明 v0.13.1 主 loader 是否会在建索引时统一拒绝，并给出发布前校验器应增加的判断。
 9. 缓存实验设计。为同一模型设计 N、P、W 三组 cache 实验。说明每组的进程与 cache 初始状态、外部墙钟的起止点，以及为什么“cache 文件存在”还不足以证明 W 组命中。
-10. LoRA 容量累计。表 7-11 的测试形状下，A、B、C 三个 LoRA 都物化后，仅输入 buffer 的逻辑 payload 是多少？若切回 A，数值是否减少？再说明将 8 个适配器都物化后的 payload。
+10. LoRA 容量累计。表 7-11 的测试形状下，A、B、C 三个 LoRA 都物化后，仅输入 buffer 的理论大小 是多少？若切回 A，数值是否减少？再说明将 8 个适配器都物化后的 payload。
 11. 发布配额推演。某设备给模型目录的配额是 9.0 GB。旧、新模型各 3.66 GB，两个 cache 上限分别为 0.28 GB 和 0.44 GB；更新器另存 0.60 GB 压缩包，并要求 0.50 GB 余量。计算发布存储峰值。若改为排空旧 Engine 后再创建新 Engine，存储峰值与运行内存峰值分别如何变化？运行内存能否仅凭 Engine 数量写成减半？

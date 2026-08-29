@@ -2,15 +2,15 @@
 
 > 本章说明 MTP 如何让 drafter 草拟多个 token，再由基础模型一次验证。分析接受比例与每轮运行成本如何共同决定加速比。
 
-第 1 章讨论了缓解 decode 内存带宽约束的两类方法。硬件可以提高带宽，量化可以减少每 token 读取的字节数。第三种方法是投机解码（speculative decoding）。基础模型每读取一次权重，尽可能确认多个 token。本章据此定量分析第 2 章第 19 问：投机解码为什么可能加速，又会在什么条件下减速。
+第 1 章给出缓解 decode 内存带宽约束的两条思路：提高有效带宽，或减少每 token 搬运的字节数；量化走的是第二条。投机解码（speculative decoding）是减少每 token 字节数的另一种办法：基础模型每读取一次权重，尽可能确认多个 token。本章据此定量分析第 2 章第 19 问：投机解码为什么可能加速，又会在什么条件下减速。
 
 ## 9.1　投机解码的目标：一次验证多个候选 token
 
-dense 模型在 decode 阶段通常每生成一个 token 就读取一次模型权重。普通 decode 前向只确定一个 token。投机解码试图增加每次基础模型权重读取所确认的 token 数。
+稠密模型在 decode 阶段通常每生成一个 token 就读取一次模型权重。普通 decode 前向只确定一个 token。投机解码试图增加每次基础模型权重读取所确认的 token 数。
 
 投机解码先由低成本的 drafter 草拟若干 token。基础模型（base 模型）再用一次前向验证这些候选。匹配的最长前缀被接受；第一个不匹配位置改用基础模型给出的 token。验证多个候选只执行一次基础模型前向，而不是对每个候选分别执行一次。若一轮接受多个 token，这次前向的成本便由这些 token 分担。
 
-投机解码有多种实现。drafter 可以是独立模型，也可以来自与基础模型联合训练的预测头。这类预测头称为多 token 预测（Multi-Token Prediction，MTP）头。Google 发布的 Gemma 4 MTP drafter 使用目标模型的 activation，并与目标模型共享 KV cache。[^ch09-google-mtp] LiteRT-LM 在运行时把 drafter 装载为独立模型，对应成员是 `mtp_drafter_model_`。验证使用基础模型的 `"verify"` signature。常量定义见 `runtime/executor/llm_litert_mtp_drafter.cc:63`。`base_model.FindSignature(kVerifySignatureRunner)` 的调用见 `runtime/executor/llm_litert_mtp_drafter.cc:227-228`。
+投机解码有多种实现。drafter 可以是独立模型，也可以来自与基础模型联合训练的预测头。这类预测头称为多 token 预测（Multi-Token Prediction，MTP）头。Google 发布的 Gemma 4 MTP drafter 使用基础模型的 activation，并与基础模型共享 KV cache。[^ch09-google-mtp] LiteRT-LM 在运行时把 drafter 装载为独立模型，对应成员是 `mtp_drafter_model_`。验证使用基础模型的 `"verify"` signature。常量定义见 `runtime/executor/llm_litert_mtp_drafter.cc:63`。`base_model.FindSignature(kVerifySignatureRunner)` 的调用见 `runtime/executor/llm_litert_mtp_drafter.cc:227-228`。
 
 ## 9.2　机制：串行草拟，批量验证
 
@@ -97,7 +97,7 @@ if (bonus_token == -1) {                               // (4)
 
 `(1)` 从头逐位比较草拟结果与验证结果。结果一致时，`(3)` 增加 `num_correct_tokens`。遇到第一个不一致位置后，`(2)` 停止比较。基础模型在该位置的输出被记为 bonus token。若循环结束后 `bonus_token` 仍为 −1，说明 G 个草稿全部匹配；`(5)` 此时取 verify 输出的第 G+1 个 token。无论是否全部匹配，基础模型本轮都提供一个不来自已接受草稿的输出 token。
 
-`last_verified_token_id_idx_` 不参与接受比例统计。它保存 verify 输出中最后一个有效位置的下标。下一轮 `RunDraftingLoop` 会进入 `ConcatenateEmbeddingsAndActivationsFromVerifierBuffer` 分支。该分支用此下标读取相应 activation，作为草拟起点。隐藏态来源见本章后文。
+`last_verified_token_id_idx_` 不参与接受比例统计。它保存 verify 输出中最后一个有效位置的下标。下一轮 `RunDraftingLoop` 会进入 `ConcatenateEmbeddingsAndActivationsFromVerifierBuffer` 分支。该分支用此下标读取相应 activation，作为草拟起点。隐藏态来源见 9.6 节。
 
 `Draft()` 最后返回接受前缀和一个 bonus token（`runtime/executor/llm_litert_mtp_drafter.cc:492-493`）：
 
@@ -113,7 +113,7 @@ drafted_tokens.push_back(bonus_token);       // (2)
 
 ## 9.4　采样约束：当前 MTP 路径采用贪心接受
 
-接受循环使用严格相等比较 `verifier_id_vector[i] != drafted_tokens[i]`。这与带概率接受步骤的经典推测采样不同。Leviathan 等（2023）采用 rejection sampling。[^ch09-leviathan] Chen 等（2023）也采用保留目标模型分布的修正 rejection sampling。[^ch09-chen] LiteRT-LM 当前 MTP 路径没有该步骤；drafter 与 verifier 均采用贪心采样，接受条件是两个 token id 相等。
+接受循环使用严格相等比较 `verifier_id_vector[i] != drafted_tokens[i]`。这与带概率接受步骤的经典推测采样不同。Leviathan 等（2023）采用 rejection sampling。[^ch09-leviathan] Chen 等（2023）也采用保留目标模型（即本章的基础模型）分布的修正 rejection sampling。[^ch09-chen] LiteRT-LM 当前 MTP 路径没有该步骤；drafter 与 verifier 均采用贪心采样，接受条件是两个 token id 相等。
 
 强制贪心的地方在构造采样器的辅助函数里（`CreateGreedySampler`，`runtime/executor/llm_litert_mtp_drafter.cc:65-77`）：
 
@@ -292,7 +292,7 @@ $$ \text{speedup}(p,c) \approx
 
 聚合接受比例 r 增大时，平均每轮产出 `1+Gr` 随之增加。轮次成本 q 同样影响加速比。即使 r 很高，较大的 q 仍会限制收益。r 较低时，MTP 可能只返回 1 个或少量 token。该轮仍要执行 drafter 与 verify，吞吐可能低于普通 decode。Google 报告 Gemma 4 MTP drafter 在其跨模型、硬件与运行时测试中最高达到约 3 倍。[^ch09-google-mtp] 该数字不是本书设备上的预期值。
 
-附录 D 保存了 Gemma 4 E4B 的两组 Mac 记录。测试条件为 context 1024、decode 128 token，参数分别设为 `false` 与 `auto`。本章“开启条件”一节核对的设置链路表明，v0.13.1 的 `auto` 最终沿用 C++ 默认值 `false`。两组记录都来自关闭 MTP 后的独立采样。CPU 中位数为 22.8 和 24.9 tokens/s；`false` 组的三次运行分布在 20.1 到 24.9 tokens/s。GPU 中位数为 50.0 和 50.2 tokens/s〔基准 D〕。两组差异只能反映这几次运行的波动，不能估计 MTP 的开关收益。当前没有可核查的 Mac 强制开启记录。
+附录 D 保存了 Gemma 4 E4B 的两组 Mac 记录。测试条件为 context 1024、decode 128 token，参数分别设为 `false` 与 `auto`。9.10 节核对的设置链路表明，v0.13.1 的 `auto` 最终沿用 C++ 默认值 `false`。两组记录都来自关闭 MTP 后的独立采样。CPU 中位数为 22.8 和 24.9 tokens/s；`false` 组的三次运行分布在 20.1 到 24.9 tokens/s。GPU 中位数为 50.0 和 50.2 tokens/s〔基准 D〕。两组差异只能反映这几次运行的波动，不能估计 MTP 的开关收益。当前没有可核查的 Mac 强制开启记录。
 
 | 模式 | cpu decode tokens/s | gpu decode tokens/s | 说明 |
 |---|---|---|---|
@@ -305,7 +305,7 @@ $$ \text{speedup}(p,c) \approx
 
 在图 9-2 的示意假设 `q=1.45` 下，两个样本对应的加速比分别约为 1.23 和 2.75。把 r̂ 误作 p 会得到 0.93；该结果混用了两种口径。这两次计数实验没有同时测量 q，所以上述示意值不是实测速率。两次实验的提示词也与固定长度 benchmark 不同。故事样本的 r̂ 因而不能用于推断该 benchmark 开启 MTP 后的吞吐。
 
-固定长度 benchmark 的输入由 `runtime/core/session_utils.cc:68-73` 构造。代码先对提示词分词，再调用 `ids.resize(N)`。N 大于原 token 数时，新增的 `int` 元素为 0；N 更小时，序列会被截断。该负载不是定长的自然文本，不能沿用前述两个提示词的 r̂。Mac 归档数据既没有强制开启组，也没有这组 benchmark 的 drafter 计数器。现有可核查的强制开启端到端对照只有 Android 记录。没有证据把其中的减速归因于低接受比例。
+固定长度 benchmark 的输入由 `runtime/core/session_utils.cc:68-73` 构造。代码先对提示词分词，再调用 `ids.resize(N)`。N 大于原 token 数时，新增的 `int` 元素为 0；N 更小时，序列会被截断。该负载与自然文本提示词不同，不能沿用前述两个提示词的 r̂。Mac 归档数据既没有强制开启组，也没有这组 benchmark 的 drafter 计数器。现有可核查的强制开启端到端对照只有 Android 记录。没有证据把其中的减速归因于低接受比例。
 
 这组计数不需要修改或重新编译运行时。drafter 已维护 `num_drafted_tokens_` 和 `num_verified_tokens_`，并在析构时通过 `ABSL_LOG(INFO)` 输出。Python SDK 的 `set_min_log_severity`（`python/litert_lm/_ffi.py:450`）可把日志级别设置为 VERBOSE。若要得到分阶段或逐轮数据，则需新增遥测接口；当前日志只能提供整个 drafter 生命周期内的聚合比例。
 

@@ -2,7 +2,7 @@
 
 > 本章分析 Python、Kotlin、Swift 与 Web 如何经 C ABI、JNI 或 Embind 进入同一套 C++ runtime，并说明流式回调、数据复制、字符串所有权和显式释放的边界契约。本章还比较绑定层的并发隔离方式，并介绍测试替身与跨平台构建。
 
-LiteRT-LM v0.13.1 的 `README.md:99-106` 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。这些绑定并不共用同一条原生调用路径。Python 与 Swift 使用 `c/engine.h` 提供的 C ABI；Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章选择前四种绑定分析三类边界模式，Flutter 不在本章展开。
+LiteRT-LM v0.13.1 的 `README.md:99-106` 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。这些绑定并不共用同一条原生调用路径。Python 与 Swift 使用 `c/engine.h` 提供的 C ABI；Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章分析其中 Python、Kotlin、Swift 与 Web 四种绑定的三类边界模式；Flutter 不在本章展开。
 
 ## 11.1　C ABI：C 兼容的原生边界
 

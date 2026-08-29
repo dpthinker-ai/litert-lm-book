@@ -1,8 +1,8 @@
 # 第 3 章 输入侧：从 Engine API 到 token 序列
 
-> 本章划清 Engine、Session 与 Conversation 的所有权分层，说明 Clone 如何共享上下文、何时才复制 KV cache；再说明模板如何从消息中取得增量文本，并由 tokenizer 编码。执行器按模型签名直接提交所得 token id，或先生成 prefill embedding。
+> 本章划清 Engine、Session 与 Conversation 的所有权分层，说明 Clone 如何共享上下文、何时才复制 KV cache；再说明模板如何从消息中取得增量文本，并由 tokenizer 编码。执行器按模型 signature 直接提交所得 token id，或先生成 prefill embedding。
 
-调用方提交文本或多模态数据，模型执行器最终接收 token id 或 embedding。中间还需处理对象生命周期、消息历史、模板渲染与分词。图 3-1 列出这条路径。跨轮上下文复用（3.1.1 与 3.3 节）与单次 prefill 缓冲区内的数据放置（3.5 节）是两个不同问题，后文分开处理。
+调用方提交文本或多模态数据，模型执行器最终接收 token id 或 embedding。中间还需处理对象生命周期、消息历史、模板渲染与分词，图 3-1 列出这条路径。跨轮上下文复用（3.1.1 与 3.3 节）与单次 prefill 缓冲区内的数据放置（3.5 节）是两个不同问题，后文分开处理。
 
 <figure>
 {{#include figs/fig-3-1.svg}}
@@ -11,7 +11,7 @@
 
 ## 3.1　公共 API 分层：Engine 与 Session
 
-LiteRT-LM 的底层生成接口以 `Engine` 与 `Session` 为核心。`Engine` 初始化模型、tokenizer 与 embedder 等共享资源。它还负责创建 Session（`runtime/engine/engine.h:33`）。`SessionInterface` 保存一次交互的内部状态，并提供生成、prefill 与 decode 操作（`runtime/engine/engine.h:65`）。
+LiteRT-LM 的底层生成接口以 `Engine` 与 `Session` 为核心。`Engine` 初始化模型、tokenizer 与 embedding 组件等共享资源。它还负责创建 Session（`runtime/engine/engine.h:33`）。`SessionInterface` 保存一次交互的内部状态，并提供生成、prefill 与 decode 操作（`runtime/engine/engine.h:65`）。
 
 `EngineT::CreateSession` 接收 `SessionConfig`，返回一个由调用方持有的 Session（`runtime/engine/engine.h:308`）。同一个 Engine 可以创建多个 Session。生成入口位于 Session，而不是 Engine。共享模型资源与每次交互的状态分属不同的所有权边界。
 
@@ -156,7 +156,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 (1) 与 (2) 把若干 Python 风格的方法改写为 MiniJinja 测试或过滤器。(3) 删除 MiniJinja 不识别的 generation 标记。该函数只处理字符串，不分析 Jinja 语法树，因此只转换列出的模式。未覆盖的模板语法会原样进入 `Apply`，并可能在 MiniJinja 渲染时返回错误（`runtime/components/prompt_template.cc:112-127`）。
 
-`PromptTemplateInput` 还包含 `now`，默认值取对象构造时的当前时间（`runtime/components/prompt_template.h:89-91`）。不能因此假定模板的渲染结果总是确定的。LiteRT-LM 在同一对新旧渲染中复用模板输入对象的非消息字段，并对渲染结果做前缀校验。
+`PromptTemplateInput` 还包含 `now`，默认值取对象构造时的当前时间（`runtime/components/prompt_template.h:89-91`）；引用它的模板两次渲染就可能得到不同结果。LiteRT-LM 因此在同一对新旧渲染中复用模板输入对象的非消息字段，并对渲染结果做前缀校验。
 
 ## 3.3　增量文本：单轮模板与全历史回退
 
@@ -356,7 +356,7 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
 
 (1) 指针移动到当前张量的写入起点。(2) 代码逐 token 调用 `LookupInternal`。(3) 从本次写入末尾到张量第二维末尾的槽位都复制默认 embedding。`starting_token` 同时计入偏移处已有的 token 与本次 token。padding 仍属于同一个输出张量的布局。
 
-模板和 tokenizer 已将消息转换为 token id。执行器按模型签名选择直接提交 id，或在当前 prefill 缓冲中生成 embedding。跨轮复用由 Session 的上下文与模板增量语义负责；`byte_offset` 只处理单次缓冲区内的写入位置。
+模板和 tokenizer 已将消息转换为 token id。执行器按模型 signature 选择直接提交 id，或在当前 prefill 缓冲中生成 embedding。跨轮复用由 Session 的上下文与模板增量语义负责；`byte_offset` 只处理单次缓冲区内的写入位置。
 
 ## 小结
 
