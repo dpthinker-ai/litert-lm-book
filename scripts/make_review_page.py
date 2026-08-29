@@ -147,9 +147,15 @@ a:focus-visible { outline: 2px solid var(--fig-accent); outline-offset: 2px; }
 rev = subprocess.run(
     ["git", "-C", str(BOOK_ROOT.parent), "rev-parse", "--short", "HEAD"],
     capture_output=True, text=True).stdout.strip() or "未知"
+dirty = subprocess.run(
+    ["git", "-C", str(BOOK_ROOT.parent), "status", "--porcelain"],
+    capture_output=True, text=True).stdout.strip()
+if dirty:
+    rev += "+（含未提交修订）"
 today = datetime.date.today().isoformat()
 
-page = f"""<title>《端侧大模型推理》{chapter_name}</title>
+page = f"""<meta charset="utf-8">
+<title>《端侧大模型推理》{chapter_name}</title>
 <style>{CSS}</style>
 <div class="review-bar"><div class="inner">
 <b>《端侧大模型推理：原理与 LiteRT-LM 实现》审阅版</b> · 对应提交 {rev} · {today}<br>
