@@ -148,7 +148,7 @@ rev = subprocess.run(
     ["git", "-C", str(BOOK_ROOT.parent), "rev-parse", "--short", "HEAD"],
     capture_output=True, text=True).stdout.strip() or "未知"
 dirty = subprocess.run(
-    ["git", "-C", str(BOOK_ROOT.parent), "status", "--porcelain"],
+    ["git", "-C", str(BOOK_ROOT.parent), "status", "--porcelain", "-uno"],
     capture_output=True, text=True).stdout.strip()
 if dirty:
     rev += "+（含未提交修订）"
