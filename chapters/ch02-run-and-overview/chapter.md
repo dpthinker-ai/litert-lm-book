@@ -2,7 +2,7 @@
 
 > 本章运行 LiteRT-LM，按源码定义解释 benchmark 的四项指标，并建立后续章节使用的五层架构视图。
 
-第 1 章在明确的假设下推导了 decode 的带宽侧上限。本章把同一分析方法用于实测数据。
+第 1 章在明确的假设下推导了 decode 的带宽侧上限，那还是纸面上的账。本章先把 LiteRT-LM 跑起来，再按源码定义逐项解读 benchmark 输出的四个数字，检验第 1 章的判断在实测工作点上是否成立；随后建立的五层职责视图与二十个问题索引，是后续各章共用的定位地图。
 
 ## 2.1　运行命令行工具
 
@@ -16,7 +16,7 @@ litert-lm run \
   --prompt="What is the capital of France?"
 ```
 
-`litert-lm` 的 CLI 入口使用 click，并注册八个子命令模块（`python/litert_lm_cli/main.py:52`）。本章使用 `run` 和 `benchmark`；同一入口还注册 `convert`、`list`、`import`、`delete`、`rename` 与 `serve`。
+`litert-lm` 的 CLI 入口使用 click（Python 的命令行框架），并注册八个子命令模块（`python/litert_lm_cli/main.py:52`）。本章使用 `run` 和 `benchmark`；同一入口还注册 `convert`、`list`、`import`、`delete`、`rename` 与 `serve`。
 
 ```python
 _serve_module.register(cli)      # (1)
@@ -29,7 +29,7 @@ _benchmark_module.register(cli)
 _run_module.register(cli)
 ```
 
-每个子命令由独立模块实现，再通过 `register(cli)` 注册到同一个 click group。`import` 是 Python 关键字，因此对应模块通过 `importlib.import_module` 加载（`python/litert_lm_cli/main.py:33`）。入口只负责注册，命令逻辑由各模块实现。
+每个子命令由独立模块实现，再通过 `register(cli)` 注册到 click 的同一个命令组（group）；`cli` 就是用 `@click.group` 装饰生成的这个组对象（`python/litert_lm_cli/main.py:38-49`），子命令全部挂在它名下。`register` 本身只有一行：以 `benchmark` 模块为例，它调用 `cli.add_command(benchmark)`，把模块内定义好的命令对象挂进组里（`python/litert_lm_cli/commands/benchmark.py:223-225`）。`import` 是 Python 关键字，因此对应模块通过 `importlib.import_module` 加载（`python/litert_lm_cli/main.py:33`）。入口只负责注册，命令逻辑由各模块实现。
 
 `run` 在解析模型与后端参数后创建 `Engine`，再用上下文管理器限定其生命周期（`python/litert_lm_cli/commands/run.py:240`）：
 
@@ -47,9 +47,16 @@ _run_module.register(cli)
     with engine_cm as engine:             # (2)
 ```
 
-(1) 把模型路径、后端与生成配置传入 `Engine`。(2) 进入上下文后，`run` 再调用 `engine.create_session`（`python/litert_lm_cli/commands/run.py:252`）。`SessionInterface` 的注释说明，Session 保存每次独立交互的内部状态（`runtime/engine/engine.h:65`）。Python `Engine.__exit__` 调用 `close`（`python/litert_lm/engine.py:137`），后者删除原生 Engine 句柄（`python/litert_lm/engine.py:129`）。各后端何时释放设备资源仍由其实现决定。
+(1) 把模型路径、后端与生成配置传入 `Engine`。(2) 进入上下文后，`run` 再调用 `engine.create_session`（`python/litert_lm_cli/commands/run.py:252`）。`SessionInterface` 的注释说明，Session 保存每次独立交互的内部状态（`runtime/engine/engine.h:65`）。Python `Engine.__exit__` 调用 `close`（`python/litert_lm/engine.py:137`），`close` 再删除原生 Engine 句柄（`python/litert_lm/engine.py:129`）。各后端何时释放设备资源仍由其实现决定。
 
-指定 `--from-huggingface-repo` 时，`run` 调用 `common.download_from_huggingface`（`python/litert_lm_cli/commands/run.py:571`）。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，CLI 流式打印增量文本。
+指定 `--from-huggingface-repo` 时，`run` 调用 `common.download_from_huggingface`（`python/litert_lm_cli/commands/run.py:571`）。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，CLI 流式打印增量文本。一次归档运行的输出如下（cpu 后端、温度 0、seed 42，提示词 `Write one sentence about the ocean.`；附录 D 第八节采样确定性实验，实录见 `experiments/data/temperature_test.md`）：
+
+```text
+The vast, mysterious ocean covers over seventy percent of the Earth's surface,
+teeming with diverse life and holding immense power.
+```
+
+温度 0 下这条输出可逐字复现；采样参数对输出的影响见第 5 章。
 
 `run` 迭代 `send_message_async` 返回的 stream，并打印每个响应字典中的文本项（`python/litert_lm_cli/commands/run.py:101`）：
 
@@ -81,7 +88,7 @@ _run_module.register(cli)
 
 从源码构建后，还可以运行 C++ 示例程序 `litert_lm_main`。完整构建命令见第 11 章与附录 C；这里先看两个基本参数：
 
-- `--backend`：选执行后端，默认是 `gpu`（`runtime/engine/litert_lm_main.cc:52`）。想用 CPU 就传 `--backend=cpu`。
+- `--backend`：选执行后端，默认是 `gpu`（`runtime/engine/litert_lm_main.cc:52`）。选 CPU 后端时传 `--backend=cpu`。
 - `--model_path`：指向一个 `.litertlm` 模型文件（`runtime/engine/litert_lm_main.cc:54`）。
 
 以下命令选择 CPU 后端：
@@ -225,7 +232,7 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 
 附录 D 的 Apple M5 Pro 主矩阵提供一组后端敏感度数据。Gemma 4 E4B、context 1024、decode 128 token 时，prefill 从 cpu 的 259.2 tokens/s 变为 gpu 的 999.1 tokens/s，约为 3.9 倍；decode 从 24.7 变为 50.6 tokens/s，约为 2.0 倍〔基准 D〕。切换后端同时改变了有效计算吞吐、有效带宽、delegate 和 kernel。这组比例表明两个阶段的后端敏感度不同，不能单独证明 prefill 已受算力约束、decode 已受带宽约束。
 
-第 1 章的 25 tokens/s 来自假想手机的题设，不能直接套到这台 Mac。对本书基准模型，`.litertlm` 整文件为 3.66 GB，并包含多个模型段；附录 D 识别出的主 decode 段 payload 为 2.26 GB。若额外假设每个 decode step 恰好读取这 2.26 GB 一次，并忽略其他流量，那么 gpu/256 档的等效主干 payload 速率为 `50.6 × 2.26 ≈ 114 GB/s`，cpu/256 档为 `24.8 × 2.26 ≈ 56 GB/s`。这两个数是吞吐与假设 payload 的乘积，不是硬件计数器测得的 DRAM 带宽，也不能用来核验设备标称带宽。
+第 1 章的 25 tokens/s 来自假想手机的题设，不能直接套到这台 Mac。这台 Mac 的标尺先立在标称值上：Apple 公布 M5 Pro 的统一内存带宽最高为 307 GB/s。[^ch02-m5pro-bandwidth] 对本书基准模型，`.litertlm` 整文件为 3.66 GB，并包含多个模型段；附录 D 识别出的主 decode 段 payload 为 2.26 GB。若额外假设每个 decode step 恰好读取这 2.26 GB 一次，并忽略其他流量，那么 gpu/256 档的等效主干 payload 速率为 `50.6 × 2.26 ≈ 114 GB/s`，cpu/256 档为 `24.8 × 2.26 ≈ 56 GB/s`，都落在标称带宽以内。不过这两个数是吞吐与假设 payload 的乘积，不是硬件计数器测得的 DRAM 带宽；它们与 307 GB/s 之间的差距混合了计算耗时、实际带宽利用率与假设误差，不能读作利用率，也不能反过来核验标称值。
 
 <figure>
 {{#include figs/fig-2-1.svg}}
@@ -269,7 +276,9 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{S}\left(\frac{R_s}{R_l}-1\right) $$
 | 19 | speculative decoding 在什么条件下提高吞吐，又会增加哪些开销？ | 9（`LiteRT-LM#2227`[^ch02-issue-2227]） |
 | 20 | 图像怎样编码并进入语言模型？约束解码怎样限制结构化输出？ | 10 |
 
-> 表 2-2　二十个推理与运行时问题。不同语言绑定如何复用核心 runtime，同时采用不同的原生边界，见第 11 章。
+> 表 2-2　二十个推理与运行时问题；不少问题由多章接力解答，表中同时给出各段位置。
+
+表中没有列语言绑定的问题：各语言绑定如何复用核心 runtime、原生边界划在哪里，见第 11 章。
 
 ## 2.6　五层职责视图
 
@@ -337,7 +346,9 @@ class LlmExecutorBase {
 };
 ```
 
-(1) 定义基本 prefill 接口。`runtime/core/tasks.cc` 使用的参数化重载位于 `runtime/executor/llm_executor_base.h:51`；基类默认返回未实现，支持该路径的具体 executor 需要覆盖它。(2) 定义基本 decode 接口。(3) 返回 executor 的后端名称。工厂选择的 executor 与 delegate 配置可因 CPU、GPU、NPU 路径而异，但上层编排仍通过这些公共方法调用。组件层主要位于 `runtime/components/`；文件格式实现位于 `schema/`。
+(1) 定义基本 prefill 接口。`runtime/core/tasks.cc` 使用的参数化重载位于 `runtime/executor/llm_executor_base.h:51`；基类默认返回未实现，支持该路径的具体 executor 需要覆盖它。(2) 定义基本 decode 接口。(3) 返回 executor 的后端名称。工厂选择的 executor 与 delegate 配置可因 CPU、GPU、NPU 路径而异，但上层编排仍通过这些公共方法调用。
+
+第四、五层的代码位置更简单：组件层主要位于 `runtime/components/`，文件格式实现位于 `schema/`。
 
 图 2-3 沿调用方向展开一次生成请求的主数据流：
 
@@ -385,29 +396,29 @@ LiteRT-LM Version: 1.5.0
 Section 0:
   Begin Offset: 8192
   End Offset:   3579204608
-  Data Type:    AnySectionDataType_TFLiteModel     <- 权重与计算图
+  Data Type:    AnySectionDataType_TFLiteModel     # (1)
 Section 1:
   Begin Offset: 3579204608
   End Offset:   3583074304
-  Data Type:    AnySectionDataType_SP_Tokenizer    <- SentencePiece 分词器
+  Data Type:    AnySectionDataType_SP_Tokenizer    # (2)
 Section 2:
   Begin Offset: 3583074304
   End Offset:   3583078400
   Data Type:    AnySectionDataType_LlmMetadataProto
     <<<<<<<< start of LlmMetadata
-      start_token { token_ids: 2 }                 <- BOS
-      stop_tokens { token_str: "<end_of_turn>" }   <- 停止序列配置，第 12 问
-      prompt_templates { ... }                     <- 聊天模板，第 7 问
+      start_token { token_ids: 2 }                 # (3)
+      stop_tokens { token_str: "<end_of_turn>" }   # (4)
+      prompt_templates { ... }                     # (5)
     >>>>>>>> end of LlmMetadata
 ```
 
-这个示例把 TFLite 模型、SentencePiece tokenizer 与 LLM 元数据放在三个 section 中；其他模型可以采用不同布局。构建 Session 配置时，源码会从 LLM 元数据读取 `start_token`（`runtime/engine/engine_settings.cc:594`）、`stop_tokens`（`runtime/engine/engine_settings.cc:603`）和 `prompt_templates`（`runtime/engine/engine_settings.cc:623`）。它们如何影响输入构造与停止判断，见第 3、5 章。
+`(1)` 是权重与计算图所在的 TFLite 模型段，`(2)` 是 SentencePiece 分词器；这个示例把它们与 LLM 元数据放在三个 section 中，其他模型可以采用不同布局。元数据段内，`(3)` 的 `start_token` 是 BOS，`(4)` 的 `stop_tokens` 对应停止序列配置（第 12 问），`(5)` 的 `prompt_templates` 是聊天模板（第 7 问）。构建 Session 配置时，源码依次读取这三项（`runtime/engine/engine_settings.cc:594`、:603、:623）；它们如何影响输入构造与停止判断，见第 3、5 章。
 
 TFLite section 的读取路径先用 `end_offset - begin_offset` 计算模型大小（`schema/core/litertlm_read.cc:223`），再创建 `tflite::MMAPAllocation`（`schema/core/litertlm_read.cc:226`）。这说明 v0.13.1 的该路径使用文件映射分配对象；页错误、物理驻留与初始化耗时仍需结合操作系统和访问行为测量。第 7 章分析 section 布局、映射和冷启动。
 
 ## 小结
 
-benchmark 指标必须按 `BenchmarkInfo` 的源码定义解释，Roofline 结论必须附带工作负载假设，五层视图只用于定位主要职责。第 3 至 5 章继续分析 Session、prefill/decode 编排和输出处理。
+读 benchmark 数字，先回到 `BenchmarkInfo` 的源码定义：TTFT 是计算值，Init 各阶段可能重叠，两项吞吐分属不同阶段。一个 tokens/s 点值判定不了工作点受算力还是带宽约束，下判断前要补上负载假设与对照数据。五层视图与二十个问题是定位工具，不描述强制依赖。第 3 至 5 章继续分析 Session、prefill/decode 编排和输出处理。
 
 ## 练习与自查
 
@@ -418,6 +429,7 @@ benchmark 指标必须按 `BenchmarkInfo` 的源码定义解释，Roofline 结�
 5. 架构归位。约束解码的 `MaskLogits` 调用属于五层视图中的哪一层？它接收的 logits 来自哪一层？
 
 [^ch02-litertlm-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/tree/v0.13.1)，版本 v0.13.1；访问日期：2026-07-18。
+[^ch02-m5pro-bandwidth]: Apple，[*Apple debuts M5 Pro and M5 Max to supercharge the most demanding pro workflows*](https://www.apple.com/au/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/)，2026-03-04；访问日期：2026-08-30。
 [^ch02-issue-2568]: Yegorsh，[*`--max-num-tokens` unreasonably affects decoding speed*](https://github.com/google-ai-edge/LiteRT-LM/issues/2568)，LiteRT-LM issue #2568，2026-06-13；访问日期：2026-07-18。
 [^ch02-issue-2281]: 4ntoine，[*Different inference result depending on backend*](https://github.com/google-ai-edge/LiteRT-LM/issues/2281)，LiteRT-LM issue #2281，2026-05-15；访问日期：2026-07-18。
 [^ch02-issue-2227]: Shoolife，[*MTP / speculative decoding regresses decode tok/s on PowerVR GPU (Tensor G6) — even with GPU sampler fully loaded*](https://github.com/google-ai-edge/LiteRT-LM/issues/2227)，LiteRT-LM issue #2227，2026-05-11；访问日期：2026-07-18。
