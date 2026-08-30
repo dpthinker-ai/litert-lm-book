@@ -265,7 +265,7 @@ LiteRT-LM 的内存日志提供多种口径（`runtime/engine/litert_lm_lib.cc:4
 
 ## 7.4　LoRA：基座权重与增量权重分离
 
-LoRA 用两个低秩矩阵表示某个线性层的权重增量。对于 `d_in × d_out` 的原矩阵，秩（rank）为 `r` 时，两个矩阵共有 `r × (d_in + d_out)` 个参数。若 `d_in = d_out = d`，相对全量矩阵的参数比例是 `2r / d`。代入 `r = 16`、`d = 2048`，比例约为 1.6%。
+LoRA 用两个低秩矩阵表示某个线性层的权重增量。对于 \\(d_{in} \times d_{out}\\) 的原矩阵，秩（rank）为 \\(r\\) 时，两个矩阵共有 \\(r \times (d_{in} + d_{out})\\) 个参数。若 \\(d_{in} = d_{out} = d\\)，相对全量矩阵的参数比例是 \\(2r/d\\)。代入 \\(r = 16\\)、\\(d = 2048\\)，比例约为 1.6%。
 
 这个数字只描述单个方阵投影。完整适配器与基座模型的大小比还取决于覆盖哪些层、保存类型和文件元数据，不能直接写成 1.6%。
 
@@ -524,7 +524,7 @@ $$
 
 这个公式只能计算矩阵 payload。运行时不拿 `lora_rank` metadata 直接判断兼容性。`LoRA::Init` 先按基座 signature 创建输入 buffer，再比较 `TensorBuffer::PackedSize()` 与适配器 tensor 的实际字节数；不同就返回错误（`runtime/components/lora.cc:64-103`）。两个适配器即使 rank 都是 32，也可能因隐藏维度、GQA 投影宽度、元素类型或导出命名不同而不兼容。
 
-仓库测试资产 `litert_dummy_lora32_f16_model.tflite` 提供了可复算的规模。本书对二进制的静态解析表明，`decode` signature 有 35 层、280 个 FP16 LoRA 输入；完整命令与逐类统计见 `experiments/data/ch07_lora_capacity.md`。单元测试另行确认 rank 为 32，一个 `32 × 2048` 的 query tensor 占 `32 × 2048 × 2 = 131072` 字节，即 128 KiB（`runtime/util/lora_data_test.cc:94-118`）；物化后返回的 buffer 数量也是 280（`runtime/components/lora_test.cc:139-152`）。
+仓库测试资产 `litert_dummy_lora32_f16_model.tflite` 提供了可复算的规模。本书对二进制的静态解析表明，`decode` signature 有 35 层、280 个 FP16 LoRA 输入；完整命令与逐类统计见 `experiments/data/ch07_lora_capacity.md`。单元测试另行确认 rank 为 32，一个 `32 × 2048` 的 query tensor 占 \\(32 \times 2048 \times 2 = 131072\\) 字节，即 128 KiB（`runtime/util/lora_data_test.cc:94-118`）；物化后返回的 buffer 数量也是 280（`runtime/components/lora_test.cc:139-152`）。
 
 | 投影与矩阵 | 每层个数 | 单个形状 | 单个大小 | 35 层合计 |
 |---|---:|---:|---:|---:|

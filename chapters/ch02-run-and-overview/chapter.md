@@ -173,7 +173,7 @@ Time to first token:  3.9400 s
 
 初始化时间必须按实现口径解释。C API 遍历 `GetInitPhases()`，把每条 duration 换算为毫秒后求和，最后除以 1000 返回秒（`c/engine.cc:821`）。`EngineAdvancedImpl::Create` 先开始记录 `kTotal`，紧接着开始 `kModelAssets` 子阶段（`runtime/core/engine_advanced_impl.cc:180`）。后续还记录 `kLlmMetadata` 子阶段（`runtime/core/engine_advanced_impl.cc:193`）。因此，这些 duration 并非互斥区间，CLI 的 `Init time` 不能直接视为一条无重叠的端到端墙钟计时。附录 D 保留 API 原始口径；分析单个初始化步骤时，应读取各 phase 或另设外部墙钟计时。
 
-v0.13.1 的 TTFT 是计算值，并非从请求发起直接计时至首个流式回调。cpu/256 档按同一批 turn 数据复算为 `256 ÷ 65.6 + 1 ÷ 24.8 ≈ 3.94 s`。这与上面输出的 3.94 s 一致，是对指标定义和数据记录的内部一致性检查，不是一次独立测量。cpu/4096 档同理：`4096 ÷ 226.5 + 1 ÷ 20.7 ≈ 18.13 s`〔基准 D〕。
+v0.13.1 的 TTFT 是计算值，并非从请求发起直接计时至首个流式回调。cpu/256 档按同一批 turn 数据复算为 \\(256 \div 65.6 + 1 \div 24.8 \approx 3.94\\) s。这与上面输出的 3.94 s 一致，是对指标定义和数据记录的内部一致性检查，不是一次独立测量。cpu/4096 档同理：\\(4096 \div 226.5 + 1 \div 20.7 \approx 18.13\\) s〔基准 D〕。
 
 prefill 与 decode 的吞吐对应不同阶段，不能合并为单一吞吐值。同模型、同设备、同后端时，两者仍会受序列长度、固定 prefill signature 的填充率和 kernel 实现影响。附录 D 的主矩阵来自 Apple M5 Pro；Android 真机数据作为扩展实验单列。引用基准数据时，正文会同时给出设备、模型、后端与上下文等条件。
 
@@ -232,7 +232,7 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 
 附录 D 的 Apple M5 Pro 主矩阵提供一组后端敏感度数据。Gemma 4 E4B、context 1024、decode 128 token 时，prefill 从 cpu 的 259.2 tokens/s 变为 gpu 的 999.1 tokens/s，约为 3.9 倍；decode 从 24.7 变为 50.6 tokens/s，约为 2.0 倍〔基准 D〕。切换后端同时改变了有效计算吞吐、有效带宽、delegate 和 kernel。这组比例表明两个阶段的后端敏感度不同，不能单独证明 prefill 已受算力约束、decode 已受带宽约束。
 
-第 1 章的 25 tokens/s 来自假想手机的题设，不能直接套到这台 Mac。这台 Mac 的标尺先立在标称值上：Apple 公布 M5 Pro 的统一内存带宽最高为 307 GB/s。[^ch02-m5pro-bandwidth] 对本书基准模型，`.litertlm` 整文件为 3.66 GB，并包含多个模型段；附录 D 识别出的主 decode 段 payload 为 2.26 GB。若额外假设每个 decode step 恰好读取这 2.26 GB 一次，并忽略其他流量，那么 gpu/256 档的等效主干 payload 速率为 `50.6 × 2.26 ≈ 114 GB/s`，cpu/256 档为 `24.8 × 2.26 ≈ 56 GB/s`，都落在标称带宽以内。不过这两个数是吞吐与假设 payload 的乘积，不是硬件计数器测得的 DRAM 带宽；它们与 307 GB/s 之间的差距混合了计算耗时、实际带宽利用率与假设误差，不能读作利用率，也不能反过来核验标称值。
+第 1 章的 25 tokens/s 来自假想手机的题设，不能直接套到这台 Mac。这台 Mac 的标尺先立在标称值上：Apple 公布 M5 Pro 的统一内存带宽最高为 307 GB/s。[^ch02-m5pro-bandwidth] 对本书基准模型，`.litertlm` 整文件为 3.66 GB，并包含多个模型段；附录 D 识别出的主 decode 段 payload 为 2.26 GB。若额外假设每个 decode step 恰好读取这 2.26 GB 一次，并忽略其他流量，那么 gpu/256 档的等效主干 payload 速率为 \\(50.6 \times 2.26 \approx 114\\) GB/s，cpu/256 档为 \\(24.8 \times 2.26 \approx 56\\) GB/s，都落在标称带宽以内。不过这两个数是吞吐与假设 payload 的乘积，不是硬件计数器测得的 DRAM 带宽；它们与 307 GB/s 之间的差距混合了计算耗时、实际带宽利用率与假设误差，不能读作利用率，也不能反过来核验标称值。
 
 <figure>
 {{#include figs/fig-2-1.svg}}
