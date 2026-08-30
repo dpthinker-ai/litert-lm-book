@@ -19,6 +19,8 @@ Google 官方将 LiteRT‑LM 定义为“使用 LiteRT 运行 LLM 的编排层�
 
 > 表 1-1　LiteRT‑LM 管理 LLM 生成过程，LiteRT 管理模型图和张量的设备执行；平台后端决定算子最终落到哪块硬件。
 
+表中的 signature 贯穿全书，先在这里说清：一个编译后的模型可以暴露多个具名调用入口，每个入口绑定一组固定形状的输入输出张量，这样的入口称为 signature，相当于一个库导出的多个函数。与函数不同，signature 的输入长度也在模型导出时冻结，同一个模型文件因此常备多个入口——本书基准模型有 `prefill_128`、`prefill_1024`、`decode`、`verify` 四个（入口名前缀见 `runtime/executor/llm_litert_compiled_model_executor.cc:77-78`），运行时按用途和输入长短选用。固定长度带来的分块与填充见第 4 章。
+
 代码里能清楚地看到这条调用链。`Engine` 初始化时先取得 LiteRT 的 `Environment`，再创建专用执行器（`runtime/core/engine_advanced_impl.cc:279-287`）；执行器从 `.litertlm` 模型包中读取 prefill/decode 子模型，并调用 `CompiledModel::Create` 完成后端编译（`runtime/executor/llm_litert_compiled_model_executor.cc:1651`）。这里的编译发生在设备上：`.litertlm` 存放的子模型是离线转换得到的可移植计算图与权重，GPU 的 kernel 程序要等首次创建时现场编译，编译产物可写入程序缓存复用（`runtime/executor/llm_executor_settings_utils.cc:134-137`）；NPU 路径另有绑定芯片代际的预编译产物。
 
 运行阶段，LiteRT‑LM 负责准备 token、position、attention mask 与 KV cache buffer，真正的 prefill 和 decode 计算则分别交给 LiteRT 的 `CompiledModel::Run` 与 `RunAsync`（`runtime/executor/llm_litert_compiled_model_executor.cc:730-734`、`runtime/executor/llm_litert_compiled_model_executor.cc:943`）。这些调用点的完整上下文分别见第 7 章（编译与加载）和第 8 章（缓冲绑定、执行与 NPU 路径）。
