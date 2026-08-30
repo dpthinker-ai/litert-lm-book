@@ -190,7 +190,7 @@ absl::StatusOr<ExecutorVisionData> VisionLiteRtCompiledModelExecutor::Encode(
 
 <figure>
 {{#include figs/fig-10-1.svg}}
-<figcaption>图 10-1　图像经 patchify、视觉编码器与适配器得到 embedding；prefill 查表再按 `kSpecialToken` 位置写入对应行。</figcaption>
+<figcaption>图 10-1　图像经 patchify、视觉编码器与适配器得到 embedding；prefill 查表再按 kSpecialToken 位置写入对应行。</figcaption>
 </figure>
 
 ### 10.2.1　变分辨率的视觉编码

@@ -149,7 +149,7 @@ loader 对键名做不区分大小写的比较。缺少 `model_type` 时，它�
 
 <figure>
 {{#include figs/fig-7-2.svg}}
-<figcaption>图 7-2　`.litertlm` 的头部记录 section 类型与字节范围；prompt 模板和停止 token 等运行参数位于 `LlmMetadataProto` 段内。</figcaption>
+<figcaption>图 7-2　.litertlm 的头部记录 section 类型与字节范围；prompt 模板和停止 token 等运行参数位于 LlmMetadataProto 段内。</figcaption>
 </figure>
 
 <div class="aside-compare">
@@ -556,7 +556,7 @@ $$
 
 <figure>
 {{#include figs/fig-7-7.svg}}
-<figcaption>图 7-7　首次 `UseLoRA` 把待用数据物化为后端 buffer；切换当前 ID 不会释放已经物化的适配器。</figcaption>
+<figcaption>图 7-7　首次 UseLoRA 把待用数据物化为后端 buffer；切换当前 ID 不会释放已经物化的适配器。</figcaption>
 </figure>
 
 假设音频服务依次加载 A、B、C 三个适配器，三者都采用表 7-11 的测试形状。状态与理论大小 如下：

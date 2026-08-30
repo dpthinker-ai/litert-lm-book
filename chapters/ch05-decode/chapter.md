@@ -43,7 +43,7 @@ while (true) {
 
 <figure>
 {{#include figs/fig-5-1.svg}}
-<figcaption>图 5-1　取消在迭代开始时检查；内部与外部采样汇合后，代码先处理文本与流式回调，再执行 `ShouldStop`。</figcaption>
+<figcaption>图 5-1　取消在迭代开始时检查；内部与外部采样汇合后，代码先处理文本与流式回调，再执行 ShouldStop。</figcaption>
 </figure>
 
 ## 5.2　两条路径：内部采样与外部采样
