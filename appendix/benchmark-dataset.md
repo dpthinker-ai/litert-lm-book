@@ -96,7 +96,7 @@
 
 ## 八、采样确定性实验（cpu）
 
-同一提示词（"Write one sentence about the ocean."）在温度 0、相同种子下运行两次，输出逐字一致。温度 1.0 时，seed 7 与 seed 1 生成了不同句子，seed 1 与 seed 2 则生成了相同序列；启用随机采样不保证每次输出都不同。复现时须固定模型、后端、提示词、温度、top-k、top-p 与缓存模式。实录见 `experiments/data/temperature_test.md`。
+同一提示词（"Write one sentence about the ocean."）在温度 0、相同种子下运行两次，输出逐字一致。温度 1.0 时，seed 7 与 seed 1 生成了不同句子，seed 1 与 seed 2 则生成了相同序列；启用随机采样不保证每次输出都不同。复现时须固定运行时版本、模型文件、后端、提示词、温度、top-k、top-p 与缓存模式；2026-08-31 以重装的新版运行时复测同一命令，温度 0 得到另一句，确定性不跨环境成立。实录见 `experiments/data/temperature_test.md`。
 
 ## 九、`--max-num-tokens` 预留宽度扫描（cpu，2026-07-17 补采）
 
