@@ -28,9 +28,10 @@ KV cache 属于运行时状态，模型文件则由 Engine 加载；二者的生
 
 ### 7.1.1　权重位宽与激活类型是两个配置维度
 
-LiteRT-LM 将激活类型表示为 `ActivationDataType`（`runtime/executor/executor_settings_base.h:62-74`）：
+LiteRT-LM 将激活类型表示为 `ActivationDataType`：
 
 ```cpp
+// runtime/executor/executor_settings_base.h:62-74
 enum class ActivationDataType {
   // Use float32 as the activation data type.
   FLOAT32,
@@ -46,11 +47,11 @@ enum class ActivationDataType {
 };
 ```
 
-这个枚举说明运行时设置可以区分 FLOAT32、FLOAT16、INT16 与 INT8。它不保证每个后端都按该类型保存所有中间张量，也不说明转换成本和质量。`Backend` 枚举另行列出 CPU、GPU、NPU 及三条 ARTISAN 路径（`runtime/executor/executor_settings_base.h:34-54`）。
+这个枚举说明运行时设置可以区分 FLOAT32、FLOAT16、INT16 与 INT8。它不保证每个后端都按该类型保存所有中间张量，也不说明转换成本和质量。`Backend` 枚举另行列出 CPU、GPU、NPU 及三条 ARTISAN 路径。
 
-激活设置到编译选项和算子的映射随后端而变。当前 GPU 编译选项只在 FLOAT32 与其他枚举值之间选择 FP32 或 FP16 精度（`runtime/executor/llm_executor_settings_utils.cc:76-86`）。
+激活设置到编译选项和算子的映射随后端而变。当前 GPU 编译选项只在 FLOAT32 与其他枚举值之间选择 FP32 或 FP16 精度。
 
-权重量化也不能从激活枚举推断。相邻的 `FakeWeightsMode` 声明了两种合成权重配置：所有层使用 INT8；或者注意力使用 INT8、FFN 与 embedding 使用 INT4（`runtime/executor/executor_settings_base.h:81-92`）。它可以表达待测的位宽组合，却没有给出真实模型的分组方式、scale、校准过程或质量结果。枚举名也不能证明“注意力层必须用 INT8”或真实 `.litertlm` 文件采用同一策略。
+权重量化也不能从激活枚举推断。相邻的 `FakeWeightsMode` 声明了两种合成权重配置：所有层使用 INT8；或者注意力使用 INT8、FFN 与 embedding 使用 INT4。它可以表达待测的位宽组合，却没有给出真实模型的分组方式、scale、校准过程或质量结果。枚举名也不能证明“注意力层必须用 INT8”或真实 `.litertlm` 文件采用同一策略。
 
 ### 7.1.2　从低比特文件到低比特 kernel 要经过四层
 
@@ -58,9 +59,9 @@ enum class ActivationDataType {
 
 这四层不能互相替代。文件中存在 INT4 常量，不代表图中的每个矩阵乘都能由同一个低比特算子处理。图能表达某种量化形式，也不代表 CPU、GPU 与 NPU 都接受它。后端完成编译后，权重还可能转换成设备相关布局；此时文件大小不再等于运行时权重缓冲大小。
 
-v0.13.1 的 GPU 编译选项提供了两个可观察的例子。`convert_weights_on_gpu` 控制 OpenCL 与 WebGPU 路径是否在 GPU 上转换权重，其他后端会忽略该开关。`allow_src_quantized_fc_conv_ops` 决定是否允许源量化的 FC/Conv，默认设置会允许该路径（`runtime/executor/llm_executor_settings.h:197-212`、`runtime/executor/llm_executor_settings.h:231-238`、`runtime/executor/llm_executor_settings_utils.cc:164-172`）。这些开关说明“量化权重存在”和“量化算子被采用”是两个判断。源码没有给出它们在每款 GPU 上对应的 kernel 清单。
+v0.13.1 的 GPU 编译选项提供了两个可观察的例子。`convert_weights_on_gpu` 控制 OpenCL 与 WebGPU 路径是否在 GPU 上转换权重，其他后端会忽略该开关。`allow_src_quantized_fc_conv_ops` 决定是否允许源量化的 FC/Conv，默认设置会允许该路径。这些开关说明“量化权重存在”和“量化算子被采用”是两个判断。源码没有给出它们在每款 GPU 上对应的 kernel 清单。
 
-CPU 路径配置 XNNPACK、动态 fully connected 标志和量化 zero point 压缩，再把硬件加速器设为 CPU（`runtime/executor/llm_executor_settings_utils.cc:217-255`）。这里同样没有一个通用的“INT4 已启用”布尔值。是否能编译，要由模型图、LiteRT、XNNPACK 版本和目标 CPU 共同决定。
+CPU 路径配置 XNNPACK、动态 fully connected 标志和量化 zero point 压缩，再把硬件加速器设为 CPU。这里同样没有一个通用的“INT4 已启用”布尔值。是否能编译，要由模型图、LiteRT、XNNPACK 版本和目标 CPU 共同决定。
 
 <figure>
 {{#include figs/fig-7-1.svg}}
@@ -117,33 +118,33 @@ $$
 
 ## 7.2　`.litertlm`：头部记录 section 目录
 
-端侧运行所需的数据不只有权重。模型相关的 section 有两种：TFLite 模型和外挂 TFLite 权重。tokenizer 分为 SentencePiece 与 HuggingFace；后者使用 zlib 压缩。其余类型是 `LlmMetadataProto` 和通用二进制（`schema/core/litertlm_header_schema.fbs:67-83`）。
+端侧运行所需的数据不只有权重。模型相关的 section 有两种：TFLite 模型和外挂 TFLite 权重。tokenizer 分为 SentencePiece 与 HuggingFace；后者使用 zlib 压缩。其余类型是 `LlmMetadataProto` 和通用二进制。
 
-`LlmMetadata` protobuf 保存起始 token、停止 token、prompt 模板和默认采样参数。模型类型也在同一消息内（`runtime/proto/llm_metadata.proto:59-90`）。这些值不是各自独立的 section。
+`LlmMetadata` protobuf 保存起始 token、停止 token、prompt 模板和默认采样参数。模型类型也在同一消息内。这些值不是各自独立的 section。
 
-文件头使用 FlatBuffer 二进制序列化格式。`KeyValuePair` 的键是字符串，值是带类型标签的 `VData` union。union 允许 12 种标量或字符串包装类型（`schema/core/litertlm_header_schema.fbs:23-59`）。这个设计固定了值的表示类型，但没有固定键名集合。增加字符串键通常不需要修改 `.fbs`；增加 union 值类型或 section 类型才需要修改 schema。
+文件头使用 FlatBuffer 二进制序列化格式。`KeyValuePair` 的键是字符串，值是带类型标签的 `VData` union。union 允许 12 种标量或字符串包装类型。这个设计固定了值的表示类型，但没有固定键名集合。增加字符串键通常不需要修改 `.fbs`；增加 union 值类型或 section 类型才需要修改 schema。
 
-`key` 与 `value` 标记为 `(required)`，这是 schema 的结构约束。它不等于当前读取路径会对任意损坏文件做完整验证。`ReadHeaderFromLiteRTLM` 检查魔数、major 版本、头部结束偏移和读取结果，然后把缓冲传递给生成的访问器；该函数没有调用生成的 FlatBuffers verifier（`schema/core/litertlm_read.cc:70-139`）。因此，本章只把 schema 当作文件结构定义，不把它描述成完整的安全校验器或语义校验器。
+`key` 与 `value` 标记为 `(required)`，这是 schema 的结构约束。它不等于当前读取路径会对任意损坏文件做完整验证。`ReadHeaderFromLiteRTLM` 检查魔数、major 版本、头部结束偏移和读取结果，然后把缓冲传递给生成的访问器；该函数没有调用生成的 FlatBuffers verifier。因此，本章只把 schema 当作文件结构定义，不把它描述成完整的安全校验器或语义校验器。
 
-段目录由 `SectionObject` 给出。每项记录可选的键值属性、`begin_offset`、`end_offset` 和 `data_type`，数据范围是 `[begin_offset, end_offset)`。注释规定，下一段不得早于计算出的 16 KiB 对齐边界（`schema/core/litertlm_header_schema.fbs:85-96`）。
+段目录由 `SectionObject` 给出。每项记录可选的键值属性、`begin_offset`、`end_offset` 和 `data_type`，数据范围是 `[begin_offset, end_offset)`。注释规定，下一段不得早于计算出的 16 KiB 对齐边界。
 
-`AnySectionDataType` 上方还有版本演进约定。新增 section 类型提升 minor 版本，重排或删除已有类型提升 major 版本（`schema/core/litertlm_header_schema.fbs:67-71`）。这段注释没有声称所有 minor 版本都能由旧读取器无条件处理。
+`AnySectionDataType` 上方还有版本演进约定。新增 section 类型提升 minor 版本，重排或删除已有类型提升 major 版本。这段注释没有声称所有 minor 版本都能由旧读取器无条件处理。
 
-schema 工具层定义了三种写段辅助类。`FileBackedSectionStream` 把源文件读入内部缓冲，`ProtoBufSectionStream` 序列化 protobuf，`ZlibBackendedSectionStream` 包装输入流并压缩（`schema/core/litertlm_section.h:95-142`、`schema/core/litertlm_section.h:181-243`、`schema/core/litertlm_section.h:252-280`）。
+schema 工具层定义了三种写段辅助类。`FileBackedSectionStream` 把源文件读入内部缓冲，`ProtoBufSectionStream` 序列化 protobuf，`ZlibBackendedSectionStream` 包装输入流并压缩。
 
-当前 Python builder 逐项调用 section 的 `data_writer`，并在写入前后记录偏移（`python/litert_lm_builder/litertlm_builder.py:702-712`）。这三个 C++ 类只是写段辅助类，不是文件头中的 section 类型。它们也不能用来概括当前 Python builder 的打包路径。
+当前 Python builder 逐项调用 section 的 `data_writer`，并在写入前后记录偏移。这三个 C++ 类只是写段辅助类，不是文件头中的 section 类型。它们也不能用来概括当前 Python builder 的打包路径。
 
 ### 7.2.1　固定前缀与两阶段写入
 
-当前 Python 工具生成的格式版本是 1.5.0。文件开头 8 字节是 `LITERTLM`，随后依次写入 4 字节的 major、minor、patch。字节 20-23 是填充，字节 24-31 保存 FlatBuffer 头的结束偏移，头部元数据从字节 32 开始。`BLOCK_SIZE` 为 16 KiB（`python/litert_lm_builder/litertlm_core.py:24-31`）。
+当前 Python 工具生成的格式版本是 1.5.0。文件开头 8 字节是 `LITERTLM`，随后依次写入 4 字节的 major、minor、patch。字节 20-23 是填充，字节 24-31 保存 FlatBuffer 头的结束偏移，头部元数据从字节 32 开始。`BLOCK_SIZE` 为 16 KiB。
 
-builder 不能在写 section 前一次性确定所有结束偏移。它先用非零占位值打包头部，得到头部长度；然后从对齐后的第一个 section 起点开始写数据，逐段回填 `beginOffset` 与 `endOffset`。全部 section 写完后，builder 回到文件开头，写入魔数、版本、头部结束偏移和更新后的 FlatBuffer（`python/litert_lm_builder/litertlm_builder.py:671-730`）。
+builder 不能在写 section 前一次性确定所有结束偏移。它先用非零占位值打包头部，得到头部长度；然后从对齐后的第一个 section 起点开始写数据，逐段回填 `beginOffset` 与 `endOffset`。全部 section 写完后，builder 回到文件开头，写入魔数、版本、头部结束偏移和更新后的 FlatBuffer。
 
 第二次打包前后，元数据长度必须相同。代码以断言检查这一条件。偏移值本身是固定宽度的 `ulong`，因此从占位值改成真实值不会改变 FlatBuffer 的字段宽度。若以后把可变长内容加入这一回填过程，就需要重新审视这一假设。
 
-TFLite 模型段的 `items` 还有三项会影响加载行为。`model_type` 用来区分主干、视觉、音频或其他模型；`backend_constraint` 声明允许的后端集合；`prefer_activation_type` 给出首选激活类型。builder 会禁止覆盖 `model_type` 与 `backend_constraint`，并把后端字符串转换为小写（`python/litert_lm_builder/litertlm_builder.py:434-505`）。
+TFLite 模型段的 `items` 还有三项会影响加载行为。`model_type` 用来区分主干、视觉、音频或其他模型；`backend_constraint` 声明允许的后端集合；`prefer_activation_type` 给出首选激活类型。builder 会禁止覆盖 `model_type` 与 `backend_constraint`，并把后端字符串转换为小写。
 
-loader 对键名做不区分大小写的比较。缺少 `model_type` 时，它为兼容旧文件回退到 `kTfLitePrefillDecode`；存在后端和激活提示时，则把它们存入 `section_hints_map_`（`runtime/util/litert_lm_loader.cc:71-117`、`runtime/util/litert_lm_loader.cc:233-266`）。因此，section 属性不是只供打印工具展示的注释。Engine 会在创建 executor 前检查后端约束，并在调用者没有显式指定激活类型时采用 `prefer_activation_type`（`runtime/engine/engine_settings.cc:73-136`、`runtime/engine/engine_settings.cc:415-433`）。
+loader 对键名做不区分大小写的比较。缺少 `model_type` 时，它为兼容旧文件回退到 `kTfLitePrefillDecode`；存在后端和激活提示时，则把它们存入 `section_hints_map_`。因此，section 属性不是只供打印工具展示的注释。Engine 会在创建 executor 前检查后端约束，并在调用者没有显式指定激活类型时采用 `prefer_activation_type`。
 
 `backend_constraint` 是约束，`prefer_activation_type` 是默认选择提示。前者不包含当前后端时，Engine 返回 `InvalidArgumentError`；后者不会覆盖调用者已经设置的激活类型。排查初始化失败时，应先区分这两种语义。
 
@@ -154,23 +155,25 @@ loader 对键名做不区分大小写的比较。缺少 `model_type` 时，它�
 
 <div class="aside-compare">
 
-llama.cpp 的 GGUF 也在单文件中保存元数据与张量数据。它的默认数据对齐是 32 字节（`GGUF_DEFAULT_ALIGNMENT`，`llama.cpp/ggml/include/gguf.h:46 @ b9873`）；`.litertlm` 的 section 布局使用 16 KiB 边界。二者的对齐对象和粒度不同，不能只凭数值判断格式优劣。
+llama.cpp 的 GGUF 也在单文件中保存元数据与张量数据。它的默认数据对齐是 32 字节[^ch07-llamacpp-gguf]；`.litertlm` 的 section 布局使用 16 KiB 边界。二者的对齐对象和粒度不同，不能只凭数值判断格式优劣。
 
-两个项目都允许从独立文件接入 LoRA。llama.cpp 暴露 `--lora` 参数（`llama.cpp/common/arg.cpp:2648 @ b9873`）；LiteRT-LM 由 `LoadLoRA` 和 `UseLoRA` 分别处理数据登记与后端资源创建。
+两个项目都允许从独立文件接入 LoRA。llama.cpp 暴露 `--lora` 参数[^ch07-llamacpp-lora]；LiteRT-LM 由 `LoadLoRA` 和 `UseLoRA` 分别处理数据登记与后端资源创建。
 
 </div>
 
 ## 7.3　当前加载路径：`LitertLmLoader` 按请求取段
 
-v0.13.1 的 Engine 创建流程先调用 `BuildLiteRtCompiledModelResources`（`runtime/core/engine_advanced_impl.cc:184-198`）。文件格式为 `LITERT_LM` 时，分支进入 `BuildModelResourcesFromLitertLmFormat`。该函数创建 `LitertLmLoader`，再包装成 `ModelResourcesLitertLm`（`runtime/executor/litert_compiled_model_executor_utils.cc:109-123`、`runtime/executor/litert_compiled_model_executor_utils.cc:391-399`）。这是本章所说的主加载路径。
+v0.13.1 的 Engine 创建流程先调用 `BuildLiteRtCompiledModelResources`。文件格式为 `LITERT_LM` 时，分支进入 `BuildModelResourcesFromLitertLmFormat`。该函数创建 `LitertLmLoader`，再包装成 `ModelResourcesLitertLm`。这是本章所说的主加载路径。
 
-`schema/core/litertlm_read.cc` 里还有 `ReadTFLiteFileFromSection` 的两个辅助重载。一个使用 TFLite 的 `MMAPAllocation`，另一个返回单独的 `MemoryMappedFile` 句柄（`schema/core/litertlm_read.h:145-162`、`schema/core/litertlm_read.cc:218-264`）。这两个重载都能按 section 提取 TFLite 模型。当前 Engine 主路径不通过它们加载模型，因而不能把其中任一重载称为“默认权重路径”。
+`schema/core/litertlm_read.cc` 里还有 `ReadTFLiteFileFromSection` 的两个辅助重载。一个使用 TFLite 的 `MMAPAllocation`，另一个返回单独的 `MemoryMappedFile` 句柄。这两个重载都能按 section 提取 TFLite 模型。当前 Engine 主路径不通过它们加载模型，因而不能把其中任一重载称为“默认权重路径”。
 
 ### 7.3.1　只在初始化时建立 section 索引
 
-`LitertLmLoader::Initialize` 最多读取开头 16 KiB 作为头部。来源是 `ScopedFile` 时，它为这部分建立映射；来源已经是整文件 `MemoryMappedFile` 时，它直接使用基址。解析后，loader 遍历 section 并记录各 `BufferKey` 的偏移范围。它不提前创建各 section 的 `BufferRef`（`runtime/util/litert_lm_loader.h:42`、`runtime/util/litert_lm_loader.cc:196-267`）。调用方请求模型、tokenizer 或元数据时，`GetSectionBuffer` 才取得相应范围：
+`LitertLmLoader::Initialize` 最多读取开头 16 KiB 作为头部。来源是 `ScopedFile` 时，它为这部分建立映射；来源已经是整文件 `MemoryMappedFile` 时，它直接使用基址。解析后，loader 遍历 section 并记录各 `BufferKey` 的偏移范围。它不提前创建各 section 的 `BufferRef`。调用方请求模型、tokenizer 或元数据时，`GetSectionBuffer` 才取得相应范围：
 
 ```cpp
+// runtime/util/litert_lm_loader.h:42
+// runtime/util/litert_lm_loader.cc:196-267
   {
     absl::ReaderMutexLock lock(section_buffers_mutex_);
     auto section_buffer_it = section_buffers_.find(buffer_key);
@@ -189,17 +192,19 @@ v0.13.1 的 Engine 创建流程先调用 `BuildLiteRtCompiledModelResources`（`
   absl::Status status = MapSection(buffer_key, offset_begin, offset_end);
 ```
 
-第一次检查持读锁，已存在的 section buffer 可以直接返回。未命中后取得写锁并再次检查，避免两个线程重复处理同一 section。取得的 `BufferRef` 留在 `section_buffers_` 中复用（`runtime/util/litert_lm_loader.cc:270-301`）。
+第一次检查持读锁，已存在的 section buffer 可以直接返回。未命中后取得写锁并再次检查，避免两个线程重复处理同一 section。取得的 `BufferRef` 留在 `section_buffers_` 中复用。
 
 这里的“按需”指 section buffer 在第一次请求时建立。若来源是 `ScopedFile`，这一步包含一次 section 映射；若整文件已经映射，则只根据基址和偏移建立视图。它不保证物理页只在首次 CPU 访问时读盘。
 
 ### 7.3.2　对齐补偿与平台页建议
 
-`MapSection` 先区分模型来源。整文件已经是 `MemoryMappedFile` 时，它直接用基址加 `begin_offset`。只有 `ScopedFile` 分支才为 section 新建映射（`runtime/util/litert_lm_loader.cc:120-158`）。
+`MapSection` 先区分模型来源。整文件已经是 `MemoryMappedFile` 时，它直接用基址加 `begin_offset`。只有 `ScopedFile` 分支才为 section 新建映射。
 
-`MemoryMappedFile::Create` 要求映射偏移满足平台对齐值。POSIX 使用 `getpagesize()`（`runtime/util/memory_mapped_file_posix.cc:90-105`）。Windows 读取系统的 allocation granularity（`runtime/util/memory_mapped_file_win.cc:133-137`）。16 KiB section 边界不一定满足所有平台的对齐值。`ScopedFile` 分支因此先回退到平台边界，再把返回指针前移 `alignment_gap`：
+`MemoryMappedFile::Create` 要求映射偏移满足平台对齐值。POSIX 使用 `getpagesize()`。Windows 读取系统的 allocation granularity。16 KiB section 边界不一定满足所有平台的对齐值。`ScopedFile` 分支因此先回退到平台边界，再把返回指针前移 `alignment_gap`：
 
 ```cpp
+// runtime/util/memory_mapped_file_posix.cc:90-105
+// runtime/util/memory_mapped_file_win.cc:133-137
     size_t alignment = MemoryMappedFile::GetOffsetAlignment();
     uint64_t alignment_gap = begin_offset % alignment;
     uint64_t aligned_begin_offset = begin_offset - alignment_gap;
@@ -209,36 +214,36 @@ v0.13.1 的 Engine 创建流程先调用 `BuildLiteRtCompiledModelResources`（`
 
 这段补偿位于当前主 loader，而不是文件格式本身。向前多映射的范围扩大了虚拟映射区；哪些页实际进入物理内存仍由后续访问与操作系统策略决定。
 
-POSIX 实现用 `MAP_PRIVATE` 建立映射。随后，Apple 平台调用 `MADV_DONTNEED`，其他 POSIX 平台调用 `MADV_WILLNEED`（`runtime/util/memory_mapped_file_posix.cc:101-128`）。`madvise` 是给内核的建议，不是同步读盘完成或禁止预读的保证。因此不能简单地说“mmap 后一律不预读”：不同平台的代码路径给出了相反的页使用建议。
+POSIX 实现用 `MAP_PRIVATE` 建立映射。随后，Apple 平台调用 `MADV_DONTNEED`，其他 POSIX 平台调用 `MADV_WILLNEED`。`madvise` 是给内核的建议，不是同步读盘完成或禁止预读的保证。因此不能简单地说“mmap 后一律不预读”：不同平台的代码路径给出了相反的页使用建议。
 
 ### 7.3.3　并行的是 tokenizer 创建与模型加载
 
-`parallel_file_section_loading_` 默认值为 `true`（`runtime/engine/engine_settings.h:173`）。对于带 `LlmModelType` 的新格式模型，开关为真时，Engine 用 `std::launch::async` 创建 tokenizer。当前线程继续设置模型并创建 executor。开关为假时改用 `std::launch::deferred`。旧格式模型在进入这个分支前同步创建 tokenizer（`runtime/core/engine_advanced_impl.cc:221-271`）。因此，这个名称不能解释成“所有 section 同时读盘”。
+`parallel_file_section_loading_` 默认值为 `true`。对于带 `LlmModelType` 的新格式模型，开关为真时，Engine 用 `std::launch::async` 创建 tokenizer。当前线程继续设置模型并创建 executor。开关为假时改用 `std::launch::deferred`。旧格式模型在进入这个分支前同步创建 tokenizer。因此，这个名称不能解释成“所有 section 同时读盘”。
 
 <figure>
 {{#include figs/fig-7-3.svg}}
 <figcaption>图 7-3　当前加载链路先建立 section 索引，再按请求映射 section；新格式模型可让 tokenizer 创建与后续模型加载重叠，实际冷启动差异需单独测量。</figcaption>
 </figure>
 
-本书尚未对 `parallel_file_section_loading` 做开关对照，因而不报告并行加载的毫秒收益。附录 D 的设备是 Apple M5 Pro，模型是 Gemma 4 E4B。后端为 GPU（Metal），CLI 使用 `--cache disk`。同一批次中，首次 Init API 聚合值为 5.29 s，后续约为 1.77 s〔基准 D〕。
+本书尚未对 `parallel_file_section_loading` 做开关对照，因而不报告并行加载的毫秒收益。附录 D 的设备是 Apple M5 Pro，模型是 Gemma 4 E4B。后端为 GPU（Metal），CLI 使用 `--cache disk`。同一批次中，首次 Init API 聚合值为 5.29 s，后续约为 1.77 s。
 
-这个 Init 值不是无重叠的端到端墙钟时间。C API 会遍历 `GetInitPhases()`，把所有阶段的 duration 相加（`c/engine.cc:821-830`）；`kTotal` 与随后启动的 `kModelAssets`、`kLlmMetadata` 子阶段存在区间重叠（`runtime/core/engine_advanced_impl.cc:178-201`）。这组数据只能说明同一 API 口径的批内变化。实验既没有 cache 开关对照，也没有外部墙钟的受控测量。因此，这些数据不能单独量化编译缓存或 tokenizer 并行的贡献。
+这个 Init 值不是无重叠的端到端墙钟时间。C API 会遍历 `GetInitPhases()`，把所有阶段的 duration 相加；`kTotal` 与随后启动的 `kModelAssets`、`kLlmMetadata` 子阶段存在区间重叠。这组数据只能说明同一 API 口径的批内变化。实验既没有 cache 开关对照，也没有外部墙钟的受控测量。因此，这些数据不能单独量化编译缓存或 tokenizer 并行的贡献。
 
 ### 7.3.4　weight cache 的标识不是内容哈希
 
-CPU 与 GPU 后端会为权重或程序缓存派生文件名。`CacheSuffix` 的注释列出 XNNPACK、MlDrift 程序缓存（program cache）和 MlDrift weight cache。各自的命名形态见 `runtime/executor/executor_settings_base.h:168-186`。`GetWeightCacheFile` 处理 `:nocache`、scoped cache file、路径派生与旧缓存清理（`runtime/executor/executor_settings_base.cc:301-354`）。
+CPU 与 GPU 后端会为权重或程序缓存派生文件名。`CacheSuffix` 的注释列出 XNNPACK、MlDrift 程序缓存（program cache）和 MlDrift weight cache。`GetWeightCacheFile` 处理 `:nocache`、scoped cache file、路径派生与旧缓存清理。
 
-cache 文件不是 `.litertlm` 中某个 section 的原样副本。LiteRT-LM 先派生路径，或者取得调用者提供的文件描述符，再把配置传递给后端。CPU 路径设置 XNNPACK weight cache 的路径或 fd。GPU 的路径模式传入序列化目录、模型 cache key 与外部张量序列化开关；只有文件描述符模式才显式传入 weight cache 与 program cache 的 fd（`runtime/executor/litert_compiled_model_executor_utils.cc:460-488`、`runtime/executor/litert_compiled_model_executor_utils.cc:491-554`）。路径模式下 GPU weight cache 的实际文件名、格式与命中判断属于下层 LiteRT 后端，不能从 LiteRT-LM 的候选路径单独确定。
+cache 文件不是 `.litertlm` 中某个 section 的原样副本。LiteRT-LM 先派生路径，或者取得调用者提供的文件描述符，再把配置传递给后端。CPU 路径设置 XNNPACK weight cache 的路径或 fd。GPU 的路径模式传入序列化目录、模型 cache key 与外部张量序列化开关；只有文件描述符模式才显式传入 weight cache 与 program cache 的 fd。路径模式下 GPU weight cache 的实际文件名、格式与命中判断属于下层 LiteRT 后端，不能从 LiteRT-LM 的候选路径单独确定。
 
-主文本 executor 先创建带 cache 参数的 compilation options。若 `.litertlm` 有独立 `TFLiteWeights` 段，它还把该段的 offset 与 length 作为 `tflite_weights` 传给 GPU；非 GPU 后端遇到这类外挂权重段会返回错误。随后才调用 `CompiledModel::Create`（`runtime/executor/llm_litert_compiled_model_executor.cc:1624-1652`）。外挂权重、weight cache 与 compiled model 是三个对象。它们分别属于模型输入产物、后端派生物和本次进程中的可执行对象。
+主文本 executor 先创建带 cache 参数的 compilation options。若 `.litertlm` 有独立 `TFLiteWeights` 段，它还把该段的 offset 与 length 作为 `tflite_weights` 传给 GPU；非 GPU 后端遇到这类外挂权重段会返回错误。随后才调用 `CompiledModel::Create`。外挂权重、weight cache 与 compiled model 是三个对象。它们分别属于模型输入产物、后端派生物和本次进程中的可执行对象。
 
 CPU 和 GPU 的 cache 内容也不能互换。主 CPU 路径使用 `.xnnpack_cache`；GPU 配置包含 MlDrift program cache、外部张量序列化和模型 cache key。删除或禁用其中一种 cache，只能隔离对应后端的初始化变量，不能推出另一种 cache 的状态。
 
-缓存名中的模型标识来自 `GetFileCacheIdentifier`。路径版本读取文件最后修改时间和字节数，拼成 `<mtime_seconds>_<size>`。结果还会在进程内按路径缓存（`runtime/util/file_util.cc:97-143`）。文件描述符版本同样返回修改时间与大小（`runtime/util/file_util.cc:146-182`）。头文件注释写的也是“timestamp + file size”（`runtime/util/file_util.h:42-46`）。
+缓存名中的模型标识来自 `GetFileCacheIdentifier`。路径版本读取文件最后修改时间和字节数，拼成 `<mtime_seconds>_<size>`。结果还会在进程内按路径缓存。文件描述符版本同样返回修改时间与大小。头文件注释写的也是“timestamp + file size”。
 
 这不是内容哈希。只要大小或秒级修改时间变化，派生路径通常会变化；若内容改变但大小与时间戳相同，标识仍然不变。同一进程第一次查询后还会复用路径对应的已缓存标识。因此，这种失效判断不能保证每次内容变化都生成新缓存名。
 
-自动清理只适用于路径模式，并且要在调用方启用检查、当前派生出的普通文件不存在且目录可遍历时才会执行。`DeleteStaleCaches` 按 basename 与后缀匹配旧文件，直接调用文件系统删除；实现中没有进程间锁（`runtime/executor/executor_settings_base.cc:335-350`、`runtime/util/file_util.cc:192-239`）。若模型内容改变但标识没有改变，当前 cache 路径仍存在，清理分支不会运行。若模型在同一进程内被原位替换，即使新文件的 mtime 或大小不同，进程内保存的旧标识也可能继续被使用。scoped file 模式绕过自动清理，调用者需要自行管理旧文件。
+自动清理只适用于路径模式，并且要在调用方启用检查、当前派生出的普通文件不存在且目录可遍历时才会执行。`DeleteStaleCaches` 按 basename 与后缀匹配旧文件，直接调用文件系统删除；实现中没有进程间锁。若模型内容改变但标识没有改变，当前 cache 路径仍存在，清理分支不会运行。若模型在同一进程内被原位替换，即使新文件的 mtime 或大小不同，进程内保存的旧标识也可能继续被使用。scoped file 模式绕过自动清理，调用者需要自行管理旧文件。
 
 <figure>
 {{#include figs/fig-7-4.svg}}
@@ -261,7 +266,7 @@ CPU 和 GPU 的 cache 内容也不能互换。主 CPU 路径使用 `.xnnpack_cac
 
 mmap 先增加虚拟地址映射，物理驻留随后受页面访问、`madvise` 和内核回收策略影响。它可以避免把整个模型再复制到一块普通堆缓冲，但不会自动缩小推理阶段需要访问的权重工作集。对稠密模型而言，每个 decode step 通常会访问大部分权重；实际驻留规模还取决于后端预打包、缓存和系统内存压力。
 
-LiteRT-LM 的内存日志提供多种口径（`runtime/engine/litert_lm_lib.cc:427-451`）。日志记录 peak system RAM、physical footprint 与非 mmap 堆；还记录 in-use heap 和 private footprint。判断模型能否运行时，应同时看私有内存、KV cache、激活、后端工作区和文件映射的驻留工作集。虚拟映射大小不是峰值物理内存，二者之差也不能全部视为节省量。
+LiteRT-LM 的内存日志提供多种口径。日志记录 peak system RAM、physical footprint 与非 mmap 堆；还记录 in-use heap 和 private footprint。判断模型能否运行时，应同时看私有内存、KV cache、激活、后端工作区和文件映射的驻留工作集。虚拟映射大小不是峰值物理内存，二者之差也不能全部视为节省量。
 
 ## 7.4　LoRA：基座权重与增量权重分离
 
@@ -275,21 +280,21 @@ LoRA 用两个低秩矩阵表示某个线性层的权重增量。对于 \\(d_{in
 
 离线合并不需要运行时切换接口，但每个适配器都会产生一份新的完整模型。若基座权重已经量化，先合并还是先量化会改变数值结果，不能把 FP16 合并后的差分直接等同于量化模型上的差分。运行时适配只分发增量文件，却要求基座模型的 signature 预先暴露匹配的 LoRA 输入，后端还要能为这些输入创建 buffer。
 
-v0.13.1 可追踪到的 `LoRA` 组件属于运行时适配路径。主文本 compiled executor 会识别 LoRA 输入名，并跳过普通 decode buffer 的创建，把这些输入留给 `LoraManager`（`runtime/executor/llm_litert_compiled_model_executor.cc:1708-1719`）。不过，该文件里没有创建或调用 `LoraManager` 的调用点。仓库内可直接追踪的 `LoadLoRA` 与 `UseLoRA` 调用位于音频编码器。因此，不能仅凭主文本图中存在 LoRA 输入，就断定 v0.13.1 的文本生成 API 已完成同样的热切换链路。
+v0.13.1 可追踪到的 `LoRA` 组件属于运行时适配路径。主文本 compiled executor 会识别 LoRA 输入名，并跳过普通 decode buffer 的创建，把这些输入留给 `LoraManager`。不过，该文件里没有创建或调用 `LoraManager` 的调用点。仓库内可直接追踪的 `LoadLoRA` 与 `UseLoRA` 调用位于音频编码器。因此，不能仅凭主文本图中存在 LoRA 输入，就断定 v0.13.1 的文本生成 API 已完成同样的热切换链路。
 
 仓库中也没有一条由上述运行时组件执行 \\(W^{\prime}=W+\Delta W\\) 的原位合并路径。若产品选择离线合并，应把它视为模型导出流程。量化、后端约束、cache 标识和质量都要重新验证，不能把 `LoadLoRA` 当作合并工具。
 
-LiteRT-LM 的 `LoraData` 在 CPU 侧提供只读数据视图。类注释说明其目标是以 mmap 等方式减少拷贝（`runtime/util/lora_data.h:28-64`）。`LoraManager` 用 `lora_data_` 保存尚未创建后端对象的 ID，用 `loras_` 保存已经创建的 `LoRA` 对象。`current_lora_id_` 选择当前使用哪一份（`runtime/components/lora_manager.h:34-77`）。
+LiteRT-LM 的 `LoraData` 在 CPU 侧提供只读数据视图。类注释说明其目标是以 mmap 等方式减少拷贝。`LoraManager` 用 `lora_data_` 保存尚未创建后端对象的 ID，用 `loras_` 保存已经创建的 `LoRA` 对象。`current_lora_id_` 选择当前使用哪一份。
 
-v0.13.1 中可直接追踪的调用点位于音频编码器的 `LoadLoRA` 与 `UseLoRA`（`runtime/executor/audio_litert_compiled_model_executor.cc:192-214`）。这一调用点使用前述通用组件，但不能证明主文本 executor 已提供相同的热切换接口。
+v0.13.1 中可直接追踪的调用点位于音频编码器的 `LoadLoRA` 与 `UseLoRA`。这一调用点使用前述通用组件，但不能证明主文本 executor 已提供相同的热切换接口。
 
-`LoadLoRA` 从 `ModelAssets` 创建 `LoraData`，放入待用表。第一次调用 `UseLoRA(id)` 时，管理器把数据移进 `LoRA::Create`，将对象写入 `loras_`，删除待用表中的同一项，再更新当前 ID（`runtime/components/lora_manager.cc:46-68`）。
+`LoadLoRA` 从 `ModelAssets` 创建 `LoraData`，放入待用表。第一次调用 `UseLoRA(id)` 时，管理器把数据移进 `LoRA::Create`，将对象写入 `loras_`，删除待用表中的同一项，再更新当前 ID。
 
-`LoRA::Init` 遍历 signature 输入，为 LoRA 输入创建 `TensorBuffer`。数据存在时，它检查大小并复制；不存在时，将相应 buffer 置零（`runtime/components/lora.cc:64-103`）。buffer 的实际存放位置由编译模型和后端决定，不能统一称为 GPU 显存。
+`LoRA::Init` 遍历 signature 输入，为 LoRA 输入创建 `TensorBuffer`。数据存在时，它检查大小并复制；不存在时，将相应 buffer 置零。buffer 的实际存放位置由编译模型和后端决定，不能统一称为 GPU 显存。
 
-适配器文件本身也是 TFLite FlatBuffer。`LoraData` 先验证并建立 `FlatBufferModel`，从名为 `lora_rank` 的 metadata 读取 rank，再按 tensor 名找到相应 buffer（`runtime/util/lora_data.cc:41-81`、`runtime/util/lora_data.cc:109-140`）。文件来源可以是路径、`ScopedFile` 或已有 buffer；文件路径分支通过 mmap 提供 tensor 视图（`runtime/util/lora_data.cc:219-247`）。
+适配器文件本身也是 TFLite FlatBuffer。`LoraData` 先验证并建立 `FlatBufferModel`，从名为 `lora_rank` 的 metadata 读取 rank，再按 tensor 名找到相应 buffer。文件来源可以是路径、`ScopedFile` 或已有 buffer；文件路径分支通过 mmap 提供 tensor 视图。
 
-名称和尺寸共同构成兼容边界。`IsLoRAInputName` 只接受两组固定命名模式，并要求名称以层号结尾（`runtime/util/lora_util.cc:33-35`、`runtime/util/lora_util.cc:75-80`）。基座 signature 需要某个 LoRA 输入而适配器缺少同名 tensor 时，运行时为该输入填零；同名 tensor 存在但字节数不一致时，初始化失败。适配器多出的 tensor 不会被基座 signature 请求。由此可见，仅比较 rank 不足以判断兼容性，还要比较命名、覆盖层和每个输入的形状。
+名称和尺寸共同构成兼容边界。`IsLoRAInputName` 只接受两组固定命名模式，并要求名称以层号结尾。基座 signature 需要某个 LoRA 输入而适配器缺少同名 tensor 时，运行时为该输入填零；同名 tensor 存在但字节数不一致时，初始化失败。适配器多出的 tensor 不会被基座 signature 请求。由此可见，仅比较 rank 不足以判断兼容性，还要比较命名、覆盖层和每个输入的形状。
 
 | 兼容情况 | `LoRA::Init` 的行为 | 结果 |
 |---|---|---|
@@ -303,27 +308,27 @@ v0.13.1 中可直接追踪的调用点位于音频编码器的 `LoadLoRA` 与 `U
 
 `current_lora_id_` 只选择当前返回哪组 buffer，不会删除以前使用过的 `LoRA`。`loras_` 保留每个已经执行过 `UseLoRA` 的 ID，类的公开接口也没有逐项卸载方法。切换回旧 ID 时，可以直接复用已经创建的对象。使用过的不同 ID 越多，管理器保留的源数据与后端 buffer 也可能越多，直到管理器销毁。
 
-ID 还需要由调用者保持全生命周期唯一。`LoadLoRA` 的重复检查只查询尚未物化的 `lora_data_`。某个 ID 执行 `UseLoRA` 后会从该表移入 `loras_`；此后再次用同一 ID 调用 `LoadLoRA`，当前检查不会因 `loras_` 已有对象而拒绝。后续 `UseLoRA` 会继续选择旧对象，新放入 `lora_data_` 的数据不会替换它（`runtime/components/lora_manager.cc:46-68`）。应用不应依赖复用 ID 来更新适配器。
+ID 还需要由调用者保持全生命周期唯一。`LoadLoRA` 的重复检查只查询尚未物化的 `lora_data_`。某个 ID 执行 `UseLoRA` 后会从该表移入 `loras_`；此后再次用同一 ID 调用 `LoadLoRA`，当前检查不会因 `loras_` 已有对象而拒绝。后续 `UseLoRA` 会继续选择旧对象，新放入 `lora_data_` 的数据不会替换它。应用不应依赖复用 ID 来更新适配器。
 
-测试覆盖了 ID 0 → ID 1 → ID 0 的切换（`runtime/components/lora_manager_test.cc:169-220`）。懒创建只说明未使用的 ID 暂不创建后端对象。它不能推出“显存始终只占当前一个 LoRA”。
+测试覆盖了 ID 0 → ID 1 → ID 0 的切换。懒创建只说明未使用的 ID 暂不创建后端对象。它不能推出“显存始终只占当前一个 LoRA”。
 
-`GetLoRABuffers` 只从当前 ID 对应的对象取 buffer。`LoRA` 通过 `TensorBuffer::Duplicate()` 返回共享底层数据的句柄（`runtime/components/lora.h:33-39`、`runtime/components/lora.h:56-67`、`runtime/components/lora.cc:116-123`）。此处不会再次 `memcpy` 张量数据。调用方仍要按接口约定释放取得的句柄。
+`GetLoRABuffers` 只从当前 ID 对应的对象取 buffer。`LoRA` 通过 `TensorBuffer::Duplicate()` 返回共享底层数据的句柄。此处不会再次 `memcpy` 张量数据。调用方仍要按接口约定释放取得的句柄。
 
 ## 7.5　`litertlm_print`：检查头部与 section 目录
 
-`litertlm_print` 先读取版本与系统元数据，再遍历 `SectionObject`。它打印条目的键值、起止偏移和 section 类型（`schema/core/litertlm_print.cc:106-180`）。遇到 `LlmMetadataProto` 时，它额外调用 `ReadLlmMetadataFromSection`，输出 protobuf 的 `DebugString()`（`schema/core/litertlm_print.cc:181-196`）。因此，元数据段会展开 start token、stop token 和 prompt 模板。其他段则主要显示位置与类型。
+`litertlm_print` 先读取版本与系统元数据，再遍历 `SectionObject`。它打印条目的键值、起止偏移和 section 类型。遇到 `LlmMetadataProto` 时，它额外调用 `ReadLlmMetadataFromSection`，输出 protobuf 的 `DebugString()`。因此，元数据段会展开 start token、stop token 和 prompt 模板。其他段则主要显示位置与类型。
 
-`litertlm_print` 并不覆盖所有合法的 `VData` 类型。`VData` union 声明了 12 种值类型。`PrintKeyValuePair` 只显式处理 `StringValue`、`Int32`、`Float32`、`Bool` 和 `UInt64`。其余合法类型落入 `Unknown Type`（`schema/core/litertlm_print.cc:60-103`）。
+`litertlm_print` 并不覆盖所有合法的 `VData` 类型。`VData` union 声明了 12 种值类型。`PrintKeyValuePair` 只显式处理 `StringValue`、`Int32`、`Float32`、`Bool` 和 `UInt64`。其余合法类型落入 `Unknown Type`。
 
-解析 `LlmMetadataProto` 时，函数保存了 `ReadLlmMetadataFromSection` 的返回状态，却没有在输出 `DebugString()` 前检查它（`schema/core/litertlm_print.cc:181-196`）。因此，该工具能显示目录和常见元数据，但不能完整展示所有 union 类型。单次输出也不能替代文件验证。
+解析 `LlmMetadataProto` 时，函数保存了 `ReadLlmMetadataFromSection` 的返回状态，却没有在输出 `DebugString()` 前检查它。因此，该工具能显示目录和常见元数据，但不能完整展示所有 union 类型。单次输出也不能替代文件验证。
 
 ## 7.6　故障诊断案例：同一模型换后端后初始化失败
 
 假设应用收到一个名为 `chat-int4.litertlm` 的文件。GPU 初始化成功，改用 CPU 后在 executor 创建前返回：`Main backend constraint mismatch`。随后，开发者删除 XNNPACK cache，错误仍然存在。
 
-第一步应检查容器目录，而不是根据 `int4` 文件名推断 CPU 支持。用 `litertlm_print` 查看主 `TFLiteModel` 段的 `model_type`、`backend_constraint` 与 `prefer_activation_type`。若 `backend_constraint` 只有 `gpu`，loader 会把该属性传给 Engine，`ValidateBackendConstraint` 在编译前返回 `InvalidArgumentError`（`runtime/util/litert_lm_loader.cc:71-117`、`runtime/engine/engine_settings.cc:73-103`）。此时 cache 尚未决定算子能否执行，删除 cache 不会解除模型声明的后端约束。
+第一步应检查容器目录，而不是根据 `int4` 文件名推断 CPU 支持。用 `litertlm_print` 查看主 `TFLiteModel` 段的 `model_type`、`backend_constraint` 与 `prefer_activation_type`。若 `backend_constraint` 只有 `gpu`，loader 会把该属性传给 Engine，`ValidateBackendConstraint` 在编译前返回 `InvalidArgumentError`。此时 cache 尚未决定算子能否执行，删除 cache 不会解除模型声明的后端约束。
 
-若约束同时包含 `cpu,gpu`，再进入第二层诊断。检查是否存在独立 `TFLiteWeights` 段。当前主 executor 只允许 GPU 使用该段的 offset map；非 GPU 路径会直接返回 `InvalidArgumentError`（`runtime/executor/llm_litert_compiled_model_executor.cc:1629-1646`）。这种失败同样不是 kernel 性能问题，而是当前加载接口不接受该产物布局。
+若约束同时包含 `cpu,gpu`，再进入第二层诊断。检查是否存在独立 `TFLiteWeights` 段。当前主 executor 只允许 GPU 使用该段的 offset map；非 GPU 路径会直接返回 `InvalidArgumentError`。这种失败同样不是 kernel 性能问题，而是当前加载接口不接受该产物布局。
 
 若没有外挂权重段，且后端约束允许 CPU，才进入编译与 cache 层。可以用 `:nocache` 做一次隔离运行。无 cache 仍失败，优先检查 TFLite 图和 CPU delegate 的算子支持；无 cache 成功、启用 cache 失败，再核对 cache 路径、文件权限和模型是否被原位替换。若替换后的文件大小与秒级 mtime 都相同，或者同一进程已查询过旧路径，`GetFileCacheIdentifier` 可能继续给出旧标识。
 
@@ -347,7 +352,7 @@ ID 还需要由调用者保持全生命周期唯一。`LoadLoRA` 的重复检查
 
 ### 7.7.1　真实容器案例：3.66 GB 文件中的十个 TFLite payload
 
-附录 D 使用的 Gemma 4 E4B `.litertlm` 文件为 3.66 GB。静态分析先在 16 KiB 边界查找 TFLite 标识，再用 TFLite FlatBuffer 绑定读取 signature 与张量形状，由此识别出 10 个 TFLite payload〔基准 D〕。这里的“段”是该扫描方法识别出的 payload，不是 `litertlm_print` 导出的 section 目录。
+附录 D 使用的 Gemma 4 E4B `.litertlm` 文件为 3.66 GB。静态分析先在 16 KiB 边界查找 TFLite 标识，再用 TFLite FlatBuffer 绑定读取 signature 与张量形状，由此识别出 10 个 TFLite payload。这里的“段”是该扫描方法识别出的 payload，不是 `litertlm_print` 导出的 section 目录。
 
 | 起点（字节） | 大小 | signature | 资源用途或关键输入 |
 |---:|---:|---|---|
@@ -368,19 +373,19 @@ ID 还需要由调用者保持全生命周期唯一。`LoadLoRA` 的重复检查
 
 这个文件同时说明了两个部署问题。第一，下载、签名验证和磁盘配额面对的是完整 3.66 GB 文件；运行时内存则取决于实际请求哪些 section、后端是否转换权重，以及映射页的驻留情况。第二，文本请求不等于所有段都会在每个 decode step 参与计算。把整文件体积代入“每 token 权重流量”，会把多模态与 MTP 资源一并算入主干模型。
 
-section 的资源角色由目录属性中的 `model_type` 区分，例如主文本、视觉编码器与 MTP drafter（`runtime/components/model_resources.h:39-57`）。它与 `LlmMetadata.llm_model_type` 不同；后者记录 Gemma、Qwen 等模型族，并参与默认 prompt 与部分编译设置的选择（`runtime/proto/llm_metadata.proto:77-87`、`runtime/engine/engine_settings.cc:353-412`）。部署清单应分别记录这两个字段，避免把“模型族”和“容器中的资源角色”混为一项。
+section 的资源角色由目录属性中的 `model_type` 区分，例如主文本、视觉编码器与 MTP drafter。它与 `LlmMetadata.llm_model_type` 不同；后者记录 Gemma、Qwen 等模型族，并参与默认 prompt 与部分编译设置的选择。部署清单应分别记录这两个字段，避免把“模型族”和“容器中的资源角色”混为一项。
 
 ### 7.7.2　目录可解析不等于容器完整
 
-固定前缀、FlatBuffer 头、section 目录和 section 内容是四层不同的结构。固定前缀正确，只能说明读取器找到了预期魔数和版本字段。当前读取器比较 major 版本，minor 与 patch 会被读出，但不参与兼容性拒绝；字节 20-23 也会被直接跳过（`schema/core/litertlm_read.cc:70-105`）。当前格式常量是 1.5.0（`schema/core/litertlm_header.h:31-38`）。
+固定前缀、FlatBuffer 头、section 目录和 section 内容是四层不同的结构。固定前缀正确，只能说明读取器找到了预期魔数和版本字段。当前读取器比较 major 版本，minor 与 patch 会被读出，但不参与兼容性拒绝；字节 20-23 也会被直接跳过。当前格式常量是 1.5.0。
 
-字节 24-31 给出 FlatBuffer 头部的结束位置。普通读取器要求结束位置不小于 32，并检查相应字节能否读出（`schema/core/litertlm_read.cc:108-139`）。Engine 的主 loader 最多映射文件开头 16 KiB，再把这段传递给读取器（`runtime/util/litert_lm_loader.h:42`、`runtime/util/litert_lm_loader.cc:196-224`）。流式 loader 另有显式的 32 字节至 16 KiB 范围检查（`runtime/util/litert_lm_streaming_loader.cc:35-80`）。两个入口的防护位置不同，损坏文件不一定返回同一种错误。
+字节 24-31 给出 FlatBuffer 头部的结束位置。普通读取器要求结束位置不小于 32，并检查相应字节能否读出。Engine 的主 loader 最多映射文件开头 16 KiB，再把这段传递给读取器。流式 loader 另有显式的 32 字节至 16 KiB 范围检查。两个入口的防护位置不同，损坏文件不一定返回同一种错误。
 
-头部读完后，`LitertlmHeader::reset` 直接取得生成的根对象访问器（`schema/core/litertlm_read.h:89-97`）。这条路径没有建立 `flatbuffers::Verifier`。schema 中的 `(required)` 字段定义了合法文件应有的结构，但不能据此认为主 loader 已经验证了所有 vector 边界、必需字段和 union 类型。外部取得的模型文件若不受发布链信任，应在调用 Engine 前执行独立的 FlatBuffer 与 section 范围校验。这是由当前边界推导出的应用要求，不是 v0.13.1 已提供的验证接口。
+头部读完后，`LitertlmHeader::reset` 直接取得生成的根对象访问器。这条路径没有建立 `flatbuffers::Verifier`。schema 中的 `(required)` 字段定义了合法文件应有的结构，但不能据此认为主 loader 已经验证了所有 vector 边界、必需字段和 union 类型。外部取得的模型文件若不受发布链信任，应在调用 Engine 前执行独立的 FlatBuffer 与 section 范围校验。这是由当前边界推导出的应用要求，不是 v0.13.1 已提供的验证接口。
 
-section 目录还要做全局检查。builder 按 16 KiB 倍数计算各段起点，并在写完一段后记录其结束位置（`python/litert_lm_builder/litertlm_builder.py:702-712`、`python/litert_lm_builder/litertlm_builder.py:733-737`）。主 loader 建索引时只显式拒绝 `begin_offset > end_offset`。这段循环没有统一检查零长度、文件末尾、头部重叠、section 之间的重叠和 16 KiB 对齐（`runtime/util/litert_lm_loader.cc:199-218`、`runtime/util/litert_lm_loader.cc:233-267`）。
+section 目录还要做全局检查。builder 按 16 KiB 倍数计算各段起点，并在写完一段后记录其结束位置。主 loader 建索引时只显式拒绝 `begin_offset > end_offset`。这段循环没有统一检查零长度、文件末尾、头部重叠、section 之间的重叠和 16 KiB 对齐。
 
-`MapSection` 为 `ScopedFile` 调整 mmap 起点，解决的是操作系统映射 API 的对齐要求，不是容器格式校验。底层文件映射会拒绝超出文件长度的范围；整文件已经映射的分支则直接执行基址加偏移（`runtime/util/litert_lm_loader.cc:120-158`、`runtime/util/memory_mapped_file_posix.cc:101-115`）。因此，越界目录项不应留到首次取段时再发现。
+`MapSection` 为 `ScopedFile` 调整 mmap 起点，解决的是操作系统映射 API 的对齐要求，不是容器格式校验。底层文件映射会拒绝超出文件长度的范围；整文件已经映射的分支则直接执行基址加偏移。因此，越界目录项不应留到首次取段时再发现。
 
 <figure>
 {{#include figs/fig-7-5.svg}}
@@ -399,16 +404,17 @@ section 目录还要做全局检查。builder 按 16 KiB 倍数计算各段起�
 
 > 表 7-7　容器检查要覆盖字节范围、目录全局关系和资源语义，不能以 `litertlm_print` 能输出目录作为完整性结论。
 
-现有测试能复现两种不同层级的损坏。流式 loader 的 `HeaderTooSmall` 用例保留正确魔数，把 `header_end_offset` 设为 8，随后检查错误文本（`runtime/util/litert_lm_streaming_loader_test.cc:121-138`）：
+现有测试能复现两种不同层级的损坏。流式 loader 的 `HeaderTooSmall` 用例保留正确魔数，把 `header_end_offset` 设为 8，随后检查错误文本：
 
 ```bash
+# runtime/util/litert_lm_streaming_loader_test.cc:121-138
 bazel test //runtime/util:litert_lm_streaming_loader_test \
   --test_arg=--gtest_filter=LitertLmStreamingLoaderTest.HeaderTooSmall
 ```
 
-主 loader 的 `InitializeWithInvalidOffsets` 测试则构造 `begin_offset=100`、`end_offset=50` 的模型段。头部可以读取，失败发生在 section 索引阶段（`runtime/util/litert_lm_loader_test.cc:102-126`）。这两种错误都早于后端编译，删除 cache 或切换 CPU/GPU 不会修复文件结构。
+主 loader 的 `InitializeWithInvalidOffsets` 测试则构造 `begin_offset=100`、`end_offset=50` 的模型段。头部可以读取，失败发生在 section 索引阶段。这两种错误都早于后端编译，删除 cache 或切换 CPU/GPU 不会修复文件结构。
 
-还应补三类回归测试：`begin == end`、`end > file_size`，以及两个 section 生成相同的 `BufferKey`。`BufferKey` 由 `data_type` 与可选的 `model_type` 组成；`backend_constraint` 不在键中（`runtime/util/litert_lm_loader.h:42-70`）。据索引表的赋值方式推断，两段若键相同而后端约束不同，后遍历到的范围和提示会覆盖前一项，而不会形成 CPU/GPU 自动选段（`runtime/util/litert_lm_loader.h:225-248`、`runtime/util/litert_lm_loader.cc:237-259`）。这是代码分析结论，当前测试没有把它固定成格式错误。
+还应补三类回归测试：`begin == end`、`end > file_size`，以及两个 section 生成相同的 `BufferKey`。`BufferKey` 由 `data_type` 与可选的 `model_type` 组成；`backend_constraint` 不在键中。据索引表的赋值方式推断，两段若键相同而后端约束不同，后遍历到的范围和提示会覆盖前一项，而不会形成 CPU/GPU 自动选段。这是代码分析结论，当前测试没有把它固定成格式错误。
 
 发布侧校验器应使用头部目录，而不是扫描 `TFL3` 标识来恢复 section。表 7-6 的扫描用于研究现有文件；它可能找到嵌套数据中的相同字节，也无法得到 `model_type`、后端约束和 tokenizer 等非 TFLite section。面向发布的校验流程可以先读取文件长度，再用有上界的缓冲解析前缀与 FlatBuffer。只有头部通过 verifier，才遍历目录。
 
@@ -442,7 +448,7 @@ bazel test //runtime/util:litert_lm_streaming_loader_test \
 
 ### 7.7.3　cache 入口决定文件由谁管理
 
-`GetWeightCacheFile` 与 `GetProgramCacheFile` 都可能返回派生路径或调用者已经打开的 `ScopedFile`。`cache_dir = :nocache` 的判断最先执行，连已经提供的 scoped cache file 也会被禁用。未禁用时，scoped file 优先；只有缺少它，helper 才根据模型路径计算标识并拼接 cache 路径（`runtime/executor/executor_settings_base.h:233-280`、`runtime/executor/executor_settings_base.cc:301-410`）。
+`GetWeightCacheFile` 与 `GetProgramCacheFile` 都可能返回派生路径或调用者已经打开的 `ScopedFile`。`cache_dir = :nocache` 的判断最先执行，连已经提供的 scoped cache file 也会被禁用。未禁用时，scoped file 优先；只有缺少它，helper 才根据模型路径计算标识并拼接 cache 路径。
 
 主 CPU 路径把 `.xnnpack_cache` 接到模型名后。设置独立目录时，典型路径为：
 
@@ -450,9 +456,9 @@ bazel test //runtime/util:litert_lm_streaming_loader_test \
 <cache_dir>/<model_basename>.xnnpack_cache_<mtime_seconds>_<size>
 ```
 
-这一路径或 fd 被写入 XNNPACK 编译选项（`runtime/executor/llm_executor_settings_utils.cc:217-240`）。MTP drafter 在 CPU 后缀前增加 `.mtp_drafter`，以免与主模型共用名称（`runtime/executor/llm_litert_mtp_drafter.cc:175-197`）。
+这一路径或 fd 被写入 XNNPACK 编译选项。MTP drafter 在 CPU 后缀前增加 `.mtp_drafter`，以免与主模型共用名称。
 
-GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模型 cache key 使用 `<basename>_<mtime_seconds>_<size>`。在路径模式下，GPU 选项接收序列化目录与这个 key；在文件描述符模式下，才分别接收 weight cache 和 program cache 的 fd（`runtime/executor/llm_executor_settings_utils.cc:94-137`、`runtime/executor/litert_compiled_model_executor_utils.cc:491-554`）。基类还提供按模型组件区分名称的 `GetCacheSuffix`，但 v0.13.1 的主 LLM 编译路径没有调用它；主路径直接使用上述常量（`runtime/executor/executor_settings_base.cc:262-298`）。
+GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模型 cache key 使用 `<basename>_<mtime_seconds>_<size>`。在路径模式下，GPU 选项接收序列化目录与这个 key；在文件描述符模式下，才分别接收 weight cache 和 program cache 的 fd。基类还提供按模型组件区分名称的 `GetCacheSuffix`，但 v0.13.1 的主 LLM 编译路径没有调用它；主路径直接使用上述常量。
 
 | 入口 | LiteRT-LM 的处理 | 交给后端的值 | 目录与旧文件责任 |
 |---|---|---|---|
@@ -464,9 +470,9 @@ GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模�
 
 > 表 7-8　路径模式由 LiteRT-LM 派生名称，文件描述符模式由应用决定文件位置和生命周期。
 
-路径 helper 只拼接名称、检查文件并尝试清理旧项，不会创建 cache 目录。应用应在创建 Engine 前建立目录并验证写权限。scoped file 测试采用的顺序也是先创建空文件、以可写方式打开，再把 fd 传递给 Engine（`runtime/core/engine_advanced_impl_test.cc:232-280`）。
+路径 helper 只拼接名称、检查文件并尝试清理旧项，不会创建 cache 目录。应用应在创建 Engine 前建立目录并验证写权限。scoped file 测试采用的顺序也是先创建空文件、以可写方式打开，再把 fd 传递给 Engine。
 
-清理规则还带来并发边界。`DeleteStaleCaches` 没有进程间锁；若两个进程使用相同 basename 和同一 cache 目录，却计算出不同标识，其中一个进程可能把另一个进程的文件识别为旧项。删除失败只记录警告，helper 仍会返回当前路径（`runtime/util/file_util.cc:192-239`）。不可变模型名配合独立版本目录可以避开这一竞争；代价是旧版本 cache 不会自动被新版本清理，需要发布系统按保留期回收。
+清理规则还带来并发边界。`DeleteStaleCaches` 没有进程间锁；若两个进程使用相同 basename 和同一 cache 目录，却计算出不同标识，其中一个进程可能把另一个进程的文件识别为旧项。删除失败只记录警告，helper 仍会返回当前路径。不可变模型名配合独立版本目录可以避开这一竞争；代价是旧版本 cache 不会自动被新版本清理，需要发布系统按保留期回收。
 
 ### 7.7.4　发布案例：用新进程切换不可变版本
 
@@ -481,7 +487,7 @@ GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模�
 
 切换后，P41 不再接收新请求，但继续处理已经进入的会话。v41 的模型、进程镜像和 cache 目录保留到回滚窗口结束。观察期内若 v42 触发质量、内存或兼容性问题，路由重新指向 P41；旧进程已经退出时，则用 v41 的不可变路径和 cache 目录启动替代进程。
 
-若应用要求原子切换，应在路由或 Engine 句柄层实现；v0.13.1 的这条调用链不提供模型发布事务。GPU 模型 key 没有加入运行时版本、设备型号、驱动、激活类型和 `cache_compiled_shaders_only`（`runtime/executor/llm_executor_settings.h:221-224`、`runtime/executor/llm_executor_settings_utils.cc:109-137`）。下层后端是否另行校验 cache 兼容性，不能从这段代码确定。这些条件变化时，发布系统应建立新的 cache 代际。
+若应用要求原子切换，应在路由或 Engine 句柄层实现；v0.13.1 的这条调用链不提供模型发布事务。GPU 模型 key 没有加入运行时版本、设备型号、驱动、激活类型和 `cache_compiled_shaders_only`。下层后端是否另行校验 cache 兼容性，不能从这段代码确定。这些条件变化时，发布系统应建立新的 cache 代际。
 
 | 发布关口 | 核验对象 | 通过条件 | 失败后的动作 |
 |---|---|---|---|
@@ -512,7 +518,7 @@ GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模�
 
 N 与 W 可以交替运行，降低温度和后台负载随时间单向变化造成的偏差。若要控制操作系统 page cache，应使用目标平台允许且可复现的方法，并把操作记录写入实验数据。没有这项控制时，只能把结果称为“新进程、无 backend cache”或“新进程、已有 backend cache”，不能称为物理磁盘冷读。
 
-cache 文件存在本身不能证明命中；scoped-file 模式甚至要求调用者先创建文件。v0.13.1 的这条调用链没有统一的 cache-hit 计数器。判断命中还需结合后端日志、文件是否重写和受控初始化时间差。现有测试验证了同一 cache 可再次创建 Engine 并得到非空输出，但没有量化初始化收益（`runtime/core/engine_advanced_impl_test.cc:165-230`）。附录 D 的 5.29 s 与约 1.77 s 也缺少 N/P/W 对照，不能直接归因于 cache。
+cache 文件存在本身不能证明命中；scoped-file 模式甚至要求调用者先创建文件。v0.13.1 的这条调用链没有统一的 cache-hit 计数器。判断命中还需结合后端日志、文件是否重写和受控初始化时间差。现有测试验证了同一 cache 可再次创建 Engine 并得到非空输出，但没有量化初始化收益。附录 D 的 5.29 s 与约 1.77 s 也缺少 N/P/W 对照，不能直接归因于 cache。
 
 ### 7.7.6　多 LoRA 案例：文件稀疏不等于后端缓冲稀疏
 
@@ -522,9 +528,9 @@ $$
 B_{\mathrm{pair}}=r(d_{\mathrm{in}}+d_{\mathrm{out}})b.
 $$
 
-这个公式只能计算矩阵 payload。运行时不拿 `lora_rank` metadata 直接判断兼容性。`LoRA::Init` 先按基座 signature 创建输入 buffer，再比较 `TensorBuffer::PackedSize()` 与适配器 tensor 的实际字节数；不同就返回错误（`runtime/components/lora.cc:64-103`）。两个适配器即使 rank 都是 32，也可能因隐藏维度、GQA 投影宽度、元素类型或导出命名不同而不兼容。
+这个公式只能计算矩阵 payload。运行时不拿 `lora_rank` metadata 直接判断兼容性。`LoRA::Init` 先按基座 signature 创建输入 buffer，再比较 `TensorBuffer::PackedSize()` 与适配器 tensor 的实际字节数；不同就返回错误。两个适配器即使 rank 都是 32，也可能因隐藏维度、GQA 投影宽度、元素类型或导出命名不同而不兼容。
 
-仓库测试资产 `litert_dummy_lora32_f16_model.tflite` 提供了可复算的规模。本书对二进制的静态解析表明，`decode` signature 有 35 层、280 个 FP16 LoRA 输入；完整命令与逐类统计见 `experiments/data/ch07_lora_capacity.md`。单元测试另行确认 rank 为 32，一个 `32 × 2048` 的 query tensor 占 \\(32 \times 2048 \times 2 = 131072\\) 字节，即 128 KiB（`runtime/util/lora_data_test.cc:94-118`）；物化后返回的 buffer 数量也是 280（`runtime/components/lora_test.cc:139-152`）。
+仓库测试资产 `litert_dummy_lora32_f16_model.tflite` 提供了可复算的规模。本书对二进制的静态解析表明，`decode` signature 有 35 层、280 个 FP16 LoRA 输入；完整命令与逐类统计见 `experiments/data/ch07_lora_capacity.md`。单元测试另行确认 rank 为 32，一个 `32 × 2048` 的 query tensor 占 \\(32 \times 2048 \times 2 = 131072\\) 字节，即 128 KiB；物化后返回的 buffer 数量也是 280。
 
 | 投影与矩阵 | 每层个数 | 单个形状 | 单个大小 | 35 层合计 |
 |---|---:|---:|---:|---:|
@@ -544,15 +550,15 @@ $$
 20\times832\ \mathrm{KiB}+15\times512\ \mathrm{KiB}=23.75\ \mathrm{MiB}.
 $$
 
-后 15 层缺少 60 个 key/value tensor，共 4.6875 MiB。`LoRA::Init` 仍按基座 signature 创建全部 280 个 buffer；找不到同名 tensor 时，它把对应 buffer 清零。单元测试检查了缺失的 `value_w_prime_left_20`，返回内容全为零（`runtime/components/lora.cc:70-101`、`runtime/components/lora_test.cc:111-130`）。按基座 shape 计算，这 280 个输入对应 28.4375 MiB 理论大小，其中 4.6875 MiB 是清零的输入；后端实际分配仍应读取 `PackedSize()` 并测量。
+后 15 层缺少 60 个 key/value tensor，共 4.6875 MiB。`LoRA::Init` 仍按基座 signature 创建全部 280 个 buffer；找不到同名 tensor 时，它把对应 buffer 清零。单元测试检查了缺失的 `value_w_prime_left_20`，返回内容全为零。按基座 shape 计算，这 280 个输入对应 28.4375 MiB 理论大小，其中 4.6875 MiB 是清零的输入；后端实际分配仍应读取 `PackedSize()` 并测量。
 
 清零是字节层面的已验证行为。它是否在任意导出图中都等价于“不施加增量”，还取决于图如何使用该输入，不能只根据 `memset` 推广。尺寸不匹配会使首次 `UseLoRA` 失败；v0.13.1 尚无对应单元测试，部署前应加入适配器与基座 signature 的逐 tensor 兼容性检查。
 
 ### 7.7.7　懒物化推迟分配，但不限制累计数量
 
-`LoadLoRA(id)` 只建立 `LoraData` 并放入 `lora_data_`。文件路径分支使用 mmap 提供只读视图，此时尚未调用 `CompiledModel::CreateInputBuffer`（`runtime/components/lora_manager.cc:46-54`、`runtime/util/lora_data.cc:219-247`）。第一次 `UseLoRA(id)` 才创建 `LoRA` 对象，遍历 signature，复制已有 tensor 并清零缺项。成功后，对象进入 `loras_`，待用表中的同 ID 项被删除（`runtime/components/lora_manager.cc:57-68`）。
+`LoadLoRA(id)` 只建立 `LoraData` 并放入 `lora_data_`。文件路径分支使用 mmap 提供只读视图，此时尚未调用 `CompiledModel::CreateInputBuffer`。第一次 `UseLoRA(id)` 才创建 `LoRA` 对象，遍历 signature，复制已有 tensor 并清零缺项。成功后，对象进入 `loras_`，待用表中的同 ID 项被删除。
 
-源数据不会在复制结束后立即释放。`LoRA` 自身仍持有 `LoraData`，同时保存创建出的 `lora_buffers_`（`runtime/components/lora.h:69-84`）。因此，已经启用的适配器通常同时保留文件映射或原始 buffer 视图、后端 `TensorBuffer` 与管理器记录。文件映射范围不等于常驻物理内存，后端 buffer 的位置也不能统一写成 GPU 显存。
+源数据不会在复制结束后立即释放。`LoRA` 自身仍持有 `LoraData`，同时保存创建出的 `lora_buffers_`。因此，已经启用的适配器通常同时保留文件映射或原始 buffer 视图、后端 `TensorBuffer` 与管理器记录。文件映射范围不等于常驻物理内存，后端 buffer 的位置也不能统一写成 GPU 显存。
 
 <figure>
 {{#include figs/fig-7-7.svg}}
@@ -571,13 +577,13 @@ $$
 
 > 表 7-12　切回已物化 ID 只更新 `current_lora_id_`；管理器仍保留此前创建的对象和 buffer。
 
-测试覆盖了 `0 → 1 → 0` 的切换，并验证切回后仍能读取 ID 0 的原内容（`runtime/components/lora_manager_test.cc:169-220`）。若同形状的 8 个适配器都至少使用过一次，仅 LoRA 输入 buffer 的理论大小 就是 \\(8\times28.4375=227.5\\) MiB。还需计入 8 份源数据视图与运行时开销。`LoraManager` 没有逐 ID 卸载接口，容量预算应按“生命周期内启用过的不同 ID 数量”计算，而不是只按当前 ID 计算。
+测试覆盖了 `0 → 1 → 0` 的切换，并验证切回后仍能读取 ID 0 的原内容。若同形状的 8 个适配器都至少使用过一次，仅 LoRA 输入 buffer 的理论大小 就是 \\(8\times28.4375=227.5\\) MiB。还需计入 8 份源数据视图与运行时开销。`LoraManager` 没有逐 ID 卸载接口，容量预算应按“生命周期内启用过的不同 ID 数量”计算，而不是只按当前 ID 计算。
 
-ID 也不能当作可覆盖的槽位。`LoadLoRA` 的重复检查只查 `lora_data_`，不查 `loras_`。A 以 ID 7 物化后，再用 ID 7 加载 B 会成功把 B 放回待用表；随后的 `UseLoRA(7)` 发现旧对象已经存在，仍选择 A，不会用 B 替换它（`runtime/components/lora_manager.cc:46-68`）。管理器此时同时持有旧对象 A 和待用数据 B。调用方应保证 ID 在 manager 生命周期内唯一。
+ID 也不能当作可覆盖的槽位。`LoadLoRA` 的重复检查只查 `lora_data_`，不查 `loras_`。A 以 ID 7 物化后，再用 ID 7 加载 B 会成功把 B 放回待用表；随后的 `UseLoRA(7)` 发现旧对象已经存在，仍选择 A，不会用 B 替换它。管理器此时同时持有旧对象 A 和待用数据 B。调用方应保证 ID 在 manager 生命周期内唯一。
 
-v0.13.1 的完整 LoRA 执行接入还有限定。主文本 executor 能识别 LoRA signature 输入并跳过普通 decode buffer 创建，但上层资源管理在收到文本 `ScopedLoraFile` 时直接返回 `Lora is not supported.`（`runtime/executor/llm_litert_compiled_model_executor.cc:1708-1719`、`runtime/framework/resource_management/resource_manager.cc:540-557`）。可以从仓库完整追踪的登记、切换与执行路径位于音频编码器（`runtime/framework/resource_management/resource_manager.cc:559-575`、`runtime/executor/audio_litert_compiled_model_executor.cc:826-864`）。
+v0.13.1 的完整 LoRA 执行接入还有限定。主文本 executor 能识别 LoRA signature 输入并跳过普通 decode buffer 创建，但上层资源管理在收到文本 `ScopedLoraFile` 时直接返回 `Lora is not supported.`。可以从仓库完整追踪的登记、切换与执行路径位于音频编码器。
 
-音频侧的 `UseLoRA(std::nullopt)` 也不是卸载操作。实现直接返回成功，旁边的 TODO 说明尚未清除输入 map 中的 LoRA buffer（`runtime/executor/audio_litert_compiled_model_executor.cc:202-214`）。因此，停用当前适配器、释放某个 ID 和销毁 manager 是三件不同的事。v0.13.1 的这条音频路径与 `LoraManager` 接口不能用前两者完成逐适配器容量回收。
+音频侧的 `UseLoRA(std::nullopt)` 也不是卸载操作。实现直接返回成功，旁边的 TODO 说明尚未清除输入 map 中的 LoRA buffer。因此，停用当前适配器、释放某个 ID 和销毁 manager 是三件不同的事。v0.13.1 的这条音频路径与 `LoraManager` 接口不能用前两者完成逐适配器容量回收。
 
 ### 7.7.8　回到设备预算：快速回滚需要两类峰值
 
@@ -710,3 +716,5 @@ CPU、GPU 与 NPU 的执行路径对照见第 8 章。该章继续区分配置�
 9. 缓存实验设计。为同一模型设计 N、P、W 三组 cache 实验。说明每组的进程与 cache 初始状态、外部墙钟的起止点，以及为什么“cache 文件存在”还不足以证明 W 组命中。
 10. LoRA 容量累计。表 7-11 的测试形状下，A、B、C 三个 LoRA 都物化后，仅输入 buffer 的理论大小 是多少？若切回 A，数值是否减少？再说明将 8 个适配器都物化后的 payload。
 11. 发布配额推演。某设备给模型目录的配额是 9.0 GB。旧、新模型各 3.66 GB，两个 cache 上限分别为 0.28 GB 和 0.44 GB；更新器另存 0.60 GB 压缩包，并要求 0.50 GB 余量。计算发布存储峰值。若改为排空旧 Engine 后再创建新 Engine，存储峰值与运行内存峰值分别如何变化？运行内存能否仅凭 Engine 数量写成减半？
+[^ch07-llamacpp-gguf]: ggml-org，[*llama.cpp 源码 ggml/include/gguf.h:46*](https://github.com/ggml-org/llama.cpp/blob/b9873/ggml/include/gguf.h#L46)，版本 b9873；访问日期：2026-08-31。
+[^ch07-llamacpp-lora]: ggml-org，[*llama.cpp 源码 common/arg.cpp:2648*](https://github.com/ggml-org/llama.cpp/blob/b9873/common/arg.cpp#L2648)，版本 b9873；访问日期：2026-08-31。

@@ -75,9 +75,40 @@ def main() -> None:
 
     for manuscript in manuscript_files():
         relative = manuscript.relative_to(REPO)
+        in_fence = False
         for number, line in enumerate(
             manuscript.read_text(encoding="utf-8").splitlines(), 1
         ):
+            if line.lstrip().startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                stripped = line.strip()
+                if stripped.startswith(("// ", "# ")):
+                    for ref in SOURCE_REF.finditer(stripped):
+                        ref_path = ref.group("path")
+                        if ref_path.startswith(EXTERNAL_PREFIXES):
+                            continue
+                        start = int(ref.group("start"))
+                        end = int(ref.group("end") or start)
+                        key = (ref_path, start, end)
+                        checked.add(key)
+                        target = source / ref_path
+                        if not target.is_file():
+                            errors.append(
+                                f"{relative}:{number}: missing source file {ref_path}"
+                            )
+                            continue
+                        if target not in line_counts:
+                            line_counts[target] = sum(
+                                1 for _ in target.open(encoding="utf-8", errors="ignore")
+                            )
+                        if end > line_counts[target] or start < 1:
+                            errors.append(
+                                f"{relative}:{number}: line range out of bounds "
+                                f"{ref_path}:{start}-{end}"
+                            )
+                continue
             for span_match in CODE_SPAN.finditer(line):
                 span = span_match.group(1)
                 shorthand = SHORTHAND_REF.fullmatch(span.strip())

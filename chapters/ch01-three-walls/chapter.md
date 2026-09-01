@@ -19,11 +19,11 @@ Google 官方将 LiteRT‑LM 定义为“使用 LiteRT 运行 LLM 的编排层�
 
 > 表 1-1　LiteRT‑LM 管理 LLM 生成过程，LiteRT 管理模型图和张量的设备执行；平台后端决定算子最终落到哪块硬件。
 
-表中的 signature 贯穿全书，先在这里说清：一个编译后的模型可以暴露多个具名调用入口，每个入口绑定一组固定形状的输入输出张量，这样的入口称为 signature，相当于一个库导出的多个函数。与函数不同，signature 的输入长度也在模型导出时冻结，同一个模型文件因此常备多个入口——本书基准模型有 `prefill_128`、`prefill_1024`、`decode`、`verify` 四个（入口名前缀见 `runtime/executor/llm_litert_compiled_model_executor.cc:77-78`），运行时按用途和输入长短选用。固定长度带来的分块与填充见第 4 章。
+表中的 signature 贯穿全书，先在这里说清：一个编译后的模型可以暴露多个具名调用入口，每个入口绑定一组固定形状的输入输出张量，这样的入口称为 signature，相当于一个库导出的多个函数。与函数不同，signature 的输入长度也在模型导出时冻结，同一个模型文件因此常备多个入口——本书基准模型有 `prefill_128`、`prefill_1024`、`decode`、`verify` 四个，运行时按用途和输入长短选用。固定长度带来的分块与填充见第 4 章。
 
-代码里能清楚地看到这条调用链。`Engine` 初始化时先取得 LiteRT 的 `Environment`，再创建专用执行器（`runtime/core/engine_advanced_impl.cc:279-287`）；执行器从 `.litertlm` 模型包中读取 prefill/decode 子模型，并调用 `CompiledModel::Create` 完成后端编译（`runtime/executor/llm_litert_compiled_model_executor.cc:1651`）。这里的编译发生在设备上：`.litertlm` 存放的子模型是离线转换得到的可移植计算图与权重，GPU 的 kernel 程序要等首次创建时现场编译，编译产物可写入程序缓存复用（`runtime/executor/llm_executor_settings_utils.cc:134-137`）；NPU 路径另有绑定芯片代际的预编译产物。
+代码里能清楚地看到这条调用链。`Engine` 初始化时先取得 LiteRT 的 `Environment`，再创建专用执行器；执行器从 `.litertlm` 模型包中读取 prefill/decode 子模型，并调用 `CompiledModel::Create` 完成后端编译。这里的编译发生在设备上：`.litertlm` 存放的子模型是离线转换得到的可移植计算图与权重，GPU 的 kernel 程序要等首次创建时现场编译，编译产物可写入程序缓存复用；NPU 路径另有绑定芯片代际的预编译产物。
 
-运行阶段，LiteRT‑LM 负责准备 token、position、attention mask 与 KV cache buffer，真正的 prefill 和 decode 计算则分别交给 LiteRT 的 `CompiledModel::Run` 与 `RunAsync`（`runtime/executor/llm_litert_compiled_model_executor.cc:730-734`、`runtime/executor/llm_litert_compiled_model_executor.cc:943`）。这些调用点的完整上下文分别见第 7 章（编译与加载）和第 8 章（缓冲绑定、执行与 NPU 路径）。
+运行阶段，LiteRT‑LM 负责准备 token、position、attention mask 与 KV cache buffer，真正的 prefill 和 decode 计算则分别交给 LiteRT 的 `CompiledModel::Run` 与 `RunAsync`。这些调用点的完整上下文分别见第 7 章（编译与加载）和第 8 章（缓冲绑定、执行与 NPU 路径）。
 
 <figure>
 {{#include figs/fig-1-1.svg}}
@@ -62,7 +62,7 @@ $$ 4 \times 10^{9} \text{ 参数} \times 0.5 \text{ 字节/参数} = 2 \times 10
 
 其中 1 GiB = \\(2^{30}\\) 字节，这里的 1.86 GiB 只是 INT4 权重大小的理想值。量化把浮点权重映射成整数保存，还原时按反量化公式 \\(x \approx s \times (q - z)\\) 计算：\\(q\\) 是保存的整数，\\(s\\) 是 scale（整数每差 1 对应的实数步长），\\(z\\) 是 zero point（实数 0 对应的整数）。直观地说，若一组权重的 scale 是 0.25，整数 4 反量化后就代表 1.0；对称量化下 \\(z=0\\)，可以省略。scale 不必每个权重存一份，常见做法是按整层、按通道或按权重分组（如每 32 或 64 个一组）共享；但无论怎么共享，scale 都要写进模型文件，占用真实字节。第 7 章的 2B 案例会按分组把这笔账算出来。文件里除了权重和这些量化附加数据，还有对齐填充、元数据，也可能包含其他模型段。所以，参数量乘位宽不能直接换算出文件大小。
 
-模型文件如何进入进程内存，决定这些字节以什么口径占用。LiteRT-LM 可以从只读 `MemoryMappedFile` 创建模型，接口见 `runtime/util/memory_mapped_file.h:46`。`ModelResources` 的注释说明，内存映射模型在实际使用时才分配物理页（`runtime/components/model_resources.h:148`）。它还为外部权重（不内嵌在模型图里、单独存放在权重段、不应被 mmap 的权重数据）保留独立的文件接口，见 `runtime/components/model_resources.h:163`。
+模型文件如何进入进程内存，决定这些字节以什么口径占用。LiteRT-LM 可以从只读的内存映射文件创建模型。`ModelResources` 的注释说明，内存映射模型在实际使用时才分配物理页。它还为外部权重（不内嵌在模型图里、单独存放在权重段、不应被 mmap 的权重数据）保留独立的文件接口。
 
 mmap 建立的只是虚拟地址映射：一方面，1.86 GiB 不保证始终全部驻留物理内存；另一方面，推理时真正访问到的权重页面仍要占用物理内存，映射本身省不掉这部分。而端侧推理通常会反复触碰几乎全部权重，原因在执行方式上。batch（批大小）指一次前向计算并行处理的序列数：服务端把多个用户的请求拼成一批同时前向，权重读入一次，这一批里的所有请求共用，读取成本随之摊薄；端侧通常只有一个用户的一个请求在生成，同一时刻只有一条序列可算，batch=1。batch=1 的稠密 decode（稠密指所有参数每步都参与计算，区别于 MoE 等稀疏激活架构）每一步只生成一个新 token，而模型远大于片上缓存（CPU/GPU 芯片内的多级高速缓存，容量最大的一级通常也只有几 MiB 到几十 MiB），这一步用到的权重基本都要从主存读入；步步如此，工作集就接近全部权重。
 
@@ -84,11 +84,11 @@ $$ 128 \text{ KiB} \times 4096 = 0.5 \text{ GiB} $$
 
 上面的理论大小是理想口径：恰好为已缓存的 \\(S\\) 个 token 各分配一份数据，不含填充、量化元数据和多缓冲，而实际分配通常不满足这三条假设。后端往往按预留宽度分配（预先为最大 token 数分配好槽位，而不是随 \\(S\\) 逐 token 增长）：例如预留 4096 个 token 的槽位而只缓存了 1000 个时，buffer 仍按 4096 准备，占用约是理论大小的 4 倍。不支持原地更新的后端还要准备输入、输出两套 KV buffer，容量接近理论大小的两倍，代价见 1.4 节。张量对齐与后端工作区也会叠加额外字节。因此，理论大小的用途是估算下限和横向比较：它是模型结构决定的每 token 最少字节数，便于在同一口径下比较不同模型；实际占用是否超出内存预算，仍以目标后端在目标上下文下的实测为准。
 
-预留宽度如何增长，由运行时参数控制。LiteRT-LM 对动态导出的 CPU 模型提供增量扩容参数：decode 时按 `CpuConfig::kv_increment_size` 增加 KV cache 大小（`runtime/executor/llm_executor_settings.h:107`），默认值为 16。较小的增量会增加 `Resize` 的调用次数，较大的增量则可能提前预留更多空间。重分配次数、内存碎片和峰值占用仍取决于具体执行后端的实现，需要实际测量。
+预留宽度如何增长，由运行时参数控制。LiteRT-LM 对动态导出的 CPU 模型提供增量扩容参数：decode 时按 `CpuConfig::kv_increment_size` 增加 KV cache 大小，默认值为 16。较小的增量会增加 `Resize` 的调用次数，较大的增量则可能提前预留更多空间。重分配次数、内存碎片和峰值占用仍取决于具体执行后端的实现，需要实际测量。
 
 权重和 KV cache 可以按模型结构估算，激活与工作区不行。仅凭层数 \\(L\\) 和模型宽度 \\(d_{model}\\) 算不出激活的内存峰值：FFN（前馈网络）的中间维度、算子调度和张量生命周期都会影响它；buffer 复用、数据类型与后端工作区（scratch buffer）的分配方式也会改变结果。batch=1 的 decode 每次只处理一个新 token，激活张量通常小于长序列 prefill。未实测时，不应给激活指定固定数值，也不应忽略后端工作区。
 
-降低激活内存峰值的一种手段是把 prompt 分块处理：动态导出的模型可以用 `CpuConfig::prefill_chunk_size` 控制每次 prefill 的 token 数（`runtime/executor/llm_executor_settings.h:114`），默认值 -1 表示不分块。例如 2048-token 的 prompt 取 chunk=512 时，一次 prefill 变成至少四次调用，每次最多处理 512 个 token，与序列长度相关的中间张量可能因此缩小。固定工作区、buffer 复用与后端调度会改变比例，不能据此认定峰值恰好降到四分之一。分块变多次调用后，首 token 时延（TTFT，time-to-first-token）会升高还是降低、变化多大，同样需要在目标设备上实测。
+降低激活内存峰值的一种手段是把 prompt 分块处理：动态导出的模型可以用 `CpuConfig::prefill_chunk_size` 控制每次 prefill 的 token 数，默认值 -1 表示不分块。例如 2048-token 的 prompt 取 chunk=512 时，一次 prefill 变成至少四次调用，每次最多处理 512 个 token，与序列长度相关的中间张量可能因此缩小。固定工作区、buffer 复用与后端调度会改变比例，不能据此认定峰值恰好降到四分之一。分块变多次调用后，首 token 时延（TTFT，time-to-first-token）会升高还是降低、变化多大，同样需要在目标设备上实测。
 
 现在把权重和 KV cache 合成一份预算示例：假定设备物理内存 8 GiB，操作系统和其他进程合计占用 4 GiB，推理进程还剩 4 GiB 可用。其中，4B 模型的理想 INT4 权重占 1.86 GiB，按本节示意参数计算的 4096-token KV cache 占 0.5 GiB，两项合计 2.36 GiB，剩余约 1.64 GiB。这份余量还要容纳量化附加数据、激活、后端工作区、权重复制或重排、运行时对象与内存碎片。所以，仅凭权重和 KV cache 两项，不能判定模型一定能运行。
 
@@ -122,11 +122,11 @@ $$ R_{\mathrm{bw}}=\frac{50 \times 10^{9}\ \text{字节/s}}{2 \times 10^{9}\ \te
 
 $$ \frac{50 \times 10^{9}\ \text{字节/s}}{2.36 \times 2^{30}\ \text{字节/token}} \approx 19.7\ \text{tokens/s} $$
 
-19.7 tokens/s 同样只是上限估算：缓存命中、预留槽位是否被实际读取、注意力 kernel 的实现和 KV 数据类型，都会改变真实的 DRAM 流量。不过，上下文越长、decode 越慢这个方向可以用实测对照。附录 D 的 Gemma 4 E4B 基准中，上下文从 256 增至 4096 时，CPU decode 从 24.8 降至 20.7 tokens/s，约下降 17%〔基准 D〕，与 KV 读写量和注意力工作量随上下文增长的分析方向一致；但不能仅凭端到端吞吐就把降幅全部归于 KV cache。还要注意口径：该基准的设备、模型与后端都与本节题设不同，实测值验证不了 25 tokens/s 这个点值，只能检验同一套分析方法。
+19.7 tokens/s 同样只是上限估算：缓存命中、预留槽位是否被实际读取、注意力 kernel 的实现和 KV 数据类型，都会改变真实的 DRAM 流量。不过，上下文越长、decode 越慢这个方向可以用实测对照。附录 D 的 Gemma 4 E4B 基准中，上下文从 256 增至 4096 时，CPU decode 从 24.8 降至 20.7 tokens/s，约下降 17%，与 KV 读写量和注意力工作量随上下文增长的分析方向一致；但不能仅凭端到端吞吐就把降幅全部归于 KV cache。还要注意口径：该基准的设备、模型与后端都与本节题设不同，实测值验证不了 25 tokens/s 这个点值，只能检验同一套分析方法。
 
 题设还回避了一个问题：50 GB/s 这样的有效带宽从哪里来？它不是硬件标称峰值乘一个固定比例。访问模式、缓存行为与共享内存总线上的其他流量都会改变推理实际拿到的 \\(B_{\mathrm{eff}}\\)，解包计算和同步也会占掉时间。若直接用标称峰值代入公式，得到的只是更宽松的上界。目标工作负载的有效带宽，应通过硬件计数器或可比的基准实测获得。
 
-1.3 节留下的双缓冲代价，可以在这里交代。支持原地更新的后端让输入、输出指向同一组 KV buffer；不支持时，LiteRT-LM 返回两组 buffer 并在调用间交换（接口见 `runtime/executor/litert/kv_cache.h:70`），张量形状相同时，KV buffer 的占用接近单组的两倍。翻倍的只是 KV buffer 这一项；权重、激活等科目不受影响，整个进程的内存占用不会因此翻倍。
+1.3 节留下的双缓冲代价，可以在这里交代。支持原地更新的后端让输入、输出指向同一组 KV buffer；不支持时，LiteRT-LM 返回两组 buffer 并在调用间交换，张量形状相同时，KV buffer 的占用接近单组的两倍。翻倍的只是 KV buffer 这一项；权重、激活等科目不受影响，整个进程的内存占用不会因此翻倍。
 
 硬件峰值带宽由设备决定，软件能改变的只有两件事：提高有效带宽的利用率，或减少每步搬运的字节数。prefill 因权重复用通常受算力约束，batch=1 的稠密 decode 则通常受带宽约束，二者都要用实际工作点确认。减少每步字节数正是后文两项技术的出发点：量化压缩权重本身（见第 7 章），投机解码让一次权重读取确认多个 token（见第 9 章）；但能否兑现成吞吐提升，还取决于 kernel 实现、草稿 token 被接受的比例和额外计算开销，不能只看方法名称下判断。
 
@@ -146,13 +146,13 @@ $$ 2 \times 10^{9}\ \text{字节} \times 20 \times 10^{-12}\ \text{J/字节} = 0
 
 减少 DRAM 流量能同时降低带宽占用与搬运能耗，但只有当这两项在总成本中占大头时，收益才接近线性。软件侧另有一组影响功耗的可调参数：线程数、核心绑定和异步调度都会改变吞吐、功率与温度，取值应依据持续负载实验确定。
 
-核心绑定在 LiteRT-LM 里有一个真实实例。Android 路径的 `cpu_affinity_utils.cc` 读取 SoC 厂商与型号属性（`runtime/engine/cpu_affinity_utils.cc:64`），按型号查 `kTensorAffinities` 中预置的中核、大核编号（`runtime/engine/cpu_affinity_utils.cc:56`）：Google Tensor G4 返回 `{4,5,6,7}`，G5/G6 返回 `{2,3,4,5,6,7}`；`SetCpuAffinity` 随后调用 `sched_setaffinity` 完成绑定（`runtime/engine/cpu_affinity_utils.cc:103`）。源码注释只说明该选择用于性能优化，没有配套的能耗或温控测量，不能据此断言这组编号在所有负载下最省电。
+核心绑定在 LiteRT-LM 里有一个真实实例。Android 路径的 `cpu_affinity_utils.cc` 读取 SoC 厂商与型号属性，按型号查 `kTensorAffinities` 中预置的中核、大核编号：Google Tensor G4 返回 `{4,5,6,7}`，G5/G6 返回 `{2,3,4,5,6,7}`；`SetCpuAffinity` 随后调用 `sched_setaffinity` 完成绑定。源码注释只说明该选择用于性能优化，没有配套的能耗或温控测量，不能据此断言这组编号在所有负载下最省电。
 
 功耗之外，异构后端还有可用性问题：CPU 通用性最强；GPU 与 NPU 的可用算子、驱动和内存路径随设备而变；专用加速器只在受支持的计算图上才可能兑现能效优势。所以，离开具体的模型、量化格式、后端委托（delegate）和设备实测，不能给 CPU、GPU、NPU 排出固定的优劣次序。
 
 后端的差别不止于快慢与能耗。不同后端的算子实现和浮点路径可能产生数值差异；在自回归生成中，早期差异会影响后续 token。但这不意味着所有输出差异都可以归因于数值路径：异常结果仍需用容差测试、逐层对比和已知 issue 排查。第 8 章结合 `LiteRT-LM#2281` 分析一个真实的后端输出差异案例。[^ch01-issue-2281]
 
-这些可选后端在代码里对应 `Backend` 枚举（`runtime/executor/executor_settings_base.h:34`）：通用项有 `CPU`、`GPU`、`NPU` 与 `UNSPECIFIED`，另有 `CPU_ARTISAN`、`GPU_ARTISAN`、`GOOGLE_TENSOR_ARTISAN` 三项，源码把前两个 Artisan 标为手写算子路径（hand-written path），Google Tensor 项标为 Emission Graph。枚举只能证明运行时暴露了多条可选执行路径，证明不了哪条更快或更省电；各路径的实现与测量见第 8 章。
+这些可选后端在代码里对应 `Backend` 枚举：通用项有 `CPU`、`GPU`、`NPU` 与 `UNSPECIFIED`，另有 `CPU_ARTISAN`、`GPU_ARTISAN`、`GOOGLE_TENSOR_ARTISAN` 三项，源码把前两个 Artisan 标为手写算子路径（hand-written path），Google Tensor 项标为 Emission Graph。枚举只能证明运行时暴露了多条可选执行路径，证明不了哪条更快或更省电；各路径的实现与测量见第 8 章。
 
 三类约束合起来是一条配置评估规则：内存预算、Roofline 工作点、持续功耗和后端支持必须同时检查，任何一项不过关都会否决整个配置。优化手段的代价也常常跨约束联动：量化减小权重大小，但可能增加解包计算或缩小后端支持范围；投机解码想让模型的一次前向确认多个 token，但草拟和验证本身有额外成本，`LiteRT-LM#2227` 就记录了特定 GPU 条件下的负收益。[^ch01-issue-2227]
 

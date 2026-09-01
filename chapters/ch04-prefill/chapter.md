@@ -10,9 +10,10 @@
 
 主基准使用 Apple M5 Pro（24 GiB）、macOS 26.5 和 LiteRT-LM v0.13.1。模型是 Gemma 4 E4B 的公开 LiteRT-LM 产物，未另做量化转换；数据取 `litert-lm benchmark` 中位数。上下文为 1024 时，gpu 后端的 prefill 为 999.1 tokens/s，decode 为 50.6 tokens/s，相差约 20 倍。cpu 后端分别为 259.2 tokens/s 和 24.7 tokens/s，相差约 10 倍〔基准 D〕。这组数据描述端到端吞吐，不能单独证明两段分别受算力和带宽约束。测量的代码路径从 `Tasks::Prefill` 进入 executor，其中同时包含模型执行、固定形状填充和 host 侧开销。
 
-`Tasks::Prefill` 的编排入口依次完成最大长度校验、等待参数设置、计时和 executor 调用（`runtime/core/tasks.cc:413`）：
+`Tasks::Prefill` 的编排入口依次完成最大长度校验、等待参数设置、计时和 executor 调用：
 
 ```cpp
+// runtime/core/tasks.cc:413
 absl::StatusOr<Responses> Prefill(
     LlmExecutor& executor, ExecutorInputs& inputs, bool wait_for_completion,
     std::optional<BenchmarkInfo>& benchmark_info) {
@@ -39,7 +40,7 @@ absl::StatusOr<Responses> Prefill(
 
 (1) 越界判断用 `>=` 而非 `>`。上下文窗口要留一个位置给 pending token，所以 token 数必须小于 `max_num_tokens`。(2) `wait_for_completion` 与 benchmark 开关做按位或。启用基准模式后强制同步等待，避免在异步执行完成前结束计时。(3)(4) `TimePrefillTurnStart` 与 `TimePrefillTurnEnd` 包围 `executor.Prefill`。第 2 层负责校验、计时和编排；executor 负责形状选择、模型执行与 KV cache 更新。
 
-这两个探针只记录起止时间。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键保存 `absl::Now()`（`runtime/engine/io_types.cc:296`）。`TimePrefillTurnEnd` 再取一次时间并求差，把结果和 token 数存入 `prefill_turns_`（`runtime/engine/io_types.cc:306`）。测量范围覆盖整个 `executor.Prefill`，包括工作组循环、掩码填充、embedding 装配与 KV 缓冲交换。附录 D 的 prefill 吞吐由这对探针产生。
+这两个探针只记录起止时间。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键保存 `absl::Now()`。`TimePrefillTurnEnd` 再取一次时间并求差，把结果和 token 数存入 `prefill_turns_`。测量范围覆盖整个 `executor.Prefill`，包括工作组循环、掩码填充、embedding 装配与 KV 缓冲交换。附录 D 的 prefill 吞吐由这对探针产生。
 
 ### 4.1.1　固定 signature 如何影响吞吐曲线
 
@@ -51,22 +52,24 @@ gpu 主基准也有相同现象。256 与 1024 token 的 prefill 墙钟时间约
 
 2000 和 3000 token 分别调用两个、三个 1024 signature。prefill 墙钟时间约为 7.67 s 和 11.48 s，折合每组约 3.83 s。4000 token 需要四组，墙钟时间增至约 17.45 s，吞吐降到 229.3 tokens/s〔基准 D〕。后续工作组开始时，已处理上下文更长。但仅凭这次扫描，还无法区分注意力计算、掩码写入、热状态和调度抖动各自的影响。若要判断瓶颈，需要分别记录各 signature 的耗时并读取硬件性能计数器。
 
-按探针定义，prefill 吞吐等于 token 数除以墙钟时间。cpu/4096 的 prefill 时间约为 4096 ÷ 226.5 tokens/s = 18.08 s〔基准 D〕。`GetTimeToFirstToken` 在此基础上加一次平均 decode step 的耗时，得到表中的 18.13 s（`runtime/engine/io_types.cc:455`）。因此，这项复算只能检查指标定义和表中数字，不能证明模型加载或采样开销可以忽略。在相同模型和条件下，减少 prefill token 数或选择实测时间更短的后端，都能降低 TTFT。本书测得 gpu/4096 的 TTFT 为 4.45 s〔基准 D〕。
+按探针定义，prefill 吞吐等于 token 数除以墙钟时间。cpu/4096 的 prefill 时间约为 4096 ÷ 226.5 tokens/s = 18.08 s〔基准 D〕。`GetTimeToFirstToken` 在此基础上加一次平均 decode step 的耗时，得到表中的 18.13 s。因此，这项复算只能检查指标定义和表中数字，不能证明模型加载或采样开销可以忽略。在相同模型和条件下，减少 prefill token 数或选择实测时间更短的后端，都能降低 TTFT。本书测得 gpu/4096 的 TTFT 为 4.45 s〔基准 D〕。
 
 ## 4.2　设计权衡：固定形状还是动态形状
 
 executor 需要把长度可变的提示词映射到模型可执行的输入形状：编译后的模型可能只接受固定序列长度，提示词却可能包含 20 或 2000 个 token。LiteRT-LM 提供两条路径，对应 `LlmLiteRtCompiledModelExecutorStatic` 与 `LlmLiteRtCompiledModelExecutorDynamic` 两个 executor 子类。
 
-静态形状路径预先编译若干个固定长度的 prefill 入口（signature），例如 128、512、1024。这组入口按长度排序存放（`SortedPrefillSignatureMap`，`runtime/executor/litert_compiled_model_executor_utils.h:43`）：
+静态形状路径预先编译若干个固定长度的 prefill 入口（signature），例如 128、512、1024。这组入口按长度排序存放在 `SortedPrefillSignatureMap` 中：
 
 ```cpp
+// runtime/executor/litert_compiled_model_executor_utils.h:43
 using SortedPrefillSignatureMap =
     absl::btree_map<int, std::string, std::greater<int>>;                // (1)
 ```
 
-键是序列长度，值是 signature 名。比较器 `std::greater<int>` 使其按长度降序排列，`begin()` 指向最长入口 (1)。`GetOptimizedPrefillWorkGroups` 使用贪心算法选择入口（`runtime/executor/litert_compiled_model_executor_utils.cc:248`）：
+键是序列长度，值是 signature 名。比较器 `std::greater<int>` 使其按长度降序排列，`begin()` 指向最长入口 (1)。`GetOptimizedPrefillWorkGroups` 使用贪心算法选择入口：
 
 ```cpp
+// runtime/executor/litert_compiled_model_executor_utils.cc:248
 int max_seq_len = prefill_runner_set.begin()->first;                    // (1)
 while (input_length >= max_seq_len) {
   work_groups.push_back(
@@ -93,7 +96,7 @@ if (input_length > 0) {
 
 <div class="aside-compare">
 
-llama.cpp 把提示词分成不超过 `n_ubatch` 的物理微批，并按实际批长构建计算图（`llama.cpp/include/llama.h:342 @ b9873`）。它不需要在固定 signature 末尾填充，也不保存多个预编译序列长度入口。相应地，形状直到运行时才确定。两种方案对性能和产物体积的影响取决于编译器与后端，需要实测比较。
+llama.cpp 把提示词分成不超过 `n_ubatch` 的物理微批，并按实际批长构建计算图。[^ch04-llamacpp-ubatch]它不需要在固定 signature 末尾填充，也不保存多个预编译序列长度入口。相应地，形状直到运行时才确定。两种方案对性能和产物体积的影响取决于编译器与后端，需要实测比较。
 
 </div>
 
@@ -103,11 +106,12 @@ llama.cpp 把提示词分成不超过 `n_ubatch` 的物理微批，并按实际�
 
 真实入口集为 {1024, 128}。当 \\(L = 1153\\) 时，需要使用两次 1024 signature，填充 895 个位置，整体填充率约 44%。局部最大填充率出现在输入长度刚超过某个较小入口时。
 
-源码中的 TODO 注释表示，计划在取得各入口的基准成本后改进策略（`runtime/executor/litert_compiled_model_executor_utils.cc:256`）。当前贪心策略尚未按实测成本选择工作组。若要改为成本模型，需要同时测量各 signature 的执行成本与填充成本。在取得这些数据前，不能断言多个小入口一定优于一个大入口。
+源码中的 TODO 注释表示，计划在取得各入口的基准成本后改进策略。当前贪心策略尚未按实测成本选择工作组。若要改为成本模型，需要同时测量各 signature 的执行成本与填充成本。在取得这些数据前，不能断言多个小入口一定优于一个大入口。
 
-`Static::Prefill` 取得工作组后逐组调用内部实现（`runtime/executor/llm_litert_compiled_model_executor.cc:1537`）：
+`Static::Prefill` 取得工作组后逐组调用内部实现：
 
 ```cpp
+// runtime/executor/llm_litert_compiled_model_executor.cc:1537
 ASSIGN_OR_RETURN(auto work_groups, GetOptimizedPrefillWorkGroups(
                                        prefill_signature_map_, ids.size()));
 for (int i = 0; i < work_groups.size(); ++i) {
@@ -125,9 +129,10 @@ for (int i = 0; i < work_groups.size(); ++i) {
 
 (1) `do_prefill_sync_` 为 false 时，除最后一组外的工作组都使用异步执行。最后一组是否等待，由 `wait_for_completion` 决定。Metal 缓冲会使 `do_prefill_sync_` 为 true，此时各组同步执行。(2) 每处理一组就缩短 `ids` span。循环后的 `RET_CHECK_EQ(ids.size(), 0)` 验证工作组覆盖了全部输入。
 
-动态形状路径允许输入长度变化，KV cache 也按需增长。长提示词被切成不超过配置上限的块（`runtime/executor/llm_litert_compiled_model_executor.cc:1855`）：
+动态形状路径允许输入长度变化，KV cache 也按需增长。长提示词被切成不超过配置上限的块：
 
 ```cpp
+// runtime/executor/llm_litert_compiled_model_executor.cc:1855
 if (prefill_chunk_size_ <= 0) {
   return PrefillInternal(ids, params);                                  // (1)
 }
@@ -139,7 +144,7 @@ while (!ids.empty()) {
 }
 ```
 
-(1) 若未配置 chunk size，整段输入直接进入内部实现。(2)(3) 否则按 `prefill_chunk_size_` 分块，每块调用一次 `PrefillInternal`。静态路径必须选择能容纳当前 token 数的预编译入口；动态路径的块长只受上限约束。最后一块通过 `std::min` 取得余数，不需要补到固定 signature 长度。v0.13.1 的动态 executor 只接受 cpu 后端（`runtime/executor/llm_litert_compiled_model_executor.cc:2030`）。
+(1) 若未配置 chunk size，整段输入直接进入内部实现。(2)(3) 否则按 `prefill_chunk_size_` 分块，每块调用一次 `PrefillInternal`。静态路径必须选择能容纳当前 token 数的预编译入口；动态路径的块长只受上限约束。最后一块通过 `std::min` 取得余数，不需要补到固定 signature 长度。v0.13.1 的动态 executor 只接受 cpu 后端。
 
 表 4-1 汇总两条路径的差异。
 
@@ -153,9 +158,10 @@ while (!ids.empty()) {
 
 > 表 4-1　静态与动态两条 prefill 路径的权衡。第 8 章继续说明 executor 的分派条件。
 
-两条路径最终都调用基类的 `PrefillInternal`（`runtime/executor/llm_litert_compiled_model_executor.cc:543`）。该函数写入输入缓冲，推进 `current_step`，更新已处理 token 记录，再由 LiteRT 执行 signature。输出写入 KV cache，供后续 decode 使用：
+两条路径最终都调用基类的 `PrefillInternal`。该函数写入输入缓冲，推进 `current_step`，更新已处理 token 记录，再由 LiteRT 执行 signature。输出写入 KV cache，供后续 decode 使用：
 
 ```cpp
+// runtime/executor/llm_litert_compiled_model_executor.cc:543
 // We always hold one pending token in the input ids for the next
 // prefill or decode step.
 int prefill_length = ids.size() - 1;                                   // (1)
@@ -172,11 +178,11 @@ std::transform(prefill_input_pos_ptr, prefill_input_pos_ptr + prefill_length,
 
 `PrefillInternal` 除了调用 LiteRT 执行 signature，还包含三类 host 侧工作。这些操作不计入模型 FLOPs，但会进入墙钟时间。
 
-掩码填充。每次 prefill 都要更新 4D 注意力掩码。`FillAttentionMask` 锁定缓冲，按 `[batch, …, steps, channel]` 的布局写入（`runtime/executor/litert_compiled_model_executor_utils.cc:339`）。prefill 传入本段长度作为 `steps`（`runtime/executor/llm_litert_compiled_model_executor.cc:668`）。decode 每步传入 `steps=1`（`runtime/executor/llm_litert_compiled_model_executor.cc:900`）。写入量与 `steps × channel_size` 成正比，发生在 CPU 上并计入墙钟时间。
+掩码填充。每次 prefill 都要更新 4D 注意力掩码。`FillAttentionMask` 锁定缓冲，按 `[batch, …, steps, channel]` 的布局写入。prefill 传入本段长度作为 `steps`。decode 每步传入 `steps=1`。写入量与 `steps × channel_size` 成正比，发生在 CPU 上并计入墙钟时间。
 
-embedding 装配。除了 token 到 embedding 的查表，带 per-layer embeddings 的模型还要准备逐层 embedding。同一个循环调用 `per_layer_embedding_lookup_->LookupPrefill`，按偏移写入本段结果（`runtime/executor/llm_litert_compiled_model_executor.cc:662`）。查表和写入的数据量随 prefill 长度增长。第 3 章介绍 embedding lookup。
+embedding 装配。除了 token 到 embedding 的查表，带 per-layer embeddings 的模型还要准备逐层 embedding。同一个循环调用 `per_layer_embedding_lookup_->LookupPrefill`，按偏移写入本段结果。查表和写入的数据量随 prefill 长度增长。第 3 章介绍 embedding lookup。
 
-KV 缓冲交换。双缓冲路径在 prefill 结尾交换两组缓冲的指针，不复制 KV 数据（`runtime/executor/llm_litert_compiled_model_executor.cc:737`）。单缓冲路径为每个工作组填写 int32 参数张量。`FillSingleBufferCacheParamTensor` 的实现见第 6 章。
+KV 缓冲交换。双缓冲路径在 prefill 结尾交换两组缓冲的指针，不复制 KV 数据。单缓冲路径为每个工作组填写 int32 参数张量。`FillSingleBufferCacheParamTensor` 的实现见第 6 章。
 
 现有探针没有分别记录这三类操作的耗时，附录 D 的曲线不能给出各项占比。250、500 和 1000 token 都执行同一个 1024 signature，短输入的低吞吐主要反映填充率口径。若要判断 host 侧开销，需要在 `PrefillInternal` 内分别插桩。
 
@@ -187,18 +193,19 @@ KV 缓冲交换。双缓冲路径在 prefill 结尾交换两组缓冲的指针�
 
 ## 4.3　取消语义：prefill 与 decode 的检查点
 
-`TaskController::Cancel()` 将共享的原子变量设为 true（`runtime/core/session_advanced.h:67`）。任务是否立即停止，取决于执行路径在何处读取该原子量。prefill 与 decode 的检查位置不同。
+`TaskController::Cancel()` 将共享的原子变量设为 true。任务是否立即停止，取决于执行路径在何处读取该原子量。prefill 与 decode 的检查位置不同。
 
-`ExecutorPrefillParams` 声明了 `GetCancelFlag()` 和 `GetMaxPrefillSequenceLength()`（`runtime/executor/llm_executor_io_types.h:376`）。但 v0.13.1 的 `Tasks::Prefill` 只设置 `wait_for_completion`。静态和动态 executor 也没有读取取消标志与最大长度这两个字段。因此，运行中的 prefill 尚未实现基于这些字段的合作式取消。
+`ExecutorPrefillParams` 声明了 `GetCancelFlag()` 和 `GetMaxPrefillSequenceLength()`。但 v0.13.1 的 `Tasks::Prefill` 只设置 `wait_for_completion`。静态和动态 executor 也没有读取取消标志与最大长度这两个字段。因此，运行中的 prefill 尚未实现基于这些字段的合作式取消。
 
 <figure>
 {{#include figs/fig-4-2.svg}}
 <figcaption>图 4-2　取消请求不会中断已经开始的模型调用：prefill 要等整次调用返回后再改写状态，decode 则在下一次循环开始时停止。</figcaption>
 </figure>
 
-`ThreadedExecutionManager::AddPrefillTask` 在获取 executor 与组装输入之间的几个边界处读取取消标志。进入 `Tasks::Prefill` 后，要等整次调用返回才再次检查（`runtime/framework/resource_management/threaded_execution_manager.cc:763`）：
+`ThreadedExecutionManager::AddPrefillTask` 在获取 executor 与组装输入之间的几个边界处读取取消标志。进入 `Tasks::Prefill` 后，要等整次调用返回才再次检查：
 
 ```cpp
+// runtime/framework/resource_management/threaded_execution_manager.cc:763
 if (cancelled != nullptr && cancelled->load()) {
   llm_executor.value().reset();
   FinishTaskAndLogErrors(task_id, Responses(TaskState::kCancelled),
@@ -218,9 +225,10 @@ if (cancelled != nullptr && cancelled->load()) {
 
 若取消发生在 `Tasks::Prefill` 之前，任务可以跳过模型执行。executor 开始运行后，当前 prefill 仍会完成，随后响应状态才改为 `kCancelled`。静态工作组循环和动态 chunk 循环都没有读取取消标志，因而分块边界不是取消点。
 
-decode 在每次迭代开始前检查同一个标志（`runtime/core/tasks.cc:487`）：
+decode 在每次迭代开始前检查同一个标志：
 
 ```cpp
+// runtime/core/tasks.cc:487
 while (true) {
   if (cancelled != nullptr && cancelled->load()) {                     // (1)
     // ...
@@ -234,18 +242,20 @@ while (true) {
 
 ## 4.4　任务调度：在工作线程执行 prefill
 
-framework 层提供了单工作线程的顺序队列 `ExecutionQueue`（`runtime/framework/execution_queue.cc`）。它的 `Enqueue` 把任务保存到两个结构中：
+framework 层提供了单工作线程的顺序队列 `ExecutionQueue`，它的 `Enqueue` 把任务保存到两个结构中：
 
 ```cpp
+// runtime/framework/execution_queue.cc:52-54
 int id = next_id_++;
 pending_tasks_[id] = std::move(task);                                  // (1)
 task_order_.push(id);                                                  // (2)
 return id;
 ```
 
-(1) `pending_tasks_` 保存任务体，(2) `task_order_` 保存 FIFO 顺序。`Remove(id)` 只从 `pending_tasks_` 删除任务体，不修改队列。工作线程取到已删除的 id 时跳过该任务。这是 `ExecutionQueue` 对尚未执行任务的移除语义，不等同于会话 prefill 的运行中取消。任务在锁外执行（`runtime/framework/execution_queue.cc:97`）：
+(1) `pending_tasks_` 保存任务体，(2) `task_order_` 保存 FIFO 顺序。`Remove(id)` 只从 `pending_tasks_` 删除任务体，不修改队列。工作线程取到已删除的 id 时跳过该任务。这是 `ExecutionQueue` 对尚未执行任务的移除语义，不等同于会话 prefill 的运行中取消。任务在锁外执行：
 
 ```cpp
+// runtime/framework/execution_queue.cc:97
 // Execute the task OUTSIDE the mutex lock.
 // This prevents deadlocks if a task itself calls Enqueue() or Remove().
 if (current_task) {
@@ -259,9 +269,10 @@ v0.13.1 的会话路径由 `ThreadedExecutionManager` 调度 prefill 和 decode�
 
 ### 4.4.1　按需扩容的 ThreadPool
 
-底层原语是按需扩容的线程池。`Schedule` 提交任务时判断是否创建工作线程（`runtime/framework/threadpool.cc:78`）：
+底层原语是按需扩容的线程池。`Schedule` 提交任务时判断是否创建工作线程：
 
 ```cpp
+// runtime/framework/threadpool.cc:78
   // If all worker threads are (supposed to be) busy, instantiates a new worker
   // thread to run the task.
   size_t num_threads = threads_.size();
@@ -282,13 +293,14 @@ v0.13.1 的会话路径由 `ThreadedExecutionManager` 调度 prefill 和 decode�
   tasks_.push_back(std::move(callback));                  // (3)
 ```
 
-(1) 任务数不少于现有线程数，且尚未达到 `max_num_threads_` 时，线程池尝试创建一个工作线程。线程池从零个线程开始按需增长。(2) 第一个工作线程创建失败时返回错误。后续扩容失败只记录警告，任务仍由现有线程处理。(3) 无论是否扩容，任务都会进入队列。`RunWorker` 也在锁外执行任务（`runtime/framework/threadpool.cc:180`）。
+(1) 任务数不少于现有线程数，且尚未达到 `max_num_threads_` 时，线程池尝试创建一个工作线程。线程池从零个线程开始按需增长。(2) 第一个工作线程创建失败时返回错误。后续扩容失败只记录警告，任务仍由现有线程处理。(3) 无论是否扩容，任务都会进入队列。`RunWorker` 也在锁外执行任务。
 
 ### 4.4.2　两个单线程池
 
-`ThreadedExecutionManager` 创建两个线程池，并把各自的上限设为 1（`runtime/framework/resource_management/threaded_execution_manager.cc:74`）：
+`ThreadedExecutionManager` 创建两个线程池，并把各自的上限设为 1：
 
 ```cpp
+// runtime/framework/resource_management/threaded_execution_manager.cc:74
   execution_thread_pool_ =
       std::make_unique<ThreadPool>(/*name_prefix=*/"execution_thread_pool",
                                    /*max_num_threads=*/1);       // (1)
@@ -301,9 +313,11 @@ v0.13.1 的会话路径由 `ThreadedExecutionManager` 调度 prefill 和 decode�
 
 ### 4.4.3　回调线程边界与背压
 
-流式回调与终态回调使用不同路径。`Tasks::Decode` 产生文本后直接调用流式回调，此时仍在执行池线程上（`runtime/core/tasks.cc:564`）。慢回调会延长当前 decode 迭代。任务结束时，`FinishTask` 把终态回调投递到回调池（`runtime/framework/resource_management/threaded_execution_manager.cc:434`）：
+流式回调与终态回调使用不同路径。`Tasks::Decode` 产生文本后直接调用流式回调，此时仍在执行池线程上。慢回调会延长当前 decode 迭代。任务结束时，`FinishTask` 把终态回调投递到回调池：
 
 ```cpp
+// runtime/core/tasks.cc:564
+// runtime/framework/resource_management/threaded_execution_manager.cc:434
 if (callback_thread_pool_ != nullptr) {
   RETURN_IF_ERROR(callback_thread_pool_->Schedule(
       [callback = std::move(callback), responses = std::move(responses),
@@ -322,11 +336,11 @@ if (callback_thread_pool_ != nullptr) {
 }
 ```
 
-(1) 终态回调在回调池线程执行。(2) `FinishTask` 随后调用 `WaitUntilDone`，最长等待 10 s。`FinishTask` 此时仍占用单线程执行池，所以后续模型任务无法开始。回调池改变了终态回调的执行线程，但没有消除背压。源码 TODO 提出异步处理并移除这次等待（`runtime/framework/resource_management/threaded_execution_manager.cc:456`）。流式回调不经过该回调池，仍直接占用执行线程。
+(1) 终态回调在回调池线程执行。(2) `FinishTask` 随后调用 `WaitUntilDone`，最长等待 10 s。`FinishTask` 此时仍占用单线程执行池，所以后续模型任务无法开始。回调池改变了终态回调的执行线程，但没有消除背压。源码 TODO 提出异步处理并移除这次等待。流式回调不经过该回调池，仍直接占用执行线程。
 
 终态回调可以异步提交新任务并返回。如果回调在提交新任务后同步等待结果，执行线程与回调线程可能相互等待，直至其中一侧超时。
 
-`ThreadedExecutionManager` 在 `QueueTask` 中检查依赖。`dependent_tasks` 非空的任务不能进入执行池（`runtime/framework/resource_management/threaded_execution_manager.cc:301`）。条件满足后，`Schedule` 才把任务加入执行池（`runtime/framework/resource_management/threaded_execution_manager.cc:311`）。第 3 章 `Clone` 使用的 `last_task_ids_` 记录了这组依赖。因此，decode 会在所依赖的 prefill 完成后开始。实际响应时间还包括模型执行和回调背压。
+`ThreadedExecutionManager` 在 `QueueTask` 中检查依赖。`dependent_tasks` 非空的任务不能进入执行池。条件满足后，`Schedule` 才把任务加入执行池。第 3 章 `Clone` 使用的 `last_task_ids_` 记录了这组依赖。因此，decode 会在所依赖的 prefill 完成后开始。实际响应时间还包括模型执行和回调背压。
 
 ## 小结
 
@@ -345,3 +359,4 @@ prefill 完成后，KV cache 中已有提示词对应的 K/V。decode 如何读�
 3. 异步边界。静态路径在什么条件下异步提交中间工作组？Metal 缓冲为何构成例外？
 4. 曲线解读。附录 D 第七节中，250、500 和 1000 token 的 TTFT 近似相同，吞吐却接近按 token 数成比例增长。结合入口集 {1024, 128} 解释原因。
 5. 取消语义。若取消发生在一次 prefill signature 执行期间和一次 decode step 执行期间，v0.13.1 分别会在何时观察到取消标志？
+[^ch04-llamacpp-ubatch]: ggml-org，[*llama.cpp 源码 include/llama.h:342*](https://github.com/ggml-org/llama.cpp/blob/b9873/include/llama.h#L342)，版本 b9873；访问日期：2026-08-31。
