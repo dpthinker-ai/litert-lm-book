@@ -58,5 +58,5 @@
   <text class="ts" x="650" y="330" style="font-size:9px">下层不理解</text>
   <text class="ts" x="650" y="343" style="font-size:9px">对话与工具语义</text>
   <path class="edge dash" d="M633,328 H645"/>
-  <text class="ts" x="360" y="492" text-anchor="middle" style="font-size:9.5px">主线表示 v0.13.1 的 LiteRT compiled-model 路径；其他引擎类型见正文说明</text>
+  <text class="ts" x="360" y="492" text-anchor="middle" style="font-size:9.5px">主线表示 LiteRT compiled-model 主路径；其他引擎类型见正文说明</text>
 </svg>

@@ -397,7 +397,7 @@ $$
 
 batch 中的状态彼此独立，但 `UpdateConstraintState` 要求 token 数恰好等于 `batch_size`。`MaskLogits` 还要求 logits 形状为 `[batch_size,1,vocab_size]`。这两个条件把“每条序列一个状态”与模型输出 shape 对齐。不能把一个序列的位图广播到整个 batch。
 
-v0.13.1 同时支持外部采样和内部采样。外部路径在 `Tasks::DecodeOneStep` 中取得 logits、调用 `MaskLogits`，再调用外部 sampler；内部路径把同一个 `ConstrainedDecoder` 放入 `ExecutorDecodeParams`，执行器再更新状态并屏蔽 logits。
+LiteRT-LM 同时支持外部采样和内部采样。外部路径在 `Tasks::DecodeOneStep` 中取得 logits、调用 `MaskLogits`，再调用外部 sampler；内部路径把同一个 `ConstrainedDecoder` 放入 `ExecutorDecodeParams`，执行器再更新状态并屏蔽 logits。
 
 float32 路径的 `MaskLogits` 使用双重循环：
 
@@ -528,7 +528,7 @@ value
 array: OPEN_BRACKET ( value (COMMA value)* )? CLOSE_BRACKET;
 ```
 
-(1) `functionCall` 要求 `call`、冒号、`ID`，参数对象可选。(2) `value` 递归引用 `object` 和 `array`，因此能表示嵌套参数。`ParseFcExpression` 把示例还原为 `{"name":"tool_name","arguments":{"param_1":7,"param_2":"foo"}}`；头文件给出了相同的输入输出。FC 与 Python 风格调用使用 ANTLR parser；JSON 路径在 v0.13.1 中调用 `serde_json::from_str`。
+(1) `functionCall` 要求 `call`、冒号、`ID`，参数对象可选。(2) `value` 递归引用 `object` 和 `array`，因此能表示嵌套参数。`ParseFcExpression` 把示例还原为 `{"name":"tool_name","arguments":{"param_1":7,"param_2":"foo"}}`；头文件给出了相同的输入输出。FC 与 Python 风格调用使用 ANTLR parser；JSON 路径调用 `serde_json::from_str`。
 
 解析成功后，应用核对函数与参数，执行函数，再把结果作为消息发回模型。执行函数是应用的责任，不是语法约束或 parser 的责任（`docs/api/cpp/tool-use.md:22-38`）。
 
@@ -646,7 +646,7 @@ absl::StatusOr<ordered_json> ExecuteToolCall(
 
 <div class="aside-version">
 
-工具调用格式与 parser 会随版本变化，本节描述的是 v0.13.1。上游 `LiteRT-LM#2418` 记录过特定模型的嵌套 JSON 参数解析问题。[^ch10-issue-2418] 排查时先保存模型原始输出。确认生成文本符合文法后，再检查 parser 是否覆盖该格式，并核对应用是否因参数校验而拒绝调用。
+工具调用格式与 parser 会随版本变化，本节只描述本书冻结的版本。上游 `LiteRT-LM#2418` 记录过特定模型的嵌套 JSON 参数解析问题。[^ch10-issue-2418] 排查时先保存模型原始输出。确认生成文本符合文法后，再检查 parser 是否覆盖该格式，并核对应用是否因参数校验而拒绝调用。
 
 </div>
 

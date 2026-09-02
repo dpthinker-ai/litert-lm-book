@@ -10,7 +10,7 @@
 
 - 运行模型并做实验：使用第 2 章介绍的 Python CLI `litert-lm`。安装并运行模型后，可以改变参数并记录结果；需要从 Python 程序调用时，再使用 Python SDK。[^epilogue-cli]
 - Android / JVM：使用 Kotlin SDK（第 11 章）与预编译 Maven 产物。[^epilogue-android] 依赖版本应显式固定，并与应用验证过的 LiteRT-LM 版本对应；不要使用 `latest.release`。`Engine`、`Session` 与 `Conversation` 的接口关系见第 3、11 章。
-- iOS / macOS：使用 Swift package。[^epilogue-swift] v0.13.1 的生命周期限制还要以冻结版头文件为准。第 11 章分别讨论 Conversation 与 Engine 的显式释放问题，不能把两个 issue 合并为同一接口结论。
+- iOS / macOS：使用 Swift package。[^epilogue-swift] 生命周期限制以冻结版头文件为准。第 11 章分别讨论 Conversation 与 Engine 的显式释放问题，不能把两个 issue 合并为同一接口结论。
 - Web：使用 Web SDK，通过 npm 安装 `@litert-lm/core`，或从 CDN 以 `+esm` 导入。[^epilogue-web] 核心编译为 WASM 并在浏览器执行。数 GiB 的模型文件需随应用分发或在首次启动时下载，部署时要规划网络流量与缓存空间。
 
 四种入口均可先从语言层 API 开始。出现部署失败、吞吐下降或模型加载错误时，可按模型文件、编排层、执行器和后端四个位置依次定位。
@@ -70,7 +70,7 @@ decode 阶段应分别记录停止 token 或停止序列、`max_output_tokens`�
 
 这个案例只演示诊断方法，不构成本书新增的 GPU 性能实测。假设同一模型从 cpu 切换到 gpu 后变慢，不能直接归结为“GPU 后端较慢”。先用同一模型摘要、prompt、上下文和输出长度重跑 cpu 基线。随后只改 backend，并分别记录 Engine 创建、prefill、首个 token 与后续 decode。Engine 创建时间变化时，检查编译、缓存与设备初始化。decode tokens/s 下降后，再检查采样位置、设备回传与持续负载。
 
-隔离 backend 变量时，应显式固定 sampler backend，并关闭 MTP、约束解码和 repetition penalty 等非必要开关。v0.13.1 在未显式指定 sampler 时，主 backend 的变化还可能改变采样位置；第 8 章说明了这一路径。若 GPU 组还开启设备侧采样或 MTP，就必须拆成额外对照。两项同时变化时，即使最终吞吐下降，也无法判断是采样数据路径还是 drafter/verify 成本造成。
+隔离 backend 变量时，应显式固定 sampler backend，并关闭 MTP、约束解码和 repetition penalty 等非必要开关。当前实现在未显式指定 sampler 时，主 backend 的变化还可能改变采样位置；第 8 章说明了这一路径。若 GPU 组还开启设备侧采样或 MTP，就必须拆成额外对照。两项同时变化时，即使最终吞吐下降，也无法判断是采样数据路径还是 drafter/verify 成本造成。
 
 输出内容也要保存。浮点后端可能在接近的 logits 上选择不同 token，后续自回归序列便会分叉。性能对照应固定采样设置，并把首个分叉位置作为结果的一部分。不同后端不保证逐 token 生成相同文本。
 
@@ -81,7 +81,7 @@ decode 阶段应分别记录停止 token 或停止序列、`max_output_tokens`�
 - 硬件相关问题包括特定 GPU/NPU 上的崩溃和特定 SoC 上的数值异常，需要对应设备才能复现。第 8、9 章引用的 `LiteRT-LM#2281`[^epilogue-issue-2281]、`LiteRT-LM#2227`[^epilogue-issue-2227] 属于这一类。
 - 接口问题包括缺失的 API、误导性错误信息和边界处理。`LiteRT-LM#2589` 请求为 Swift Conversation 增加显式关闭接口；[^epilogue-issue-2589] `LiteRT-LM#2613` 讨论 Engine 在析构线程上的崩溃与显式关闭。[^epilogue-issue-2613] 两者涉及不同对象与失败条件，提交修改前必须分别核对当前版本。
 
-两类问题需要不同的验证路径。硬件相关问题应保留设备、驱动、模型产物和运行时日志；接口问题可先定位公开 API、所有权契约和失败分支。v0.13.1 的贡献说明明确写明仓库当时尚未开放代码贡献，建议先提交 issue；因此，本书不把准备补丁写成当前可用的上游流程。[^epilogue-contributing]
+两类问题需要不同的验证路径。硬件相关问题应保留设备、驱动、模型产物和运行时日志；接口问题可先定位公开 API、所有权契约和失败分支。上游的贡献说明当时明确写明仓库尚未开放代码贡献，建议先提交 issue；因此，本书不把准备补丁写成当前可用的上游流程。[^epilogue-contributing]
 
 一个可复现的 issue 至少应包含以下六项：版本、模型摘要、设备与后端、完整命令或最小程序、预期结果、实际日志。性能问题还要提供预热和重复次数。回归问题应尽量给出最后正常版本与首个异常版本；若没有完成二分，应明确写出已测试的版本范围。
 

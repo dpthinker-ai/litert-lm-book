@@ -392,7 +392,7 @@ NPU 执行器提供更细的内置分项。`LatencyStats` 分别累计输入准�
 
 ## 8.6　NPU：专用多子图路径与部署约束
 
-LiteRT-LM v0.13.1 的 NPU 专用执行器包含 Qualcomm QNN/HTP 与 Google Tensor 配置，并使用专门的多子图路径。本书的两台探测设备均为 Qualcomm 平台。它们都未完成一次 NPU 推理，也没有采集功耗数据，因此本章不比较 NPU 与 CPU、GPU 的能效。
+LiteRT-LM 的 NPU 专用执行器包含 Qualcomm QNN/HTP 与 Google Tensor 配置，并使用专门的多子图路径。本书的两台探测设备均为 Qualcomm 平台。它们都未完成一次 NPU 推理，也没有采集功耗数据，因此本章不比较 NPU 与 CPU、GPU 的能效。
 
 ### 8.6.1　NPU executor 仍是一条异构流水线
 

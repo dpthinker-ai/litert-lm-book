@@ -51,7 +51,7 @@ Engine 用哪份实现，由注册工厂决定：`EngineFactory` 按 Backend 保
 
 克隆解决的是“同一个前缀、多条分支”的复用问题。头文件注释给的例子很直观：先对 “What is the tallest building ” 执行 prefill，再 Clone 出第二个 Session，一条分支接 “in the world?”、另一条接 “in France?”，公共前缀只需计算一次。`Clone` 的接口约定是：新 Session 取得调用点之前的全部设置与上下文。
 
-接口语义只能说明克隆后的行为，不能据此判定 KV cache 是立即深拷贝、引用共享还是写时复制。v0.13.1 的实现先共享上下文，分支修改时再分离；复制到底发生在哪一步，下面沿实现路径走一遍。
+接口语义只能说明克隆后的行为，不能据此判定 KV cache 是立即深拷贝、引用共享还是写时复制。实际实现先共享上下文，分支修改时再分离；复制到底发生在哪一步，下面沿实现路径走一遍。
 
 #### Clone 的实现：任务顺序与写时复制
 
@@ -127,7 +127,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 代码行 `(4)` `prefill_preface_on_init` 为 true 且 Preface 非空时，`Conversation::Create` 生成输入并调用 `RunPrefill`。头文件说明，这会增加初始化时间并缩短首次响应时间。具体差值仍需在目标设备上测量。
 
-`DataProcessorConfig` 是六种配置的 `std::variant`。表 3-1 只列 v0.13.1 头文件中的默认字段。部分字段会被模型元数据覆盖，因而不能把这些值视为所有模型文件的固定配置。
+`DataProcessorConfig` 是六种配置的 `std::variant`。表 3-1 只列头文件中的默认字段。部分字段会被模型元数据覆盖，因而不能把这些值视为所有模型文件的固定配置。
 
 | 配置类型 | 图像相关默认值 | 工具调用标记 | 其他默认字段 |
 |---|---|---|---|

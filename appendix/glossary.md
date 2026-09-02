@@ -44,8 +44,8 @@
 | .litertlm | — | 2 | 单文件模型容器：FlatBuffer 头描述一组具名分段，分段可承载 TFLite 模型、tokenizer、`LlmMetadataProto` 等数据 |
 | FlatBuffer | — | 7 | 可直接读取缓冲中类型化字段的二进制序列化格式；`.litertlm` 头与 TFLite 模型都使用它 |
 | backend constraint | 后端约束 | 7 | `.litertlm` 模型段声明的允许后端集合；Engine 会在编译 executor 前检查请求后端是否包含在集合中 |
-| weight cache | 权重缓存 | 7 | 后端编译阶段使用的派生缓存；v0.13.1 以模型 mtime 与文件大小参与命名，不等同于模型权重段或内容哈希 |
-| LoRA | — | 7 | 在基座模型之外加载增量权重；v0.13.1 的管理器按已使用的 adapter id 保留资源，未提供卸载接口 |
+| weight cache | 权重缓存 | 7 | 后端编译阶段使用的派生缓存；当前以模型 mtime 与文件大小参与命名，不等同于模型权重段或内容哈希 |
+| LoRA | — | 7 | 在基座模型之外加载增量权重；其管理器按已使用的 adapter id 保留资源，未提供卸载接口 |
 | mmap | — | 7 | 把文件区域映射到进程地址空间；页面何时读入由访问模式、操作系统与 `madvise` 等条件决定 |
 | 后端 | backend | 1 | 设备内某类处理器加上驱动它的软件实现；同一设备可有 CPU/GPU/NPU 多个后端，`Backend` 枚举（含 ARTISAN 路径）见第 8 章 |
 | zero-copy | 零拷贝 | 8 | 生产者与消费者复用同一底层存储；还需满足 buffer 类型、布局与完成事件相容，不能由一次 `Duplicate()` 单独证明 |

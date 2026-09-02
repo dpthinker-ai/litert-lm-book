@@ -1,6 +1,6 @@
 # 第 7 章 模型文件与权重：量化、容器格式与 LoRA
 
-> 本章区分低比特表示的理论收益与实测收益，说明 `.litertlm` 的文件布局及 v0.13.1 主加载路径。还将分析权重缓存（weight cache）与 LoRA 的资源生命周期；相关口径用于第 8 章的后端内存讨论。
+> 本章区分低比特表示的理论收益与实测收益，说明 `.litertlm` 的文件布局及主加载路径。还将分析权重缓存（weight cache）与 LoRA 的资源生命周期；相关口径用于第 8 章的后端内存讨论。
 
 KV cache 属于运行时状态，模型文件则由 Engine 加载；二者的生命周期不同。`.litertlm` 把模型、tokenizer 与运行参数组织在一个带分段目录的文件中。低秩适配（low-rank adaptation，LoRA）将增量权重与基座权重分开保存。
 
@@ -59,7 +59,7 @@ enum class ActivationDataType {
 
 这四层不能互相替代。文件中存在 INT4 常量，不代表图中的每个矩阵乘都能由同一个低比特算子处理。图能表达某种量化形式，也不代表 CPU、GPU 与 NPU 都接受它。后端完成编译后，权重还可能转换成设备相关布局；此时文件大小不再等于运行时权重缓冲大小。
 
-v0.13.1 的 GPU 编译选项提供了两个可观察的例子。`convert_weights_on_gpu` 控制 OpenCL 与 WebGPU 路径是否在 GPU 上转换权重，其他后端会忽略该开关。`allow_src_quantized_fc_conv_ops` 决定是否允许源量化的 FC/Conv，默认设置会允许该路径。这些开关说明“量化权重存在”和“量化算子被采用”是两个判断。源码没有给出它们在每款 GPU 上对应的 kernel 清单。
+GPU 编译选项提供了两个可观察的例子。`convert_weights_on_gpu` 控制 OpenCL 与 WebGPU 路径是否在 GPU 上转换权重，其他后端会忽略该开关。`allow_src_quantized_fc_conv_ops` 决定是否允许源量化的 FC/Conv，默认设置会允许该路径。这些开关说明“量化权重存在”和“量化算子被采用”是两个判断。源码没有给出它们在每款 GPU 上对应的 kernel 清单。
 
 CPU 路径配置 XNNPACK、动态 fully connected 标志和量化 zero point 压缩，再把硬件加速器设为 CPU。这里同样没有一个通用的“INT4 已启用”布尔值。是否能编译，要由模型图、LiteRT、XNNPACK 版本和目标 CPU 共同决定。
 
@@ -163,7 +163,7 @@ llama.cpp 的 GGUF 也在单文件中保存元数据与张量数据。它的默�
 
 ## 7.3　当前加载路径：`LitertLmLoader` 按请求取段
 
-v0.13.1 的 Engine 创建流程先调用 `BuildLiteRtCompiledModelResources`。文件格式为 `LITERT_LM` 时，分支进入 `BuildModelResourcesFromLitertLmFormat`。该函数创建 `LitertLmLoader`，再包装成 `ModelResourcesLitertLm`。这是本章所说的主加载路径。
+Engine 创建流程先调用 `BuildLiteRtCompiledModelResources`。文件格式为 `LITERT_LM` 时，分支进入 `BuildModelResourcesFromLitertLmFormat`。该函数创建 `LitertLmLoader`，再包装成 `ModelResourcesLitertLm`。这是本章所说的主加载路径。
 
 `schema/core/litertlm_read.cc` 里还有 `ReadTFLiteFileFromSection` 的两个辅助重载。一个使用 TFLite 的 `MMAPAllocation`，另一个返回单独的 `MemoryMappedFile` 句柄。这两个重载都能按 section 提取 TFLite 模型。当前 Engine 主路径不通过它们加载模型，因而不能把其中任一重载称为“默认权重路径”。
 
@@ -260,7 +260,7 @@ CPU 和 GPU 的 cache 内容也不能互换。主 CPU 路径使用 `.xnnpack_cac
 
 > 表 7-3　weight cache 的失效依据是路径元数据和进程状态，不是模型内容摘要。
 
-部署系统若会原位更新模型，较稳妥的做法是使用不可变版本文件名，并在更新后创建新进程。若必须复用路径，应由应用在替换时显式管理对应 cache，不能依赖同大小文件自动失效。这里的结论针对 v0.13.1 的命名与清理逻辑，不代表底层 cache 格式在不同 LiteRT 版本之间兼容。
+部署系统若会原位更新模型，较稳妥的做法是使用不可变版本文件名，并在更新后创建新进程。若必须复用路径，应由应用在替换时显式管理对应 cache，不能依赖同大小文件自动失效。这里的结论针对当前的命名与清理逻辑，不代表底层 cache 格式在不同 LiteRT 版本之间兼容。
 
 ### 7.3.5　mmap 下的内存口径
 
@@ -280,13 +280,13 @@ LoRA 用两个低秩矩阵表示某个线性层的权重增量。对于 \\(d_{in
 
 离线合并不需要运行时切换接口，但每个适配器都会产生一份新的完整模型。若基座权重已经量化，先合并还是先量化会改变数值结果，不能把 FP16 合并后的差分直接等同于量化模型上的差分。运行时适配只分发增量文件，却要求基座模型的 signature 预先暴露匹配的 LoRA 输入，后端还要能为这些输入创建 buffer。
 
-v0.13.1 可追踪到的 `LoRA` 组件属于运行时适配路径。主文本 compiled executor 会识别 LoRA 输入名，并跳过普通 decode buffer 的创建，把这些输入留给 `LoraManager`。不过，该文件里没有创建或调用 `LoraManager` 的调用点。仓库内可直接追踪的 `LoadLoRA` 与 `UseLoRA` 调用位于音频编码器。因此，不能仅凭主文本图中存在 LoRA 输入，就断定 v0.13.1 的文本生成 API 已完成同样的热切换链路。
+仓库中可追踪到的 `LoRA` 组件属于运行时适配路径。主文本 compiled executor 会识别 LoRA 输入名，并跳过普通 decode buffer 的创建，把这些输入留给 `LoraManager`。不过，该文件里没有创建或调用 `LoraManager` 的调用点。仓库内可直接追踪的 `LoadLoRA` 与 `UseLoRA` 调用位于音频编码器。因此，不能仅凭主文本图中存在 LoRA 输入，就断定文本生成 API 已完成同样的热切换链路。
 
 仓库中也没有一条由上述运行时组件执行 \\(W^{\prime}=W+\Delta W\\) 的原位合并路径。若产品选择离线合并，应把它视为模型导出流程。量化、后端约束、cache 标识和质量都要重新验证，不能把 `LoadLoRA` 当作合并工具。
 
 LiteRT-LM 的 `LoraData` 在 CPU 侧提供只读数据视图。类注释说明其目标是以 mmap 等方式减少拷贝。`LoraManager` 用 `lora_data_` 保存尚未创建后端对象的 ID，用 `loras_` 保存已经创建的 `LoRA` 对象。`current_lora_id_` 选择当前使用哪一份。
 
-v0.13.1 中可直接追踪的调用点位于音频编码器的 `LoadLoRA` 与 `UseLoRA`。这一调用点使用前述通用组件，但不能证明主文本 executor 已提供相同的热切换接口。
+当前可直接追踪的调用点位于音频编码器的 `LoadLoRA` 与 `UseLoRA`。这一调用点使用前述通用组件，但不能证明主文本 executor 已提供相同的热切换接口。
 
 `LoadLoRA` 从 `ModelAssets` 创建 `LoraData`，放入待用表。第一次调用 `UseLoRA(id)` 时，管理器把数据移进 `LoRA::Create`，将对象写入 `loras_`，删除待用表中的同一项，再更新当前 ID。
 
@@ -381,7 +381,7 @@ section 的资源角色由目录属性中的 `model_type` 区分，例如主文�
 
 字节 24-31 给出 FlatBuffer 头部的结束位置。普通读取器要求结束位置不小于 32，并检查相应字节能否读出。Engine 的主 loader 最多映射文件开头 16 KiB，再把这段传递给读取器。流式 loader 另有显式的 32 字节至 16 KiB 范围检查。两个入口的防护位置不同，损坏文件不一定返回同一种错误。
 
-头部读完后，`LitertlmHeader::reset` 直接取得生成的根对象访问器。这条路径没有建立 `flatbuffers::Verifier`。schema 中的 `(required)` 字段定义了合法文件应有的结构，但不能据此认为主 loader 已经验证了所有 vector 边界、必需字段和 union 类型。外部取得的模型文件若不受发布链信任，应在调用 Engine 前执行独立的 FlatBuffer 与 section 范围校验。这是由当前边界推导出的应用要求，不是 v0.13.1 已提供的验证接口。
+头部读完后，`LitertlmHeader::reset` 直接取得生成的根对象访问器。这条路径没有建立 `flatbuffers::Verifier`。schema 中的 `(required)` 字段定义了合法文件应有的结构，但不能据此认为主 loader 已经验证了所有 vector 边界、必需字段和 union 类型。外部取得的模型文件若不受发布链信任，应在调用 Engine 前执行独立的 FlatBuffer 与 section 范围校验。这是由当前边界推导出的应用要求，不是运行时已提供的验证接口。
 
 section 目录还要做全局检查。builder 按 16 KiB 倍数计算各段起点，并在写完一段后记录其结束位置。主 loader 建索引时只显式拒绝 `begin_offset > end_offset`。这段循环没有统一检查零长度、文件末尾、头部重叠、section 之间的重叠和 16 KiB 对齐。
 
@@ -392,7 +392,7 @@ section 目录还要做全局检查。builder 按 16 KiB 倍数计算各段起�
 <figcaption>图 7-5　模型产物要依次通过前缀、FlatBuffer、section 布局、payload、Engine 语义和后端编译检查；上一层通过不能替代下一层。</figcaption>
 </figure>
 
-| 校验层 | v0.13.1 当前检查 | 发布前还应检查 | 典型失败位置 |
+| 校验层 | 当前检查 | 发布前还应检查 | 典型失败位置 |
 |---|---|---|---|
 | 固定前缀 | 魔数、版本字节可读、major 相等 | padding、允许的 minor/patch 范围 | 读取头部 |
 | 头部范围 | 结束位置不小于 32、指定字节可读 | 分配前的大小上限、FlatBuffer verifier | 读取或访问头部字段 |
@@ -418,7 +418,7 @@ bazel test //runtime/util:litert_lm_streaming_loader_test \
 
 发布侧校验器应使用头部目录，而不是扫描 `TFL3` 标识来恢复 section。表 7-6 的扫描用于研究现有文件；它可能找到嵌套数据中的相同字节，也无法得到 `model_type`、后端约束和 tokenizer 等非 TFLite section。面向发布的校验流程可以先读取文件长度，再用有上界的缓冲解析前缀与 FlatBuffer。只有头部通过 verifier，才遍历目录。
 
-目录遍历时，为每个 section 建立半开区间 `[begin,end)` 和 `BufferKey`。先检查 `32 <= header_end <= 16 KiB`，再要求 `header_end <= begin < end <= file_size`。若发布产物只允许由当前 builder 生成，还可把 16 KiB 起点对齐列入发布规则；这比 v0.13.1 主 loader 的兼容范围更严格。所有区间按起点排序，若前一项的 `end` 大于后一项的 `begin`，文件即有重叠。`BufferKey` 集合则用于拒绝重复资源角色。
+目录遍历时，为每个 section 建立半开区间 `[begin,end)` 和 `BufferKey`。先检查 `32 <= header_end <= 16 KiB`，再要求 `header_end <= begin < end <= file_size`。若发布产物只允许由当前 builder 生成，还可把 16 KiB 起点对齐列入发布规则；这比主 loader 的兼容范围更严格。所有区间按起点排序，若前一项的 `end` 大于后一项的 `begin`，文件即有重叠。`BufferKey` 集合则用于拒绝重复资源角色。
 
 结构检查通过后，再按 `data_type` 验证 payload。TFLite 段要在自己的字节范围内完成模型验证，protobuf 和 tokenizer 也使用各自解析器。最后核对产品需要的角色，例如主文本模型、metadata 和 tokenizer 是否齐全。这样得到的错误可以指向“目录第 4 项越界”或“缺少主文本角色”，而不是在后端编译时只留下一个宽泛的初始化失败。
 
@@ -458,7 +458,7 @@ bazel test //runtime/util:litert_lm_streaming_loader_test \
 
 这一路径或 fd 被写入 XNNPACK 编译选项。MTP drafter 在 CPU 后缀前增加 `.mtp_drafter`，以免与主模型共用名称。
 
-GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模型 cache key 使用 `<basename>_<mtime_seconds>_<size>`。在路径模式下，GPU 选项接收序列化目录与这个 key；在文件描述符模式下，才分别接收 weight cache 和 program cache 的 fd。基类还提供按模型组件区分名称的 `GetCacheSuffix`，但 v0.13.1 的主 LLM 编译路径没有调用它；主路径直接使用上述常量。
+GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模型 cache key 使用 `<basename>_<mtime_seconds>_<size>`。在路径模式下，GPU 选项接收序列化目录与这个 key；在文件描述符模式下，才分别接收 weight cache 和 program cache 的 fd。基类还提供按模型组件区分名称的 `GetCacheSuffix`，但主 LLM 编译路径没有调用它；主路径直接使用上述常量。
 
 | 入口 | LiteRT-LM 的处理 | 交给后端的值 | 目录与旧文件责任 |
 |---|---|---|---|
@@ -487,7 +487,7 @@ GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模�
 
 切换后，P41 不再接收新请求，但继续处理已经进入的会话。v41 的模型、进程镜像和 cache 目录保留到回滚窗口结束。观察期内若 v42 触发质量、内存或兼容性问题，路由重新指向 P41；旧进程已经退出时，则用 v41 的不可变路径和 cache 目录启动替代进程。
 
-若应用要求原子切换，应在路由或 Engine 句柄层实现；v0.13.1 的这条调用链不提供模型发布事务。GPU 模型 key 没有加入运行时版本、设备型号、驱动、激活类型和 `cache_compiled_shaders_only`。下层后端是否另行校验 cache 兼容性，不能从这段代码确定。这些条件变化时，发布系统应建立新的 cache 代际。
+若应用要求原子切换，应在路由或 Engine 句柄层实现；这条调用链不提供模型发布事务。GPU 模型 key 没有加入运行时版本、设备型号、驱动、激活类型和 `cache_compiled_shaders_only`。下层后端是否另行校验 cache 兼容性，不能从这段代码确定。这些条件变化时，发布系统应建立新的 cache 代际。
 
 | 发布关口 | 核验对象 | 通过条件 | 失败后的动作 |
 |---|---|---|---|
@@ -518,7 +518,7 @@ GPU 的 program cache 候选路径以 `_mldrift_program_cache.bin` 结尾，模�
 
 N 与 W 可以交替运行，降低温度和后台负载随时间单向变化造成的偏差。若要控制操作系统 page cache，应使用目标平台允许且可复现的方法，并把操作记录写入实验数据。没有这项控制时，只能把结果称为“新进程、无 backend cache”或“新进程、已有 backend cache”，不能称为物理磁盘冷读。
 
-cache 文件存在本身不能证明命中；scoped-file 模式甚至要求调用者先创建文件。v0.13.1 的这条调用链没有统一的 cache-hit 计数器。判断命中还需结合后端日志、文件是否重写和受控初始化时间差。现有测试验证了同一 cache 可再次创建 Engine 并得到非空输出，但没有量化初始化收益。附录 D 的 5.29 s 与约 1.77 s 也缺少 N/P/W 对照，不能直接归因于 cache。
+cache 文件存在本身不能证明命中；scoped-file 模式甚至要求调用者先创建文件。这条调用链没有统一的 cache-hit 计数器。判断命中还需结合后端日志、文件是否重写和受控初始化时间差。现有测试验证了同一 cache 可再次创建 Engine 并得到非空输出，但没有量化初始化收益。附录 D 的 5.29 s 与约 1.77 s 也缺少 N/P/W 对照，不能直接归因于 cache。
 
 ### 7.7.6　多 LoRA 案例：文件稀疏不等于后端缓冲稀疏
 
@@ -552,7 +552,7 @@ $$
 
 后 15 层缺少 60 个 key/value tensor，共 4.6875 MiB。`LoRA::Init` 仍按基座 signature 创建全部 280 个 buffer；找不到同名 tensor 时，它把对应 buffer 清零。单元测试检查了缺失的 `value_w_prime_left_20`，返回内容全为零。按基座 shape 计算，这 280 个输入对应 28.4375 MiB 理论大小，其中 4.6875 MiB 是清零的输入；后端实际分配仍应读取 `PackedSize()` 并测量。
 
-清零是字节层面的已验证行为。它是否在任意导出图中都等价于“不施加增量”，还取决于图如何使用该输入，不能只根据 `memset` 推广。尺寸不匹配会使首次 `UseLoRA` 失败；v0.13.1 尚无对应单元测试，部署前应加入适配器与基座 signature 的逐 tensor 兼容性检查。
+清零是字节层面的已验证行为。它是否在任意导出图中都等价于“不施加增量”，还取决于图如何使用该输入，不能只根据 `memset` 推广。尺寸不匹配会使首次 `UseLoRA` 失败；目前没有对应单元测试，部署前应加入适配器与基座 signature 的逐 tensor 兼容性检查。
 
 ### 7.7.7　懒物化推迟分配，但不限制累计数量
 
@@ -581,9 +581,9 @@ $$
 
 ID 也不能当作可覆盖的槽位。`LoadLoRA` 的重复检查只查 `lora_data_`，不查 `loras_`。A 以 ID 7 物化后，再用 ID 7 加载 B 会成功把 B 放回待用表；随后的 `UseLoRA(7)` 发现旧对象已经存在，仍选择 A，不会用 B 替换它。管理器此时同时持有旧对象 A 和待用数据 B。调用方应保证 ID 在 manager 生命周期内唯一。
 
-v0.13.1 的完整 LoRA 执行接入还有限定。主文本 executor 能识别 LoRA signature 输入并跳过普通 decode buffer 创建，但上层资源管理在收到文本 `ScopedLoraFile` 时直接返回 `Lora is not supported.`。可以从仓库完整追踪的登记、切换与执行路径位于音频编码器。
+完整的 LoRA 执行接入还有限定。主文本 executor 能识别 LoRA signature 输入并跳过普通 decode buffer 创建，但上层资源管理在收到文本 `ScopedLoraFile` 时直接返回 `Lora is not supported.`。可以从仓库完整追踪的登记、切换与执行路径位于音频编码器。
 
-音频侧的 `UseLoRA(std::nullopt)` 也不是卸载操作。实现直接返回成功，旁边的 TODO 说明尚未清除输入 map 中的 LoRA buffer。因此，停用当前适配器、释放某个 ID 和销毁 manager 是三件不同的事。v0.13.1 的这条音频路径与 `LoraManager` 接口不能用前两者完成逐适配器容量回收。
+音频侧的 `UseLoRA(std::nullopt)` 也不是卸载操作。实现直接返回成功，旁边的 TODO 说明尚未清除输入 map 中的 LoRA buffer。因此，停用当前适配器、释放某个 ID 和销毁 manager 是三件不同的事。这条音频路径与 `LoraManager` 接口不能用前两者完成逐适配器容量回收。
 
 ### 7.7.8　回到设备预算：快速回滚需要两类峰值
 
@@ -630,7 +630,7 @@ $$
 
 同进程持有两个 Engine 不会消除运行内存峰值。销毁旧 Engine 也不会清空路径标识的进程内静态 map；若复用原路径，后续查询仍可能取得第一次保存的标识。因此，同进程方案仍应使用不可变模型路径。它能省去跨进程路由，却失去进程级故障隔离。是否采用这一方式，要看应用能否在一个进程内明确串行创建、切换和销毁 Engine，并完成目标平台的峰值验证。
 
-若磁盘空间不足以同时存放两个模型文件，就不能同时满足“旧产物本地可用”和“新产物完整落盘后再切换”。此时需要在发布前明确选择：缩减安装包中的可选模态资源、使用系统提供的增量分发能力，或者接受回滚时重新下载。`.litertlm` v0.13.1 是单文件容器；本章没有证据表明发布器能在两个版本之间自动复用相同 section 的磁盘块。
+若磁盘空间不足以同时存放两个模型文件，就不能同时满足“旧产物本地可用”和“新产物完整落盘后再切换”。此时需要在发布前明确选择：缩减安装包中的可选模态资源、使用系统提供的增量分发能力，或者接受回滚时重新下载。`.litertlm` 是单文件容器；本章没有证据表明发布器能在两个版本之间自动复用相同 section 的磁盘块。
 
 ### 7.7.9　验收证据包：保存可复核的发布记录
 
@@ -677,7 +677,7 @@ release-v42/
 
 `cache-before.txt` 与 `cache-after.txt` 应列出文件名、字节数和修改时间；必要时再保存摘要。它们与后端日志和 N/P/W 时间共同用于判断 cache 行为，不能只凭新文件出现下结论。内存 CSV 需要带单调时钟，并在相同时间轴上标记 Engine 创建、路由切换与旧 Engine 释放，否则无法把峰值归到图 7-8 的具体阶段。
 
-LoRA 报告只在产品启用该能力时生成。对 v0.13.1 的文本生成路径，报告应明确写“不支持上层热切换”，而不是放一份空结果表示通过。回滚记录也要保存实际命令、耗时和恢复后的固定输入输出；尚未演练时，发布状态应标为“方案已写，恢复未验证”。证据包不改变 LiteRT-LM 的运行行为，它只让每个结论能回到产物、配置和原始记录。
+LoRA 报告只在产品启用该能力时生成。对当前的文本生成路径，报告应明确写“不支持上层热切换”，而不是放一份空结果表示通过。回滚记录也要保存实际命令、耗时和恢复后的固定输入输出；尚未演练时，发布状态应标为“方案已写，恢复未验证”。证据包不改变 LiteRT-LM 的运行行为，它只让每个结论能回到产物、配置和原始记录。
 
 证据包还要区分“检查通过”和“没有失败记录”。若字段只允许 true/false，缺失的实验很容易被默认成 false 后忽略，或者被空文件误判为成功。应用的发布系统可以使用下面五种治理状态；它们不是 LiteRT-LM 的状态码：
 
@@ -691,7 +691,7 @@ LoRA 报告只在产品启用该能力时生成。对 v0.13.1 的文本生成路
 
 > 表 7-15　`NOT_MEASURED`、`NOT_APPLICABLE` 与 `WAIVED` 都不是 `PASS`；例外放行也要保留责任与失效条件。
 
-状态必须绑定具体环境。某款 GPU 上的 `PASS` 不能覆盖另一款驱动，CPU 的 cache 对照也不能替代 GPU program cache。条件变化时，旧记录仍可保留作对照，但新组合要生成独立条目。对本书当前证据而言，N/P/W cache 收益和双 Engine 峰值应是 `NOT_MEASURED`；文本 LoRA 热切换则应记录为“当前 v0.13.1 上层路径不支持”，不能用 `NOT_APPLICABLE` 掩盖产品原本要求该能力的事实。
+状态必须绑定具体环境。某款 GPU 上的 `PASS` 不能覆盖另一款驱动，CPU 的 cache 对照也不能替代 GPU program cache。条件变化时，旧记录仍可保留作对照，但新组合要生成独立条目。对本书当前证据而言，N/P/W cache 收益和双 Engine 峰值应是 `NOT_MEASURED`；文本 LoRA 热切换则应记录为“当前上层路径不支持”，不能用 `NOT_APPLICABLE` 掩盖产品原本要求该能力的事实。
 
 ## 小结
 
@@ -712,7 +712,7 @@ CPU、GPU 与 NPU 的执行路径对照见第 8 章。该章继续区分配置�
 5. 元数据打印路径。`litertlm_print` 对 `LlmMetadataProto` 多做了哪一步？遇到合法的 UInt8 元数据值时会打印什么？
 6. 分组参数重算。把本章 2B 参数案例的 INT4 分组从 32 改为 64，其他条件不变。重新计算 scale、模型文件与 3.0 GiB 运行预算，并说明哪一项结论没有变化。
 7. 后端约束诊断。某 `.litertlm` 的 `backend_constraint` 为 `cpu,gpu`，含独立 `TFLiteWeights`，GPU 可初始化而 CPU 返回错误。根据本章加载链路指出失败层级，并说明为什么删除 XNNPACK cache 不能解决该问题。
-8. 容器校验判断。某容器的魔数、版本和 FlatBuffer 头均可读取，但两个 section 的字节范围互相重叠。说明 v0.13.1 主 loader 是否会在建索引时统一拒绝，并给出发布前校验器应增加的判断。
+8. 容器校验判断。某容器的魔数、版本和 FlatBuffer 头均可读取，但两个 section 的字节范围互相重叠。说明主 loader 是否会在建索引时统一拒绝，并给出发布前校验器应增加的判断。
 9. 缓存实验设计。为同一模型设计 N、P、W 三组 cache 实验。说明每组的进程与 cache 初始状态、外部墙钟的起止点，以及为什么“cache 文件存在”还不足以证明 W 组命中。
 10. LoRA 容量累计。表 7-11 的测试形状下，A、B、C 三个 LoRA 都物化后，仅输入 buffer 的理论大小 是多少？若切回 A，数值是否减少？再说明将 8 个适配器都物化后的 payload。
 11. 发布配额推演。某设备给模型目录的配额是 9.0 GB。旧、新模型各 3.66 GB，两个 cache 上限分别为 0.28 GB 和 0.44 GB；更新器另存 0.60 GB 压缩包，并要求 0.50 GB 余量。计算发布存储峰值。若改为排空旧 Engine 后再创建新 Engine，存储峰值与运行内存峰值分别如何变化？运行内存能否仅凭 Engine 数量写成减半？

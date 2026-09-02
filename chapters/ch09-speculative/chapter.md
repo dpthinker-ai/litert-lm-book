@@ -305,12 +305,12 @@ $$ \text{speedup}(p,c) \approx
 
 曲线的两端各有一层含义。聚合接受比例 \\(r\\) 增大时，平均每轮产出 \\(1+Gr\\) 随之增加，但分母上的轮次成本 \\(q\\) 同样起作用，\\(r\\) 再高，较大的 \\(q\\) 仍会压低加速比；反过来，\\(r\\) 较低时一轮可能只返回 1 个或少量 token，drafter 与 verify 的成本却不因此减少，吞吐甚至可能低于普通 decode。Google 报告 Gemma 4 MTP drafter 在其跨模型、硬件与运行时测试中最高达到约 3 倍[^ch09-google-mtp]；该数字不是本书设备上的预期值。
 
-附录 D 保存了 Gemma 4 E4B 的两组 Mac 记录，测试条件为 context 1024、decode 128 token，参数分别设为 `false` 与 `auto`。这两组并不构成开关对照：9.10 节核对的设置链路表明，v0.13.1 的 `auto` 最终沿用 C++ 默认值 `false`，两组都是关闭 MTP 后的独立采样。CPU 中位数分别为 22.8 和 24.9 tokens/s（`false` 组的三次运行分布在 20.1 到 24.9 tokens/s），GPU 中位数为 50.0 和 50.2 tokens/s。两组之间的差异只反映运行波动，估计不了 MTP 的开关收益；可核查的 Mac 强制开启记录目前没有。
+附录 D 保存了 Gemma 4 E4B 的两组 Mac 记录，测试条件为 context 1024、decode 128 token，参数分别设为 `false` 与 `auto`。这两组并不构成开关对照：9.10 节核对的设置链路表明，`auto` 最终沿用 C++ 默认值 `false`，两组都是关闭 MTP 后的独立采样。CPU 中位数分别为 22.8 和 24.9 tokens/s（`false` 组的三次运行分布在 20.1 到 24.9 tokens/s），GPU 中位数为 50.0 和 50.2 tokens/s。两组之间的差异只反映运行波动，估计不了 MTP 的开关收益；可核查的 Mac 强制开启记录目前没有。
 
 | 模式 | cpu decode tokens/s | gpu decode tokens/s | 说明 |
 |---|---|---|---|
 | 关（`false`） | 22.8 | 50.0 | 基线 |
-| `auto` | 24.9 | 50.2 | v0.13.1 实为关，与基线同行为的再采样 |
+| `auto` | 24.9 | 50.2 | 实为关，与基线同行为的再采样 |
 
 > 表 9-1　Mac 归档记录中的 `false` 与 `auto` 均为关闭行为，各列为 3 次运行的中位数〔基准 D〕；该表不能用于估计 MTP 收益。
 
@@ -355,7 +355,7 @@ for (size_t step = 0; step < sequence_length; ++step) {             // (1)
 
 `(1)` 将本轮返回序列展开为逐位置处理，省略的几行从每个候选取出当前位置的 token，填入 `step_tokens`。`(2)` 先推进停止序列检测器，`(3)` 再合并未完成的 BPE token id。即使 executor 一次返回多个 token，停止检测与文本解码仍按 token 顺序推进。
 
-停止序列在批次中间命中时，v0.13.1 会调整 executor 的逻辑位置。代码以 `sequence_length - step` 计算回退量，再调用 `SetCurrentStep`：
+停止序列在批次中间命中时，代码会调整 executor 的逻辑位置。代码以 `sequence_length - step` 计算回退量，再调用 `SetCurrentStep`：
 
 ```cpp
 // runtime/core/tasks.cc:223-233
@@ -436,7 +436,7 @@ if (section_object->data_type() == AnySectionDataType_TFLiteModel) {  // (2)
 
 `(2)` 遍历 `.litertlm` 的 section，`(3)` 读取 TFLite 模型 section 的 `model_type` 元数据，出现一项 `"tf_lite_mtp_drafter"` 时 `(4)` 即返回 true。能力判断因此只看模型文件里有没有相应的 drafter section；第 7 章介绍的 `.litertlm` 容器正好可以把基础模型和这个子模型放在同一个文件里。
 
-第二个条件在 v0.13.1 有一处与帮助文档不符的行为：能力查询与自动启用尚未连通。CLI 参数 `--enable-speculative-decoding` 接受 `auto`、`true`、`false`，help 写明 `auto` 会根据模型元数据自动判断；但顺着设置链路走一遍会发现并非如此：`parse_speculative_decoding` 把 `auto` 与缺省值都映射为 `None`、另外两项映射为相应布尔值，Python 绑定只在值非 `None` 时调用 setter，于是 `auto` 保留 C++ 默认值 `false`；v0.13.1 的引擎创建路径并没有调用 `HasSpeculativeDecodingSupport`。标志最终写入执行器设置，执行器构造时据此决定是否创建 drafter：
+第二个条件目前有一处与帮助文档不符的行为：能力查询与自动启用尚未连通。CLI 参数 `--enable-speculative-decoding` 接受 `auto`、`true`、`false`，help 写明 `auto` 会根据模型元数据自动判断；但顺着设置链路走一遍会发现并非如此：`parse_speculative_decoding` 把 `auto` 与缺省值都映射为 `None`、另外两项映射为相应布尔值，Python 绑定只在值非 `None` 时调用 setter，于是 `auto` 保留 C++ 默认值 `false`；引擎创建路径并没有调用 `HasSpeculativeDecodingSupport`。标志最终写入执行器设置，执行器构造时据此决定是否创建 drafter：
 
 ```cpp
 // python/litert_lm_cli/common.py:108-119
@@ -453,7 +453,7 @@ if (advanced_settings.has_value() &&
 }
 ```
 
-`(1)` 为真时才创建 drafter。`(2)` 的 `Create` 调用 `resources.GetTFLiteModel(ModelType::kTfLiteMtpDrafter)` 取出 drafter section，随后把它编译为独立模型；模型文件不含该 section 时，创建过程返回错误。查询接口本身是可用的：v0.13.1 通过 C API 和 Kotlin JNI 提供 `HasSpeculativeDecodingSupport`，需要自动行为的应用应当先查询能力，再显式设置启用标志。
+`(1)` 为真时才创建 drafter。`(2)` 的 `Create` 调用 `resources.GetTFLiteModel(ModelType::kTfLiteMtpDrafter)` 取出 drafter section，随后把它编译为独立模型；模型文件不含该 section 时，创建过程返回错误。查询接口本身是可用的：C API 和 Kotlin JNI 都提供 `HasSpeculativeDecodingSupport`，需要自动行为的应用应当先查询能力，再显式设置启用标志。
 
 草拟步数 \\(G\\) 也不能在运行时调整，它由模型 verify signature 的形状决定：
 
@@ -470,7 +470,7 @@ num_draft_steps = input_pos_dims[0] - 1;                         // (1)
 
 <div class="aside-compare">
 
-llama.cpp 把 draft 模型保存为独立文件，调用方通过 `--model-draft` 在运行时指定，草拟与验证逻辑在独立的 speculative 模块中。[^ch09-llamacpp-draft]LiteRT-LM 的 MTP 则把 drafter section 与基础模型放进同一个 `.litertlm` 文件，verify signature 也由基础模型提供。独立文件让调用方可以在运行时选择兼容的 draft 模型，单文件则由模型发布者固定 drafter 与 verify 的组合。v0.13.1 可以查询模型能力，但不会据此自动启用 MTP，调用方仍需显式设置。
+llama.cpp 把 draft 模型保存为独立文件，调用方通过 `--model-draft` 在运行时指定，草拟与验证逻辑在独立的 speculative 模块中。[^ch09-llamacpp-draft]LiteRT-LM 的 MTP 则把 drafter section 与基础模型放进同一个 `.litertlm` 文件，verify signature 也由基础模型提供。独立文件让调用方可以在运行时选择兼容的 draft 模型，单文件则由模型发布者固定 drafter 与 verify 的组合。LiteRT-LM 可以查询模型能力，但不会据此自动启用 MTP，调用方仍需显式设置。
 
 </div>
 

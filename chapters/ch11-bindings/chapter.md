@@ -2,7 +2,7 @@
 
 > 本章分析 Python、Kotlin、Swift 与 Web 如何经 C ABI、JNI 或 Embind 进入同一套 C++ runtime，并说明流式回调、数据复制、字符串所有权和显式释放的边界契约。本章还比较绑定层的并发隔离方式，并介绍测试替身与跨平台构建。
 
-LiteRT-LM v0.13.1 的 `README.md:99-106` 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。这些绑定并不共用同一条原生调用路径。Python 与 Swift 使用 `c/engine.h` 提供的 C ABI；Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章分析其中 Python、Kotlin、Swift 与 Web 四种绑定的三类边界模式；Flutter 不在本章展开。
+LiteRT-LM 的 README 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。[^ch11-readme]这些绑定并不共用同一条原生调用路径。Python 与 Swift 使用 `c/engine.h` 提供的 C ABI；Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章分析其中 Python、Kotlin、Swift 与 Web 四种绑定的三类边界模式；Flutter 不在本章展开。
 
 ## 11.1　C ABI：C 兼容的原生边界
 
@@ -93,7 +93,7 @@ void litert_lm_engine_delete(LiteRtLmEngine* engine) { delete engine; }  // (4)
 
 (3) 用 `new` 分配 `LiteRtLmEngine`，再把工厂返回的 `unique_ptr<Engine>` 移入其中。(4) 删除句柄，句柄析构又触发 `unique_ptr<Engine>` 析构。RAII 仍负责句柄内部的清理，但跨语言调用方必须显式调用 delete，才能启动这条析构链。(1)、(2) 以 `nullptr` 表示创建失败；这条 C 接口没有把内部的 `absl::Status` 细节传给调用方。
 
-绑定层需要把 create/delete 契约映射为本语言的资源管理接口。Python 提供上下文管理器和 `__del__`，Kotlin 使用 `AutoCloseable`，Swift v0.13.1 则主要依赖 `deinit`。
+绑定层需要把 create/delete 契约映射为本语言的资源管理接口。Python 提供上下文管理器和 `__del__`，Kotlin 使用 `AutoCloseable`，Swift 则主要依赖 `deinit`。
 
 ## 11.3　三类原生边界
 
@@ -185,7 +185,7 @@ Web 的 Embind 也在编译期从 C++ 导出 JavaScript 可见对象。源码可
 |---|---|---|---|---|
 | Python | ctypes（运行时声明签名） | 是 | `c_void_p` | 上下文管理器 / `__del__` |
 | Kotlin | JNI（`external fun` 声明） | 否，直连 C++ | `jlong`（`Engine*` 位模式） | `AutoCloseable` |
-| Swift | C 互操作（import C 头） | 是 | `OpaquePointer` | v0.13.1 由 `deinit` 释放 |
+| Swift | C 互操作（import C 头） | 是 | `OpaquePointer` | 由 `deinit` 释放 |
 | Web | Emscripten Embind | 否，直连 C++ | 带 `.delete()` 的 JS 对象 | 手动 `.delete()` 配对 |
 
 > 表 11-1　四种语言绑定采用三类原生边界，并以不同类型保存原生句柄。
@@ -323,7 +323,7 @@ std::vector<litert::lm::InputData> ToEngineInputData(
 
 `switch` 根据标签构造对应类型：(1) 生成 `InputText`，(2) 生成 `InputImage`，(3) 生成不含缓冲的 `InputImageEnd`；音频分支采用相同结构。(1)、(2) 中的 `std::string(ptr, size)` 会把 C 缓冲复制到新字符串，复制量等于输入的字节数。
 
-接口不接管调用方缓冲的所有权，也不要求缓冲在函数返回后继续存活。实现会复制数据，使 `InputData` 独立拥有内容。若要避免复制，C ABI 需要增加可验证的生命周期契约，例如所有权转移或释放回调。v0.13.1 没有实现这些方案。本书也没有测量这次复制在端到端时延中的占比。
+接口不接管调用方缓冲的所有权，也不要求缓冲在函数返回后继续存活。实现会复制数据，使 `InputData` 独立拥有内容。若要避免复制，C ABI 需要增加可验证的生命周期契约，例如所有权转移或释放回调。当前没有实现这些方案。本书也没有测量这次复制在端到端时延中的占比。
 
 ## 11.7　跨语言字符串的所有权与编码
 
@@ -401,7 +401,7 @@ jstring NewStringStandardUTF(JNIEnv* env, std::string standard_utf8_str) {
 
 `LiteRT-LM#2589` 报告的是 v0.12.0 Swift API。[^ch11-issue-2589] 报告者在单 session 实现路径上遇到 `A session already exists`。旧 `Conversation` 的原生资源尚未释放时，创建下一个 conversation 失败。该 issue 请求为 `Conversation` 增加公开的 `close()`，以便调用方不依赖 ARC 的释放时机。
 
-冻结的 v0.13.1 仍只 中删除 Swift `Conversation` 句柄：
+当前的 Swift 封装仍只在 `deinit` 中删除 `Conversation` 句柄：
 
 ```swift
 // swift/Conversation.swift:65-69
@@ -441,9 +441,9 @@ class Conversation(
 
 (1) 声明 `AutoCloseable`，(2) 允许调用方主动释放，(3) 同步删除原生 `Conversation*`。原子状态转换防止重复删除。第二次 `close()` 会抛出异常。调用方也可以使用 Kotlin 的 `use { }` 在作用域结束时执行 `close()`。`LiteRT-LM#2589` 用这个 `Conversation.close()` 对照 Swift API，讨论对象不是 `Engine.close()`。[^ch11-issue-2589]
 
-`LiteRT-LM#2589` 不能证明 v0.13.1 的核心引擎普遍只允许一个 session。该 issue 明确记录的环境是 v0.12.0，错误栈落在当时的 session 实现。[^ch11-issue-2589] v0.13.1 的 资源管理器头文件的注释则明确说明，共享资源可供多个 session 使用。该案例说明 Swift `Conversation` 缺少公开的确定释放接口。报告中的单 session 约束只属于其记录的版本与实现路径。
+`LiteRT-LM#2589` 不能证明当前核心引擎普遍只允许一个 session。该 issue 明确记录的环境是 v0.12.0，错误栈落在当时的 session 实现。[^ch11-issue-2589] 本书冻结版本的资源管理器头文件注释则明确说明，共享资源可供多个 session 使用。该案例说明 Swift `Conversation` 缺少公开的确定释放接口。报告中的单 session 约束只属于其记录的版本与实现路径。
 
-`LiteRT-LM#2613` 是独立的 Engine 级案例。[^ch11-issue-2613] v0.13.1 的 Swift 封装也只在 `deinit` 中调用 `litert_lm_engine_delete`。该 issue 报告，actor 的 `deinit` 不受 actor 隔离保护。删除操作可能在释放最后一个强引用的线程上执行。issue 请求增加 actor 隔离的公开 `Engine.close()`，使删除与其他 Engine 操作串行。这个案例涉及 Engine 销毁的执行上下文，与 Conversation 的单 session 报错不同。
+`LiteRT-LM#2613` 是独立的 Engine 级案例。[^ch11-issue-2613] 当前的 Swift 封装也只在 `deinit` 中调用 `litert_lm_engine_delete`。该 issue 报告，actor 的 `deinit` 不受 actor 隔离保护。删除操作可能在释放最后一个强引用的线程上执行。issue 请求增加 actor 隔离的公开 `Engine.close()`，使删除与其他 Engine 操作串行。这个案例涉及 Engine 销毁的执行上下文，与 Conversation 的单 session 报错不同。
 
 两个 issue[^ch11-issue-2589][^ch11-issue-2613] 都反映了自动释放接口的同一项限制：调用方不能直接指定原生删除的时点或隔离域。Conversation 与 Engine 的故障条件不同，修复接口仍需分别设计。
 
@@ -568,3 +568,4 @@ LiteRT-LM 的多语言 API 采用三类原生边界。Python 与 Swift 经 C ABI
 [^ch11-issue-2589]: google-ai-edge/LiteRT-LM，[*[Swift] Add a public `close()` method to `Conversation` for deterministic session release*](https://github.com/google-ai-edge/LiteRT-LM/issues/2589)，LiteRT-LM issue #2589，2026-06-16；访问日期：2026-07-18。
 
 [^ch11-issue-2613]: google-ai-edge/LiteRT-LM，[*[Swift] Engine teardown crashes with `litert_lm_engine_delete` running on an arbitrary thread in `deinit` - adding a public `close()` to solve*](https://github.com/google-ai-edge/LiteRT-LM/issues/2613)，LiteRT-LM issue #2613，2026-06-19；访问日期：2026-07-18。
+[^ch11-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.13.1/README.md#L99-L106)，版本 v0.13.1；访问日期：2026-09-02。
