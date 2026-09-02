@@ -45,7 +45,7 @@
 
 ## 第 6 章
 
-1. 28 KiB × 8192 = 224 MiB；静态槽位 32003 全预留 = 28672 B × 32003 ≈ 875 MiB。
+1. 28 KiB × 8192 = 224 MiB。32768 不小于占位值 32003，`GetTargetNumber` 回落到占位值以下最大的 256 的倍数 32000 并打印警告；28672 B × 32000 = 917,504,000 B = 875 MiB。
 2. `Session::Clone` 本身不搬运 LLM KV，搬运量为 0。新旧 handler 共享同一个 `SharedProcessedContext`，各自持有按值复制的 `RuntimeConfig` 与 `RuntimeState`；其中 `RuntimeState::rand_gen` 是 `shared_ptr`，复制状态时不会复制底层随机数生成器。较短分支后续需要截断或改写共享历史时才触发写时分离。若此时使用 compiled executor，且上下文宽度为 4096，一组活动 KV 输入缓冲约为 \\(4096 \times 28\ \text{KiB} = 112\ \text{MiB}\\)；`CopyTensorBuffer` 按 `PackedSize()` 复制完整容量，不按有效前缀裁剪。
 3. 缓冲内容不复制，只交换输入和输出缓冲指针。读旧写新之后调用 `std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_)`；prefill 路径在 `runtime/executor/llm_litert_compiled_model_executor.cc:738`，decode 路径在 `runtime/executor/llm_litert_compiled_model_executor.cc:947`。
 4. 按 28 KiB/token 估算，预留容量从约 112 MiB 增至约 224 MiB。本书同 prompt 实验中，decode 从 26.4 降至 21.5 tokens/s，约下降 19%。实验没有用性能计数器分离注意力、KV 访存和其他执行成本，不能把全部降幅归到单一原因。

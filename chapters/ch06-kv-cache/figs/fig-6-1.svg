@@ -1,4 +1,4 @@
-<svg viewBox="0 0 640 300" width="640" height="300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GPU out-of-place KV cache 路径中的输入与输出缓冲交换">
+<svg viewBox="0 0 640 262" width="640" height="262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GPU out-of-place KV cache 路径中的输入与输出缓冲交换">
   <defs>
     <style>
       text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
@@ -16,31 +16,26 @@
     <marker id="asw" orient="auto" markerWidth="9" markerHeight="9" refX="6" refY="4"><path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-soft, #57606a)"/></marker>
   </defs>
   <text class="t" x="320" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">GPU out-of-place KV：分别读写两套缓冲，再交换指针</text>
-  <!-- step N -->
   <text class="ts" x="150" y="60" text-anchor="middle" style="font-size:12px;font-weight:700">第 N 步</text>
   <rect class="buf" x="70" y="80" width="160" height="44" rx="6"/>
   <text class="t" x="150" y="107" text-anchor="middle" style="font-size:12px">buffer 1</text>
   <rect class="buf" x="70" y="150" width="160" height="44" rx="6"/>
   <text class="t" x="150" y="177" text-anchor="middle" style="font-size:12px">buffer 2</text>
-  <!-- 指针 -->
   <text class="rdt" x="20" y="106" style="font-size:11px;font-weight:700">读→</text>
   <path class="edge rd" marker-end="url(#ard)" d="M48,102 H68"/>
   <text class="wrt" x="18" y="176" style="font-size:11px;font-weight:700">写→</text>
   <path class="edge wr" marker-end="url(#awr)" d="M48,172 H68"/>
-  <!-- swap arrow -->
   <path class="edge" style="stroke:var(--fig-text-soft,#57606a)" marker-end="url(#asw)" d="M250,137 H390"/>
   <text class="ts" x="320" y="128" text-anchor="middle" style="font-size:12px;font-weight:700">交换指针</text>
   <text class="ts" x="320" y="155" text-anchor="middle" style="font-size:10px">不复制张量数据</text>
-  <!-- step N+1 -->
   <text class="ts" x="490" y="60" text-anchor="middle" style="font-size:12px;font-weight:700">第 N+1 步</text>
   <rect class="buf" x="410" y="80" width="160" height="44" rx="6"/>
   <text class="t" x="490" y="107" text-anchor="middle" style="font-size:12px">buffer 1</text>
   <rect class="buf" x="410" y="150" width="160" height="44" rx="6"/>
   <text class="t" x="490" y="177" text-anchor="middle" style="font-size:12px">buffer 2</text>
-  <text class="wrt" x="580" y="106" style="font-size:11px;font-weight:700">←写</text>
-  <path class="edge wr" marker-end="url(#awr)" d="M600,102 H572" transform="translate(-28,0)"/>
-  <text class="rdt" x="580" y="176" style="font-size:11px;font-weight:700">←读</text>
-  <path class="edge rd" marker-end="url(#ard)" d="M600,172 H572" transform="translate(-28,0)"/>
-  <text class="ts" x="320" y="235" text-anchor="middle" style="font-size:12px">本步输出缓冲成为下一步输入缓冲；交换操作不复制 KV 数据</text>
-  <text class="ts" x="320" y="258" text-anchor="middle" style="font-size:10.5px">源码：kv_cache_buffers_1_ / _2_ 与 input_/output_ 指针（llm_litert_compiled_model_executor.h:327-333）</text>
+  <text class="wrt" x="612" y="106" style="font-size:11px;font-weight:700">←写</text>
+  <path class="edge wr" marker-end="url(#awr)" d="M606,102 H572"/>
+  <text class="rdt" x="612" y="176" style="font-size:11px;font-weight:700">←读</text>
+  <path class="edge rd" marker-end="url(#ard)" d="M606,172 H572"/>
+  <text class="ts" x="320" y="238" text-anchor="middle" style="font-size:12px">本步的输出缓冲成为下一步的输入缓冲；交换操作不复制 KV 数据</text>
 </svg>
