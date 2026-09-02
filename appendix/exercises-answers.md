@@ -59,7 +59,7 @@
 3. 两个文件的标识都是相同的 `<mtime_seconds>_<size>`，无法区分内容差异。同一进程首次按路径计算后还会缓存该标识；即使随后替换文件，继续查询同一路径也可能复用旧结果。
 4. 两次 `LoadLoRA` 后，ID 0 与 1 都位于 `lora_data_`。`UseLoRA(0)` 把 ID 0 的数据移入新建对象并写入 `loras_`，当前 ID 变为 0；`UseLoRA(1)` 对 ID 1 做同样处理。再次选择 ID 0 时直接复用已有对象。最终两项都留在 `loras_`，`current_lora_id_` 为 0，公开接口没有逐项卸载操作。
 5. 对 `LlmMetadataProto`，工具会额外调用 `ReadLlmMetadataFromSection` 并输出 protobuf 的 `DebugString()`。`PrintKeyValuePair` 没有处理合法的 UInt8 union 值，因此会输出 `Unknown Type`。
-6. 分组数减半为 28,125,000，每组 2 字节，scale 共 56,250,000 B。文件在填充前约为 \\(900{,}000{,}000 + 200{,}000{,}000 + 56{,}250{,}000 + 80 \times 2^{20} = 1{,}240{,}136{,}080\\) B，约 1.15 GiB。加 224 MiB KV cache、0.40 GiB 运行开销和 0.25 GiB 余量后约为 2.02 GiB；若再保留一份同规模转换权重，约为 3.18 GiB。分组变大降低了 scale 开销，但“无完整副本时低于 3.0 GiB、有完整副本时超过 3.0 GiB”的结论没有变化。
+6. 分组数减半为 28,125,000，每组 2 字节，scale 共 56,250,000 B。文件在填充前约为 \\(900{,}000{,}000 + 200{,}000{,}000 + 56{,}250{,}000 + 80 \times 2^{20} = 1{,}240{,}136{,}080\\) B，约 1.15 GiB。加 448 MiB KV cache、0.40 GiB 运行开销和 0.25 GiB 余量后约为 2.24 GiB；若再保留一份同规模转换权重，约为 3.39 GiB。分组变大降低了 scale 开销，但“无完整副本时低于 3.0 GiB、有完整副本时超过 3.0 GiB”的结论没有变化。
 7. 失败发生在 executor 接入外挂 `TFLiteWeights` 的产物布局层。当前主 executor 只允许 GPU 使用该段的 offset map，CPU 会在 `CompiledModel::Create` 之前返回错误。XNNPACK cache 尚未参与这一结构约束，删除它不会改变结果。
 8. 主 loader 建索引时只显式拒绝 `begin_offset > end_offset`，不会统一拒绝两个合法局部范围之间的重叠。发布前校验器应确认每段非空、位于 `[header_end_offset, file_size]` 内，按起点排序后前一段结束位置不大于后一段起点，并检查对齐规则与 `BufferKey` 唯一性。
 9. N、P、W 都使用新进程。N 设为 `:nocache`；P 使用空的版本目录并允许生成 cache；W 使用 P 产物的受控副本。外部墙钟从调用 Engine 创建之前开始，到创建返回后结束；首次 prefill 和 decode 另计。文件存在只说明后端曾写过产物，不能证明本次兼容并读取了它；还要检查后端日志、文件是否重写，并比较受控时间差。
