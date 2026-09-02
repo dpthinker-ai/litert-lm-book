@@ -4,27 +4,22 @@
     <marker id="a8" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft,#57606a)"/></marker>
   </defs>
   <text class="t" x="330" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">Backend 工厂分派到共同接口</text>
-  <!-- Backend 枚举 -->
   <rect class="box" x="30" y="120" width="130" height="70" rx="6"/>
   <text class="t" x="95" y="142" text-anchor="middle" style="font-size:12px;font-weight:700">Backend 枚举</text>
   <text class="ts" x="95" y="160" text-anchor="middle" style="font-size:10px">CPU · GPU · NPU</text>
   <text class="ts" x="95" y="175" text-anchor="middle" style="font-size:10px">(+ ARTISAN 手写路径)</text>
-  <!-- 工厂 -->
   <rect class="fac" x="200" y="122" width="130" height="66" rx="6"/>
   <text class="accent" x="265" y="148" text-anchor="middle" style="font-size:12px;font-weight:700">工厂函数</text>
   <text class="ts" x="265" y="165" text-anchor="middle" style="font-size:10px">switch(GetBackend())</text>
-  <!-- 两条路径 -->
   <rect class="hw" x="378" y="70" width="150" height="46" rx="6"/>
   <text class="t" x="453" y="90" text-anchor="middle" style="font-size:12px;font-weight:700">CPU / GPU 一路</text>
   <text class="ts" x="453" y="106" text-anchor="middle" style="font-size:9.5px">CompiledModel 执行器</text>
   <rect class="hw" x="378" y="194" width="150" height="46" rx="6"/>
   <text class="t" x="453" y="214" text-anchor="middle" style="font-size:12px;font-weight:700">NPU 专用路径</text>
   <text class="ts" x="453" y="230" text-anchor="middle" style="font-size:9.5px">多子图执行器</text>
-  <!-- 同一抽象 -->
   <rect class="abs" x="560" y="122" width="80" height="66" rx="6"/>
   <text class="a2" x="600" y="148" text-anchor="middle" style="font-size:12px;font-weight:700">LlmExecutor</text>
   <text class="ts" x="600" y="165" text-anchor="middle" style="font-size:9.5px">同一接口</text>
-  <!-- edges -->
   <path class="edge" marker-end="url(#a8)" d="M160,155 H198"/>
   <path class="edge" marker-end="url(#a8)" d="M330,145 C 355,120 355,95 376,93"/>
   <path class="edge" marker-end="url(#a8)" d="M330,165 C 355,190 355,215 376,217"/>
