@@ -18,7 +18,7 @@
 | `runtime/executor/llm_executor_base.h` | Executor 抽象（Prefill/Decode/DecodeLogits） | 第 4、5 章 |
 | `runtime/executor/llm_litert_compiled_model_executor.*` | 核心执行器、KV cache 双缓冲、设备侧采样 | 第 4、6、8 章 |
 | `runtime/executor/llm_litert_compiled_model_executor_factory.cc` | 按 Backend 分派创建 | 第 8 章 |
-| `runtime/executor/kv_cache_interface.h` | KV cache 搬运接口，以及尚未由 LiteRT 实现的持久化接口 | 第 6 章 |
+| `runtime/executor/kv_cache_interface.h`、`litert/kv_cache.*` | KV cache 接口抽象及其唯一实现（v0.13.1 无执行器调用；`Serialize`/`Load` 未实现） | 第 6 章 |
 | `runtime/executor/llm_litert_mtp_drafter.*` | MTP 投机解码 drafter / verify / 接受循环 | 第 9 章 |
 | `runtime/executor/llm_litert_npu_compiled_model_executor.*` | NPU 执行器（QNN、embedder 子模型、KV 快照与恢复） | 第 6、8 章 |
 | `runtime/executor/vision_litert_compiled_model_executor.*`、`audio_litert_compiled_model_executor.*` | 视觉/音频编码器 → embedding | 第 10 章 |
@@ -34,7 +34,7 @@
 | `runtime/framework/resource_management/threaded_execution_manager.*` | 异步执行管理器（任务依赖链、会话克隆任务） | 第 4、6 章 |
 | `runtime/framework/resource_management/resource_manager.*`、`context_handler/` | 会话上下文共享、写时分离与执行器状态切换 | 第 6 章 |
 | `runtime/util/memory_mapped_file.*`、`litert_lm_loader.*`、`lora_data.h` | 跨平台 mmap、段加载器、LoRA 数据视图 | 第 7 章 |
-| `runtime/executor/llm_executor_settings.h`、`llm_executor_io_types.h` | 执行器配置（线程数/KV 增量/取消开关）与 IO 类型 | 第 4、6、8 章 |
+| `runtime/executor/llm_executor_settings.h`、`llm_executor_io_types.h`、`magic_number_configs_helper.*` | 执行器配置（线程数/KV 增量/取消开关）、IO 类型与 magic number 占位宽度替换 | 第 4、6、8 章 |
 | `schema/core/`（`litertlm_header_schema.fbs`、`litertlm_read.*`、`litertlm_print.*`） | `.litertlm` 文件格式与读取 | 第 2、7 章 |
 | `schema/capabilities/speculative_decoding.*` | 根据模型分段类型判断是否支持投机解码 | 第 9 章 |
 | `c/engine.h`、`c/engine.cc` | C ABI（不透明句柄 + C 函数） | 第 11 章 |
