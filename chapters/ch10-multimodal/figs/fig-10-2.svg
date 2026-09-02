@@ -17,28 +17,24 @@
   </defs>
   <text class="t" x="380" y="26" text-anchor="middle">约束解码：每一步由文法状态算出合法 token 集合</text>
   <text class="td" x="380" y="45" text-anchor="middle">FC 文法的四个状态位置（不等于四个 tokenizer token）；灰色 = 屏蔽，蓝色 = 可采</text>
-  <!-- 行 1 -->
   <text class="td" x="28" y="84">前缀 ∅</text>
   <text class="ts" x="28" y="104">start</text>
   <rect class="mask" x="170" y="88" width="420" height="16" rx="3"/>
   <rect class="ok" x="200" y="88" width="30" height="16" rx="3"/>
   <text class="td" x="215" y="80" text-anchor="middle">call</text>
   <text class="td" x="600" y="102">文法要求："call" 关键字</text>
-  <!-- 行 2 -->
   <text class="td" x="28" y="144">前缀 call:</text>
   <text class="ts" x="28" y="164">functionCall</text>
   <rect class="mask" x="170" y="148" width="420" height="16" rx="3"/>
   <rect class="ok" x="330" y="148" width="58" height="16" rx="3"/>
   <text class="td" x="359" y="140" text-anchor="middle">weather / …</text>
   <text class="td" x="600" y="162">文法允许：任意 ID</text>
-  <!-- 行 3 -->
   <text class="td" x="28" y="204">前缀 …weather{</text>
   <text class="ts" x="28" y="224">pair</text>
   <rect class="mask" x="170" y="208" width="420" height="16" rx="3"/>
   <rect class="ok" x="430" y="208" width="40" height="16" rx="3"/>
   <text class="td" x="450" y="200" text-anchor="middle">city</text>
   <text class="td" x="600" y="222">文法允许：任意 ID</text>
-  <!-- 行 4 -->
   <text class="td" x="28" y="264">前缀 …city:</text>
   <text class="ts" x="28" y="284">value</text>
   <rect class="mask" x="170" y="268" width="420" height="16" rx="3"/>
