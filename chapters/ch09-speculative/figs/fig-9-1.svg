@@ -16,7 +16,6 @@
   <marker id="a9" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker>
   </defs>
   <text class="t" x="340" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">一次 Draft 调用：base 执行一次 verify</text>
-  <!-- 第一步：drafter 草拟 G 个 -->
   <text class="accent" x="40" y="70" style="font-size:12px;font-weight:700">① drafter 串行草拟 G 个 token</text>
   <g>
     <rect class="draft" x="60"  y="82" width="50" height="34" rx="5"/><text class="t" x="85"  y="104" text-anchor="middle" style="font-size:11px">d₁</text>
@@ -25,11 +24,9 @@
     <path class="edge" marker-end="url(#a9)" d="M110,99 H121"/>
     <path class="edge" marker-end="url(#a9)" d="M172,99 H183"/>
   </g>
-  <!-- 第二步：base 一次 verify -->
   <text class="accent" x="40" y="158" style="font-size:12px;font-weight:700">② base 模型一次前向验证 G+1 个位置</text>
   <rect class="base" x="60" y="170" width="420" height="40" rx="6"/>
   <text class="accent" x="270" y="195" text-anchor="middle" style="font-size:12px;font-weight:700">base.verify signature：一次 RunAsync</text>
-  <!-- 第三步：接受前缀 + bonus -->
   <text class="a2" x="40" y="250" style="font-size:12px;font-weight:700">③ 接受最长匹配前缀 + 1 个 bonus token</text>
   <g>
     <rect class="ok"    x="60"  y="262" width="50" height="34" rx="5"/><text class="t" x="85"  y="284" text-anchor="middle" style="font-size:11px">✓ d₁</text>
