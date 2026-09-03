@@ -29,7 +29,7 @@
   <rect class="bl" x="245" y="95" width="225" height="67" rx="7"/>
   <text class="tw" x="357.5" y="120" text-anchor="middle">SharedProcessedContext</text>
   <text class="ts" x="357.5" y="141" text-anchor="middle">ProcessedTokens + 活动 KV 上下文</text>
-  <text class="td" x="357.5" y="156" text-anchor="middle">CloneContextHandler：LLM KV 搬运量为 0</text>
+  <text class="td" x="357.5" y="156" text-anchor="middle">CloneContextHandler：LLM KV 复制量为 0</text>
   <path class="edge" d="M180,101 H235" marker-end="url(#f63-arrow)"/>
   <path class="edge" d="M180,156 H235" marker-end="url(#f63-arrow)"/>
   <rect class="off" x="525" y="82" width="195" height="38" rx="6"/>

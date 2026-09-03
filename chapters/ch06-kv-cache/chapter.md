@@ -2,11 +2,11 @@
 
 > 本章计算 KV cache 的容量与带宽成本，并说明 LiteRT-LM 的双缓冲、会话克隆、检查点回退与序列化的能力边界。
 
-第 1 章估算的 25 tokens/s 只计算了权重读取，KV cache、采样和其他算子均未计入；第 2 章 2.4.1 节又用实测的减速折算出每个上下文 token 约 59 到 107 KiB 的等效附加字节，并把细算留给了本章。本章先按张量形状把 KV cache 每 token 的真实字节数算出来（6.1 节），再看它如何进入 decode 每一步的带宽账，以及 `--max-num-tokens` 为什么会改变吞吐（6.2 节）。后半章转向 KV cache 的生命周期：部分 GPU 后端要求的双缓冲（6.3 节），会话克隆的写时复制与它真正复制的字节数（6.4 至 6.5 节），序列化接口的现状（6.6 节），检查点与 channel 过滤（6.7 至 6.8 节）。这些内容对应第 2 章表 2-2 的问题 13 与 14。
+第 1 章估算的 25 tokens/s 只计算了权重读取，KV cache、采样和其他算子均未计入；第 2 章 2.4.1 节又用实测的减速折算出每个上下文 token 约 59 到 107 KiB 的等效附加字节，并把详细计算留给了本章。本章先按张量形状把 KV cache 每 token 的真实字节数算出来（6.1 节），再看它在 decode 每一步的带宽开销中占多大比例，以及 `--max-num-tokens` 为什么会改变吞吐（6.2 节）。后半章转向 KV cache 的生命周期：部分 GPU 后端要求的双缓冲（6.3 节），会话克隆的写时复制与它真正复制的字节数（6.4 至 6.5 节），序列化接口的现状（6.6 节），检查点与 channel 过滤（6.7 至 6.8 节）。这些内容对应第 2 章表 2-2 的问题 13 与 14。
 
 ## 6.1　KV cache 的内存占用估算
 
-注意力机制生成新 token 时，要用该位置的 query 与此前所有 token 的 key/value 计算。不缓存这些 key/value，第 1000 步就要重算前 999 个 token 的 key/value，第 1001 步再算一遍：单步开销随上下文长度线性增加，生成整段序列的累计开销呈二次增长。KV cache 把已经算出的 key/value 存在内存里，后续 decode step 直接读取，用内存容量换掉这笔重复计算。
+注意力机制生成新 token 时，要用该位置的 query 与此前所有 token 的 key/value 计算。不缓存这些 key/value，第 1000 步就要重算前 999 个 token 的 key/value，第 1001 步再算一遍：单步开销随上下文长度线性增加，生成整段序列的累计开销呈二次增长。KV cache 把已经算出的 key/value 存在内存里，后续 decode step 直接读取，以内存容量为代价省去这部分重复计算。
 
 KV cache 的大小沿用 1.3 节的理论公式：
 
@@ -40,7 +40,7 @@ $$ B_{KV,\mathrm{scan}} \approx E \times S \times T $$
 
 这个量既不是 DRAM 带宽实测值，也不是严格的总线流量上界。片上缓存可能减少主存读取，重复加载和中间布局转换则可能增加流量。输出侧也取决于实现：原地更新只需写入新增 K/V；非原地（out-of-place）kernel 还要写出另一份输出 cache。仅凭 host 侧的缓冲绑定无法确定这些操作产生的总线字节数。
 
-把权重也放进同一笔账。若每个 decode step 从主存读取一次 \\(W\\) 字节的权重和 \\(E\\times S\\) 字节的 KV，写回与其他流量忽略，带宽侧的乐观上限就是 \\(B_{\mathrm{eff}}/(W+E\\times S)\\)，其中 \\(B_{\mathrm{eff}}\\) 是 1.4 节定义的有效带宽。对基准模型，\\(W\\) 取主 decode 段的 2.26 GB：\\(S=4096\\) 时 \\(E\\times S\\) 为 112 MiB，约为 \\(W\\) 的 5%；\\(S\\) 取 32000 时为 875 MiB，约为 \\(W\\) 的 40%。短上下文下 KV 读取在带宽账里只是零头，上下文接近模型允许的上限时才与权重同量级。该式的每项假设都要随设备和后端重新核对。
+把权重也纳入同一个估算。若每个 decode step 从主存读取一次 \\(W\\) 字节的权重和 \\(E\\times S\\) 字节的 KV，写回与其他流量忽略，带宽侧的乐观上限就是 \\(B_{\mathrm{eff}}/(W+E\\times S)\\)，其中 \\(B_{\mathrm{eff}}\\) 是 1.4 节定义的有效带宽。对基准模型，\\(W\\) 取主 decode 段的 2.26 GB：\\(S=4096\\) 时 \\(E\\times S\\) 为 112 MiB，约为 \\(W\\) 的 5%；\\(S\\) 取 32000 时为 875 MiB，约为 \\(W\\) 的 40%。短上下文下 KV 读取在带宽开销中占比很小，上下文接近模型允许的上限时才与权重同量级。该式的每项假设都要随设备和后端重新核对。
 
 基准模型的 \\(E\\) 为 28 KiB/token。暂取 \\(T=25\\) tokens/s，可得到以下理论扫描量：
 
@@ -59,7 +59,7 @@ $$ B_{KV,\mathrm{scan}} \approx E \times S \times T $$
 
 ### 6.2.2　`--max-num-tokens` 如何决定预留大小
 
-问题 13 的后半句来自 `LiteRT-LM#2568` 报告的现象：`--max-num-tokens` 会影响 decode 吞吐。[^ch06-issue-2568] 该参数设定 KV cache 可容纳的 token 数，本书称为预留宽度。在固定形状路径上，attention mask 屏蔽尚未使用的位置，张量的宽度却由预留宽度决定；表 6-2 的同 prompt 对照显示，扩大预留宽度会降低吞吐。这一节回答两个问题：预留宽度从哪里来，它又是怎样变成张量宽度的。
+问题 13 的后半句来自 `LiteRT-LM#2568` 报告的现象：`--max-num-tokens` 会影响 decode 吞吐。[^ch06-issue-2568] 该参数设定 KV cache 可容纳的 token 数，本书称为预留宽度。在固定形状路径上，attention mask 屏蔽尚未使用的位置，张量的宽度却由预留宽度决定；表 6-2 的同 prompt 对照显示，扩大预留宽度会降低吞吐。这一节回答两个问题：预留宽度如何确定，它又是怎样变成张量宽度的。
 
 未显式指定该参数时，LiteRT-LM 根据 prompt 长度计算默认值：
 
@@ -77,7 +77,7 @@ if (main_executor_settings_.GetMaxNumTokens() == 0) {
 
 代码行 `(1)` 等价于把 prompt token 数加 1024 后向上对齐到 4096 的整数倍：prompt 为 100 个 token 时得到 4096，4000 个 token 时得到 8192。默认预留宽度因此按 4096 分段变化，而不是随 prompt 长度连续变化。`(2)` 表示模型元数据中的 `max_num_tokens` 可以覆盖这项推导结果。
 
-预留宽度变成张量宽度，靠的是 LiteRT 的 magic number 机制。6.1 节看到的 32003 不是真实容量：模型转换时把序列宽度写成一个大于 10 的素数作占位值；运行时创建 LiteRT 环境时扫描 prefill signature，把 mask 输入的最后一维识别为上下文宽度的占位值，再连同目标值一起作为环境选项交给编译器，编译后张量的宽度就是目标值。目标值的规则如下：
+预留宽度通过 LiteRT 的 magic number 机制变成张量宽度。6.1 节看到的 32003 不是真实容量：模型转换时把序列宽度写成一个大于 10 的素数作占位值；运行时创建 LiteRT 环境时扫描 prefill signature，把 mask 输入的最后一维识别为上下文宽度的占位值，再连同目标值一起作为环境选项交给编译器，编译后张量的宽度就是目标值。目标值的规则如下：
 
 ```cpp
 // runtime/executor/magic_number_configs_helper.cc:254-263
@@ -91,7 +91,7 @@ int64_t GetTargetNumber(int64_t magic_number, int64_t target_number_hint) {
 }
 ```
 
-`--max-num-tokens` 小于占位值时直接采用；为 0 或不小于占位值时回落到占位值以下最大的 256 的倍数，对 32003 即 32000，并打印一条警告。所以 `--max-num-tokens 4096` 得到宽度为 4096 的 KV 张量与 mask，8192 得到 8192；表 6-1 末行的 32000 也由此而来。预留宽度就是 6.1 节公式里的 \\(S\\)：固定形状模型预留 4096 时，KV 张量含 4096 个位置，当前上下文可能只用其中一部分；增大 `--max-num-tokens` 不改变 prompt，只扩大这些张量的静态宽度。
+`--max-num-tokens` 小于占位值时直接采用；为 0 或不小于占位值时改用占位值以下最大的 256 的倍数，对 32003 即 32000，并打印一条警告。所以 `--max-num-tokens 4096` 得到宽度为 4096 的 KV 张量与 mask，8192 得到 8192；表 6-1 末行的 32000 也由此而来。预留宽度就是 6.1 节公式里的 \\(S\\)：固定形状模型预留 4096 时，KV 张量含 4096 个位置，当前上下文可能只用其中一部分；增大 `--max-num-tokens` 不改变 prompt，只扩大这些张量的静态宽度。
 
 对照实验的条件为 cpu 后端、decode 128 个 token、磁盘缓存已预热；完整记录见附录 D（附录 D 称之为 `--max-num-tokens` 扫描）：
 
@@ -179,7 +179,7 @@ if (signatures_.input_int32_param.has_value()) {
   gpu_optimized_single_buffer_cache_ = true;
 ```
 
-该标志为真时，执行器不再交换指针；创建缓冲时，GPU 后端也不再创建输入侧的 KV 缓冲，只保留一套输出侧缓冲。在 CPU 后端上，缓冲仍按 6.3 节的复制登记方式创建，但只要 signature 含该参数张量，执行时同样填充参数、不交换指针。Gemma 4 E4B 的记录中存在 `param_tensor[1,1,1,7]`〔基准 D〕，所以它在 GPU 上走的是单缓冲路径，不能按两套独立 KV 缓冲估算。
+该标志为真时，执行器不再交换指针；创建缓冲时，GPU 后端也不再创建输入侧的 KV 缓冲，只保留一套输出侧缓冲。在 CPU 后端上，缓冲仍按 6.3 节的复制登记方式创建，但只要 signature 含该参数张量，执行时同样填充参数、不交换指针。Gemma 4 E4B 的记录中存在 `param_tensor[1,1,1,7]`〔基准 D〕，所以它在 GPU 上使用单缓冲路径，不能按两套独立 KV 缓冲估算。
 
 同一缓冲既读又写时，kernel 需要知道本步更新的槽位区间，所以单缓冲路径在每次 prefill 与 decode 前都要填充这个参数张量。prefill 路径的调用：
 
@@ -205,21 +205,21 @@ std::memcpy(param_tensor_lock_and_addr.second, params, sizeof(params));
 
 `start_index` 和 `end_index` 标明本步更新区间；源码注释说明前两个参数供 `add_values_to_cache` kernel 使用，第三个供 `runtime_batched_matmul` kernel 检查 channel 结束位置。
 
-两条路径的取舍到这里清楚了。双缓冲用两套缓冲和指针交换避开原地更新，代价是多一套 KV 常驻容量；单缓冲只保留一套 KV 数据，代价是模型 signature、host 代码和 kernel 要共同维护更新区间。CPU 后端的缓冲复用是第三种情况：两个 map 指向同一块缓冲，不需要交换，也不能套用 GPU 的两套分配口径；若 signature 含参数张量，CPU 上同样每步填充它。
+两条路径的取舍可以归纳如下。双缓冲用两套缓冲和指针交换避开原地更新，代价是多一套 KV 常驻容量；单缓冲只保留一套 KV 数据，代价是模型 signature、host 代码和 kernel 要共同维护更新区间。CPU 后端的缓冲复用是第三种情况：两个 map 指向同一块缓冲，不需要交换，也不能套用 GPU 的两套分配口径；若 signature 含参数张量，CPU 上同样每步填充它。
 
 ## 6.4　会话克隆与写时复制
 
-3.1.1 节沿实现路径走过一遍 `Session::Clone`：克隆任务执行时，资源管理器让新旧两个 context handler 指向同一个 `SharedProcessedContext`，运行配置与运行状态按值复制，KV cache 一个字节都不搬。本节接着回答问题 14 剩下的部分：共享之后，什么时候必须复制，复制多少字节，各后端有什么差别。
+3.1.1 节按实现路径说明了 `Session::Clone`：克隆任务执行时，资源管理器让新旧两个 context handler 指向同一个 `SharedProcessedContext`，运行配置与运行状态按值复制，KV cache 不复制任何字节。本节接着回答问题 14 剩下的部分：共享之后，什么时候必须复制，复制多少字节，各后端有什么差别。
 
 ### 6.4.1　共享的上下文与各自的运行状态
 
-每个会话在资源管理器里对应一个 context handler，它管理两类状态。第一类是已处理上下文（processed context）：已经 prefill 或 decode 过的 token 序列，以及它们在执行器里的 KV cache。这一类通过 `SharedProcessedContext` 共享：共享对象记录挂在它上面的全部 handler，也就是同一条上下文链；handler 处于活动状态时，实际的已处理上下文对象移入执行器，共享对象只保留链的成员关系。第二类是运行配置与运行状态（`RuntimeConfig`、`RuntimeState`），包括采样参数、当前步数 `current_step` 和随机数生成器，每个 handler 各有一份，活动时同样由执行器持有。
+每个会话在资源管理器里对应一个 context handler，它管理两类状态。第一类是已处理上下文（processed context）：已经 prefill 或 decode 过的 token 序列，以及它们在执行器里的 KV cache。这一类通过 `SharedProcessedContext` 共享：共享对象记录关联到它的全部 handler，也就是同一条上下文链；handler 处于活动状态时，实际的已处理上下文对象移入执行器，共享对象只保留链的成员关系。第二类是运行配置与运行状态（`RuntimeConfig`、`RuntimeState`），包括采样参数、当前步数 `current_step` 和随机数生成器，每个 handler 各有一份，活动时同样由执行器持有。
 
-克隆得到的 handler 就是这样组成的：它复用原 handler 的共享对象，配置与状态按值复制，两个会话从相同的 `current_step` 起步。有两点容易误判。`RuntimeState` 里的随机数生成器是 `shared_ptr`，按值复制 `RuntimeState` 复制的是指针，两个会话此后共用同一个生成器对象；带音频上下文的会话会另行克隆音频状态，那不属于本章讨论的 LLM KV cache。
+克隆得到的 handler 就是这样组成的：它复用原 handler 的共享对象，配置与状态按值复制，两个会话从相同的 `current_step` 开始。有两点容易误判。`RuntimeState` 里的随机数生成器是 `shared_ptr`，按值复制 `RuntimeState` 复制的是指针，两个会话此后共用同一个生成器对象；带音频上下文的会话会另行克隆音频状态，那不属于本章讨论的 LLM KV cache。
 
 ### 6.4.2　写时分离的触发条件
 
-共享让第一个分支可以从公共前缀末尾继续执行而不复制 KV；只有当某个分支要在较早位置改写共享历史时，资源管理器才把它分离出去。判断发生在 prefill 入口。资源管理器先比较执行器里已处理 token 的数量与本次请求的当前步：两者相等，说明请求正好接在已处理序列末尾，直接执行；当前步更早，说明请求要从历史中间重新开始，此时先把新输入里与已处理 token 逐位相同的前缀删掉（这些 token 不必重算），把当前步推进到第一个不同的位置。删完仍有输入要处理，就到了必须改写历史的时刻，资源管理器再问一个问题：当前 handler 是不是共享链里最长的那个？
+共享让第一个分支可以从公共前缀末尾继续执行而不复制 KV；只有当某个分支要在较早位置改写共享历史时，资源管理器才把它分离出去。判断发生在 prefill 入口。资源管理器先比较执行器里已处理 token 的数量与本次请求的当前步：两者相等，说明请求正好接在已处理序列末尾，直接执行；当前步更早，说明请求要从历史中间重新开始，此时先把新输入里与已处理 token 逐位相同的前缀删掉（这些 token 不必重算），把当前步推进到第一个不同的位置。删完仍有输入要处理，就必须改写历史，资源管理器再判断一件事：当前 handler 是不是共享链里最长的那个。
 
 ```cpp
 // runtime/framework/resource_management/resource_manager.cc:322-332
@@ -234,7 +234,7 @@ if (largest_time_step != current_step) {
 }
 ```
 
-`LongestHandlerTimeStep` 遍历共享链，读取每个 handler 的 `current_step`（活动 handler 的步数从执行器读取），取最大值。代码行 `(1)` 只在当前 handler 不是最长分支时执行：最长分支改写自己末尾之后的槽位不会影响别人，直接覆盖即可；较短分支要覆盖的槽位却正被更长的分支使用，必须先分离。decode 在准备截断已处理 token 时执行同一检查。因此复制时机取决于分支的执行顺序和步数：从末尾续写的分支不触发复制，较短分支需要分叉或截断时才触发。
+`LongestHandlerTimeStep` 遍历共享链，读取每个 handler 的 `current_step`（活动 handler 的步数从执行器读取），取最大值。代码行 `(1)` 只在当前 handler 不是最长分支时执行：最长分支改写自己末尾之后的槽位不会影响其他分支，直接覆盖即可；较短分支要覆盖的槽位却正被更长的分支使用，必须先分离。decode 在准备截断已处理 token 时执行同一检查。因此复制时机取决于分支的执行顺序和步数：从末尾续写的分支不触发复制，较短分支需要分叉或截断时才触发。
 
 分离由 `SaveProcessedContextAndSeparateLoadedHandler` 完成。它把执行器里当前的已处理上下文保存回原共享对象，再让当前 handler 改用一个新的共享对象：
 
@@ -253,7 +253,7 @@ RETURN_IF_ERROR(context_handler->UpdateSharedProcessedContext(
     new_shared_processed_context));  // (2)
 ```
 
-代码行 `(1)` 向执行器要一份独立快照，KV 字节的复制就发生在这里，复制多少见 6.4.3 节；`(2)` 把即将改写历史的 handler 从原共享链移出。此后执行器回到该 handler 的 `current_step` 继续 prefill 或 decode；原共享链中较长的上下文保存在快照里，当前分支可以覆盖分叉点之后的槽位。
+代码行 `(1)` 从执行器取得一份独立快照，KV 字节的复制就发生在这里，复制多少见 6.4.3 节；`(2)` 把即将改写历史的 handler 从原共享链移出。此后执行器回到该 handler 的 `current_step` 继续 prefill 或 decode；原共享链中较长的上下文保存在快照里，当前分支可以覆盖分叉点之后的槽位。
 
 ### 6.4.3　复制粒度与后端差异
 
@@ -266,13 +266,13 @@ LITERT_ASSIGN_OR_RETURN(auto size, tensor_buffer.PackedSize());  // (1)
 std::memcpy(dst_lock_and_addr.second, src_lock_and_addr.second, size);  // (2)
 ```
 
-`PackedSize()` 是缓冲的完整容量，不按 `current_step` 裁剪有效前缀。按基准模型的形状，宽度为 4096 的一套 K/V 缓冲约为 112 MiB；只要活动输入 map 里有这套完整缓冲，`CloneContext` 就复制这么多字节。CPU 后端和没有 int32 参数张量的 GPU out-of-place 路径满足这一前提。GPU 单缓冲路径则不然：6.3.1 节看到它不创建输入侧缓冲，输入 map 为空，`CloneContext` 遍历不到任何 KV 缓冲，快照里不含 KV 字节；恢复快照时，单缓冲标志为真的执行器也跳过 KV map 的替换。我们据此推断，signature 含参数张量的模型在会话分支后，KV 状态并不随快照保存与恢复；本书没有在真机上验证这条路径的行为。动态形状路径的 `PackedSize()` 对应当时已分配的张量形状，同样要另算。
+`PackedSize()` 是缓冲的完整容量，不按 `current_step` 裁剪有效前缀。按基准模型的形状，宽度为 4096 的一套 K/V 缓冲约为 112 MiB；只要活动输入 map 里有这套完整缓冲，`CloneContext` 就复制这么多字节。CPU 后端和没有 int32 参数张量的 GPU out-of-place 路径满足这一前提。GPU 单缓冲路径则不然：6.3.1 节说明它不创建输入侧缓冲，输入 map 为空，`CloneContext` 遍历不到任何 KV 缓冲，快照里不含 KV 字节；恢复快照时，单缓冲标志为真的执行器也跳过 KV map 的替换。我们据此推断，signature 含参数张量的模型在会话分支后，KV 状态并不随快照保存与恢复；本书没有在真机上验证这条路径的行为。动态形状路径的 `PackedSize()` 对应当时已分配的张量形状，同样要另算。
 
 常规 compiled executor 恢复快照时不复制张量：它把保存的 KV map 移入活动输入 map，接管所有权。文件中另有一个按缓冲复制的 `RestoreKVCacheBuffers`，当前没有调用点。
 
 NPU executor 的 `CloneContext` 扫描 prefill 输入缓冲，只复制名称以 `kv_cache_k_`、`kv_cache_v_` 或 `kv_cache_c_` 开头的项（第三类是部分 NPU 模型额外携带的 cache，本书按名称称为 C cache），每块同样由 `CopyTensorBuffer` 按 `PackedSize()` 完整复制；张量形状由对应模型决定，基准模型的 112 MiB 不能沿用。恢复时它不像常规 executor 那样移动 map，而是检查源、目标缓冲的 `PackedSize()` 相等后，把快照内容 `memcpy` 回固定的输入缓冲。
 
-写时分离不是调用 `CloneContext` 的唯一位置。两个 handler 一旦分属不同的 `SharedProcessedContext`，之后每次在它们之间切换，资源管理器都会先用 `CloneContext` 保存当前执行器状态，再恢复目标状态；仍共享同一个对象的 handler 之间切换时，只交换运行配置与运行状态，不碰 KV。`Session::Clone`、写时分离与上下文切换是三层不同的操作，不能合并成一次立即发生的 KV 拷贝。
+写时分离不是调用 `CloneContext` 的唯一位置。两个 handler 一旦分属不同的 `SharedProcessedContext`，之后每次在它们之间切换，资源管理器都会先用 `CloneContext` 保存当前执行器状态，再恢复目标状态；仍共享同一个对象的 handler 之间切换时，只交换运行配置与运行状态，不涉及 KV。`Session::Clone`、写时分离与上下文切换是三层不同的操作，不能合并成一次立即发生的 KV 拷贝。
 
 ## 6.5　容量案例：公共前缀分出两条会话
 
@@ -280,7 +280,7 @@ NPU executor 的 `CloneContext` 扫描 prefill 输入缓冲，只复制名称以
 
 一套 K/V 缓冲约为 112 MiB。out-of-place 路径分别创建输入、输出缓冲，因此两套常驻 KV 数据约为 224 MiB。这里只计算 LLM KV 张量，不含权重、激活、采样器、后端工作区和内存分配器开销。
 
-设会话 A 已处理 2048 个 token。应用调用 `A.Clone()` 创建会话 B，然后让 B 从公共前缀末尾继续生成 256 个 token。Clone 只建立共享关系，LLM KV 搬运量为 0。B 从末尾续写时也不需要保存 A 的旧状态，因为 B 此时是共享链中最长的分支。
+设会话 A 已处理 2048 个 token。应用调用 `A.Clone()` 创建会话 B，然后让 B 从公共前缀末尾继续生成 256 个 token。Clone 只建立共享关系，LLM KV 复制量为 0。B 从末尾续写时也不需要保存 A 的旧状态，因为 B 此时是共享链中最长的分支。
 
 随后应用切回 A。切换时 A、B 仍共享同一个对象，只交换运行状态，不复制 KV。应用不沿 B 的结果续写，而是在第 2048 步加入另一段输入。资源管理器发现共享链的最长位置已经是 2304，而 A 仍在 2048；A 即将覆盖执行器中 2048 之后的槽位，因此触发 `SaveProcessedContextAndSeparateLoadedHandler`。compiled executor 此时复制活动输入 map 的完整 `PackedSize()`，增量约为 112 MiB。
 
@@ -291,7 +291,7 @@ NPU executor 的 `CloneContext` 扫描 prefill 输入缓冲，只复制名称以
 <figcaption>图 6-2　条件化 out-of-place 路径的容量变化：Clone 与最长分支续写不额外复制 KV；较短分支改写历史时，compiled executor 才复制一套完整活动输入缓冲。</figcaption>
 </figure>
 
-| 阶段 | 共享关系与执行动作 | 新增的 LLM KV 搬运量 | 4096 槽位下的容量口径 |
+| 阶段 | 共享关系与执行动作 | 新增的 LLM KV 复制量 | 4096 槽位下的容量口径 |
 |---|---|---:|---:|
 | A 位于第 2048 步 | 执行器持有输入、输出两套 KV 缓冲 | 不适用 | 双缓冲约 224 MiB |
 | `A.Clone()` 得到 B | 两个 handler 共享 `SharedProcessedContext` | 0 | 不因 Clone 再分配一套 KV |
@@ -301,7 +301,7 @@ NPU executor 的 `CloneContext` 扫描 prefill 输入缓冲，只复制名称以
 
 > 表 6-3　表中的 112 MiB 和 224 MiB 只适用于上述张量形状。计算条件还包括 4096 槽位与 GPU out-of-place 路径。Gemma 4 E4B 的实际 GPU 路径不同。两项数字也不是整个进程的内存占用，不能用于 NPU 的 K/V/C cache 集合。
 
-相同计算还能说明 `--max-num-tokens` 如何放大分支成本。若其他条件不变，把固定宽度从 4096 增至 8192，一套 KV 缓冲由约 112 MiB 增至约 224 MiB。双缓冲由约 224 MiB 增至约 448 MiB；一次相同路径的写时分离也由约 112 MiB 增至约 224 MiB。预留宽度同时影响常驻双缓冲与后续快照增量。
+相同计算还能说明 `--max-num-tokens` 如何增加分支成本。若其他条件不变，把固定宽度从 4096 增至 8192，一套 KV 缓冲由约 112 MiB 增至约 224 MiB。双缓冲由约 224 MiB 增至约 448 MiB；一次相同路径的写时分离也由约 112 MiB 增至约 224 MiB。预留宽度同时影响常驻双缓冲与后续快照增量。
 
 容量不能只按“模型最大支持长度”设置。部署侧需要先给出 prompt 上限、单轮输出上限、会话保留策略和允许的分支数，再确定预留宽度。设置过大增加内存与固定形状执行成本；设置过小会让 prefill 越界，或在达到 `max_num_tokens` 时结束 decode。表 6-2 已展示这两类结果。
 
@@ -340,7 +340,7 @@ class KVCacheInterface {
 
 这些方法都是纯虚函数，接口只规定调用形式。`Serialize` 与 `Load` 表达把 KV cache 转成字节串再载入的目标；`SelectAndCopyFrom` 从较大的 batch 中选出一条，`BroadcastAndCopyFrom` 把单条 cache 复制到较大的 batch；`DeepCopy` 要求返回拥有独立缓冲的新对象。
 
-这个接口当前只有一个实现 `LitertKVCache`，而这个实现没有任何执行器使用：仓库里引用它的只有它自己的源文件和单元测试。6.3 节的 compiled executor 用的是自己的两套缓冲 map，6.4 节的 `CloneContext` 走的是 `CloneKVCacheBuffers`，NPU executor 也直接调用 `CopyTensorBuffer`，都不经过这个接口。因此本节讨论的是接口的设计目标和它唯一实现的行为，不是实际执行路径上已经具备的能力。
+这个接口当前只有一个实现 `LitertKVCache`，而这个实现没有任何执行器使用：仓库里引用它的只有它自己的源文件和单元测试。6.3 节的 compiled executor 用的是自己的两套缓冲 map，6.4 节的 `CloneContext` 调用的是 `CloneKVCacheBuffers`，NPU executor 也直接调用 `CopyTensorBuffer`，都不经过这个接口。因此本节讨论的是接口的设计目标和它唯一实现的行为，不是实际执行路径上已经具备的能力。
 
 ### 6.6.1　`Serialize` 与 `Load` 是尚未实现的接口目标
 
@@ -359,7 +359,7 @@ absl::Status Load(absl::string_view serialized_kv_cache) override {
 
 配套测试 `SerializeNotSupported` 也要求返回未实现错误。加上没有执行器使用这个类这一事实，结论是：当前没有任何路径能把 LiteRT 后端的 KV cache 保存到磁盘或跨进程传递。接口声明表示设计目标，不能当作已提供的运行时能力。
 
-| 操作 | 实际路径 | KV 字节搬运量 | 状态或用途 |
+| 操作 | 实际路径 | KV 字节复制量 | 状态或用途 |
 |---|---|---|---|
 | `Session::Clone` | 新旧 handler 共享 `SharedProcessedContext`；分别持有按值复制的 `RuntimeConfig`、`RuntimeState` | LLM KV 为 0 | 建立可写时分离的会话分支；音频上下文另行克隆 |
 | compiled executor 写时分离 | `CloneContext` 复制活动输入 KV map 中每块缓冲的 `PackedSize()` | 该 map 含一套宽度为 4096 的基准模型 K/V 时约 112 MiB；不按有效前缀裁剪；单缓冲路径的 map 为空 | 较短分支需要截断或改写共享历史时触发；非单缓冲恢复通过移动 map 接管所有权 |
@@ -368,7 +368,7 @@ absl::Status Load(absl::string_view serialized_kv_cache) override {
 | `LitertKVCache::DeepCopy` | 复制 bank 1，并复制可选的 bank 2（该类为不支持原地更新的后端准备的第二套缓冲） | 取决于张量形状与 bank 数量 | 独立接口实现；没有执行器调用 |
 | `Serialize` / `Load` | 返回 `UnimplementedError` | 不适用 | 接口目标，LiteRT 后端尚不可用 |
 
-> 表 6-4　会话克隆先共享 LLM 上下文。后续写时分离或独立上下文切换进入 executor `CloneContext` 时，才按具体后端的缓冲集合搬运 KV 字节。
+> 表 6-4　会话克隆先共享 LLM 上下文。后续写时分离或独立上下文切换进入 executor `CloneContext` 时，才按具体后端的缓冲集合复制 KV 字节。
 
 ### 6.6.2　批量分支的选择与广播
 
@@ -428,7 +428,7 @@ return execution_manager_lock->SetCurrentStep(*session_info_, target_step);   //
 | 回退到 step 200 的 `candidate` | 恢复逻辑 step；删除 step 大于 200 的条目 | 0 |
 | 回退后 refill 新输入 | 从目标位置继续写入 | 由后续 prefill 决定 |
 
-> 表 6-5　检查点是 Session 层的逻辑书签。它既不复制 KV，也不保留同名 label 的多个版本。
+> 表 6-5　检查点只记录 Session 层的逻辑位置。它既不复制 KV，也不保留同名 label 的多个版本。
 
 这个语义影响错误恢复设计。若应用先保存 `safe`，随后在更晚位置再次使用同名 label，第一次恢复点便已丢失。若需要保留树状分支，应使用 `Session::Clone` 管理独立会话，而不是把 checkpoint map 当成持久版本库。若需要跨进程恢复，当前 `Serialize` / `Load` 又尚未实现；应用不能把 checkpoint label 当成可持久化状态。
 
@@ -480,7 +480,7 @@ refill 输入不为空时，`Conversation` 先 prefill 清理后的历史，再�
 
 KV cache 以容量和带宽换取较少的重复计算。其占用由层数、KV 头维度、序列长度和存储类型共同决定，本书基准模型为 28 KiB/token。固定形状路径中，`--max-num-tokens` 经 magic number 机制成为张量的静态宽度；本章的同 prompt 对照显示，预留宽度从 4096 增至 8192，decode 吞吐从 26.4 降至 21.5 tokens/s，降幅约 19%。
 
-LiteRT-LM 用双缓冲处理部分 GPU 后端的输入输出别名限制，signature 含 int32 参数张量的模型则走单缓冲的原地更新路径。`Session::Clone` 只共享 `SharedProcessedContext`，按值复制运行配置与状态，不搬运 KV 字节；较短分支需要截断或改写共享历史时，资源管理器才调用 executor `CloneContext` 完成写时分离，此后两个分支之间每次切换都要再保存一次。
+LiteRT-LM 用双缓冲处理部分 GPU 后端的输入输出别名限制，signature 含 int32 参数张量的模型则走单缓冲的原地更新路径。`Session::Clone` 只共享 `SharedProcessedContext`，按值复制运行配置与状态，不复制 KV 字节；较短分支需要截断或改写共享历史时，资源管理器才调用 executor `CloneContext` 完成写时分离，此后两个分支之间每次切换都要再保存一次。
 
 常规 compiled executor 按活动输入 map 中各缓冲的 `PackedSize()` 复制完整容量，宽度 4096 的基准模型 K/V 约 112 MiB；单缓冲路径的输入 map 为空，快照不含 KV。NPU executor 同样按完整缓冲复制，缓冲集合还可能包含 C cache，恢复时把保存内容复制回固定输入缓冲。`KVCacheInterface` 及其唯一实现 `LitertKVCache` 不在任何执行器的调用链上，`Serialize` 与 `Load` 也只返回未实现错误。检查点只保存逻辑位置；channel 过滤在下一条非追加式 user 消息到达后才回退并 refill 清理后的历史。
 
@@ -489,8 +489,8 @@ LiteRT-LM 用双缓冲处理部分 GPU 后端的输入输出别名限制，signa
 ## 练习与自查
 
 1. 模型参数复算。每 token 按 28 KiB 计。先计算 8192 个 token 的 KV cache 占用；再说明 `--max-num-tokens 32768` 时该模型实际得到的静态宽度是多少（提示：6.2.2 节的目标值规则），并计算对应占用。
-2. 成本对比。调用 `Session::Clone` 后，LLM KV 立即搬运多少字节？新旧 handler 共享什么、分别复制什么？若 compiled executor 的活动输入 map 含一套宽度为 4096 的基准模型 K/V 缓冲，后续写时分离约复制多少字节？
-3. 代码定位。双缓冲交换为什么不搬运张量内容？找出 prefill 与 decode 路径执行交换的位置。
+2. 成本对比。调用 `Session::Clone` 后，LLM KV 立即复制多少字节？新旧 handler 共享什么、分别复制什么？若 compiled executor 的活动输入 map 含一套宽度为 4096 的基准模型 K/V 缓冲，后续写时分离约复制多少字节？
+3. 代码定位。双缓冲交换为什么不复制张量内容？找出 prefill 与 decode 路径执行交换的位置。
 4. 参数推演。`--max-num-tokens` 从 4096 增至 8192 时，容量和本章实测 decode 吞吐分别如何变化？
 5. 接口辨析。比较 compiled executor 与 NPU executor 的 `CloneContext`。两者选择哪些缓冲，复制粒度如何，恢复方式有何不同？再说明它们与 `LitertKVCache::DeepCopy` 是否属于同一调用链。
 6. 时序复述。启用 channel 过滤后，依次说明相关操作。起点是 assistant 输出含 channel 字段。终点是下一条 user 消息开始 decode。

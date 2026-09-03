@@ -31,7 +31,7 @@
   <text class="blue" x="298" y="65">② Clone 后 B 续写至 2304</text>
   <rect class="box" x="288" y="82" width="206" height="72" rx="7"/>
   <text class="label" x="391" y="107" text-anchor="middle">A、B 共享上下文</text>
-  <text class="soft" x="391" y="129" text-anchor="middle">Clone 搬运 0 MiB</text>
+  <text class="soft" x="391" y="129" text-anchor="middle">Clone 复制 0 MiB</text>
   <text class="soft" x="391" y="146" text-anchor="middle">B 从末尾续写仍为 0 MiB</text>
   <path class="edge" d="M494,118 H532" marker-end="url(#f62-arrow)"/>
   <text class="blue" x="548" y="65">③ A 在 2048 后改写</text>
