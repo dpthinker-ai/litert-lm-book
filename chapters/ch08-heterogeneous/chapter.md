@@ -2,13 +2,13 @@
 
 > 本章说明 CPU、GPU、NPU 的适用条件与运行时路径。重点分析 buffer 交接、同步成本，以及后端变化为何可能改变输出。
 
-第 6、7 章算完了 KV cache 与模型文件两笔内存账；本章转向第 1 章三类约束中的最后一类：异构。手机 SoC 同时有 CPU、GPU 与 NPU，三者支持的算子、数值路径和部署条件都不同，运行时要在保持上层接口不变的前提下选出一条执行路径。本章沿这条路径走一遍：后端如何变成执行器与编译选项（8.2 节），CPU 的线程数与核绑定（8.3 节），GPU 的设备侧采样（8.4 节，对应第 2 章表 2-2 的问题 18），跨阶段的缓冲交接何时才算零拷贝（8.5 节），NPU 的多子图路径与本书两台真机停在哪一步（8.6 节），最后回答问题 17：换后端为什么速度和输出都可能变（8.7 节）。
+第 6、7 章分别估算了 KV cache 与模型文件的内存占用；本章转向第 1 章三类约束中的最后一类：异构。手机 SoC 同时有 CPU、GPU 与 NPU，三者支持的算子、数值路径和部署条件都不同，运行时要在保持上层接口不变的前提下选出一条执行路径。本章按这条路径依次说明：后端如何变成执行器与编译选项（8.2 节），CPU 的线程数与核绑定（8.3 节），GPU 的设备侧采样（8.4 节，对应第 2 章表 2-2 的问题 18），跨阶段的缓冲交接何时才算零拷贝（8.5 节），NPU 的多子图路径与本书两台真机到达哪一步（8.6 节），最后回答问题 17：换后端为什么速度和输出都可能变（8.7 节）。
 
 ## 8.1　后端选择改变执行路径
 
 上游 issue `LiteRT-LM#2281` 报告：同一个 `.litertlm` 文件分别用 `--backend=cpu` 和 `--backend=gpu` 运行，速度不同，输出文本也可能不同。[^ch08-issue-2281] 这就是表 2-2 问题 17 的来源。
 
-它说明后端不是一个只影响速度的开关。换后端换掉的是整条计算路径：算子 kernel、数值精度处理和反量化实现都可能随之变化。LiteRT-LM 因此在运行时按配置选择后端，并把这些差异封装在同一个执行器接口之内；后面各节按这条路径的顺序展开。
+它说明后端不是一个只影响速度的开关。换后端改变的是整条计算路径：算子 kernel、数值精度处理和反量化实现都可能随之变化。LiteRT-LM 因此在运行时按配置选择后端，并把这些差异封装在同一个执行器接口之内；后面各节按这条路径的顺序展开。
 
 ## 8.2　Backend 工厂分派
 
@@ -27,7 +27,7 @@ enum class Backend {
 };
 ```
 
-代码行 `(1)` 带 ARTISAN 后缀的枚举值对应手写算子路径，`(2)` 不带后缀的 CPU、GPU 走 LiteRT 编译路径；同一类硬件有两个枚举值，是因为底层算子实现不同。本章只讲 CPU、GPU 与 NPU 这条编译路径，其中 `(3)` NPU 在工厂里进入独立分支。GOOGLE_TENSOR_ARTISAN 对应 Pixel Tensor 的手写路径，此处不展开。
+代码行 `(1)` 带 ARTISAN 后缀的枚举值对应手写算子路径，`(2)` 不带后缀的 CPU、GPU 使用 LiteRT 编译路径；同一类硬件有两个枚举值，是因为底层算子实现不同。本章只讲 CPU、GPU 与 NPU 这条编译路径，其中 `(3)` NPU 在工厂里进入独立分支。GOOGLE_TENSOR_ARTISAN 对应 Pixel Tensor 的手写路径，此处不展开。
 
 工厂函数按枚举值选择实现：
 
@@ -48,7 +48,7 @@ switch (backend) {
 }
 ```
 
-代码行 `(1)` 的后端由 CLI 的 `--backend` 或上层配置写入执行器设置，工厂按配置分派，不探测设备。`(2)` CPU 和 GPU 共用一个创建函数：两者读取同一个 prefill/decode 子图，硬件差异交给 LiteRT 编译选项和 delegate 处理。`(3)` NPU 使用专门的执行器和模型资源。其余枚举值落入 default 分支，返回 `InvalidArgumentError`，错误在工厂边界就暴露。
+代码行 `(1)` 的后端由 CLI 的 `--backend` 或上层配置写入执行器设置，工厂按配置分派，不探测设备。`(2)` CPU 和 GPU 共用一个创建函数：两者读取同一个 prefill/decode 子图，硬件差异交给 LiteRT 编译选项和 delegate 处理。`(3)` NPU 使用专门的执行器和模型资源。其余枚举值进入 default 分支，返回 `InvalidArgumentError`，错误在工厂边界就被报告。
 
 <div class="aside-compare">
 
@@ -93,9 +93,9 @@ return is_kv_cache_dynamic;
 
 两条路径的缓冲管理不同。静态执行器使用导出时确定的 prefill、decode 与 KV cache 形状；动态执行器按配置里的 `kv_increment_size` 扩展 KV cache，默认每次增加 16 个位置。动态形状允许缓冲随当前序列长度增长，但底层 delegate 可能需要重新准备张量，实际峰值内存仍取决于 delegate 的分配策略。`prefill_chunk_size` 的注释注明它只适用于动态导出的模型。两种执行器都实现同一个 `LlmExecutor` 接口，上层不需要按形状类型分支。
 
-### 8.2.2　后端枚举如何下沉为编译选项
+### 8.2.2　后端枚举如何转换为编译选项
 
-工厂分支只决定创建哪一种执行器，CPU 与 GPU 的硬件请求继续下沉到编译选项。GPU 分支设置激活精度、缓冲模式与 GPU 专属选项，最后请求 GPU 加速器；CPU 分支设置线程数与 XNNPACK 缓存，最后请求 CPU：
+工厂分支只决定创建哪一种执行器，CPU 与 GPU 的硬件请求继续转换为编译选项。GPU 分支设置激活精度、缓冲模式与 GPU 专属选项，最后请求 GPU 加速器；CPU 分支设置线程数与 XNNPACK 缓存，最后请求 CPU：
 
 ```cpp
 // runtime/executor/llm_executor_settings_utils.cc:76-261
@@ -139,7 +139,7 @@ CPU 通常有最宽的算子覆盖范围，也是没有可用加速器时的后�
 
 ### 8.3.1　CPU 亲和性：Pixel Tensor 的硬编码核表
 
-移动 SoC 常把不同性能特征的 CPU 核组合在一起。LiteRT-LM 提供的亲和性工具做三件事：识别当前是不是 Pixel Tensor 设备，查询预设的性能核编号，把当前线程绑定到这些核上。核编号不是运行时推导的，而是按芯片型号硬编码：
+移动 SoC 常把不同性能特征的 CPU 核组合在一起。LiteRT-LM 提供的亲和性工具执行三个步骤：识别当前是不是 Pixel Tensor 设备，查询预设的性能核编号，把当前线程绑定到这些核上。核编号不是运行时推导的，而是按芯片型号硬编码：
 
 ```cpp
 // runtime/engine/cpu_affinity_utils.cc:57-62
@@ -153,7 +153,7 @@ const TensorCoreAffinity kTensorAffinities[] = {
 
 代码行 `(1)` 起每一行给出一款 Pixel SoC 的预设核编号：G3 使用 4 至 8 号核，G4 使用 4 至 7 号核，G5、G6 使用 2 至 7 号核。当前实现不分析运行时拓扑，只查这张版本内置表，表外设备不会自动得到同类配置。
 
-识别芯片靠两个系统属性：
+识别芯片依据两个系统属性：
 
 ```cpp
 // runtime/engine/cpu_affinity_utils.cc:67
@@ -225,7 +225,7 @@ if (backend == Backend::CPU) {
 
 GPU 适合并行执行矩阵运算。第 5 章介绍过设备侧采样（device-side sampling）：采样器直接消费 GPU 产生的 logits，不必在每个 decode step 把完整 logits 张量传给 host 侧的采样器。
 
-先算这份传输量有多大。decode 每一步都会产生长度等于词表大小的 logits，以本书基准模型的 262144 词表和 FP32 计算，张量大小为 262144 × 4 字节 = 1 MiB。host 采样要让这 1 MiB 对 CPU 可见，生成 512 个 token 就要处理 512 份；设备侧采样则在 GPU 侧消费它。它减少的只是完整 logits 的跨设备传输，选中的少量 token id 仍会复制到 host，用于返回结果和更新运行时状态。本书没有隔离测量该优化的吞吐或时延收益，不能从 CPU/GPU 整机结果中单独归因。
+先计算这部分传输量。decode 每一步都会产生长度等于词表大小的 logits，以本书基准模型的 262144 词表和 FP32 计算，张量大小为 262144 × 4 字节 = 1 MiB。host 采样要让这 1 MiB 对 CPU 可见，生成 512 个 token 就要处理 512 份；设备侧采样则在 GPU 侧消费它。它减少的只是完整 logits 的跨设备传输，选中的少量 token id 仍会复制到 host，用于返回结果和更新运行时状态。本书没有隔离测量该优化的吞吐或时延收益，不能从 CPU/GPU 整机结果中单独归因。
 
 <figure>
 {{#include figs/fig-8-2.svg}}
@@ -373,9 +373,9 @@ $$
 
 给一个只用于说明算法的可复算示例：若 256 步的总差为 128 ms，则 \\(\Delta t=0.5\\) ms/step。1 MiB 除以 0.5 ms，按 1 GB = 10^9 字节换算，等效速率约为 2.10 GB/s。这个数只能称为“按 logits 大小折算的等效速率”，因为分母还包含等待和两种 sampler 的计算差，它不是内存总线或互连带宽的测量值。
 
-另一个实验是保持 GPU sampler 不变，仅切换 `sampler_handles_input`。false 路径由 host 读取 token id 并准备下一步输入；true 路径允许 sampler 填写 token、position 和 mask。该开关真正生效还要求 sampler 支持输入接管、signature 含 `input_tokens`，且 embedding 不在 GPU 主图内。若前置条件不成立，两组配置会落到同一路径，差值没有解释力。
+另一个实验是保持 GPU sampler 不变，仅切换 `sampler_handles_input`。false 路径由 host 读取 token id 并准备下一步输入；true 路径允许 sampler 填写 token、position 和 mask。该开关真正生效还要求 sampler 支持输入接管、signature 含 `input_tokens`，且 embedding 不在 GPU 主图内。若前置条件不成立，两组配置会进入同一路径，差值不能说明问题。
 
-异步测量还要确认等待策略。静态 prefill 发现任一输入为 Metal memory 时，会改用同步 `Run`，其他路径才可能调用 `RunAsync`。GPU benchmark 模式又把同步等待类型设为 active，并可等待权重转换完成。因此，“打开 benchmark”并非只增加计时器；跨版本或跨工具比较时，必须记录等待模式和 warm-up 处理。
+异步测量还要确认等待策略。静态 prefill 检测到任一输入为 Metal memory 时，会改用同步 `Run`，其他路径才可能调用 `RunAsync`。GPU benchmark 模式又把同步等待类型设为 active，并可等待权重转换完成。因此，“打开 benchmark”并非只增加计时器；跨版本或跨工具比较时，必须记录等待模式和 warm-up 处理。
 
 调试日志也会扰动被测路径。`num_logits_to_print_after_decode` 看似只打印少量值，但 `LogTensor` 在不能直接取得 CPU span 时，会先把整个 tensor 复制到 `std::vector`。它适合检查数值，不适合与关闭日志的吞吐结果混合统计。系统级 timeline 则应把 CPU 填充、delegate invoke、buffer lock、采样和 token 回调分别标记；只看到设备 kernel 之间有空隙，不能直接断定空隙全是复制。
 
@@ -397,7 +397,7 @@ logits 路径也不同。主 NPU 模型的 decode 输出可以带 per-tensor 量
 
 ### 8.6.2　CPU/GPU embedder 与 NPU 多子图
 
-CPU/GPU 执行器并非总把 embedding 融入主图。初始化时它查询模型包里有没有独立的 embedder 段：有，就为 embedder 创建独立的 compiled model，由单独的查表组件驱动；没有，`embedding_lookup_` 保持为 null，此时主图必须提供 `input_tokens` 输入，否则输入缓冲初始化返回失败。采样器初始化把 GPU 后端上的后一种情形称为 embedding 在 GPU 图内执行。因此，CPU/GPU 路径同时支持独立 embedder 与主图内 embedding，具体形式由模型包和主图 signature 决定。
+CPU/GPU 执行器并非总把 embedding 包含在主图内。初始化时它查询模型包里有没有独立的 embedder 段：有，就为 embedder 创建独立的 compiled model，由单独的查表组件驱动；没有，`embedding_lookup_` 保持为 null，此时主图必须提供 `input_tokens` 输入，否则输入缓冲初始化返回失败。采样器初始化把 GPU 后端上的后一种情形称为 embedding 在 GPU 图内执行。因此，CPU/GPU 路径同时支持独立 embedder 与主图内 embedding，具体形式由模型包和主图 signature 决定。
 
 NPU 执行器在主 LLM 图之外还定义了多组上下文。以下三个结构展示了其中的 embedder、per-layer embedder 与辅助子图：
 
@@ -428,9 +428,9 @@ struct NpuAuxiliaryContext {                         // (3)
 
 该模型包名标注目标为 sm8750，记录中识别为 HTP V79 代；第一台设备为 HTP V81。这个静态差异说明预编译 context 还存在架构兼容条件，但执行在验证该条件前已经停止。本次测试没有直接观察到 V79/V81 不匹配引起的运行时错误，因此不能把它列为真机确认的另一个失败原因。
 
-第二台设备是 HONOR MEP-AN00，系统库显示 HTP V79，且 `/odm` 中的 QNN 库可由 shell 读取。V79 代与模型包标注的目标代际更接近，但仅凭库名不能证明具体 SoC 与预编译 context 完全匹配。LiteRT-LM 先因宿主库版本门槛失败；换用 QAIRT 2.46 宿主库后，流程进入 QNN manager 创建 backend/device 的阶段并在此停止，仍未创建可执行推理会话。`qnn-platform-validator` 使用原厂路径和 QAIRT 2.42 V79 组件时都报告相同的 unsigned-images 诊断。这个对照降低了“单一宿主 SDK 版本错配”作为唯一原因的可能性，并支持签名或 DSP 访问策略相关的解释；它不足以证明所有版本交互均已排除，也不足以把失败唯一归因于 OEM ROM。
+第二台设备是 HONOR MEP-AN00，系统库显示 HTP V79，且 `/odm` 中的 QNN 库可由 shell 读取。V79 代与模型包标注的目标代际更接近，但仅凭库名不能证明具体 SoC 与预编译 context 完全匹配。LiteRT-LM 先因宿主库版本检查失败；换用 QAIRT 2.46 宿主库后，流程进入 QNN manager 创建 backend/device 的阶段并在此停止，仍未创建可执行推理会话。`qnn-platform-validator` 使用原厂路径和 QAIRT 2.42 V79 组件时都报告相同的 unsigned-images 诊断。这个对照降低了“单一宿主 SDK 版本错配”作为唯一原因的可能性，并支持签名或 DSP 访问策略相关的解释；它不足以证明所有版本交互均已排除，也不足以把失败唯一归因于 OEM ROM。
 
-子模型通过重复的 `TensorBuffer` 句柄衔接。prefill 路径对主模型 embeddings 输入缓冲调用 `Duplicate()`，并把所得句柄作为 embedder 输出；decode、verify、per-layer embedder 与 mask 路径采用同类连接。代码在这些连接点没有显式执行字节复制，`Duplicate()` 共享底层缓冲的句柄语义可以减少子图之间的显式搬运。本书没有测量实际驱动同步与设备内存行为，因此不能把衔接成本记为零。
+子模型通过重复的 `TensorBuffer` 句柄衔接。prefill 路径对主模型 embeddings 输入缓冲调用 `Duplicate()`，并把所得句柄作为 embedder 输出；decode、verify、per-layer embedder 与 mask 路径采用同类连接。代码在这些连接点没有显式执行字节复制，`Duplicate()` 共享底层缓冲的句柄语义可以减少子图之间的显式复制。本书没有测量实际驱动同步与设备内存行为，因此不能把衔接成本记为零。
 
 第一台设备完成了 QNN context 创建，第二台设备在 backend/device 创建阶段停止，两者均未完成 prefill 或 decode。因此，本书没有 NPU 吞吐、时延或功耗数据；NPU 执行行为仍以冻结版源码分析为主，真机记录只用于界定部署链路和已观察到的失败阶段。
 
@@ -453,13 +453,13 @@ struct NpuAuxiliaryContext {                         // (3)
 1. 校验模型文件、tokenizer 与 prompt token id 完全一致。记录 activation type、线程数、delegate 缓存状态和全部 sampler 参数。
 2. 使用 `k=1`，在两个独立 session 中运行到首个分叉 step。不要让一条路径选出的 token 继续作为另一条路径的输入。
 3. 调用不采样的 `DecodeLogits`，把两份 logits 转换为同一种 host 类型后比较。接口在执行器基类中定义，输出形状为 `[batch, sequence, vocab]`；具体 compiled executor 返回当前输出 buffer 的句柄。
-4. 同时计算最大绝对误差、相对误差与 top-2 margin。若误差远小于 margin，top-1 理应稳定；若二者同量级，token 选择可能翻转。再按算子或子图边界逐层比较，定位首个超出容差的位置。
+4. 同时计算最大绝对误差、相对误差与 top-2 margin。若误差远小于 margin，top-1 理应稳定；若二者同量级，token 选择可能改变。再按算子或子图边界逐层比较，定位首个超出容差的位置。
 
-给一个不代表实测结果的数值例子。CPU 路径中，候选 A、B 的 logits 分别为 12.002 和 12.000，top-2 margin 为 0.002。GPU 路径若得到 11.998 和 12.001，B 会成为 top-1。四个值的最大跨后端差为 0.004，大于 CPU 路径的 margin，最终文本可能从这一 token 起完全不同。诊断结论只能落在“首个分叉处的数值扰动足以改变 argmax”，不能据此判定整条 GPU 路径错误。
+给一个不代表实测结果的数值例子。CPU 路径中，候选 A、B 的 logits 分别为 12.002 和 12.000，top-2 margin 为 0.002。GPU 路径若得到 11.998 和 12.001，B 会成为 top-1。四个值的最大跨后端差为 0.004，大于 CPU 路径的 margin，最终文本可能从这一 token 起完全不同。诊断结论只能是“首个分叉处的数值扰动足以改变 argmax”，不能据此判定整条 GPU 路径错误。
 
 冻结版提供了三个有针对性的复核开关。GPU 激活可在 FP16 与 FP32 间切换；`allow_src_quantized_fc_conv_ops` 控制部分 GPU 是否采用量化 FC/Conv，源码明确提示它可能以质量风险换取性能；`hint_waiting_for_completion` 要求 OpenCL invoke 后等待队列完成，注释说明它用于规避 AMD 和 Mali 上的已知质量问题。三项应分别切换，若同时改变，无法判断是精度、量化 kernel 还是同步改变了结果。
 
-`num_logits_to_print_after_decode` 只能打印 logits 开头、中间和末尾的若干值，top-2 token 不一定落在这些区间内。完整诊断更适合由测试 harness 消费 `DecodeLogits`，把全量 logits 保存为二进制或计算摘要；开启日志时还要排除上一节说明的回读开销。
+`num_logits_to_print_after_decode` 只能打印 logits 开头、中间和末尾的若干值，top-2 token 不一定位于这些区间内。完整诊断更适合由测试 harness 消费 `DecodeLogits`，把全量 logits 保存为二进制或计算摘要；开启日志时还要排除上一节说明的回读开销。
 
 端侧实验记录必须包含后端及其配置。附录 D 因此把不同后端作为不同实验条件，不合并比较。
 
