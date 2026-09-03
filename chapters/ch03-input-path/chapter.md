@@ -1,8 +1,8 @@
 # 第 3 章 输入侧：从 Engine API 到 token 序列
 
-> 本章沿输入路径走完四步：Engine、Session 与 Conversation 的所有权分层（含 Clone 何时才真正复制 KV cache），模板如何从多轮消息提取本轮增量文本，tokenizer 如何编码，以及 token id 或 embedding 如何写入 prefill 缓冲。
+> 本章按输入路径说明四步：Engine、Session 与 Conversation 的所有权分层（含 Clone 何时才真正复制 KV cache），模板如何从多轮消息提取本轮增量文本，tokenizer 如何编码，以及 token id 或 embedding 如何写入 prefill 缓冲。
 
-调用方提交的是文本或多模态数据，模型执行器最终接收的是 token id 或 embedding。这中间隔着四层工作：对象与状态归谁持有（3.1 节），多轮消息如何变成本轮增量文本（3.2、3.3 节），文本如何编码成 id（3.4 节），id 或 embedding 如何摆进 prefill 缓冲（3.5 节）；图 3-1 画出整条路径。先说清一处容易混淆的边界：跨轮上下文复用由 Session 与模板负责（3.1.1 与 3.3 节），单次 prefill 缓冲内的数据放置是另一个问题（3.5 节），两者后文分开处理。
+调用方提交的是文本或多模态数据，模型执行器最终接收的是 token id 或 embedding。这中间有四步工作：对象与状态归谁持有（3.1 节），多轮消息如何变成本轮增量文本（3.2、3.3 节），文本如何编码成 id（3.4 节），id 或 embedding 如何写入 prefill 缓冲（3.5 节）；图 3-1 画出整条路径。先说清一处容易混淆的边界：跨轮上下文复用由 Session 与模板负责（3.1.1 与 3.3 节），单次 prefill 缓冲内的数据放置是另一个问题（3.5 节），两者后文分开处理。
 
 <figure>
 {{#include figs/fig-3-1.svg}}
@@ -11,7 +11,7 @@
 
 ## 3.1　公共 API 分层：Engine 与 Session
 
-LiteRT-LM 的底层生成接口把职责一分为二：`Engine` 持有模型、tokenizer 与 embedding 组件这些开销大、可共享的资源；`Session` 保存一次交互的内部状态，生成、prefill 与 decode 的入口都在它身上。分界线就是所有权：共享资源归 Engine，每次交互的状态归 Session。
+LiteRT-LM 的底层生成接口把职责一分为二：`Engine` 持有模型、tokenizer 与 embedding 组件这些开销大、可共享的资源；`Session` 保存一次交互的内部状态，生成、prefill 与 decode 的入口都由它提供。划分依据是所有权：共享资源归 Engine，每次交互的状态归 Session。
 
 一个 Engine 可以创建多个 Session：`CreateSession` 接收 `SessionConfig`，返回由调用方持有的 Session 对象。接口不约定这两类对象的内存占用或创建时延，这些数值随具体模型、后端与设备变化，需要实测。
 
@@ -43,15 +43,15 @@ virtual absl::Status RunPrefill(const std::vector<InputData>& contents) = 0;  //
 virtual absl::StatusOr<Responses> RunDecode() = 0;       // (2)
 ```
 
-代码行 `(1)` `RunPrefill` 接收 prompt，可以分块调用；`(2)` `RunDecode` 根据 Session 中已有的上下文开始生成。高层入口在实现里就是这两步的组合：先 prefill，成功后再 decode。拆分的价值在于调用方可以在两步之间做事，比如建立检查点，或克隆 Session。prefill 的任务组织见第 4 章；decode 见第 5 章。
+代码行 `(1)` `RunPrefill` 接收 prompt，可以分块调用；`(2)` `RunDecode` 根据 Session 中已有的上下文开始生成。高层入口在实现里就是这两步的组合：先 prefill，成功后再 decode。拆开之后，调用方可以在两步之间执行其他操作，比如建立检查点，或克隆 Session。prefill 的任务组织见第 4 章；decode 见第 5 章。
 
-Engine 用哪份实现，由注册工厂决定：`EngineFactory` 按 Backend 保存候选实现的优先顺序，创建时沿序取第一个已注册的类型。实现靠注册宏在链接进程序时自行登记，所以可用类型取决于目标程序链接了哪些实现；头文件也要求调用方确保目标引擎已经注册。
+Engine 用哪份实现，由注册工厂决定：`EngineFactory` 按 Backend 保存候选实现的优先顺序，创建时按顺序取第一个已注册的类型。实现靠注册宏在链接进程序时自行登记，所以可用类型取决于目标程序链接了哪些实现；头文件也要求调用方确保目标引擎已经注册。
 
 ### 3.1.1　共享前缀：基于同一上下文创建分支
 
-克隆解决的是“同一个前缀、多条分支”的复用问题。头文件注释给的例子很直观：先对 “What is the tallest building ” 执行 prefill，再 Clone 出第二个 Session，一条分支接 “in the world?”、另一条接 “in France?”，公共前缀只需计算一次。`Clone` 的接口约定是：新 Session 取得调用点之前的全部设置与上下文。
+克隆解决的是“同一个前缀、多条分支”的复用问题。头文件注释给了一个例子：先对 “What is the tallest building ” 执行 prefill，再 Clone 出第二个 Session，一条分支接 “in the world?”、另一条接 “in France?”，公共前缀只需计算一次。`Clone` 的接口约定是：新 Session 取得调用点之前的全部设置与上下文。
 
-接口语义只能说明克隆后的行为，不能据此判定 KV cache 是立即深拷贝、引用共享还是写时复制。实际实现先共享上下文，分支修改时再分离；复制到底发生在哪一步，下面沿实现路径走一遍。
+接口语义只能说明克隆后的行为，不能据此判定 KV cache 是立即深拷贝、引用共享还是写时复制。实际实现先共享上下文，分支修改时再分离；复制发生在哪一步，下面按实现路径说明。
 
 #### Clone 的实现：任务顺序与写时复制
 
@@ -95,13 +95,13 @@ return ContextHandler::Bundle(
 
 深拷贝要等到分支真正分叉才发生。prefill 时执行器比较本次输入与已处理 token：一旦发现两者分叉，且当前分支不是共享链中最长的那条，就触发分离——把原上下文存回旧的共享对象，为当前分支建立新的共享对象，并调用 `CloneContext` 复制执行器侧状态。
 
-KV cache 的字节复制就发生在 `CloneContext` 里：compiled model 执行器遍历 KV cache 输入缓冲，逐块调用 `CopyTensorBuffer`；NPU 执行器的覆写版本按 K、V、C cache 名称匹配缓冲后做同样的复制。两条后端路径都只在写时分离阶段复制，初次共享上下文时一个字节都不搬。
+KV cache 的字节复制就发生在 `CloneContext` 里：compiled model 执行器遍历 KV cache 输入缓冲，逐块调用 `CopyTensorBuffer`；NPU 执行器的覆写版本按 K、V、C cache 名称匹配缓冲后做同样的复制。两条后端路径都只在写时分离阶段复制，初次共享上下文时不复制任何字节。
 
 `Clone` 的初始成本不能按一次完整 KV cache 拷贝估算。后续分支的 prefill 行为决定 buffer 是否以及何时复制。
 
 ## 3.2　对话层：消息与模板文本
 
-Engine 与 Session 管的是资源和状态，还没有谁管“对话”：多轮消息、角色、模板都不在它们的职责里。这层由 `Conversation` 承担，它负责模板渲染、角色消息、多模态输入、历史管理与模型特定处理。`Conversation::Create` 先请求 Engine 创建一个 Session。构造完成后，Conversation 保存对 Engine 的引用，并独占它创建的 Session。
+Engine 与 Session 管的是资源和状态，还没有对象负责“对话”：多轮消息、角色、模板都不在它们的职责里。这层由 `Conversation` 承担，它负责模板渲染、角色消息、多模态输入、历史管理与模型特定处理。`Conversation::Create` 先请求 Engine 创建一个 Session。构造完成后，Conversation 保存对 Engine 的引用，并独占它创建的 Session。
 
 <figure>
 {{#include figs/fig-3-2.svg}}
@@ -110,7 +110,7 @@ Engine 与 Session 管的是资源和状态，还没有谁管“对话”：多�
 
 多轮消息不能直接交给模型，得先按模型的聊天模板拼成文本。这层转换由三个对象分工。`Message` 是消息本身，一个 JSON 对象（`nlohmann::ordered_json` 的别名），既可以是 `{"role":"user","content":"..."}`，也可以携带工具调用或多模态字段。`PromptTemplate` 把消息序列、工具与额外上下文交给 Jinja 模板渲染；Jinja 是聊天模型普遍采用的文本模板语言，模型发布方用它声明消息如何拼接成 prompt。模型对应的 `ModelDataProcessor` 负责剩下的输入转换与输出解析。
 
-`ConversationConfig` 定义这层处理所需的配置。下列只读入口对应 Preface（对话的开场设定：初始消息、工具与额外上下文）、模板、约束解码开关与 Preface 预填充选项：
+`ConversationConfig` 定义这层处理所需的配置。下列只读入口对应 Preface（对话的初始设定：初始消息、工具与额外上下文）、模板、约束解码开关与 Preface 预填充选项：
 
 ```cpp
 // runtime/conversation/conversation.h:56
@@ -161,7 +161,7 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 
 代码行 `(1)` 与 `(2)` 把若干 Python 风格的方法改写为 MiniJinja 测试或过滤器。`(3)` 删除 MiniJinja 不识别的 generation 标记。该函数只处理字符串，不分析 Jinja 语法树，因此只转换列出的模式。未覆盖的模板语法会原样进入 `Apply`，并可能在 MiniJinja 渲染时返回错误。
 
-模板输入里还埋着一个不确定性来源：`now` 字段默认取对象构造时的当前时间，引用它的模板两次渲染就可能得到不同结果。这个坑在 3.3 节的增量提取里会正面遇到——那里要比较前后两次渲染的结果，所以实现会在同一对渲染中复用模板输入的非消息字段，并对结果做前缀校验。
+模板输入里还有一个不确定性来源：`now` 字段默认取对象构造时的当前时间，引用它的模板两次渲染就可能得到不同结果。3.3 节的增量提取会遇到这个问题——那里要比较前后两次渲染的结果，所以实现会在同一对渲染中复用模板输入的非消息字段，并对结果做前缀校验。
 
 ## 3.3　增量文本：单轮模板与全历史回退
 
@@ -181,7 +181,7 @@ return GetSingleTurnTextFromFullHistory(message, optional_args);  // (2)
 
 代码行 `(1)` 模板与处理器支持该能力时，代码只渲染当前这一轮，成本与历史长度无关。`(2)` 能力未声明，或处理器返回 `Unimplemented` 时，退回全历史路径。后文“每轮渲染两遍全历史”的成本只属于回退路径，支持单轮渲染的模板没有这笔开销。
 
-全历史回退的思路是做减法：先渲染旧消息得到旧串，再渲染“旧消息＋新消息”得到新串，新串减去旧串就是本轮增量——前提是新串确实以旧串开头。首轮且 Preface 尚未预填充时不必做减法，Preface 与新消息一次性渲染即可；其他情况都走这对渲染：
+全历史回退的做法是：先渲染旧消息得到旧串，再渲染“旧消息＋新消息”得到新串，新串去掉旧串前缀就是本轮增量——前提是新串确实以旧串开头。首轮且 Preface 尚未预填充时不必比较，Preface 与新消息一次性渲染即可；其他情况都执行这两次渲染：
 
 ```cpp
 // runtime/conversation/conversation.cc:192
@@ -235,9 +235,9 @@ return new_string.substr(old_string.length());                       // (4)
 
 代码行 `(1)` 复制模板输入会让 `now`、工具和额外上下文在这一对渲染中保持相同。追加消息仍可能改变模板前部或尾部，这次复制不能保证新渲染保留旧前缀。`(2)` 至 `(4)` 才给出检查条件与返回逻辑。
 
-`include_preface` 只控制该辅助函数在旧消息为空时是否渲染 Preface：为 true 时旧串留空、返回值包含 Preface；为 false 时先渲染 Preface，再从新串中减掉它。调用方传入的值恰是 `prefill_preface_on_init` 的反面——初始化时已经预填充过 Preface 的，这里就不再包含它。
+`include_preface` 只控制该辅助函数在旧消息为空时是否渲染 Preface：为 true 时旧串留空、返回值包含 Preface；为 false 时先渲染 Preface，再从新串中减掉它。调用方传入的值是 `prefill_preface_on_init` 的取反——初始化时已经预填充过 Preface 的，这里就不再包含它。
 
-全历史回退会向模板引擎重复提交旧消息。若每轮增加近似固定长度的消息，前 n 轮累计提交的历史文本量随轮数呈二次增长。以每轮渲染出约 500 字符估算：第 10 轮的回退先渲染约 4500 字符的旧串，再渲染约 5000 字符的新串；前 10 轮累计提交约 5 万字符，而十轮的新增输入合计只有 5000 字符。这笔账推导的只是待渲染的输入量，换算不出具体时延；单轮路径没有这笔重复开销。要不要为回退路径加渲染缓存，得在目标模板与设备上实测，而且缓存还得定义 Preface、模板或额外上下文变化时的失效规则。
+全历史回退会向模板引擎重复提交旧消息。若每轮增加近似固定长度的消息，前 n 轮累计提交的历史文本量随轮数呈二次增长。以每轮渲染出约 500 字符估算：第 10 轮的回退先渲染约 4500 字符的旧串，再渲染约 5000 字符的新串；前 10 轮累计提交约 5 万字符，而十轮的新增输入合计只有 5000 字符。这个估算只给出待渲染的输入量，换算不出具体时延；单轮路径没有这部分重复开销。要不要为回退路径加渲染缓存，得在目标模板与设备上实测，而且缓存还得定义 Preface、模板或额外上下文变化时的失效规则。
 
 `SendMessageAsync` 把本轮文本传递给 `ModelDataProcessor::ToInputDataVector`，再调用 `Session::RunPrefillAsync`。旧上下文能否复用，取决于单轮语义或前缀校验，而不是 `PromptTemplateInput` 的复制操作。
 
@@ -266,7 +266,7 @@ class Tokenizer {
 
 代码行 `(1)` `TextToTokenIds` 完成输入侧编码。`(2)` `TokenIdsToText` 用于输出侧；接口要求不完整的 BPE 序列返回 `DataLossError`。
 
-两种实现都只是薄转发：SentencePiece 把编码交给 `SentencePieceProcessor`，HuggingFace 交给 Rust `tokenizers` 库。上层调用方只依赖 `Tokenizer` 接口，不需要区分二者。
+两种实现都只做转发：SentencePiece 把编码交给 `SentencePieceProcessor`，HuggingFace 交给 Rust `tokenizers` 库。上层调用方只依赖 `Tokenizer` 接口，不需要区分二者。
 
 使用哪种实现由模型文件与构建配置共同决定。`ModelResourcesLitertLm::GetTokenizer` 先查 `.litertlm` 中的 SentencePiece section，命中即创建对应实现；否则再查 HuggingFace section，从其 JSON 数据创建。这两段数据由 loader 按 section 类型取出，对应 2.7 节 section 类型清单中的 `SP_Tokenizer` 与 `HF_Tokenizer_Zlib`。两个分支各由编译宏门控；section 存在而对应支持未编译进程序时，该函数返回 `UnimplementedError`。
 
@@ -274,7 +274,7 @@ class Tokenizer {
 
 ## 3.5　prefill 输入：token id 与 embedding
 
-token id 变成向量有两条路：主模型在内部自己查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再喂给模型。执行器按模型配置 `use_token_as_lookup` 选路：为 true 时直接把 id 写入 token 输入缓冲，否则先查 embedding、填进 embedding 输入缓冲。主机侧查表不是所有模型的必经步骤，它的主要用户是多模态输入：图像与音频的 embedding 来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 10 章展开）。
+token id 变成向量有两种方式：主模型在内部自己查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再交给模型。执行器按模型配置 `use_token_as_lookup` 选择方式：为 true 时直接把 id 写入 token 输入缓冲，否则先查 embedding、写入 embedding 输入缓冲。主机侧查表不是所有模型的必经步骤，它主要用于多模态输入：图像与音频的 embedding 来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 10 章展开）。
 
 `EmbeddingLookup` 的批量 prefill 接口如下：
 
@@ -299,7 +299,7 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
 
 ### 3.5.1　编译 embedding 模型与批量写入
 
-查表由一个单独编译的 embedding 模型完成：非负 token 逐个跑一次该模型，负数 id 则直接取默认向量：
+查表由一个单独编译的 embedding 模型完成：非负 token 逐个运行一次该模型，负数 id 则直接取默认向量：
 
 ```cpp
 // runtime/components/embedding_lookup/embedding_lookup_text.cc:50
