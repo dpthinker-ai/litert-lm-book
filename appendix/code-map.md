@@ -10,7 +10,7 @@
 | `runtime/engine/engine.h` | Engine / Session 对外接口 | 第 3 章 |
 | `runtime/engine/engine_settings.*`、`engine_factory.h` | 引擎配置、后端自注册工厂 | 第 3、8 章 |
 | `runtime/engine/litert_lm_main.cc`、`litert_lm_lib.cc` | CLI 演示程序、引擎装配（后端配置分支） | 第 2、8 章 |
-| `runtime/engine/cpu_affinity_utils.*` | CPU 亲和性（绑性能核） | 第 8 章 |
+| `runtime/engine/cpu_affinity_utils.*` | CPU 亲和性（线程绑定到性能核） | 第 8 章 |
 | `runtime/conversation/` | 多轮对话、聊天模板、单轮渲染与全历史后缀提取、model_data_processor | 第 3 章 |
 | `runtime/conversation/io_types.h` | Message(JSON)、Preface、Channel | 第 3、6、10 章 |
 | `runtime/core/tasks.cc` | Prefill / Decode / DecodeOneStep / ShouldStop 算法 | 第 4、5 章 |

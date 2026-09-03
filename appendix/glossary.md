@@ -12,13 +12,13 @@
 | 三类物理约束 | — | 1 | 端侧 LLM 的三类约束：内存容量、内存带宽、功耗与异构 |
 | 内存容量约束 | — | 1 | 权重、KV cache、激活与系统占用之和不得超过可用物理内存 |
 | 内存带宽约束 | — | 1 | batch=1 的稠密模型 decode 往往需要每步读取主干权重；当算力与其他开销不先到顶时，带宽限制吞吐 |
-| quantization | 量化 | 1 | 用较低比特数表示权重；存储位宽下降可减少体积与权重搬运量，实际收益还取决于 kernel 和硬件支持 |
+| quantization | 量化 | 1 | 用较低比特数表示权重；存储位宽下降可减少体积与权重读取量，实际收益还取决于 kernel 和硬件支持 |
 | scale | 缩放系数 | 1 | 量化整数每差 1 对应的实数步长；反量化公式 x ≈ s × (q − z)，可按整层、通道或分组共享 |
 | zero point | 零点 | 1 | 实数 0 对应的量化整数；对称量化中恒为 0 可省略，非对称量化需与 scale 一起保存 |
 | 稠密模型 | dense model | 1 | 所有参数每步前向都参与计算的模型；与 MoE 等稀疏激活架构相对 |
 | MoE | 混合专家 | 1 | Mixture of Experts，稀疏激活的架构；每个 token 只经过部分专家参数，以较少的有效计算换取更大的总参数量 |
 | Roofline | 屋顶线 | 1 | 根据算术强度与硬件上限判断计算或带宽约束的分析框架 |
-| 算术强度 | arithmetic intensity | 1 | 每次数据搬运对应的运算量；Roofline 用它判断工作点靠近算力还是带宽约束 |
+| 算术强度 | arithmetic intensity | 1 | 每单位数据访问量对应的运算量；Roofline 用它判断工作点靠近算力还是带宽约束 |
 | memory-bound / compute-bound | 带宽受限 / 算力受限 | 2 | 工作点的上限由带宽项或计算项决定：带宽项更低称 memory-bound，计算项更低称 compute-bound |
 | TTFT | 首 token 时延 | 1 | time-to-first-token，从发起请求到首个输出 token 可用的时间 |
 | Engine | — | 3 | 持有模型、tokenizer 与执行器等可共享资源，并创建 Session |

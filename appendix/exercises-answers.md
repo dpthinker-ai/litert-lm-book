@@ -5,31 +5,31 @@
 ## 第 1 章
 
 1. INT4 7B 权重 7 × 10⁹ × 0.5 B ≈ 3.26 GiB；8K 上下文 KV（示例参数 128 KiB/token）≈ 1 GiB，两项合计约 4.26 GiB。能否在可用 7 GiB 内运行，还取决于后端工作区、激活峰值和其他进程占用，不能只由这两项保证。32K 上下文 KV 约 4 GiB，仅权重与 KV 已约 7.26 GiB，超过题设可用内存。
-2. 带宽 9600 × 10⁶ × 8 B = 76.8 GB/s；INT8 4B 权重每 token 读 4 × 10⁹ B；带宽侧算术上限为 76.8 ÷ 4 ≈ 19 tokens/s。该上限假定接口峰值可持续供给模型，而且每步只有一次权重搬运。实际还受有效带宽、KV 流量、同步、kernel 与温度约束，不能当作持续性能承诺。
+2. 带宽 9600 × 10⁶ × 8 B = 76.8 GB/s；INT8 4B 权重每 token 读 4 × 10⁹ B；带宽侧算术上限为 76.8 ÷ 4 ≈ 19 tokens/s。该上限假定接口峰值可持续供给模型，而且每步只读取一次权重。实际还受有效带宽、KV 流量、同步、kernel 与温度约束，不能当作持续性能承诺。
 3. 若题设明确假定 20 pJ/byte，则每 token 读 1 GB 对应约 0.02 J；15 Wh = 54000 J，理想上限为 2.7 × 10⁶ token。20 pJ/byte 不是跨工艺通用常数；结果只用于展示计算方法，不代表具体设备续航。
-4. 在典型 batch=1 稠密模型中，prefill 的多个位置可以复用同一批权重，算术强度通常较高。decode 每步只处理一个新 token，却仍需访问大量权重，算术强度较低。短 prompt、较大 batch、稀疏或 MoE 模型、量化解包与固定调度开销，都可能使这种简化判断失效；是否落入哪一侧仍要结合实测工作点。
+4. 在典型 batch=1 稠密模型中，prefill 的多个位置可以复用同一批权重，算术强度通常较高。decode 每步只处理一个新 token，却仍需访问大量权重，算术强度较低。短 prompt、较大 batch、稀疏或 MoE 模型、量化解包与固定调度开销，都可能使这种简化判断失效；属于哪一侧仍要结合实测工作点。
 5. 若该工作点已确认受带宽约束，算力翻倍不会改变带宽上限；提高带宽或减少每 token 访存量才可能提升上限。若 kernel、量化解包或同步仍受计算与固定开销影响，则算力变化仍可能改变实测吞吐。
-6. `Run` 是 LiteRT `CompiledModel` 的执行入口，驱动错误落在平台后端层，不在 LiteRT-LM 的编排逻辑内。先核对 LiteRT 的编译选项、delegate 与 buffer 交接，再逐层向上验证 LiteRT-LM 的输入组装。
+6. `Run` 是 LiteRT `CompiledModel` 的执行入口，驱动错误位于平台后端层，不在 LiteRT-LM 的编排逻辑内。先核对 LiteRT 的编译选项、delegate 与 buffer 交接，再逐层向上验证 LiteRT-LM 的输入组装。
 
 ## 第 2 章
 
 1. 1024 ÷ 999.1 + 1 ÷ 50.6 ≈ 1.025 + 0.020 = 1.045 s，按表中精度显示为约 1.04 s。它由同一轮的 prefill、decode 指标计算得到，不是另一只计时器记录的独立 TTFT。
 2. 在两档 \\(B_{\mathrm{eff}}\\) 相同、全部耗时都可折算为字节、256-token 档上下文成本忽略不计的假设下，\\(d_{\mathrm{eq}} = 2.26\ \text{GB} \div 4096 \times (50.6 \div 45.6 - 1) \approx 59\ \text{KiB/token}\\)。它高于 28 KiB 的 KV cache 理论大小，因为这项等效估算还吸收了注意力计算、缓存行为、带宽利用率变化和其他随上下文增长的成本。它不是 DRAM 流量测量值。
 3. 仅凭这四个数字不能判断异常。模型条件至少要补全模型产物与哈希、量化和运行时版本。输入条件要有 prompt token 数、prefill/decode 长度、batch 与 `max_num_tokens`。后端条件要有 CPU/GPU/NPU、delegate、线程数、缓存与 MTP/采样配置。测量条件要说明冷启动或热启动、重复次数与统计量、Init 字段定义、外部墙钟、温度和功耗模式。缺少这些条件时，不应把结果与本书某一档数据直接比较。
-4. 否则计时终点落在异步提交返回处，测得的是提交耗时而非硬件完成耗时。实现是 `params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value())`（`runtime/core/tasks.cc:435`）。
+4. 否则计时终点位于异步提交返回处，测得的是提交耗时而非硬件完成耗时。实现是 `params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value())`（`runtime/core/tasks.cc:435`）。
 5. `MaskLogits` 在第 4 层（组件层）实现、被第 2 层（编排层）的 `DecodeAndSample` 外部路径调用；它修改的 logits 来自第 3 层执行器的 `DecodeLogits`。
 
 ## 第 3 章
 
 1. 可让模板根据 `loop.last` 改写既有消息，例如把最后一条渲染为 `<last>…</last>`、其他条渲染为 `<old>…</old>`。加入新消息后，原来的最后一条会从 `<last>` 变成 `<old>`，所以新串不再保留旧串前缀。`runtime/conversation/conversation.cc:241-245` 的显式前缀检查会返回 `InternalError`，而不是把不正确的差值交给 prefill。
 2. 同步 `SessionAdvanced::Clone` 先把克隆任务排到源 Session 的既有任务之后；执行管理器随后调用 `ResourceManager::CloneContextHandler`。这一步让两个 handler 共享同一个 `SharedProcessedContext`，只按值复制 `RuntimeConfig` 与 `RuntimeState`，不复制 KV。后续分支 prefill 需要写时分离时，`SaveProcessedContextAndSeparateLoadedHandler` 才调用 executor 的 `CloneContext()`；compiled executor 的 `CloneKVCacheBuffers()` 或 NPU 对应分支再逐块调用 `CopyTensorBuffer`。因此，深拷贝属于后续写时分离，不是初次 Clone 的固定成本。
-3. 单轮路径要求模板声明 `supports_single_turn`，并由模型数据处理器实现 `RenderSingleTurnTemplate`；该调用失败时错误直接返回。模板不支持单轮渲染时，Conversation 才进入全历史回退。处理器须能把历史消息转换为模板输入。模板须能分别渲染旧历史和加入新消息后的完整历史，而且新串必须以旧串开头。转换、渲染或前缀检查任一失败都会返回错误，不会再退到第三条路径。
+3. 单轮路径要求模板声明 `supports_single_turn`，并由模型数据处理器实现 `RenderSingleTurnTemplate`；该调用失败时错误直接返回。模板不支持单轮渲染时，Conversation 才进入全历史回退。处理器须能把历史消息转换为模板输入。模板须能分别渲染旧历史和加入新消息后的完整历史，而且新串必须以旧串开头。转换、渲染或前缀检查任一失败都会返回错误，不会再进入第三条路径。
 4. `byte_offset` 为 \\(3 \times 4\ \text{B} \times 2048 = 24576\ \text{B} = 24\ \text{KiB}\\)。它只把本次写指针定位到当前输出张量的第 3 个 embedding 槽位之后。跨轮复用由 Session 上下文、模板后缀提取与 KV 状态承担；`byte_offset` 不保存历史，也不会跨调用自动累积。
 5. 例如 `{% if messages[0].content.startswith ("x") %}` 在方法名与左括号之间留了空格。Python 接受这种写法，但当前 RE2 规则只匹配紧邻的 `.startswith(`，所以不会把它改成 MiniJinja 的 `is startingwith` 形式。`PromptTemplate` 构造时会保存 MiniJinja 的模板创建错误；若错误直到求值才出现，也沿同一路径返回。C++ 侧第一次调用 `PromptTemplate::Apply` 时把错误转换为 `InternalError("Failed to apply template: …")`，不是在 `EditTemplateForMinijinja` 中主动拒绝。
 
 ## 第 4 章
 
-1. 700 < 1024，铺满循环不执行；收尾阶段从大到小查找入口。由于 128 < 700，下一较小入口无法容纳剩余 token，故选择 1024。分块计划为 [1024]，填充 324，填充率约 32%。若允许组合 6 个 128 入口（768 ≥ 700），填充可降至 68（约 9%）；源码 TODO 记录了这一备选方向。
+1. 700 < 1024，反复使用最大入口的循环不执行；随后从大到小查找能容纳余数的入口。由于 128 < 700，下一较小入口无法容纳剩余 token，故选择 1024。分块计划为 [1024]，填充 324，填充率约 32%。若允许组合 6 个 128 入口（768 ≥ 700），填充可降至 68（约 9%）；源码 TODO 记录了这一备选方向。
 2. 循环依次取 512、512、512、512 个 token，因此能确认会调用 4 次 `PrefillInternal`。代码没有给出分块前后的峰值激活生命周期、分配器复用、各块执行时间或后端同步成本。激活峰值和 TTFT 的方向与幅度都要在目标后端实测，不能由块数直接推出。
 3. `do_prefill_sync_` 为 false 时，最后一组之前的工作组异步提交；最后一组是否异步还取决于 `wait_for_completion`。输入缓冲中只要发现 Metal memory，代码就把 `do_prefill_sync_` 设为 true，所有工作组改为同步执行；源码旁的 TODO 明确把 Metal 异步 prefill 留作后续工作。
 4. 基准模型只有 128 与 1024 两档静态 prefill signature。250、500、1000 token 都使用 1024 档，对应墙钟时间约 3.9 s；吞吐上升主要来自同一固定分块中的有效 token 比例提高。仅凭这条曲线不能判断算术强度或计算单元利用率。
@@ -45,8 +45,8 @@
 
 ## 第 6 章
 
-1. 28 KiB × 8192 = 224 MiB。32768 不小于占位值 32003，`GetTargetNumber` 回落到占位值以下最大的 256 的倍数 32000 并打印警告；28672 B × 32000 = 917,504,000 B = 875 MiB。
-2. `Session::Clone` 本身不搬运 LLM KV，搬运量为 0。新旧 handler 共享同一个 `SharedProcessedContext`，各自持有按值复制的 `RuntimeConfig` 与 `RuntimeState`；其中 `RuntimeState::rand_gen` 是 `shared_ptr`，复制状态时不会复制底层随机数生成器。较短分支后续需要截断或改写共享历史时才触发写时分离。若此时使用 compiled executor，且上下文宽度为 4096，一组活动 KV 输入缓冲约为 \\(4096 \times 28\ \text{KiB} = 112\ \text{MiB}\\)；`CopyTensorBuffer` 按 `PackedSize()` 复制完整容量，不按有效前缀裁剪。
+1. 28 KiB × 8192 = 224 MiB。32768 不小于占位值 32003，`GetTargetNumber` 改用占位值以下最大的 256 的倍数 32000 并打印警告；28672 B × 32000 = 917,504,000 B = 875 MiB。
+2. `Session::Clone` 本身不复制 LLM KV，复制量为 0。新旧 handler 共享同一个 `SharedProcessedContext`，各自持有按值复制的 `RuntimeConfig` 与 `RuntimeState`；其中 `RuntimeState::rand_gen` 是 `shared_ptr`，复制状态时不会复制底层随机数生成器。较短分支后续需要截断或改写共享历史时才触发写时分离。若此时使用 compiled executor，且上下文宽度为 4096，一组活动 KV 输入缓冲约为 \\(4096 \times 28\ \text{KiB} = 112\ \text{MiB}\\)；`CopyTensorBuffer` 按 `PackedSize()` 复制完整容量，不按有效前缀裁剪。
 3. 缓冲内容不复制，只交换输入和输出缓冲指针。读旧写新之后调用 `std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_)`；prefill 路径在 `runtime/executor/llm_litert_compiled_model_executor.cc:738`，decode 路径在 `runtime/executor/llm_litert_compiled_model_executor.cc:947`。
 4. 按 28 KiB/token 估算，预留容量从约 112 MiB 增至约 224 MiB。本书同 prompt 实验中，decode 从 26.4 降至 21.5 tokens/s，约下降 19%。实验没有用性能计数器分离注意力、KV 访存和其他执行成本，不能把全部降幅归到单一原因。
 5. compiled executor 的 `CloneContext` 只遍历活动的 `input_kv_cache_buffers_`，每块都按 `PackedSize()` 完整复制；非单缓冲恢复路径通过移动保存的 map 接管所有权，不再复制内容。NPU executor 则从 prefill 输入中选择名称以 K、V 或 C cache 前缀开头的缓冲，仍按各自 `PackedSize()` 完整复制；恢复时先核对源、目标大小，再把保存内容 `memcpy` 回固定输入缓冲。两条 executor 路径都不调用 `LitertKVCache::DeepCopy`；后者是 `KVCacheInterface` 的独立实现，会复制 bank 1 及可选的 bank 2。
