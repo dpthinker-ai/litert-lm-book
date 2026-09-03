@@ -2,11 +2,11 @@
 
 > 本章分析 Python、Kotlin、Swift 与 Web 如何经 C ABI、JNI 或 Embind 进入同一套 C++ runtime，并说明流式回调、数据复制、字符串所有权和显式释放的边界契约。本章还比较绑定层的并发隔离方式，并介绍测试替身与跨平台构建。
 
-LiteRT-LM 的 README 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。[^ch11-readme] 这些绑定并不共用同一条原生调用路径：Python 与 Swift 经过一个 C 兼容的头文件，Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章分析其中 Python、Kotlin、Swift 与 Web 四种绑定，Flutter 不展开。前四节讲三类原生边界各自怎样持有原生对象、怎样配对创建与释放（11.1 至 11.4 节）；中间四节讲数据穿过边界时的契约，包括流式回调、多模态输入的复制、字符串的所有权与编码，以及 Swift 上两个显式释放问题（11.5 至 11.8 节）；最后三节讲并发隔离、测试替身与跨平台构建。
+LiteRT-LM 的 README 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。[^ch11-readme] 这些绑定并不共用同一条原生调用路径：Python 与 Swift 经过一个 C 兼容的头文件，Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章分析其中 Python、Kotlin、Swift 与 Web 四种绑定，Flutter 不展开。前四节说明三类原生边界各自怎样持有原生对象、怎样配对创建与释放（11.1 至 11.4 节）；中间四节说明数据经过边界时的契约，包括流式回调、多模态输入的复制、字符串的所有权与编码，以及 Swift 上两个显式释放问题（11.5 至 11.8 节）；最后三节说明并发隔离、测试替身与跨平台构建。
 
 ## 11.1　C ABI：C 兼容的原生边界
 
-C++ 的名字修饰（name mangling）、异常、模板和对象布局都随编译器与标准库的 ABI 变化。Python 的 `ctypes` 与 Swift 的 C 互操作只认 C 兼容的符号和数据类型，不能直接导入任意 C++ 类的方法。LiteRT-LM 因此提供一个 C 头文件作为接口：它是 Python 与 Swift 共用的 C 兼容边界，但不是 Kotlin 和 Web 的必经路径。
+C++ 的名字修饰（name mangling）、异常、模板和对象布局都随编译器与标准库的 ABI 变化。Python 的 `ctypes` 与 Swift 的 C 互操作只接受 C 兼容的符号和数据类型，不能直接导入任意 C++ 类的方法。LiteRT-LM 因此提供一个 C 头文件作为接口：它是 Python 与 Swift 共用的 C 兼容边界，但不是 Kotlin 和 Web 的必经路径。
 
 这个头文件先用不透明句柄（opaque handle）声明 engine 和 session，两者只有结构体类型名，不公开成员：
 
@@ -105,7 +105,7 @@ external fun nativeCreateEngine(
 external fun nativeDeleteEngine(enginePointer: Long)  // (2)
 ```
 
-代码行 `(1)` 以 `Long` 承载原生指针的位模式，`(2)` 把同一数值传给删除函数。Kotlin 不解释这个数值指向的对象。JNI 需要一层编译后的原生实现把 `jlong` 转回 C++ 指针，这一点与运行时声明签名的 `ctypes` 不同。
+代码行 `(1)` 以 `Long` 保存原生指针的位模式，`(2)` 把同一数值传给删除函数。Kotlin 不解释这个数值指向的对象。JNI 需要一层编译后的原生实现把 `jlong` 转回 C++ 指针，这一点与运行时声明签名的 `ctypes` 不同。
 
 Swift（iOS 与 macOS）使用 C 互操作，导入 C 模块后可直接调用 `litert_lm_engine_create`。它的 `Engine` 是一个 actor：
 
@@ -151,7 +151,7 @@ JNI_METHOD(nativeDeleteEngine)(JNIEnv* env, jclass thiz, jlong engine_pointer) {
 
 Web 的 Embind 也在编译期从 C++ 导出 JavaScript 可见对象。源码可以确认三种边界路径及各自的句柄形态，但没有说明项目选择这些路径的全部设计理由。因此，表 11-1 只记录实现事实，不把 FFI 类型概括为普遍的选型规则。
 
-| 语言 | FFI 机制 | 经 C ABI？ | 句柄形态 | 资源释放落点 |
+| 语言 | FFI 机制 | 经 C ABI？ | 句柄形态 | 资源释放位置 |
 |---|---|---|---|---|
 | Python | ctypes（运行时声明签名） | 是 | `c_void_p` | 上下文管理器 / `__del__` |
 | Kotlin | JNI（`external fun` 声明） | 否，直连 C++ | `jlong`（`Engine*` 位模式） | `AutoCloseable` |
@@ -207,7 +207,7 @@ absl::AnyInvocable<void(absl::StatusOr<litert::lm::Responses>)> CreateCallback(
 }
 ```
 
-这个 lambda 把 C++ 状态映射为 C 参数。代码行 `(1)` 在 `StatusOr` 失败时把状态字符串放进 `error_msg`，同时把 `is_final` 置为 true；`(2)` 表示正常结束；`(3)` 和 `(4)` 分别传递达到 token 上限与取消状态；`(5)` 对每条增量文本调用一次回调，并保持 `is_final` 为 false。`(5)` 传入的是 `text.data()`，没有转移底层缓冲的所有权：绑定层只能在回调期间读取该指针，把指针本身保存到回调之外会违反接口契约。Python 或 Swift 若需要保留增量文本，应先复制为本语言拥有的字符串。
+这个 lambda 把 C++ 状态映射为 C 参数。代码行 `(1)` 在 `StatusOr` 失败时把状态字符串写入 `error_msg`，同时把 `is_final` 置为 true；`(2)` 表示正常结束；`(3)` 和 `(4)` 分别传递达到 token 上限与取消状态；`(5)` 对每条增量文本调用一次回调，并保持 `is_final` 为 false。`(5)` 传入的是 `text.data()`，没有转移底层缓冲的所有权：绑定层只能在回调期间读取该指针，把指针本身保存到回调之外会违反接口契约。Python 或 Swift 若需要保留增量文本，应先复制为本语言拥有的字符串。
 
 发起流式的入口：
 
@@ -233,7 +233,7 @@ int litert_lm_session_run_decode_async(LiteRtLmSession* session,
 
 ## 11.6　多模态输入在 C 边界的扁平化
 
-第 10 章说明了图像和音频如何变成 embedding 进入 prefill。本节只看文本、图像和音频怎样表示为 C ABI 可接收的数据。C ABI 用带类型标签的结构体表示输入：
+第 10 章说明了图像和音频如何变成 embedding 进入 prefill。本节只说明文本、图像和音频怎样表示为 C ABI 可接收的数据。C ABI 用带类型标签的结构体表示输入：
 
 ```cpp
 // c/engine.h:243-260
@@ -415,7 +415,7 @@ class Conversation(
 
 代码行 `(1)` 声明 `AutoCloseable`，`(2)` 允许调用方主动释放，`(3)` 同步删除原生 `Conversation*`。原子状态转换防止重复删除，第二次 `close()` 会抛出异常；调用方也可以用 Kotlin 的 `use { }` 在作用域结束时执行 `close()`。`LiteRT-LM#2589` 正是用这个 `Conversation.close()` 对照 Swift API，讨论对象不是 `Engine.close()`。[^ch11-issue-2589]
 
-`LiteRT-LM#2589` 不能证明当前核心引擎普遍只允许一个 session。该 issue 明确记录的环境是 v0.12.0，错误栈落在当时的 session 实现。[^ch11-issue-2589] 本书冻结版本的资源管理器头文件注释则明确说明，共享资源可供多个 session 使用。该案例说明的是 Swift `Conversation` 缺少公开的确定释放接口；报告中的单 session 约束只属于其记录的版本与实现路径。
+`LiteRT-LM#2589` 不能证明当前核心引擎普遍只允许一个 session。该 issue 明确记录的环境是 v0.12.0，错误栈位于当时的 session 实现。[^ch11-issue-2589] 本书冻结版本的资源管理器头文件注释则明确说明，共享资源可供多个 session 使用。该案例说明的是 Swift `Conversation` 缺少公开的确定释放接口；报告中的单 session 约束只属于其记录的版本与实现路径。
 
 `LiteRT-LM#2613` 是独立的 Engine 级案例。[^ch11-issue-2613] 当前的 Swift 封装也只在 `deinit` 中调用 `litert_lm_engine_delete`。该 issue 报告，actor 的 `deinit` 不受 actor 隔离保护，删除操作可能在释放最后一个强引用的线程上执行；issue 请求增加 actor 隔离的公开 `Engine.close()`，使删除与其他 Engine 操作串行。这个案例涉及 Engine 销毁的执行上下文，与 Conversation 的单 session 报错不同。
 
