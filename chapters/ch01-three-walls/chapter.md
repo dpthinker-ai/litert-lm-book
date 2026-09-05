@@ -6,7 +6,7 @@
 
 LiteRT-LM 是一个在手机、手表和浏览器等受限设备上运行 LLM 的推理运行时。进入约束分析之前，先回答一个问题：它与 LiteRT 是什么关系。1.2 节说明端侧部署的动机，1.3 至 1.5 节量化三类物理约束，1.6 节对照同类运行时。后续章节讨论实现时，会反复回到这一节建立的软件栈分层。
 
-Google 官方将 LiteRT‑LM 定义为“使用 LiteRT 运行 LLM 的编排层”。[^ch01-litertlm-overview] “编排”一词说明了职责划分：LiteRT‑LM 处理 LLM 特有的模型容器、tokenizer、提示模板、会话状态、prefill/decode 循环、采样、约束解码、工具调用和多模态输入；LiteRT 则负责通用模型的加载、编译、张量缓冲和执行，把计算分派给 CPU、GPU 或 NPU 对应的实现。本书把每一条这样的执行路径称为后端（backend），它包括处理器本身，也包括驱动它的 kernel、后端委托与厂商运行时。一部手机是一台设备，上面通常同时有 CPU、GPU、NPU 几个可选后端；选后端选的是执行路径，不是换设备。LiteRT 的 `CompiledModel` API 通过编译选项选择后端，然后提供同步或异步的模型调用。[^ch01-litert-overview]
+Google 官方将 LiteRT‑LM 定义为“使用 LiteRT 运行 LLM 的编排层”。[^ch01-litertlm-overview] LiteRT‑LM 处理 LLM 特有的模型容器、tokenizer、提示模板和会话状态。它还组织 prefill/decode 循环与采样，处理约束解码、工具调用和多模态输入。LiteRT 则负责通用模型的加载、编译、张量缓冲和执行，把计算分派给 CPU、GPU 或 NPU 对应的实现。本书把每一条这样的执行路径称为后端（backend），它包括处理器本身，也包括驱动它的 kernel、后端委托与厂商运行时。一部手机是一台设备，上面通常同时有 CPU、GPU、NPU 几个可选后端；选后端选的是执行路径，不是换设备。LiteRT 的 `CompiledModel` API 通过编译选项选择后端，然后提供同步或异步的模型调用。[^ch01-litert-overview]
 
 二者不是并列关系。LiteRT‑LM 调用 LiteRT，使用者通常不直接操作 `CompiledModel`；反过来，只使用 LiteRT 也不会自动获得对话历史、停止条件或工具调用——这些属于 LLM 的上层语义。
 
@@ -19,18 +19,18 @@ Google 官方将 LiteRT‑LM 定义为“使用 LiteRT 运行 LLM 的编排层�
 
 > 表 1-1　LiteRT‑LM 管理 LLM 生成过程，LiteRT 管理模型图和张量的设备执行；平台后端决定算子在哪块硬件上执行。
 
-signature 一词在全书反复出现，先在这里定义：一个编译后的模型可以暴露多个具名调用入口，每个入口绑定一组固定形状的输入输出张量，这样的入口称为 signature，相当于一个库导出的多个函数。与函数不同，signature 的输入长度也在模型导出时冻结，同一个模型文件因此通常带有多个入口——本书基准模型有 `prefill_128`、`prefill_1024`、`decode`、`verify` 四个，运行时按用途和输入长短选用。固定长度带来的分块与填充见第 4 章。
+signature 是模型暴露的具名调用入口，规定了该入口的输入输出张量。张量维度可以是静态的，也可以包含运行时确定的动态维度；具名入口并不要求输入长度固定。本书基准模型采用静态入口，包括 `prefill_128`、`prefill_1024`、`decode` 和 `verify`。其中两种 prefill 入口的输入长度分别为 128 和 1024，运行时按输入长度选择并分块。第 4 章说明固定长度带来的填充，以及动态形状路径的处理方式。
 
 这条调用链在代码里如下。`Engine` 初始化时先取得 LiteRT 的 `Environment`，再创建专用执行器；执行器从 `.litertlm` 模型包中读取 prefill/decode 子模型，并调用 `CompiledModel::Create` 完成后端编译。这里的编译发生在设备上：`.litertlm` 存放的子模型是离线转换得到的可移植计算图与权重，GPU 的 kernel 程序要等首次创建时在设备上编译，编译产物可写入程序缓存复用；NPU 路径另有绑定芯片代际的预编译产物。
 
-运行阶段，LiteRT‑LM 负责准备 token、position、attention mask 与 KV cache buffer，真正的 prefill 和 decode 计算则分别交给 LiteRT 的 `CompiledModel::Run` 与 `RunAsync`。这些调用点的完整上下文分别见第 7 章（编译与加载）和第 8 章（缓冲绑定、执行与 NPU 路径）。
+运行阶段，LiteRT‑LM 负责准备 token、position、attention mask 与 KV cache buffer。在 CPU/GPU 的通用 compiled-model 路径中，prefill 按同步设置调用 `Run` 或 `RunAsync`，decode 通过 `RunAsync` 提交。第 4 章说明 prefill 的等待条件与 Metal 同步限制；第 8 章区分通用执行器、NPU 专用执行器与 ARTISAN 路径。
 
 <figure>
 {{#include figs/fig-1-1.svg}}
 <figcaption>图 1-1　LiteRT‑LM 位于应用与 LiteRT 之间：上层组织 LLM 生成语义，下层把模型 signature 和张量提交给硬件后端。</figcaption>
 </figure>
 
-本书对 LiteRT 的介绍只限于解释 LiteRT‑LM 所必需的边界：`Model`、`CompiledModel`、`TensorBuffer`、编译选项、signature 调用，以及后端委托与 buffer 交接。LiteRT 的通用模型转换、算子开发、完整 C/C++ API 和编译器内部实现不在讨论范围内。如果性能或兼容性问题进入后端委托、驱动或厂商运行时，本书会明确说明分析到哪一层为止，不会把下层行为归为 LiteRT‑LM 自身的机制。
+本书对 LiteRT 的介绍只限于解释 LiteRT‑LM 所必需的边界：`Model`、`CompiledModel`、`TensorBuffer`、编译选项、signature 调用，以及后端委托与 buffer 交接。LiteRT 的通用模型转换、算子开发、完整 C/C++ API 和编译器内部实现不在讨论范围内。性能或兼容性问题可能来自后端委托、驱动或厂商运行时。本书会说明这些行为所属的软件层级，区分它们与 LiteRT‑LM 的职责。
 
 ## 1.2　为什么要在端侧部署
 
