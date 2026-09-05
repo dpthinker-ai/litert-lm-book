@@ -1,0 +1,57 @@
+{
+  "started_utc": "2026-09-05T02:48:24.778954+00:00",
+  "parameters": {
+    "serial": "AWPQUT6116001779",
+    "backend": "gpu",
+    "seconds": 180,
+    "requests": 1,
+    "sample_ms": 500,
+    "label": "gpu-smoke",
+    "bundle": "tmp/m3-build/bundle",
+    "prompt": "experiments/m3_prompt.txt"
+  },
+  "source_commit": "a0afb5a56acd106b23a2b2385b8469834dc268c0",
+  "model_expected_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "remote_dir": "/data/local/tmp/litertlm/m3-024824-778954Z-gpu-smoke",
+  "clock": "device CLOCK_MONOTONIC nanoseconds",
+  "environment_unknown": [
+    "ambient_temperature",
+    "case",
+    "external_cooling",
+    "vendor_performance_mode"
+  ],
+  "max_context_tokens": 4096,
+  "max_output_tokens": 512,
+  "sampler": {
+    "type": "greedy",
+    "seed": 42
+  },
+  "mtp": false,
+  "cpu_threads": "upstream default",
+  "cache_dir": "/data/local/tmp/litertlm/m3-cache",
+  "process_exit": 3,
+  "stop_reason": "client_error",
+  "bundle_sha256": {
+    "libGemmaModelConstraintProvider.so": "985ec5778144730b80666a0f71f1e06038eb07dd1a3e941c6ab7f963eda00a8e",
+    "libLiteRt.so": "7dea9fe11af63e3b7a5506a44e00a72e98a64f6bbcffba28f6f19185a789ef98",
+    "libLiteRtGpuAccelerator.so": "776b19422095d818b862405eee16cf883d0a70c6a8a7ef9dd060864094edb0aa",
+    "libLiteRtOpenClAccelerator.so": "f7d9d273c4d46693140d312d164fac96a0e37f1f1954bfebf40384d40223504b",
+    "libLiteRtTopKOpenClSampler.so": "5ca7f34117d8299f88a52f2e6ba4c50219a62bfb870ba08c9f38c46c7122f984",
+    "libLiteRtTopKWebGpuSampler.so": "875c089d7ad163a236cc6f2675f9cc3ab03da0827bb4c1798d7ab94a710d7345",
+    "libLiteRtWebGpuAccelerator.so": "5db631d2ac82437d4fcccfdbf41715c1653b034815c9ffab329f1cfda87a0c99",
+    "liblitert-lm.so": "59013cb5232dbadf82b94312c508d981aa2875c4d335c6e175e34815aab171cd",
+    "m3_observe": "e9aaf6a3f31996944c303d9723e7967b3dd059a62f14906c73440c109be9f22c"
+  },
+  "observer_source_sha256": "07d5cf75ea6f4bb1e2b762b6b94173b79b41b11438740855ddc214bdc3dbed44",
+  "prompt_sha256": "144348f9cfd6c00a233fb6778e36e2467d76949fbcd95914afa003ee4d52cb64",
+  "command": "cd /data/local/tmp/litertlm/m3-024824-778954Z-gpu-smoke && LD_LIBRARY_PATH=/data/local/tmp/litertlm/m3-024824-778954Z-gpu-smoke ./m3_observe /data/local/tmp/litertlm/model.litertlm gpu /data/local/tmp/litertlm/m3-024824-778954Z-gpu-smoke/prompt.txt /data/local/tmp/litertlm/m3-024824-778954Z-gpu-smoke/events.jsonl 180 1 500",
+  "finished_utc": "2026-09-05T02:48:55.252836+00:00",
+  "raw_sha256": {
+    "commands.jsonl": "cb33cc13511c4974aa1d9c8ad4f0c614efd47a82026fc8ddd50aec8d7a36dc8c",
+    "events.jsonl": "31bf8a0eaa4f1a2786ff0260e1a6c533776ca94d835233335ed16d0efac69611",
+    "prompt.txt": "144348f9cfd6c00a233fb6778e36e2467d76949fbcd95914afa003ee4d52cb64",
+    "resources.jsonl": "290d0cd53348f12332c063f3f9af37290249adcaaea2c1c3ffccba4dfd0fc60b",
+    "stderr.txt": "02fca5af840a699acff6f915bbb8b8da22ecaffa810b95373d17a9d7842b28a3",
+    "stdout.txt": "6edc8869dc69c0b23576be4eb0c9df380d145af8992671c7346be1a9e439f501"
+  }
+}

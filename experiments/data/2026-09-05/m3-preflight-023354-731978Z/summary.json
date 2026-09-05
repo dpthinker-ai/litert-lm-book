@@ -1,0 +1,58 @@
+{
+  "status": "blocked",
+  "inference_run": false,
+  "source_expected_commit": "a0afb5a56acd106b23a2b2385b8469834dc268c0",
+  "model_expected_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "missing": [
+    "model_readable"
+  ],
+  "observations": {
+    "ro.product.manufacturer": "HONOR",
+    "ro.product.model": "MEP-AN00",
+    "ro.hardware": "qcom",
+    "ro.soc.model": "SM8750",
+    "ro.build.version.release": "16",
+    "ro.build.version.sdk": "36",
+    "ro.build.fingerprint": "HONOR/MEP-AN00/HNMEP:16/HONORMEP-AN00/10DLDLD175C00E170:user/release-keys",
+    "ro.product.cpu.abi": "arm64-v8a",
+    "system_memory": {
+      "returncode": 0,
+      "has_output": true
+    },
+    "battery": {
+      "returncode": 0,
+      "has_output": true
+    },
+    "thermal": {
+      "returncode": 0,
+      "has_output": true
+    },
+    "low_power_setting": {
+      "returncode": 0,
+      "has_output": true
+    },
+    "storage": {
+      "returncode": 0,
+      "has_output": true
+    },
+    "shell_process_memory_probe": {
+      "returncode": 0,
+      "has_output": true
+    }
+  },
+  "source_observed_commit": "a0afb5a56acd106b23a2b2385b8469834dc268c0",
+  "devices": [
+    {
+      "serial": "AWPQUT6116001779",
+      "state": "device"
+    }
+  ],
+  "selected_serial": "AWPQUT6116001779",
+  "next_required": [
+    "verify_binary_and_library_build_provenance",
+    "validate_process_memory_and_thermal_observation",
+    "implement_and_verify_device_clock_event_capture",
+    "complete_generation_smoke_test"
+  ],
+  "recorded_utc": "2026-09-05T02:33:54.731978+00:00"
+}

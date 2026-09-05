@@ -1,0 +1,70 @@
+{
+  "started_utc": "2026-09-05T03:14:00.155949+00:00",
+  "parameters": {
+    "serial": "AWPQUT6116001779",
+    "source": "/Users/dpthinker/workspace/LiteRT-LM-v0.13.1",
+    "backend": "gpu",
+    "seconds": 180,
+    "requests": 5,
+    "sample_ms": 0,
+    "label": "gpu-no-memory-after",
+    "environment_report": "experiments/data/2026-09-05/m3-environment-user-report.json",
+    "bundle": "tmp/m3-build/bundle",
+    "prompt": "experiments/m3_prompt.txt"
+  },
+  "source_commit": "a0afb5a56acd106b23a2b2385b8469834dc268c0",
+  "model_expected_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "remote_dir": "/data/local/tmp/litertlm/m3-031400-155949Z-gpu-no-memory-after",
+  "clock": "device CLOCK_MONOTONIC nanoseconds",
+  "environment_report": {
+    "recorded_utc": "2026-09-05T02:55:15.888971+00:00",
+    "source": "user report",
+    "case": "daily-use phone case, material unspecified",
+    "external_cooling": "no fan or heatsink",
+    "vendor_performance_mode": "not enabled",
+    "ambient_temperature_c_estimate": [
+      22,
+      25
+    ],
+    "ambient_temperature_measured": false
+  },
+  "max_context_tokens": 4096,
+  "max_output_tokens": 512,
+  "sampler": {
+    "type": "top_p",
+    "top_k": 1,
+    "top_p": 1.0,
+    "temperature": 1.0,
+    "seed": 42
+  },
+  "mtp": false,
+  "cpu_threads": 4,
+  "cache_dir": "/data/local/tmp/litertlm/m3-cache",
+  "process_exit": 0,
+  "stop_reason": "completed",
+  "model_observed_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "bundle_sha256": {
+    "libGemmaModelConstraintProvider.so": "985ec5778144730b80666a0f71f1e06038eb07dd1a3e941c6ab7f963eda00a8e",
+    "libLiteRt.so": "7dea9fe11af63e3b7a5506a44e00a72e98a64f6bbcffba28f6f19185a789ef98",
+    "libLiteRtGpuAccelerator.so": "776b19422095d818b862405eee16cf883d0a70c6a8a7ef9dd060864094edb0aa",
+    "libLiteRtOpenClAccelerator.so": "f7d9d273c4d46693140d312d164fac96a0e37f1f1954bfebf40384d40223504b",
+    "libLiteRtTopKOpenClSampler.so": "5ca7f34117d8299f88a52f2e6ba4c50219a62bfb870ba08c9f38c46c7122f984",
+    "libLiteRtTopKWebGpuSampler.so": "875c089d7ad163a236cc6f2675f9cc3ab03da0827bb4c1798d7ab94a710d7345",
+    "libLiteRtWebGpuAccelerator.so": "5db631d2ac82437d4fcccfdbf41715c1653b034815c9ffab329f1cfda87a0c99",
+    "liblitert-lm.so": "59013cb5232dbadf82b94312c508d981aa2875c4d335c6e175e34815aab171cd",
+    "m3_observe": "df707ccbc831b4ab3924ad13a16a002f2c3a51dc1865dd65a4e191041d941168"
+  },
+  "observer_source_sha256": "53a58b4aa0cc98d570d1c1653de1b7642538ec6484de131887d8a1b411fe7ea8",
+  "prompt_sha256": "144348f9cfd6c00a233fb6778e36e2467d76949fbcd95914afa003ee4d52cb64",
+  "command": "cd /data/local/tmp/litertlm/m3-031400-155949Z-gpu-no-memory-after && LD_PRELOAD=/data/local/tmp/litertlm/m3-031400-155949Z-gpu-no-memory-after/libLiteRt.so LD_LIBRARY_PATH=/data/local/tmp/litertlm/m3-031400-155949Z-gpu-no-memory-after ./m3_observe /data/local/tmp/litertlm/model.litertlm gpu /data/local/tmp/litertlm/m3-031400-155949Z-gpu-no-memory-after/prompt.txt /data/local/tmp/litertlm/m3-031400-155949Z-gpu-no-memory-after/events.jsonl 180 5 0",
+  "finished_utc": "2026-09-05T03:16:39.345290+00:00",
+  "raw_sha256": {
+    "commands.jsonl": "4f642ef1b3e41a9daf584a9f190ca2c7f98a9a9d4d5d85952066737250403219",
+    "environment.json": "d46b5a8309152f099dbd8861e29b044c80c2d94d6dc86d25e1e1db1bc54638db",
+    "events.jsonl": "6aedd313984f8e815c3b41ca5a2d70d33caafce600c97d08963084ef48d5f67a",
+    "prompt.txt": "144348f9cfd6c00a233fb6778e36e2467d76949fbcd95914afa003ee4d52cb64",
+    "resources.jsonl": "197453771e60d2b491892ed11ac5ddab96c08a98e93c69623fd9c1984e3ed42f",
+    "stderr.txt": "d3aeca21b20b46102460622d67410b97e9dd2998efda7fb87935d82562f85995",
+    "stdout.txt": "88365d396df6b3a05cd7cbe794937f68adf3fd56ed5bd8197d278d5f71be5d72"
+  }
+}

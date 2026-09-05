@@ -1,0 +1,12 @@
+{
+  "recorded_utc": "2026-09-05T02:55:15.888971+00:00",
+  "source": "user report",
+  "case": "daily-use phone case, material unspecified",
+  "external_cooling": "no fan or heatsink",
+  "vendor_performance_mode": "not enabled",
+  "ambient_temperature_c_estimate": [
+    22,
+    25
+  ],
+  "ambient_temperature_measured": false
+}

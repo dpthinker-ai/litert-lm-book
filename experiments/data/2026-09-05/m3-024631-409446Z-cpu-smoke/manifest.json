@@ -1,0 +1,52 @@
+{
+  "started_utc": "2026-09-05T02:46:31.409446+00:00",
+  "parameters": {
+    "serial": "AWPQUT6116001779",
+    "backend": "cpu",
+    "seconds": 180,
+    "requests": 1,
+    "sample_ms": 500,
+    "label": "cpu-smoke",
+    "bundle": "tmp/m3-build/bundle",
+    "prompt": "experiments/m3_prompt.txt"
+  },
+  "source_commit": "a0afb5a56acd106b23a2b2385b8469834dc268c0",
+  "model_expected_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "remote_dir": "/data/local/tmp/litertlm/m3-024631-409446Z-cpu-smoke",
+  "clock": "device CLOCK_MONOTONIC nanoseconds",
+  "environment_unknown": [
+    "ambient_temperature",
+    "case",
+    "external_cooling",
+    "vendor_performance_mode"
+  ],
+  "max_context_tokens": 4096,
+  "max_output_tokens": 512,
+  "sampler": {
+    "type": "greedy",
+    "seed": 42
+  },
+  "mtp": false,
+  "cpu_threads": "upstream default",
+  "cache_dir": "/data/local/tmp/litertlm/m3-cache",
+  "process_exit": 3,
+  "stop_reason": "client_error",
+  "bundle_sha256": {
+    "libGemmaModelConstraintProvider.so": "985ec5778144730b80666a0f71f1e06038eb07dd1a3e941c6ab7f963eda00a8e",
+    "libLiteRt.so": "7dea9fe11af63e3b7a5506a44e00a72e98a64f6bbcffba28f6f19185a789ef98",
+    "liblitert-lm.so": "59013cb5232dbadf82b94312c508d981aa2875c4d335c6e175e34815aab171cd",
+    "m3_observe": "e9aaf6a3f31996944c303d9723e7967b3dd059a62f14906c73440c109be9f22c"
+  },
+  "observer_source_sha256": "07d5cf75ea6f4bb1e2b762b6b94173b79b41b11438740855ddc214bdc3dbed44",
+  "prompt_sha256": "144348f9cfd6c00a233fb6778e36e2467d76949fbcd95914afa003ee4d52cb64",
+  "command": "cd /data/local/tmp/litertlm/m3-024631-409446Z-cpu-smoke && LD_LIBRARY_PATH=/data/local/tmp/litertlm/m3-024631-409446Z-cpu-smoke ./m3_observe /data/local/tmp/litertlm/model.litertlm cpu /data/local/tmp/litertlm/m3-024631-409446Z-cpu-smoke/prompt.txt /data/local/tmp/litertlm/m3-024631-409446Z-cpu-smoke/events.jsonl 180 1 500",
+  "finished_utc": "2026-09-05T02:48:10.846462+00:00",
+  "raw_sha256": {
+    "commands.jsonl": "a083c18163be542d487476856796487c66d84abf088744c1d6a0d407cc5323e8",
+    "events.jsonl": "c461ce52ebcf24378a42f6c59b8b5ba6e188415d16f2aee9200743ee4389e285",
+    "prompt.txt": "144348f9cfd6c00a233fb6778e36e2467d76949fbcd95914afa003ee4d52cb64",
+    "resources.jsonl": "4cd0d7448854494f77bd870f23ef23ac8d0ca0ecc29218dcf43311c8fae935fa",
+    "stderr.txt": "05622e85fecebf2ebc958ec49af7536ac3add69aec56bb9017f54b51046e0c30",
+    "stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

@@ -52,6 +52,7 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 | 章 | 实验 | 状态 | 命令或证据 |
 |---|---|---|---|
 | 2 | benchmark 主矩阵 | 已做 | `experiments/bench_baseline.sh`；`experiments/data/baseline.csv` |
+| 1、2、5–8 | HONOR 同机阶段内存、持续吞吐与文本回调 | 已做，计量范围见附录 D 第十四节 | 本附录第四节；`experiments/data/2026-09-05/M3_RUNS.json` |
 | 2、7 | 分析 `.litertlm` 分段 | 已做 | `experiments/data/model_anatomy.md` |
 | 4 | prefill 长度扫描 | 已做 | `experiments/prefill_sweep.sh`；附录 D“prefill 长度扫描” |
 | 4 | 异步开/关 | 未做 | C++ `litert_lm_main --async=true/false`；Python benchmark 无此参数 |
@@ -68,6 +69,50 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 | 11 | Python/C++ 一致性 | 未做 | 无结果数据 |
 
 > Android 扩展基准首次采集未保存 build fingerprint、RAM、温度与功耗模式，现有结果只能按附录 D 所列条件解释。已保存的元信息见 `experiments/data/_meta_android.txt`。
+
+## 四、HONOR MEP-AN00 分阶段与持续测量
+
+2026-09-05 的手机案例采用本仓库的 C API 测试客户端。它在设备内记录单调时间、文本回调和进程内存，再由 Mac 收集日志。完整条件、结果与计量范围见附录 D 第十四节；本节命令用于复现同一采集方法。换手机或运行环境后，应建立新的一组结果。
+
+构建依赖 Android SDK、NDK r28c 和 macOS 的命令行开发工具。`build_m3_android.sh` 先检查源码版本和工作区。检查通过后，编译官方 C API 动态库，再编译测试客户端。输出目录包含同批运行库、GPU accelerator 和 sampler。启动器预加载 `libLiteRt.so`，供 sampler 解析全局符号。只复制 GPU sampler 文件而不满足符号依赖时，实际采样可能回退到 CPU，须检查原始日志。
+
+在书稿仓库执行，源码路径和设备序列号替换为本机的值：
+
+```bash
+export LITERT_LM_SOURCE=/你的路径/LiteRT-LM-v0.13.1
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358"
+bash experiments/build_m3_android.sh
+adb devices -l
+adb -s <设备序列号> shell mkdir -p /data/local/tmp/litertlm
+adb -s <设备序列号> push ~/.litert-lm/models/gemma-4-e4b/model.litertlm \
+  /data/local/tmp/litertlm/model.litertlm
+python3 experiments/m3_preflight.py --serial <设备序列号> \
+  --source "$LITERT_LM_SOURCE"
+```
+
+预检通过只表示设备清单与模型身份已核对。先运行 3 请求试采，确认每轮有完整文本、正常结束回调和有效内存读数；再检查是否实际加载了 OpenCL sampler。固定 prompt 为 `experiments/m3_prompt.txt`，采样配置为 TOP_P、top-k=1、top-p=1、temperature=1、seed=42。上下文上限 4096，输出上限 512，关闭 MTP；不强制生成固定步数，遇到模型停止序列时结束。
+
+```bash
+python3 experiments/m3_run.py --serial <设备序列号> --backend gpu \
+  --seconds 180 --requests 3 --label pilot
+python3 experiments/m3_run.py --serial <设备序列号> --backend gpu \
+  --seconds 180 --requests 5 --sample-ms 0 --label control-before
+python3 experiments/m3_run.py --serial <设备序列号> --backend gpu \
+  --seconds 900 --requests 1000 --sample-ms 500 --label continuous
+python3 experiments/m3_run.py --serial <设备序列号> --backend gpu \
+  --seconds 180 --requests 5 --sample-ms 0 --label control-after
+```
+
+每个命令只运行一组实验，结束后再执行下一组。连续组按引擎加载后的时间计满 900 s，允许当前请求完成；达到严重热状态、推理错误或采集失联时提前结束。进程退出码和停止原因须一起检查，不能只看是否生成了日志文件。测试期间保留真实电池与热状态，不模拟读数；供电、手机壳、散热、性能模式和室温另存为本次环境记录。
+
+运行器打印新建的日期子目录，保存完整事件、资源读数、输入、构建产物哈希和运行日志。汇总器先核对原始文件的哈希，再重算数值；缺失字段保持缺失，不填 0。用实际输出目录替换下面的占位符：
+
+```bash
+python3 experiments/m3_summarize.py experiments/data/<日期>/<运行目录>
+```
+
+汇总文件给出阶段边界、离散采样最大值及每请求统计。`requests.csv` 用于逐轮比较。500 ms 是目标采样间隔，实际时刻与读取耗时均有记录。关闭内存采集的对照仍保留回调日志和系统热状态查询，所以两组差值不能解释为所有测量工具的总开销。
 
 [^appc-google-model]: Google，[*gemma-4-E4B-it* 模型卡](https://huggingface.co/google/gemma-4-E4B-it)；访问日期：2026-07-18。
 

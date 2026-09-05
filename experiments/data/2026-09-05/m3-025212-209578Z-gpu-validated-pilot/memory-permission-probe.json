@@ -1,0 +1,23 @@
+[
+  {
+    "command": "ls /sys/class/kgsl/kgsl-3d0/proc/4740",
+    "utc": "2026-09-05T02:52:37.558191+00:00",
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "ls: /sys/class/kgsl/kgsl-3d0/proc/4740: No such file or directory\n"
+  },
+  {
+    "command": "dumpsys meminfo 4740",
+    "utc": "2026-09-05T02:52:37.758175+00:00",
+    "returncode": 0,
+    "stdout": "Applications Memory Usage (in Kilobytes):\nUptime: 427470668 Realtime: 912154198\n                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap\n                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free\n                ------   ------   ------   ------   ------   ------   ------   ------\n  Native Heap   363460   362172     1288    57712   363460        0        0        0\n  Dalvik Heap        0        0        0        0        0        0        0        0\n        Stack      160      160        0        0      160                           \n      Gfx dev   254256   254256        0        0   254260                           \n    Other dev       20        8        4        0      348                           \n     .so mmap    30161     2560    25268     1612    35880                           \n   Other mmap   206656     1808   204800       16   207092                           \n    GL mtrack      768      768        0        0      768                           \n      Unknown     1196     1192        4      284     1196                           \n        TOTAL   916301   622924   231364    59624   863164        0        0        0\n \n App Summary\n                       Pss(KB)                        Rss(KB)\n                        ------                         ------\n           Java Heap:        0                              0\n         Native Heap:   362172                         363460\n                Code:    27828                          35880\n               Stack:      160                            160\n            Graphics:   255024                         255028\n       Private Other:   209104\n              System:    62013\n             Unknown:                                  208636\n \n           TOTAL PSS:   916301            TOTAL RSS:   863164       TOTAL SWAP PSS:    59624\n",
+    "stderr": ""
+  },
+  {
+    "command": "dumpsys SurfaceFlinger | grep GLES:",
+    "utc": "2026-09-05T02:52:37.805087+00:00",
+    "returncode": 0,
+    "stdout": "GLES: Qualcomm, Adreno (TM) 830, OpenGL ES 3.2 V@0800.74 (GIT@a97e8c1cc4, I1c372a512c, 1778232424) (Date:05/08/26)\n",
+    "stderr": ""
+  }
+]

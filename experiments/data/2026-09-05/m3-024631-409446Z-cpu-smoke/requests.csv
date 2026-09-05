@@ -1,0 +1,2 @@
+request,start_ns,first_text_ms,input_preparation_ms,prefill_api_ms,decode_api_ms,request_ms,input_tokens,decode_tokens,decode_benchmark_tokens_s,text_callbacks,output_utf8_bytes,error,decode_wall_tokens_s
+0,427163830330277,,9.051563,12883.998225,20665.286398,33980.021133,77,,,0,0,UNIMPLEMENTED: Sampler type: 3 not implemented yet.,

@@ -1,0 +1,3944 @@
+{
+  "directory": "m3-025348-259096Z-gpu-no-memory-control",
+  "parameters": {
+    "serial": "AWPQUT6116001779",
+    "backend": "gpu",
+    "seconds": 180,
+    "requests": 5,
+    "sample_ms": 0,
+    "label": "gpu-no-memory-control",
+    "bundle": "tmp/m3-build/bundle",
+    "prompt": "experiments/m3_prompt.txt"
+  },
+  "stop_reason": "completed",
+  "process_exit": 0,
+  "load_ms": 36128.281028,
+  "process_to_first_text_ms": 37790.904881,
+  "requests": [
+    {
+      "request": 0,
+      "start_ns": 427588550396365,
+      "first_text_ms": 1662.547812,
+      "input_preparation_ms": 13.261823,
+      "prefill_api_ms": 463.245938,
+      "decode_api_ms": 21796.999836,
+      "request_ms": 22273.584054,
+      "input_tokens": 77,
+      "decode_tokens": 201,
+      "decode_benchmark_tokens_s": 9.221715837608544,
+      "text_callbacks": 200,
+      "output_utf8_bytes": 1070,
+      "output_sha256": "b9a22dfb93338b4dda05ce5a04316b5969a654caf0ce15577321d8907588507e",
+      "callback_gap_ms": {
+        "count": 199,
+        "min": 98.802031,
+        "median": 101.877083,
+        "max": 130.931875
+      },
+      "error": "",
+      "decode_wall_tokens_s": 9.221452562844348
+    },
+    {
+      "request": 1,
+      "start_ns": 427610862540055,
+      "first_text_ms": 488.693489,
+      "input_preparation_ms": 6.38052,
+      "prefill_api_ms": 379.648438,
+      "decode_api_ms": 20671.050878,
+      "request_ms": 21057.165408,
+      "input_tokens": 77,
+      "decode_tokens": 201,
+      "decode_benchmark_tokens_s": 9.724036180631666,
+      "text_callbacks": 200,
+      "output_utf8_bytes": 1070,
+      "output_sha256": "b9a22dfb93338b4dda05ce5a04316b5969a654caf0ce15577321d8907588507e",
+      "callback_gap_ms": {
+        "count": 199,
+        "min": 99.638177,
+        "median": 102.615729,
+        "max": 114.219948
+      },
+      "error": "",
+      "decode_wall_tokens_s": 9.723743663846445
+    },
+    {
+      "request": 2,
+      "start_ns": 427631919884161,
+      "first_text_ms": 497.593229,
+      "input_preparation_ms": 13.96724,
+      "prefill_api_ms": 380.018437,
+      "decode_api_ms": 20624.522075,
+      "request_ms": 21018.620826,
+      "input_tokens": 77,
+      "decode_tokens": 201,
+      "decode_benchmark_tokens_s": 9.745882727799827,
+      "text_callbacks": 200,
+      "output_utf8_bytes": 1070,
+      "output_sha256": "b9a22dfb93338b4dda05ce5a04316b5969a654caf0ce15577321d8907588507e",
+      "callback_gap_ms": {
+        "count": 199,
+        "min": 100.056823,
+        "median": 102.400677,
+        "max": 114.739843
+      },
+      "error": "",
+      "decode_wall_tokens_s": 9.745680373541456
+    },
+    {
+      "request": 3,
+      "start_ns": 427652938840716,
+      "first_text_ms": 496.658124,
+      "input_preparation_ms": 15.670937,
+      "prefill_api_ms": 379.866718,
+      "decode_api_ms": 20669.059576,
+      "request_ms": 21064.712387,
+      "input_tokens": 77,
+      "decode_tokens": 201,
+      "decode_benchmark_tokens_s": 9.725036245996316,
+      "text_callbacks": 200,
+      "output_utf8_bytes": 1070,
+      "output_sha256": "b9a22dfb93338b4dda05ce5a04316b5969a654caf0ce15577321d8907588507e",
+      "callback_gap_ms": {
+        "count": 199,
+        "min": 100.200989,
+        "median": 102.539167,
+        "max": 114.757969
+      },
+      "error": "",
+      "decode_wall_tokens_s": 9.724680470387359
+    },
+    {
+      "request": 4,
+      "start_ns": 427674003689926,
+      "first_text_ms": 491.252448,
+      "input_preparation_ms": 12.536927,
+      "prefill_api_ms": 376.089271,
+      "decode_api_ms": 20607.297179,
+      "request_ms": 20996.037701,
+      "input_tokens": 77,
+      "decode_tokens": 201,
+      "decode_benchmark_tokens_s": 9.754036574355041,
+      "text_callbacks": 200,
+      "output_utf8_bytes": 1070,
+      "output_sha256": "b9a22dfb93338b4dda05ce5a04316b5969a654caf0ce15577321d8907588507e",
+      "callback_gap_ms": {
+        "count": 199,
+        "min": 99.575312,
+        "median": 102.403854,
+        "max": 110.453021
+      },
+      "error": "",
+      "decode_wall_tokens_s": 9.753826436046662
+    }
+  ],
+  "boundaries": [],
+  "stages": {},
+  "status_read_ms": {
+    "count": 0,
+    "min": null,
+    "median": null,
+    "max": null
+  },
+  "thermal_samples": [
+    {
+      "ns": 427552422853098,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 43.4,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 42.6,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 43.6,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 43.2,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 43.6,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 46.5,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 46.1,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 42.6,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 44.9,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 43.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 46.9,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.086,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 46.5,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 44.9,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 46.5,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 42.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427557550273877,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 43.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 43.6,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 44.6,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 43.4,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.895,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 43.4,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 44.6,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 43.4,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427562680512000,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 43.4,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 44.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 44.9,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 44.9,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.782,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 44.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427567801303196,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 43.8,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 43.4,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 44.8,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 44.4,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 46.1,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 43.8,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 44.9,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 44.0,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 43.4,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.715,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 43.4,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 44.6,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 44.8,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 43.4,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427572925022621,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 43.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 43.2,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 43.6,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 43.2,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 44.9,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 43.6,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 42.6,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 44.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 44.6,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.609,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 43.8,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 43.6,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 42.6,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427578055476838,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 42.6,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 43.2,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 44.6,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 44.6,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 42.6,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 43.8,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 44.2,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 44.9,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.466,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 45.7,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 43.8,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 43.2,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 42.6,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427583186081992,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 43.2,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 42.0,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 44.2,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 44.6,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 43.4,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 44.2,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.473,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 43.8,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427588313956001,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 42.2,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 43.2,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 44.6,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 42.8,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 44.6,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 43.4,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 44.2,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 42.4,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 45.3,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.465,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 44.9,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 43.8,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 43.2,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 44.9,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 41.8,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427593449734332,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 45.7,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 46.1,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 50.5,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 50.2,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 50.2,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 49.8,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 50.2,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 49.2,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 49.8,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 49.2,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 45.7,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 46.9,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 48.8,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 49.0,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 47.7,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 45.3,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.264,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 48.0,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 46.1,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 47.3,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 50.2,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 47.7,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 45.3,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 45.7,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427598592513236,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 47.3,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 47.7,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 52.1,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 51.7,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 51.7,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 51.7,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 52.1,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 51.7,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 47.7,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 48.8,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 50.9,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 49.6,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 46.5,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.273,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 49.2,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 47.7,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 48.8,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 52.1,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 49.2,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 47.3,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 47.7,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427603754516255,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 48.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 48.4,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 52.5,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 52.5,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 52.5,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 52.5,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 52.5,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 48.4,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 49.6,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 51.7,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 48.0,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.278,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 50.4,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 48.4,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 49.6,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 50.0,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 48.0,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 48.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427608924855316,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 48.8,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 48.8,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 52.1,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 52.5,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 52.5,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 52.3,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 48.8,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 50.0,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 51.7,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 48.0,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.317,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 50.4,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 48.8,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 50.0,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 50.0,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 48.4,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 48.4,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427614069856199,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 52.7,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 50.4,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 52.7,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 52.1,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 48.4,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.515,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 50.4,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 48.8,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 48.8,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427619215619479,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 48.8,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 50.4,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 52.7,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 52.1,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 48.8,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.531,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427624366302133,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 52.7,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 52.7,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 50.4,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 52.3,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 48.8,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.65,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 50.4,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 50.4,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427629525079214,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.786,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427634686408952,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.759,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427639846804523,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 52.7,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 38.869,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427644992646083,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.022,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427650144841238,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 52.7,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 52.9,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.083,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427655302217121,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.194,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.8,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427660455974567,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.193,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 50.8,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427665605180034,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 39.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.189,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427670745037063,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.9,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.2,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.276,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427675892924301,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.8,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.6,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.347,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427681043260653,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.8,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.315,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.8,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427686194033932,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.8,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.8,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.9,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.337,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 51.9,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427691338981795,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 50.8,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 54.8,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 54.0,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 53.9,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 54.4,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 53.9,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 53.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 53.5,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 50.0,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.388,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 51.5,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 54.8,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 53.1,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 49.6,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 50.4,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    },
+    {
+      "ns": 427696489478043,
+      "status": 2,
+      "temperatures": [
+        {
+          "c": 40.0,
+          "type": 2,
+          "name": "battery"
+        },
+        {
+          "c": 48.4,
+          "type": 9,
+          "name": "nsp6"
+        },
+        {
+          "c": 48.0,
+          "type": 9,
+          "name": "nsp3"
+        },
+        {
+          "c": 49.0,
+          "type": 1,
+          "name": "GPU7"
+        },
+        {
+          "c": 48.6,
+          "type": 1,
+          "name": "GPU6"
+        },
+        {
+          "c": 49.0,
+          "type": 1,
+          "name": "GPU4"
+        },
+        {
+          "c": 48.2,
+          "type": 1,
+          "name": "GPU3"
+        },
+        {
+          "c": 48.6,
+          "type": 1,
+          "name": "GPU2"
+        },
+        {
+          "c": 50.0,
+          "type": 0,
+          "name": "CPU3"
+        },
+        {
+          "c": 48.2,
+          "type": 1,
+          "name": "GPU1"
+        },
+        {
+          "c": 50.0,
+          "type": 0,
+          "name": "CPU1"
+        },
+        {
+          "c": 47.7,
+          "type": 9,
+          "name": "nsp2"
+        },
+        {
+          "c": 49.2,
+          "type": 0,
+          "name": "CPU7"
+        },
+        {
+          "c": 49.6,
+          "type": 0,
+          "name": "CPU5"
+        },
+        {
+          "c": 48.2,
+          "type": 1,
+          "name": "GPU0"
+        },
+        {
+          "c": 49.6,
+          "type": 0,
+          "name": "CPU2"
+        },
+        {
+          "c": 48.0,
+          "type": 9,
+          "name": "nsp5"
+        },
+        {
+          "c": 39.427,
+          "type": 3,
+          "name": "skin"
+        },
+        {
+          "c": 49.6,
+          "type": 0,
+          "name": "CPU0"
+        },
+        {
+          "c": 48.0,
+          "type": 9,
+          "name": "nsp0"
+        },
+        {
+          "c": 49.2,
+          "type": 0,
+          "name": "CPU6"
+        },
+        {
+          "c": 48.6,
+          "type": 1,
+          "name": "GPU5"
+        },
+        {
+          "c": 49.6,
+          "type": 0,
+          "name": "CPU4"
+        },
+        {
+          "c": 47.7,
+          "type": 9,
+          "name": "nsp1"
+        },
+        {
+          "c": 48.0,
+          "type": 9,
+          "name": "nsp4"
+        }
+      ]
+    }
+  ],
+  "valid_complete_run": true
+}

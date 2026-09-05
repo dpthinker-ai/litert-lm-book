@@ -1,0 +1,1 @@
+Explain why a language model running on a phone needs more memory than the model file size. Discuss model weights, the key-value cache, temporary tensors, and the difference between loading a model and generating text. Use plain English in three short paragraphs, approximately 150 words in total. Do not use a list or a table.

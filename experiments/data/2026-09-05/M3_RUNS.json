@@ -1,0 +1,17 @@
+{
+  "runs": {
+    "validated_pilot": "m3-025212-209578Z-gpu-validated-pilot",
+    "control_before": "m3-025348-259096Z-gpu-no-memory-control",
+    "continuous": "m3-025804-496770Z-gpu-continuous",
+    "control_after": "m3-031400-155949Z-gpu-no-memory-after"
+  },
+  "environment_report": "m3-environment-user-report.json",
+  "model_inspection": "m3-model-types-verified.json",
+  "build_provenance": "m3-build-validated",
+  "excluded_trials": {
+    "m3-024631-409446Z-cpu-smoke": "Unsupported greedy sampler; no text",
+    "m3-024824-778954Z-gpu-smoke": "Unsupported greedy sampler after GPU sampler load failure; no text",
+    "m3-025011-666728Z-gpu-pilot": "Unsupported TOP_K sampler after GPU sampler load failure; no text",
+    "m3-025050-078713Z-gpu-pilot-topp": "Successful TOP_P run, but GPU sampler unavailable and CPU fallback used"
+  }
+}

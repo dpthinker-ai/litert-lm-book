@@ -1,0 +1,655 @@
+{
+  "model_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "file_bytes": 3659530240,
+  "schema_package": "2.18.0",
+  "payloads": [
+    {
+      "offset": 4734976,
+      "signatures": [
+        "embedder"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "INT32": 5,
+        "FLOAT32": 1,
+        "19": 1
+      },
+      "examples": {
+        "INT32": {
+          "name": "embedder.lookup_embedding_table/reshape",
+          "buffer": 2,
+          "inline_bytes": 12,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "FLOAT32": {
+          "name": "embedder.lookup_embedding_table/mul",
+          "buffer": 7,
+          "inline_bytes": 4,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "19": {
+          "name": "embedder.lookup_embedding_table/composite",
+          "buffer": 12,
+          "inline_bytes": 167772160,
+          "external_bytes": 0,
+          "scales": 262144
+        }
+      },
+      "inputs": [
+        {
+          "name": "embedder_token_ids:0",
+          "type": "INT32"
+        }
+      ]
+    },
+    {
+      "offset": 175669248,
+      "signatures": [
+        "per_layer_embedder"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "INT32": 5,
+        "19": 42
+      },
+      "examples": {
+        "INT32": {
+          "name": "per_layer_embedder.lookup_embedding_table/reshape",
+          "buffer": 2,
+          "inline_bytes": 16,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "19": {
+          "name": "per_layer_embedder.lookup_embedding_table/composite",
+          "buffer": 11,
+          "inline_bytes": 16777216,
+          "external_bytes": 0,
+          "scales": 262144
+        }
+      },
+      "inputs": [
+        {
+          "name": "per_layer_embedder_token_ids:0",
+          "type": "INT32"
+        }
+      ]
+    },
+    {
+      "offset": 1012449280,
+      "signatures": [
+        "serving_default"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "INT32": 56,
+        "BOOL": 1,
+        "INT64": 1,
+        "FLOAT32": 168,
+        "19": 108,
+        "INT4": 12
+      },
+      "examples": {
+        "INT32": {
+          "name": "tfl.pseudo_const",
+          "buffer": 3,
+          "inline_bytes": 12,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "BOOL": {
+          "name": "jit(wrapper)/ConformerEncoder/ConformerEncoder.get_pos_and_mask/and",
+          "buffer": 5,
+          "inline_bytes": 4896,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "INT64": {
+          "name": "jit(wrapper)/ConformerEncoder/ConformerEncoder.get_pos_and_mask/and1",
+          "buffer": 6,
+          "inline_bytes": 32,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "FLOAT32": {
+          "name": "jit(wrapper)/ConformerEncoder/ConformerEncoder.encoder/output_projection/add;jit(wrapper)/ConformerEncoder/ConformerEncoder.encoder/output_projection/broadcast_in_dim;",
+          "buffer": 28,
+          "inline_bytes": 6144,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "19": {
+          "name": "jit(wrapper)/ConformerEncoder/ConformerEncoder.encoder/layer_0.block_with_rope/layer_0.pre_attn/layer_0.pre_feed_forward/fflayer_start_ffn_layer1/FqEinsum_0/dot_general",
+          "buffer": 328,
+          "inline_bytes": 1048576,
+          "external_bytes": 0,
+          "scales": 4096
+        },
+        "INT4": {
+          "name": "jit(wrapper)/ConformerEncoder/ConformerEncoder.encoder/layer_0.block_with_rope/layer_0.post_attn/layer_0.light_conv1d/lconv_linear_start/FqEinsum_0/dot_general",
+          "buffer": 439,
+          "inline_bytes": 1048576,
+          "external_bytes": 0,
+          "scales": 2048
+        }
+      },
+      "inputs": [
+        {
+          "name": "serving_default_mask:0",
+          "type": "BOOL"
+        },
+        {
+          "name": "serving_default_src_inputs:0",
+          "type": "FLOAT32"
+        }
+      ]
+    },
+    {
+      "offset": 1106509824,
+      "signatures": [
+        "audio_adapter"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "FLOAT32": 3,
+        "INT32": 2
+      },
+      "examples": {
+        "FLOAT32": {
+          "name": "jit(jax_fn)/AudioAdapter/audio_input_projection/btm,md->btd/dot_general1",
+          "buffer": 3,
+          "inline_bytes": 15728640,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "INT32": {
+          "name": "arith.constant",
+          "buffer": 6,
+          "inline_bytes": 12,
+          "external_bytes": 0,
+          "scales": 0
+        }
+      },
+      "inputs": [
+        {
+          "name": "audio_adapter_mask:0",
+          "type": "BOOL"
+        },
+        {
+          "name": "audio_adapter_features:0",
+          "type": "FLOAT32"
+        }
+      ]
+    },
+    {
+      "offset": 1122254848,
+      "signatures": [
+        "eoa"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "FLOAT32": 1
+      },
+      "examples": {
+        "FLOAT32": {
+          "name": "StatefulPartitionedCall:0",
+          "buffer": 1,
+          "inline_bytes": 10240,
+          "external_bytes": 0,
+          "scales": 0
+        }
+      },
+      "inputs": []
+    },
+    {
+      "offset": 1122271232,
+      "signatures": [
+        "vision_140",
+        "vision_280",
+        "vision_70"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "FLOAT32": 107,
+        "INT32": 31,
+        "INT8": 112
+      },
+      "examples": {
+        "FLOAT32": {
+          "name": "VisionEncoder/entry/bls,sd->bld/dot_general",
+          "buffer": 3,
+          "inline_bytes": 31457280,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "INT32": {
+          "name": "eq",
+          "buffer": 6,
+          "inline_bytes": 4,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "INT8": {
+          "name": "VisionEncoder/transformer/layer_0/layer_0.pre_qkv/attn.pre_qkv/attn._pre_attention_fn/q_einsum/reshape;VisionEncoder/transformer/layer_0/layer_0.pre_qkv/attn.pre_qkv/attn._pre_attention_fn/q_einsum/btd,dH->btH/dot_general",
+          "buffer": 171,
+          "inline_bytes": 589824,
+          "external_bytes": 0,
+          "scales": 768
+        }
+      },
+      "inputs": [
+        {
+          "name": "vision_140_positions_xy:0",
+          "type": "INT32"
+        },
+        {
+          "name": "vision_140_images:0",
+          "type": "FLOAT32"
+        }
+      ]
+    },
+    {
+      "offset": 1346420736,
+      "signatures": [
+        "vision_adapter_140",
+        "vision_adapter_280",
+        "vision_adapter_70"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "FLOAT32": 3,
+        "INT32": 2
+      },
+      "examples": {
+        "FLOAT32": {
+          "name": "GeminiModel.adapt_vision/mm_adapter/mm_adapter.project_soft_tokens/mm_input_projection/btm,md->btd/dot_general1",
+          "buffer": 2,
+          "inline_bytes": 7864320,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "INT32": {
+          "name": "arith.constant2",
+          "buffer": 5,
+          "inline_bytes": 12,
+          "external_bytes": 0,
+          "scales": 0
+        }
+      },
+      "inputs": [
+        {
+          "name": "vision_adapter_140_soft_tokens:0",
+          "type": "FLOAT32"
+        }
+      ]
+    },
+    {
+      "offset": 1354317824,
+      "signatures": [
+        "eoi"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "FLOAT32": 1
+      },
+      "examples": {
+        "FLOAT32": {
+          "name": "StatefulPartitionedCall:0",
+          "buffer": 1,
+          "inline_bytes": 10240,
+          "external_bytes": 0,
+          "scales": 0
+        }
+      },
+      "inputs": []
+    },
+    {
+      "offset": 1354334208,
+      "signatures": [
+        "decode",
+        "prefill_1024",
+        "prefill_128",
+        "verify"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "FLOAT32": 314,
+        "INT32": 26,
+        "INT8": 85,
+        "INT4": 258,
+        "19": 1
+      },
+      "examples": {
+        "FLOAT32": {
+          "name": "LanguageModel.decode_graph/LanguageModel.decode_softmax/transformer.decode_softmax/transformer._post_process_decoding/div1",
+          "buffer": 54,
+          "inline_bytes": 0,
+          "external_bytes": 4,
+          "scales": 0
+        },
+        "INT32": {
+          "name": "arith.constant9",
+          "buffer": 314,
+          "inline_bytes": 0,
+          "external_bytes": 12,
+          "scales": 0
+        },
+        "INT8": {
+          "name": "LanguageModel.decode_graph/LanguageModel.transformer_stack/LanguageModel.maybe_preprocess_per_layer_embeddings/transformer.projected_per_layer_inputs/embedder.projected_per_layer_inputs/per_layer_embedder.projected_per_layer_inputs/per_layer_model_projection/reshape;LanguageModel.decode_graph/LanguageModel.transformer_stack/LanguageModel.maybe_preprocess_per_layer_embeddings/transformer.projected_per_layer_inputs/embedder.projected_per_layer_inputs/per_layer_embedder.projected_per_layer_inputs/per_layer_model_projection/btm,mH->btH/dot_general1",
+          "buffer": 397,
+          "inline_bytes": 0,
+          "external_bytes": 27525120,
+          "scales": 10752
+        },
+        "INT4": {
+          "name": "LanguageModel.decode_graph/LanguageModel.transformer_stack/transformer.transformer/layer_0/layer_0.pre_qkv/attn.pre_qkv/attn._pre_attention_fn/q_einsum/reshape;LanguageModel.decode_graph/LanguageModel.transformer_stack/transformer.transformer/layer_0/layer_0.pre_qkv/attn.pre_qkv/attn._pre_attention_fn/q_einsum/btd,dH->btH/dot_general",
+          "buffer": 448,
+          "inline_bytes": 0,
+          "external_bytes": 2621440,
+          "scales": 2048
+        },
+        "19": {
+          "name": "LanguageModel.decode_graph/LanguageModel.decode_softmax/transformer.decode_softmax/embedder.decode/composite",
+          "buffer": 3510,
+          "inline_bytes": 0,
+          "external_bytes": 167772160,
+          "scales": 262144
+        }
+      },
+      "inputs": [
+        {
+          "name": "decode_kv_cache_v_3:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_2:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_16:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_8:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_input_pos:0",
+          "type": "INT32"
+        },
+        {
+          "name": "decode_kv_cache_v_22:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_10:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_per_layer_embeddings:0",
+          "type": "FLOAT32"
+        },
+        {
+          "name": "decode_kv_cache_k_17:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_6:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_22:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_4:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_param_tensor:0",
+          "type": "INT32"
+        },
+        {
+          "name": "decode_kv_cache_k_20:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_9:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_23:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_3:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_0:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_12:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_18:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_11:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_5:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_6:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_18:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_19:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_7:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_10:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_16:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_12:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_23:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_14:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_15:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_13:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_7:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_21:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_1:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_mask:0",
+          "type": "BOOL"
+        },
+        {
+          "name": "decode_kv_cache_v_17:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_13:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_0:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_21:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_15:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_9:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_2:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_1:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_8:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_embeddings:0",
+          "type": "FLOAT32"
+        },
+        {
+          "name": "decode_kv_cache_v_4:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_11:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_19:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_k_5:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_20:0",
+          "type": "INT8"
+        },
+        {
+          "name": "decode_kv_cache_v_14:0",
+          "type": "INT8"
+        }
+      ]
+    },
+    {
+      "offset": 3614392320,
+      "signatures": [
+        "mtp_drafter"
+      ],
+      "scope": "first subgraph constant tensors with nonempty buffers",
+      "constant_tensor_type_counts": {
+        "FLOAT32": 30,
+        "INT32": 18,
+        "INT8": 10,
+        "INT4": 13
+      },
+      "examples": {
+        "FLOAT32": {
+          "name": "MtpDrafterModel.decode_softmax/transformer.decode_softmax/transformer._post_process_decoding/div",
+          "buffer": 9,
+          "inline_bytes": 4,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "INT32": {
+          "name": "layer_3/layer_3.pre_q/attn.pre_q/attn._pre_attention_query_fn/maybe_rope/split",
+          "buffer": 10,
+          "inline_bytes": 16,
+          "external_bytes": 0,
+          "scales": 0
+        },
+        "INT8": {
+          "name": "MtpDrafterModel.mtp_pre_project/mtp_pre_proj/btm,md->btd/dot_general",
+          "buffer": 58,
+          "inline_bytes": 1310720,
+          "external_bytes": 0,
+          "scales": 256
+        },
+        "INT4": {
+          "name": "layer_0/layer_0.post_qkv/mlp/gating_einsum1/btd,df->btf/dot_general",
+          "buffer": 110,
+          "inline_bytes": 262144,
+          "external_bytes": 0,
+          "scales": 2048
+        }
+      },
+      "inputs": [
+        {
+          "name": "mtp_drafter_input_pos:0",
+          "type": "INT32"
+        },
+        {
+          "name": "mtp_drafter_kv_cache_v_22:0",
+          "type": "INT8"
+        },
+        {
+          "name": "mtp_drafter_activations:0",
+          "type": "FLOAT32"
+        },
+        {
+          "name": "mtp_drafter_kv_cache_k_22:0",
+          "type": "INT8"
+        },
+        {
+          "name": "mtp_drafter_param_tensor:0",
+          "type": "INT32"
+        },
+        {
+          "name": "mtp_drafter_kv_cache_v_23:0",
+          "type": "INT8"
+        },
+        {
+          "name": "mtp_drafter_kv_cache_k_23:0",
+          "type": "INT8"
+        },
+        {
+          "name": "mtp_drafter_mask:0",
+          "type": "BOOL"
+        }
+      ]
+    }
+  ],
+  "limitation": "Tensor storage types do not establish all weight bit widths, quantization recipe or executed kernel precision."
+}

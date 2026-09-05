@@ -47,6 +47,8 @@
 | weight cache | 权重缓存 | 7 | 后端编译阶段使用的派生缓存；当前以模型 mtime 与文件大小参与命名，不等同于模型权重段或内容哈希 |
 | LoRA | — | 7 | 在基座模型之外加载增量权重；其管理器按已使用的 adapter id 保留资源，未提供卸载接口 |
 | mmap | — | 7 | 把文件区域映射到进程地址空间；页面何时读入由访问模式、操作系统与 `madvise` 等条件决定 |
+| RSS | resident set size，驻留集大小 | 1 | 进程映射中实际驻留物理内存的页面总大小；单个进程读数不能直接代表完整设备内存预算 |
+| PSS | proportional set size，按共享比例分摊的驻留集大小 | 7 | 私有驻留页全额计入，共享驻留页按共享进程数分摊；本书报告值来自进程 smaps_rollup，计量范围见附录 D 第十四节 |
 | 后端 | backend | 1 | 设备内某类处理器加上驱动它的软件实现；同一设备可有 CPU/GPU/NPU 多个后端，`Backend` 枚举（含 ARTISAN 路径）见第 8 章 |
 | zero-copy | 零拷贝 | 8 | 生产者与消费者复用同一底层存储；还需满足 buffer 类型、布局与完成事件相容，不能由一次 `Duplicate()` 单独证明 |
 | 设备侧采样 | device-side sampling | 5 | 由设备后端消费完整 logits 并选出 token；可避免把整个 logits 张量传回 host，仍会回传少量 token 结果 |

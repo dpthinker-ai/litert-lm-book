@@ -1,0 +1,246 @@
+{
+  "utc": "2026-09-05T03:05:06.210377+00:00",
+  "basis": "first request process_maps event",
+  "libraries": [
+    {
+      "path": "/vendor/lib64/android.hardware.common-V2-ndk.so",
+      "stdout": "df669f6139af9370a003bcc7f11ef3ef9a96b5b2044b11f42d77611c871dd7e2  /vendor/lib64/android.hardware.common-V2-ndk.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/android.hardware.graphics.allocator-V2-ndk.so",
+      "stdout": "4d97077b7d13b3d3fa4e5f25e186be3943aa9717b30fab715767ae5a1b88fa1b  /vendor/lib64/android.hardware.graphics.allocator-V2-ndk.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/android.hardware.graphics.common-V5-ndk.so",
+      "stdout": "3831356cc31bf38d8cac9a47eb4866fe9572b384ef5bb3e009882c38400b1668  /vendor/lib64/android.hardware.graphics.common-V5-ndk.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/egl/eglSubDriverAndroid.so",
+      "stdout": "d9723607ad8dba9d3cb9d6befa2276449e3ff0b454bcece265286f85efc28a8a  /vendor/lib64/egl/eglSubDriverAndroid.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/egl/libEGL_adreno.so",
+      "stdout": "4f4a5cdcde243650b16e1780bd810c4b6fe36400a105386ee35bd97aed59970f  /vendor/lib64/egl/libEGL_adreno.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/egl/libGLESv1_CM_adreno.so",
+      "stdout": "281e53fda67dfb040dd346db369612ba90240096cc4a1dc09c7638dc07f8aeaa  /vendor/lib64/egl/libGLESv1_CM_adreno.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/egl/libGLESv2_adreno.so",
+      "stdout": "7002f8b25baea4c14d0f918450a4df353fe5e1275b4fca8eea24d30e308a6603  /vendor/lib64/egl/libGLESv2_adreno.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/hw/gralloc.default.so",
+      "stdout": "64cc2951bdd6542100eef2c72798fe4410942f7caaf30a03b8c5ea6ed45794c0  /vendor/lib64/hw/gralloc.default.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/hw/mapper.qti.so",
+      "stdout": "67d3f16200aeb9f33e6a8eae5675c361dda41d8e60058265290bbef4c41b27b3  /vendor/lib64/hw/mapper.qti.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libCB.so",
+      "stdout": "c180b9ed06c5d050be4307376db0f29e31820ce9adcc17b63271774b52cf0960  /vendor/lib64/libCB.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libOpenCL.so",
+      "stdout": "cd35cf1ecbfb2053e45566421aa605f819b69ceb5264706ed4feb15bed0942f9  /vendor/lib64/libOpenCL.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libOpenCL_adreno.so",
+      "stdout": "7571bd91b0bb8cad06ce50873865c4161778aa0bf3d2af159a9098a5aa7497ac  /vendor/lib64/libOpenCL_adreno.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libadreno_app_profiles.so",
+      "stdout": "7633ccb59bd5e0e9b080f9d343187d540d74c5dfa6d00a66acc1a9a5afd710c3  /vendor/lib64/libadreno_app_profiles.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libadreno_compiler_cl.so",
+      "stdout": "d5d9bb7ee4340772310e321d81dbb908f0bdf09b082146293c7e367598832474  /vendor/lib64/libadreno_compiler_cl.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libadreno_utils.so",
+      "stdout": "3e6e8093505aa861840c00046a8e5dcc10c288f5126d39cba39ccd513ce89454  /vendor/lib64/libadreno_utils.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libbase.so",
+      "stdout": "540f2336f2f4700d03142249dc8c2bf2ad3af1575d5e8154f4bbe630c93aaad2  /vendor/lib64/libbase.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libcamxexternalformatutils.so",
+      "stdout": "c007775f52e003e8a4519b600fe7196cbfb9aea76b83fb358d2cefb249ee5a85  /vendor/lib64/libcamxexternalformatutils.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libcutils.so",
+      "stdout": "38a76bd5c82ba297dc67ab028438994894862af7c2b7600526c1b24836d1d4e5  /vendor/lib64/libcutils.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libdmabufheap.so",
+      "stdout": "fe52224136574f4bbcb973f73b21a9e1c3993b528f8d0987c037f3e4108ff343  /vendor/lib64/libdmabufheap.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libgralloc.qti.so",
+      "stdout": "fe387d65d169b8b3970e17b24bb4ff4dd31b5e6d68dae5b21f2beb96b6685f88  /vendor/lib64/libgralloc.qti.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libgralloccore.so",
+      "stdout": "ea3b2729df45cfd2d004296f8425095cda188959b07bd9c1a3d0f17522302f05  /vendor/lib64/libgralloccore.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libgralloctypes.so",
+      "stdout": "f2c3236a7d2ef5d8842e96a03afbe4506b8550ffc5ac71d211e4f5c55fd0f8bd  /vendor/lib64/libgralloctypes.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libgrallocutils.so",
+      "stdout": "f76d1384e700b7d352476c6ab6002d2d43080cdc27d71ba53ee5817b9d982ba6  /vendor/lib64/libgrallocutils.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libgsl.so",
+      "stdout": "acf981cc71940ec0452074f2ab717fc7a12da70bc382b9eaaefbaef8c354cb2b  /vendor/lib64/libgsl.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libhardware.so",
+      "stdout": "e936a3d3388eeba451d9edcd7e43299993a30217fd199bae6ee8917761172929  /vendor/lib64/libhardware.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libhidlbase.so",
+      "stdout": "1fea2b5e19e43ff14f883e435fb8c1077b45a1f2e4a878337eee9bbfd1d03083  /vendor/lib64/libhidlbase.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libion.so",
+      "stdout": "a180b893980ffcd5b5bcff931d67bcfa348077f6caf0a67c62d699302feeb8e6  /vendor/lib64/libion.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libjsoncpp.so",
+      "stdout": "9ba9ffb761b9850ac9194ae1b79b5edc8805f6323327a561c0879b5c18b8a4b3  /vendor/lib64/libjsoncpp.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libllvm-glnext.so",
+      "stdout": "2d39a0ec8de885014ba4b2c279478ddeb865f16a8733fd2e528b13cb6d9a18bc  /vendor/lib64/libllvm-glnext.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libllvm-qcom.so",
+      "stdout": "147fa90b370fdd12ab66ce8ca71442f63304253bc785d2037fbf3c58cbe57208  /vendor/lib64/libllvm-qcom.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/liblzma.so",
+      "stdout": "7339e91e87763849fddb286c2f47c32f4b1d20f0332a988896703d0a2b358c53  /vendor/lib64/liblzma.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libmapperutils.so",
+      "stdout": "5de96dd13403a78e44a7319380e5ac8e68ab8a4c21d034f00f77b2ebfa445e02  /vendor/lib64/libmapperutils.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libqspm-mem-utils-vendor.so",
+      "stdout": "4dfbf56bac4463d7195bf31151d344c469ee4acf73109f98f65e1cdbc9860aa3  /vendor/lib64/libqspm-mem-utils-vendor.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libunwindstack.so",
+      "stdout": "3b7f59a597b2007ad0c1ad61206592a4abb4dd9e7976e196e5e80edba973ae9d  /vendor/lib64/libunwindstack.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libutils.so",
+      "stdout": "0c35e3309797af503de28bd05920e62374699ec110923c3fabb611fcde4f3b9b  /vendor/lib64/libutils.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libutilscallstack.so",
+      "stdout": "54366c0c29bc478ddccf57a9009b1d70f1e0f38877b9ee0b358608cb1e28ae6a  /vendor/lib64/libutilscallstack.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libvmmem.so",
+      "stdout": "834938f12eeb8828d396acfa980381bad52d85054ecb7bf1f7c29dc41e7cf6d1  /vendor/lib64/libvmmem.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/libz.so",
+      "stdout": "5950a8383e5ec3a6f0fa556665d0e04ac812c9f0b6325d41acadfcb0d41d0ef3  /vendor/lib64/libz.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/vendor.qti.hardware.display.snapalloc-impl.so",
+      "stdout": "68d51398e82015d1b986e850bcea07627d405bd00f2992e807e6d5b70c4b98f7  /vendor/lib64/vendor.qti.hardware.display.snapalloc-impl.so\n",
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "path": "/vendor/lib64/vendor.qti.qspmhal-V1-ndk.so",
+      "stdout": "d0a66dfae83e88ac30e07a8b07c95e50a8a9b32912bc23b1d31e47b51c7da258  /vendor/lib64/vendor.qti.qspmhal-V1-ndk.so\n",
+      "stderr": "",
+      "returncode": 0
+    }
+  ]
+}
