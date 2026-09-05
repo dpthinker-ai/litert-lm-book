@@ -340,7 +340,9 @@ $$
 N_{chunk}=\left\lceil\frac{S}{C}\right\rceil.
 $$
 
-没有输出 mask 时，第 \\(i\\) 个块的有效输出长度是 \\(\lceil S_i/R\rceil\\)，总 audio token 数为各块结果之和，而不一定等于 \\(\lceil S/R\rceil\\)；只有当块边界与缩减因子对齐时，两式才相等。实现按块累加有效 token 数，并用总和创建 `[1,total_valid_tokens,audio_embedding_dimensions]` 张量。
+没有输出 mask 时，第 \\(i\\) 个块的有效输出长度是 \\(\lceil S_i/R\rceil\\)，总 audio token 数为各块结果之和，而不一定等于 \\(\lceil S/R\rceil\\)。当所有内部块边界都是 \\(R\\) 的整数倍时，两式必然相等。未对齐时，两式可能相等，也可能不同。例如 \\(C=4\\)、\\(R=3\\)、\\(S=7\\)，两块长度分别为 4 和 3，\\(\lceil 4/3\rceil+\lceil 3/3\rceil=3=\lceil 7/3\rceil\\)，但位置 4 不与缩减因子对齐。
+
+实现按块累加有效 token 数，并用总和创建 `[1,total_valid_tokens,audio_embedding_dimensions]` 张量。
 
 这个细节会影响离线复算。若只知道整段频谱长度和缩减因子，却不知道 `sequence_length_`，便不能在所有情况下还原输出 token 数。若编码器提供输出 mask，则有效长度直接由 mask 中的有效项计数，不再使用上述取整公式。
 
