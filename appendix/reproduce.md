@@ -61,7 +61,8 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 | 7 | 分段并行加载 | 未做 | 开关仅 C API 暴露 |
 | 8 | CPU/GPU 与线程扫描 | 已做 | `experiments/android_bench.sh`；`experiments/data/android_threads.csv` |
 | 8 | NPU 端到端推理 | 未完成 | 加载与失败阶段见 `experiments/data/npu_enablement.md` |
-| 9 | MTP 开关、自然文本与聚合比例 | 已做 | `mtp.csv`、`android_mtp.csv`、`mtp_natural_phone.md`、`mtp_acceptance.md` |
+| 9 | MTP 主基准、Android 开关、自然文本与聚合比例 | 已做；Mac 主基准只有 `false`/`auto`，均为关闭 | `mtp.csv`、`android_mtp.csv`、`mtp_natural_phone.md`、`mtp_acceptance.md` |
+| 9 | Mac / 手机自然代码长生成补测 | 单次摘要，缺完整输入与原始计时日志 | `experiments/data/mtp_ceiling.md`；证据范围见附录 D |
 | 10 | 约束解码开/关 | 已做，小样本 | `experiments/data/constraint_test.md` |
 | 10 | 多模态端到端 | 未做 | 无结果数据 |
 | 11 | Python/C++ 一致性 | 未做 | 无结果数据 |
