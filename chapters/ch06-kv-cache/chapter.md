@@ -26,7 +26,7 @@ llama.cpp 与 LiteRT-LM 在不同阶段确定 KV cache 精度。llama.cpp 提供
 
 内存预算不能只计入权重。以本书基准模型为例，4096 个 token 的 KV cache 为 112 MiB；若宽度取到这个模型允许的默认上限 32000（6.2.2 节），则为 875 MiB。其他模型的形状和精度不同，应按本节公式分别计算。
 
-附录 D 第十四节的手机实验固定 4096-token 上限，实际输入为 77 token，并分开记录会话与引擎释放。这里的 112 MiB 仍是按模型形状算出的单份 KV 大小，不能与某个阶段的进程 RSS 差值直接对等。阶段读数还受到驻留、页面换入换出、运行时对象与其他缓冲变化的影响；GPU 分配也未必全部进入进程统计。要单独核对 KV 的实际分配，应记录 KV 缓冲的大小与数量。只改变预留宽度的成对实验可以观察总占用如何变化，但还要区分 mask、工作区等随宽度变化的开销。
+附录 D 第十四节的手机实验固定 4096-token 上限，实际输入为 77 token，并分别记录了会话释放与引擎释放。这里的 112 MiB 仍是按模型形状算出的单份 KV 大小，不能直接等同于某个阶段的进程 RSS 差值：阶段读数还受驻留、页面换入换出、运行时对象与其他缓冲变化的影响，GPU 分配也未必全部进入进程统计。要单独核对 KV 的实际分配，应记录 KV 缓冲的大小与数量；只改变预留宽度的成对实验可以观察总占用如何变化，但还要区分 mask、工作区等随宽度变化的开销。
 
 ## 6.2　KV cache 对解码带宽的影响
 
@@ -183,7 +183,7 @@ if (signatures_.input_int32_param.has_value()) {
 
 该标志为真时，执行器不再交换指针；创建缓冲时，GPU 后端也不再创建输入侧的 KV 缓冲，只保留一套输出侧缓冲。在 CPU 后端上，缓冲仍按 6.3 节的复制登记方式创建，但只要 signature 含该参数张量，执行时同样填充参数、不交换指针。Gemma 4 E4B 的记录中存在 `param_tensor[1,1,1,7]`〔基准 D〕，所以它在 GPU 上使用单缓冲路径，不能按两套独立 KV 缓冲估算。
 
-同一缓冲既读又写时，kernel 需要知道本步更新的槽位区间，所以单缓冲路径在每次 prefill 与 decode 前都要填充这个参数张量。prefill 路径的调用：
+同一缓冲既读又写时，kernel 需要本步更新的槽位区间作为参数，所以单缓冲路径在每次 prefill 与 decode 前都要填充这个参数张量。prefill 路径的调用：
 
 ```cpp
 // runtime/executor/llm_litert_compiled_model_executor.cc:673-678
@@ -207,7 +207,7 @@ std::memcpy(param_tensor_lock_and_addr.second, params, sizeof(params));
 
 `start_index` 和 `end_index` 标明本步更新区间；源码注释说明前两个参数供 `add_values_to_cache` kernel 使用，第三个供 `runtime_batched_matmul` kernel 检查 channel 结束位置。
 
-两条路径的取舍可以归纳如下。双缓冲用两套缓冲和指针交换避开原地更新，代价是多一套 KV 常驻容量；单缓冲只保留一套 KV 数据，代价是模型 signature、host 代码和 kernel 要共同维护更新区间。CPU 后端的缓冲复用是第三种情况：创建时两个 map 的句柄共享底层缓冲，不能套用 GPU 的两套分配口径。是否交换 map 仍由参数张量标志决定；无参数张量时，CPU 也会交换指针，这一步不复制数据。若 signature 含参数张量，CPU 上同样每步填充它。
+两条路径的取舍可以归纳如下。双缓冲用两套缓冲和指针交换避开原地更新，代价是多一套 KV 常驻容量；单缓冲只保留一套 KV 数据，代价是模型 signature、host 代码和 kernel 要共同维护更新区间。CPU 后端的缓冲复用是第三种情况：创建时两个 map 的句柄共享底层缓冲，不能套用 GPU 的两套分配口径。是否交换 map 仍由参数张量标志决定：无参数张量时 CPU 也会交换指针，这一步不复制数据；signature 含参数张量时，CPU 上同样每步填充它。
 
 ## 6.4　会话克隆与写时复制
 
@@ -422,7 +422,7 @@ return execution_manager_lock->SetCurrentStep(*session_info_, target_step);   //
 
 代码行 `(1)` 取出目标步数并恢复会话状态；`(2)` 的删除条件是 `step > target_step`，位于同一步的其他 label 不会被删除；`(3)` 请求 execution manager 设置步数，步数赋值本身不复制也不清零 KV 张量。
 
-保存时读取步数、回退时设置步数，都要先获取该 Session 对应的执行器。若需要从另一个独立上下文切换过来，资源管理器会按 6.4.3 节的路径保存并恢复上下文，可能复制 KV。因此，“检查点不包含 KV”描述的是检查点数据，不能据此把整个 API 调用的复制量一概记为 0。
+保存时读取步数、回退时设置步数，都要先获取该 Session 对应的执行器；若需要从另一个独立上下文切换过来，资源管理器会按 6.4.3 节的路径保存并恢复上下文，可能复制 KV。因此“检查点不包含 KV”描述的是检查点数据，不能据此把整个 API 调用的复制量一概记为 0。
 
 | 操作 | checkpoint map 的变化 | LLM KV 字节操作（不含上下文切换） |
 |---|---|---:|
@@ -473,7 +473,7 @@ if (config_.filter_channel_content_from_kv_cache() &&
 
 此时 channel 对应的 KV 仍在当前会话中。下一条非追加式 user 消息到达后，上述条件再次成立，`RewindAndGetInputDataVector` 才会执行：会话先回到上次保存的检查点，再根据消息历史重建 refill 输入，重建范围排除刚到达的这条 user 消息。配套单元测试用 channel 内容 `"hmm"` 验证了这一点：refill 输入包含上一条 user 消息和 assistant 的可见内容，不包含 `"hmm"`。
 
-refill 输入不为空时，`Conversation` 先 prefill 清理后的历史，再保存新检查点，之后才 prefill 当前 user 消息并进入 decode。完整时序为：assistant 完成时设置标记；下一条 user 消息到达时 rewind；refill 无 channel 的历史；保存检查点；处理当前 user 消息。底层的回退就是 6.7 节那段 `RewindToCheckpoint`：恢复步数与会话状态，删除之后的检查点。逻辑回退不清零 KV 张量；若获取执行器时需要切换独立上下文，仍可能产生该节所述的复制。refill 从目标位置继续写入，覆盖旧 channel 内容占用的槽位。
+refill 输入不为空时，`Conversation` 先 prefill 清理后的历史，再保存新检查点，之后才 prefill 当前 user 消息并进入 decode。完整时序为：assistant 完成时设置标记；下一条 user 消息到达时 rewind；refill 无 channel 的历史；保存检查点；处理当前 user 消息。底层的回退就是 6.7 节那段 `RewindToCheckpoint`：恢复步数与会话状态，删除之后的检查点，不清零 KV 张量；若获取执行器时需要切换独立上下文，仍可能产生该节所述的复制。refill 随后从目标位置继续写入，覆盖旧 channel 内容占用的槽位。
 
 <figure>
 {{#include figs/fig-6-3.svg}}
