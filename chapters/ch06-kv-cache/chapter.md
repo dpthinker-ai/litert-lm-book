@@ -207,7 +207,7 @@ std::memcpy(param_tensor_lock_and_addr.second, params, sizeof(params));
 
 `start_index` 和 `end_index` 标明本步更新区间；源码注释说明前两个参数供 `add_values_to_cache` kernel 使用，第三个供 `runtime_batched_matmul` kernel 检查 channel 结束位置。
 
-两条路径的取舍可以归纳如下。双缓冲用两套缓冲和指针交换避开原地更新，代价是多一套 KV 常驻容量；单缓冲只保留一套 KV 数据，代价是模型 signature、host 代码和 kernel 要共同维护更新区间。CPU 后端的缓冲复用是第三种情况：两个 map 指向同一块缓冲，不需要交换，也不能套用 GPU 的两套分配口径；若 signature 含参数张量，CPU 上同样每步填充它。
+两条路径的取舍可以归纳如下。双缓冲用两套缓冲和指针交换避开原地更新，代价是多一套 KV 常驻容量；单缓冲只保留一套 KV 数据，代价是模型 signature、host 代码和 kernel 要共同维护更新区间。CPU 后端的缓冲复用是第三种情况：创建时两个 map 的句柄共享底层缓冲，不能套用 GPU 的两套分配口径。是否交换 map 仍由参数张量标志决定；无参数张量时，CPU 也会交换指针，这一步不复制数据。若 signature 含参数张量，CPU 上同样每步填充它。
 
 ## 6.4　会话克隆与写时复制
 
@@ -364,9 +364,9 @@ absl::Status Load(absl::string_view serialized_kv_cache) override {
 | 操作 | 实际路径 | KV 字节复制量 | 状态或用途 |
 |---|---|---|---|
 | `Session::Clone` | 新旧 handler 共享 `SharedProcessedContext`；分别持有按值复制的 `RuntimeConfig`、`RuntimeState` | LLM KV 为 0 | 建立可写时分离的会话分支；音频上下文另行克隆 |
-| compiled executor 写时分离 | `CloneContext` 复制活动输入 KV map 中每块缓冲的 `PackedSize()` | 该 map 含一套宽度为 4096 的基准模型 K/V 时约 112 MiB；不按有效前缀裁剪；单缓冲路径的 map 为空 | 较短分支需要截断或改写共享历史时触发；非单缓冲恢复通过移动 map 接管所有权 |
+| compiled executor 写时分离 | `CloneContext` 复制活动输入 KV map 中每块缓冲的 `PackedSize()` | 该 map 含一套宽度为 4096 的基准模型 K/V 时约 112 MiB；不按有效前缀裁剪；GPU 单缓冲路径的 map 为空 | 较短分支需要截断或改写共享历史时触发；非单缓冲恢复通过移动 map 接管所有权 |
 | NPU executor 写时分离 | `CloneContext` 复制 prefill 输入中的 K、V、C cache；恢复时再次按完整缓冲复制 | 取决于对应模型各缓冲的 `PackedSize()` | 与 compiled executor 共用上层 COW 条件，但缓冲集合和恢复方式不同 |
-| `RewindToCheckpoint` | 恢复 `current_step` 与会话状态 | 0；不复制 KV 张量 | 回到已保存位置，后续由 refill 覆盖旧槽位 |
+| `RewindToCheckpoint` | 获取会话对应执行器，再恢复 `current_step` 与会话状态 | 检查点记录本身不含 KV；获取执行器时的独立上下文切换可能另有复制 | 回到已保存位置，后续由 refill 覆盖旧槽位 |
 | `LitertKVCache::DeepCopy` | 复制 bank 1，并复制可选的 bank 2（该类为不支持原地更新的后端准备的第二套缓冲） | 取决于张量形状与 bank 数量 | 独立接口实现；没有执行器调用 |
 | `Serialize` / `Load` | 返回 `UnimplementedError` | 不适用 | 接口目标，LiteRT 后端尚不可用 |
 
@@ -420,9 +420,11 @@ absl::erase_if(checkpoint_map_, [target_step](const auto& pair) {   // (2)
 return execution_manager_lock->SetCurrentStep(*session_info_, target_step);   // (3)
 ```
 
-代码行 `(1)` 取出目标步数并恢复会话状态；`(2)` 的删除条件是 `step > target_step`，位于同一步的其他 label 不会被删除；`(3)` 只改写执行器的步数，既不复制也不清零 KV 张量。
+代码行 `(1)` 取出目标步数并恢复会话状态；`(2)` 的删除条件是 `step > target_step`，位于同一步的其他 label 不会被删除；`(3)` 请求 execution manager 设置步数，步数赋值本身不复制也不清零 KV 张量。
 
-| 操作 | checkpoint map 的变化 | LLM KV 字节操作 |
+保存时读取步数、回退时设置步数，都要先获取该 Session 对应的执行器。若需要从另一个独立上下文切换过来，资源管理器会按 6.4.3 节的路径保存并恢复上下文，可能复制 KV。因此，“检查点不包含 KV”描述的是检查点数据，不能据此把整个 API 调用的复制量一概记为 0。
+
+| 操作 | checkpoint map 的变化 | LLM KV 字节操作（不含上下文切换） |
 |---|---|---:|
 | 在 step 100 保存 `base` | `base → {100, state}` | 0 |
 | 在 step 200 保存 `candidate` | 增加 `candidate → {200, state}` | 0 |
@@ -430,7 +432,7 @@ return execution_manager_lock->SetCurrentStep(*session_info_, target_step);   //
 | 回退到 step 200 的 `candidate` | 恢复逻辑 step；删除 step 大于 200 的条目 | 0 |
 | 回退后 refill 新输入 | 从目标位置继续写入 | 由后续 prefill 决定 |
 
-> 表 6-5　检查点只记录 Session 层的逻辑位置。它既不复制 KV，也不保留同名 label 的多个版本。
+> 表 6-5　检查点数据不含 KV，也不保留同名 label 的多个版本；获取执行器时的上下文切换成本另计。
 
 这个语义影响错误恢复设计。若应用先保存 `safe`，随后在更晚位置再次使用同名 label，第一次恢复点便已丢失。若需要保留树状分支，应使用 `Session::Clone` 管理独立会话，而不是把 checkpoint map 当成持久版本库。若需要跨进程恢复，当前 `Serialize` / `Load` 又尚未实现；应用不能把 checkpoint label 当成可持久化状态。
 
@@ -471,7 +473,7 @@ if (config_.filter_channel_content_from_kv_cache() &&
 
 此时 channel 对应的 KV 仍在当前会话中。下一条非追加式 user 消息到达后，上述条件再次成立，`RewindAndGetInputDataVector` 才会执行：会话先回到上次保存的检查点，再根据消息历史重建 refill 输入，重建范围排除刚到达的这条 user 消息。配套单元测试用 channel 内容 `"hmm"` 验证了这一点：refill 输入包含上一条 user 消息和 assistant 的可见内容，不包含 `"hmm"`。
 
-refill 输入不为空时，`Conversation` 先 prefill 清理后的历史，再保存新检查点，之后才 prefill 当前 user 消息并进入 decode。完整时序为：assistant 完成时设置标记；下一条 user 消息到达时 rewind；refill 无 channel 的历史；保存检查点；处理当前 user 消息。底层的回退就是 6.7 节那段 `RewindToCheckpoint`：恢复步数与会话状态，删除之后的检查点，不复制也不清零 KV 张量；refill 从目标位置继续写入，覆盖旧 channel 内容占用的槽位。
+refill 输入不为空时，`Conversation` 先 prefill 清理后的历史，再保存新检查点，之后才 prefill 当前 user 消息并进入 decode。完整时序为：assistant 完成时设置标记；下一条 user 消息到达时 rewind；refill 无 channel 的历史；保存检查点；处理当前 user 消息。底层的回退就是 6.7 节那段 `RewindToCheckpoint`：恢复步数与会话状态，删除之后的检查点。逻辑回退不清零 KV 张量；若获取执行器时需要切换独立上下文，仍可能产生该节所述的复制。refill 从目标位置继续写入，覆盖旧 channel 内容占用的槽位。
 
 <figure>
 {{#include figs/fig-6-3.svg}}
@@ -484,7 +486,7 @@ KV cache 以容量和带宽换取较少的重复计算。其占用由层数、KV
 
 LiteRT-LM 用双缓冲处理部分 GPU 后端的输入输出别名限制，signature 含 int32 参数张量的模型则走单缓冲的原地更新路径。`Session::Clone` 只共享 `SharedProcessedContext`，按值复制运行配置与状态，不复制 KV 字节；较短分支需要截断或改写共享历史时，资源管理器才调用 executor `CloneContext` 完成写时分离，此后两个分支之间每次切换都要再保存一次。
 
-常规 compiled executor 按活动输入 map 中各缓冲的 `PackedSize()` 复制完整容量，宽度 4096 的基准模型 K/V 约 112 MiB；单缓冲路径的输入 map 为空，快照不含 KV。NPU executor 同样按完整缓冲复制，缓冲集合还可能包含 C cache，恢复时把保存内容复制回固定输入缓冲。`KVCacheInterface` 及其唯一实现 `LitertKVCache` 不在任何执行器的调用链上，`Serialize` 与 `Load` 也只返回未实现错误。检查点只保存逻辑位置；channel 过滤在下一条非追加式 user 消息到达后才回退并 refill 清理后的历史。
+常规 compiled executor 按活动输入 map 中各缓冲的 `PackedSize()` 复制完整容量，宽度 4096 的基准模型 K/V 约 112 MiB；GPU 单缓冲路径的输入 map 为空，快照不含 KV。NPU executor 同样按完整缓冲复制，缓冲集合还可能包含 C cache，恢复时把保存内容复制回固定输入缓冲。`KVCacheInterface` 及其唯一实现 `LitertKVCache` 不在任何执行器的调用链上，`Serialize` 与 `Load` 也只返回未实现错误。检查点只保存逻辑位置；channel 过滤在下一条非追加式 user 消息到达后才回退并 refill 清理后的历史。
 
 ---
 

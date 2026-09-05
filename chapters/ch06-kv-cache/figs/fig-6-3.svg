@@ -69,7 +69,7 @@
   <rect class="bl" x="560" y="423" width="150" height="34" rx="6"/>
   <text class="ts" x="635" y="444" text-anchor="middle">user 2 到达</text>
   <path class="edged" d="M635,460 C635,484 90,484 90,460" marker-end="url(#f63-arrow-dim)"/>
-  <text class="td" x="362" y="472" text-anchor="middle">RewindToCheckpoint：恢复步数与会话状态，不复制 KV 张量</text>
+  <text class="td" x="362" y="472" text-anchor="middle">检查点不含 KV；获取执行器时的上下文切换成本另计</text>
   <rect class="b" x="55" y="495" width="260" height="32" rx="6"/>
   <text class="ts" x="185" y="515" text-anchor="middle">refill：user 1 + 可见 assistant</text>
   <path class="edge" d="M315,511 H350" marker-end="url(#f63-arrow)"/>

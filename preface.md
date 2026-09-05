@@ -63,7 +63,9 @@
 
 全书对 LiteRT‑LM 的代码引用统一锁定在 `v0.13.1` 版本。为不打断行文，正文中不出现文件路径与行号；引用的代码以代码块呈现，出处标注在代码块首行注释里，不逐处重复版本号。对其他项目的引用在脚注中显式标注版本（如 llama.cpp 的 b9873）。代码之外的来源，在相关断言后以页下注给出。锁定冻结版本，可以保证文件、行号与实现描述保持一致；上游后续变化只收入“版本注记”侧栏。
 
-书中的理论上限，例如 decode 上限公式，均在正文中逐步推导，读者可据此验算。实测数据来自两套分别标注的基准：主基准为一台 Mac，运行 Gemma 4 E4B，decode 实测每秒可生成数十个 token；扩展基准为一台搭载 Qualcomm SoC 的手机，使用自编译二进制。方法与全部数据见附录 D；所有标注“〔基准 D〕”之处均出自这套数据，纸面推算与真机实测明确区分，不混用。对于仅有代码分析、尚未经真机验证的部分，如 NPU 的执行行为，书中均就地标明。
+书中的理论上限，例如 decode 上限公式，均在正文中逐步推导，读者可据此验算。实测数据按设备与采集批次分别列示：Mac 主基准运行 Gemma 4 E4B，decode 实测每秒可生成数十个 token。2026 年 7 月的 Android 扩展基准使用 P0210 手机和自编译二进制。9 月另在 HONOR MEP-AN00 上补充进程内存、持续吞吐、客户端文本时延与图片输入案例。这两台手机的结果分别记录，不混算。
+
+方法与全部数据见附录 D，所有标注“〔基准 D〕”之处均指向该附录，纸面推算与真机实测明确区分。进程内存与文本回调分别有自己的计量范围，不能代替完整 GPU 内存或屏幕显示时刻。同一基础 checkpoint 的量化质量与性能对照尚未完成。NPU 执行行为等仅有代码分析的部分，书中也就地标明。
 
 [^preface-tinyllama]: TinyLlama 项目，[TinyLlama/TinyLlama-1.1B-Chat-v1.0 模型卡](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)，项目训练启动日期：2023-09-01（非 Chat-v1.0 发布日期）；访问日期：2026-09-05。
 [^preface-gemma4-launch]: Google DeepMind，Clement Farabet、Olivier Lacombe，[*Gemma 4: Byte for byte, the most capable open models*](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/)，2026-04-02；访问日期：2026-08-04。

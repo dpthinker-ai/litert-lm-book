@@ -6,10 +6,10 @@
 
 ## 2.1　运行命令行工具
 
-这一节回答三个问题：怎么运行 LiteRT-LM，运行后能看到什么，哪些行为和直觉不同。使用官方 Python 包就无需本地编译 C++，官方 README 给出以下安装与运行方式。[^ch02-litertlm-readme]
+这一节回答三个问题：怎么运行 LiteRT-LM，运行后能看到什么，哪些行为和直觉不同。使用官方 Python 包就无需本地编译 C++。以下沿用官方 README 的运行方式，并将安装版本固定为本书的 v0.13.1。[^ch02-litertlm-readme]
 
 ```bash
-uv tool install litert-lm
+uv tool install 'litert-lm==0.13.1'
 litert-lm run \
   --from-huggingface-repo=litert-community/gemma-4-E4B-it-litert-lm \
   gemma-4-E4B-it.litertlm \
@@ -26,10 +26,10 @@ ALL_PROXY=http://127.0.0.1:7890 litert-lm run \
   --prompt="What is the capital of France?"
 
 # 方案二（一次性）：重装补上 socks 依赖，此后按原命令运行
-uv tool install --force --with 'httpx[socks]' litert-lm
+uv tool install --force --with 'httpx[socks]' 'litert-lm==0.13.1'
 ```
 
-指定 `--from-huggingface-repo` 时，`run` 调用 `common.download_from_huggingface`。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，回答逐段出现在终端里。上面的 README 示例用默认采样，输出不保证每次相同；要展示一条可逐字核对的输出，得换用温度 0 的归档运行（采样确定性实验，实录见附录 D 第八节）。命令与输出如下：
+指定 `--from-huggingface-repo` 时，`run` 调用 `common.download_from_huggingface`。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，回答逐段出现在终端里。上面的 README 示例用默认采样，输出不保证每次相同；要展示一条可逐字核对的输出，得换用温度 0 的归档运行（采样确定性实验，实录见附录 D 第八节）。下面的 `gemma-4-e4b` 是本地注册名称，须先按附录 C 第一节导入模型。前面的直接下载运行不会建立这个名称。命令与输出如下：
 
 ```bash
 litert-lm run gemma-4-e4b --backend cpu \
@@ -86,7 +86,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 
 对本书而言，这个入口程序有两点值得记住。第一，它默认开启 benchmark 记录，2.2 节解读的四项指标就产自这条路径。第二，它的主流程很短：读入模型资产，解析后端选择，生成引擎设置，交给工厂创建 Engine，最后异步提交消息、等待生成结束；工厂怎样按后端选择创建具体的执行器，是第 8 章的主题。
 
-至此 Python 与 C++ 两个入口都能运行。输入进入对话与 Session，经过 prefill、decode，由回调返回结果；第 3 至 5 章沿这条链分别展开状态管理、两阶段执行和输出处理。
+至此 Python 与 C++ 两个入口都能运行。输入进入对话与 Session，经过 prefill、decode，由回调返回结果。第 3 至 5 章沿这条链分别展开状态管理、两阶段执行和输出处理。
 
 ## 2.2　benchmark 输出的四项指标
 

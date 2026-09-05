@@ -2,7 +2,7 @@
 
 *On-Device LLM Inference: Principles and Practice with LiteRT-LM*
 
-> 全稿已成：前言、11 章、尾声、附录 A-E，21 张 SVG。当前处于修订期。
+> 全稿已成：前言、11 章、尾声、附录 A-E，37 张 SVG。M5 候选复核已完成，当前 HTML 与 208 页 PDF 已通过本轮检查；E04 量化对照仍待补齐，阶段状态见 ROADMAP.md。
 > 修订记录以 git 提交历史为准；本文件只保留全书定位、目录与开放项。
 > 初稿期的详细规划（章卡、路线图、决策记录）见 git 历史与 `archive/`。
 
@@ -40,14 +40,16 @@
 
 **尾声 · 实践入口与待验证问题**；**附录** A 术语表 / B 代码地图 / C 环境搭建与实验复现 / D 基准数据集 / E 练习提示与参考答案
 
-## 开放项（与附录 D 对账，口径以附录 D 为准）
+## 当前实测与开放项（与附录 D 对账，口径以附录 D 为准）
+
+Mac 主基准与 2026 年 7 月 Android 扩展记录保留原有口径。2026-09-05 新增 HONOR MEP-AN00 的进程内存、持续吞吐、客户端时延及单图视觉案例，分别见附录 D 第十四、十五节。仍未取得完整 GPU 分配量、可靠功率、频率分解或屏幕显示事件；进程 RSS/PSS 与文本回调不能替代这些指标。
 
 尚未完成的实验，正文均已按"来源于代码分析/无实测数据"如实标注：
 - 编译缓存开/关的外部墙钟受控对照
-- 同模型 int4/int8 对照
+- 同一基础 checkpoint 的可比量化质量与性能对照（E04：缺少两档产物及可说明的量化、校准设置）
 - `parallel_file_section_loading` 开/关对照
 - 同一 prompt 的 Python/C++ 行为一致性对照
-- 多模态端到端运行（图片输入、visual token 计数与 patchify 公式验证）
+- 音频、多图与通用视觉任务质量测量（单图输入、两档预算与两类输入错误已完成；有效视觉位置由运行计数和 tokenizer 诊断间接复算）
 - 同一输入的双 tokenizer 对照
 - 使用匹配模型产物、SoC 代际和运行时的 NPU prefill/decode（两台设备仅完成部署探测；本书没有 NPU 吞吐、时延或功耗数据）
 
@@ -61,6 +63,7 @@ python3 scripts/check_book_consistency.py
 python3 scripts/check_citations.py
 python3 scripts/check_code_references.py
 python3 scripts/check_book_links.py
+python3 scripts/check_pdf_outline.py dist/book.pdf
 ```
 
 写作规范见 `CLAUDE.md`；修订工作流见其第七节。

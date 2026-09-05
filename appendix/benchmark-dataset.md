@@ -264,9 +264,10 @@ RSS/PSS 仅覆盖进程页记账，本次未取得完整 GPU 分配量。它们�
 
 开始窗口包含初始化后的性能变化，不能代表恒定的“起始速度”。逐轮看，第 2、3 个请求分别为 17.85、17.71 tokens/s，第 5 个请求降到 9.71 tokens/s。系统热状态从 1 转到 2；当前 HAL 的 skin 读数从 38.064 °C 升到 42.725 °C。GPU 传感器中的最大读数一度达到 71.0 °C，结束附近为 58.7 °C。传感器读数与系统热状态表达的范围不同，单个 GPU 读数回落不代表整机已经冷却。
 
-![图 D-1 HONOR MEP-AN00 持续运行中的吞吐、温度与热状态](figs/m3-continuous.svg)
-
-> 图 D-1　该固定负载在前几轮后降至较低吞吐，skin 温度仍继续上升；结束时不能宣称已经达到热稳态。
+<figure>
+<img src="figs/m3-continuous.svg" alt="图 D-1 HONOR MEP-AN00 持续运行中的吞吐、温度与热状态">
+<figcaption>图 D-1　该固定负载在前几轮后降至较低吞吐，skin 温度仍继续上升；结束时不能宣称已经达到热稳态。</figcaption>
+</figure>
 
 这次记录表明，同一请求的初始吞吐不能直接作为持续吞吐。系统报告了更高的热限制等级，但本次没有记录频率变化、各执行单元的时间或可靠功率，无法量化各因素对下降的贡献。USB 连接下的电池百分比和温度也不能换算为推理能耗。正文据此讨论持续运行的部署约束，不报告 GPU 的瓦数或 tokens/J。
 
@@ -308,9 +309,10 @@ uv run --with matplotlib==3.11.1 python experiments/m3_report.py \
 
 输入为自行生成的 640 × 480 RGB PNG。图 D-2 展示其图形内容，实际像素文件、生成脚本、预期答案与 SHA-256 均已归档。固定提示词为：`Name the three colored shapes from left to right. For each shape give its color and shape. Answer in one short sentence.` 判读颜色与形状的对应关系、左右顺序，不把这一张图的结果当作通用视觉准确率。
 
-![图 D-2 图片案例中的颜色、形状与左右顺序](figs/m4-shapes.svg)
-
-> 图 D-2　输入包含三个容易区分的图形；书内 SVG 展示相同几何内容，推理读取归档的 RGB PNG。
+<figure>
+<img src="figs/m4-shapes.svg" alt="图 D-2 图片案例中的颜色、形状与左右顺序">
+<figcaption>图 D-2　输入包含三个容易区分的图形；书内 SVG 展示相同几何内容，推理读取归档的 RGB PNG。</figcaption>
+</figure>
 
 主干与视觉编码器配置为 GPU，日志确认 OpenCL 路径及 OpenCL sampler；视觉适配器使用 CPU/XNNPACK。因此，不能把全部多模态计算记为 GPU 耗时。上下文上限为 4096 token，输出上限为 256 token，关闭 MTP；TOP_P、top-k=1、top-p=1、temperature=1、seed=42。带壳、无主动散热、未开性能模式、USB 供电，室温沿用作者估计的 22–25 °C。正式组系统热状态始终为 1，HAL 的 skin 读数范围为 37.937–38.451 °C。
 
