@@ -10,7 +10,7 @@
 
 云端模型的能力仍然最强。OpenAI、Google、Anthropic 的闭源旗舰，DeepSeek、Kimi、GLM 等国产开放模型，以及 Gemma 4 这样的 Google 开放模型，都在上下文长度、多模态理解与原生工具调用上持续改进。以 Gemma 4 旗舰 31B 稠密模型为例，它在 256K 上下文窗口下支持多模态与原生函数调用；发布文章引用 Arena AI 文本榜单的口径，该模型在开放模型中排第 3 位，26B MoE（Mixture of Experts，混合专家）排第 6 位。[^preface-gemma4-launch] 排在开放模型前面的，仍是闭源服务。
 
-模型规模还在增长，但本书关注的是设备资源受限时可以提供哪些功能。端侧部署的价值、边界与代价见第 1 章 1.2 节。下面对照两个时间点的模型功能与部署条件：
+模型规模还在增长，但本书关注的是资源受限的设备上能提供哪些功能。端侧部署的价值、边界与代价见第 1 章 1.2 节。下面对照两个时间点的模型功能与部署条件：
 
 - 2023 年 7 月发布的 Llama 2（7B、13B、70B 三档参数）是纯文本模型，上下文长度为 4096 个 token。[^preface-llama2] 同年 9 月 1 日开始训练的 TinyLlama 选择了 1.1B 参数规模，面向计算和内存受限的应用。[^preface-tinyllama]
 - 2026 年 4 月 2 日发布的 Gemma 4，让支持文本、图像、视频与音频输入和 128K 上下文的模型能在手机和笔记本的内存限制内运行。官方公布的部署数据称，其中 E2B（2B 有效参数）使用 2-bit/4-bit 权重与按层内存映射的 embedding，可在部分设备上以不足 1.5 GB 的内存运行；decode 吞吐在 CPU 上（树莓派 5）约 7.6 tokens/s，在 NPU 上（Qualcomm Dragonwing IQ8）约 31 tokens/s。[^preface-gemma4-edge]
@@ -25,7 +25,7 @@
 
 只有模型还不够，还需要把模型部署到设备上的运行时与工具链。Google 是少数同时提供模型、运行时与部署平台的厂商。Gemma 4 是 Google DeepMind 在 2026 年推出的主力开放模型家族，官方将其定位为“可在云端、笔记本电脑和手机上部署的开放模型”，其中 E 系列专门面向边缘设备。[^preface-gemma-family] 发布当日，Google Developers Blog 同步公布了端侧配套方案：AI Edge Gallery 示例应用、Agent Skills 技能库以及 LiteRT‑LM 部署路径。[^preface-gemma4-edge] 在 Android 侧，AICore 预览版已将 Gemma 4 定位为下一代 Gemini Nano 的基础模型。[^preface-gemma4-aicore] 同一时期，GDG China 的 Gemma 4 开发者大赛要求用 E2B/E4B 在真实硬件上演示完全离线的端侧部署。[^preface-gemma4-hackathon]
 
-模型、运行时与部署平台出自同一家厂商，使 LiteRT‑LM 值得作为本书的分析对象。它需要解决的问题——内存容量与带宽约束、异构后端调度、投机解码的接受率、多模态 embedding 路径、约束解码的信任边界——并非 LiteRT‑LM 独有，任何想在受限设备上运行大模型的系统都必须面对。
+模型、运行时与部署平台出自同一家厂商，使 LiteRT‑LM 值得作为本书的分析对象。它需要解决的问题——内存容量与带宽约束、异构后端调度、投机解码的接受率、多模态 embedding 路径、约束解码的信任边界——并非 LiteRT‑LM 独有，任何在受限设备上运行大模型的系统都会遇到。
 
 除了问题本身足够通用，选择它还有两个原因。其一，它有公开的产品部署记录：Google Developers Blog 记载了它在 Chrome、Chromebook Plus 和 Pixel Watch 中的实际应用，[^preface-litertlm-deploy] Google AI Edge Gallery 则通过示例应用展示了端侧模型部署的完整链路。[^preface-edge-gallery] 这些场景要求运行时能适配不同设备，而不只是在单一 benchmark 指标上占优。其二，它的源码覆盖了端侧推理的关键技术：KV cache 管理与双缓冲、GPU 设备侧采样、量化权重的加载与 kernel 调度、投机解码、多模态输入、约束解码、工具调用和 LoRA。每一项实现都能在固定版本的源码中定位到具体位置，书中贴出的代码片段都带出处（体例见“关于代码引用与数字”一节）。
 
@@ -65,7 +65,7 @@
 
 书中的理论上限，例如 decode 上限公式，均在正文中逐步推导，读者可据此验算。实测数据按设备与采集批次分别列示：Mac 主基准运行 Gemma 4 E4B，decode 实测每秒可生成数十个 token。2026 年 7 月的 Android 扩展基准使用 P0210 手机和自编译二进制。9 月另在 HONOR MEP-AN00 上补充进程内存、持续吞吐、客户端文本时延与图片输入案例。这两台手机的结果分别记录，不混算。
 
-方法与全部数据见附录 D，所有标注“〔基准 D〕”之处均指向该附录，纸面推算与真机实测明确区分。进程内存与文本回调分别有自己的计量范围，不能代替完整 GPU 内存或屏幕显示时刻。同一基础 checkpoint 的量化质量与性能对照尚未完成。NPU 执行行为等仅有代码分析的部分，书中也就地标明。
+方法与全部数据见附录 D，所有标注“〔基准 D〕”之处均指向该附录，理论估算与真机实测明确区分。进程内存读数与文本回调时延各有计量范围，不能代替完整的 GPU 内存或屏幕显示时刻。同一基础 checkpoint 的量化质量与性能对照尚未完成。NPU 执行行为等仅有代码分析的部分，书中也就地标明。
 
 [^preface-tinyllama]: TinyLlama 项目，[TinyLlama/TinyLlama-1.1B-Chat-v1.0 模型卡](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)，项目训练启动日期：2023-09-01（非 Chat-v1.0 发布日期）；访问日期：2026-09-05。
 [^preface-gemma4-launch]: Google DeepMind，Clement Farabet、Olivier Lacombe，[*Gemma 4: Byte for byte, the most capable open models*](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/)，2026-04-02；访问日期：2026-08-04。

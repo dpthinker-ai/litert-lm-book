@@ -91,11 +91,11 @@ return ContextHandler::Bundle(
     std::make_unique<RuntimeState>(runtime_state), std::move(audio_context)); // (2)
 ```
 
-代码行 `(1)` 让新旧上下文 handler 指向同一个共享对象，实际的已处理上下文只有一份。这正是写时复制（copy-on-write）的“共享”一半：先共享，等哪条分支要改写时再复制。`(2)` 运行配置与运行状态则按值复制。到这里没有复制任何 KV cache buffer；接口注释也写明两个 handler 共享 processed context。
+代码行 `(1)` 让新旧上下文 handler 指向同一个共享对象，实际的已处理上下文只有一份。这是写时复制（copy-on-write）的共享阶段：先共享，某条分支要改写时再复制。`(2)` 运行配置与运行状态则按值复制。到这里没有复制任何 KV cache buffer；接口注释也写明两个 handler 共享 processed context。
 
-分支需要改写共享历史时才进行写时分离。prefill 时执行器比较本次输入与已处理 token。若两者分叉，且当前分支不是共享链中最长的一条，就调用 `CloneContext` 保存执行器侧状态。原上下文存回旧的共享对象，当前分支则使用新的共享对象。
+分支需要改写共享历史时才进行写时分离：prefill 时，资源管理器比较本次输入与执行器中已处理的 token，若两者分叉，且当前分支不是共享链中最长的一条，就调用 `CloneContext` 保存执行器侧状态，把原上下文存回旧的共享对象，当前分支则改用新的共享对象。
 
-`CloneContext` 按后端选择要复制的 KV 缓冲。compiled model 执行器遍历活动输入 KV map，逐块调用 `CopyTensorBuffer`；NPU 执行器则按 K、V、C cache 名称匹配缓冲。GPU 单缓冲路径的输入 KV map 为空，快照不含 KV 字节，具体限制见 6.4.3 节。除写时分离外，资源管理器切换独立上下文时也会调用 `CloneContext` 保存当前状态。
+`CloneContext` 按后端选择要复制的 KV 缓冲：compiled model 执行器遍历活动输入 KV map，逐块调用 `CopyTensorBuffer`；NPU 执行器则按 K、V、C cache 的名称匹配缓冲；GPU 单缓冲路径的输入 KV map 为空，快照不含 KV 字节，具体限制见 6.4.3 节。除写时分离外，资源管理器切换独立上下文时也会调用 `CloneContext` 保存当前状态。
 
 初次 `Clone` 共享 LLM 上下文，不复制 LLM KV 字节。后续复制的时机取决于分支改写与独立上下文切换，复制量则取决于后端实际保存的缓冲集合。
 
@@ -108,7 +108,7 @@ Engine 与 Session 管的是资源和状态，还没有对象负责“对话”�
 <figcaption>图 3-2　Engine 创建 Session；Conversation 保留 Engine 引用、独占一个 Session，并维护消息历史、模板与处理器。</figcaption>
 </figure>
 
-多轮消息不能直接交给模型，得先按模型的聊天模板拼成文本。这层转换由三个对象分工。`Message` 是消息本身，一个 JSON 对象（`nlohmann::ordered_json` 的别名），既可以是 `{"role":"user","content":"..."}`，也可以携带工具调用或多模态字段。`PromptTemplate` 把消息序列、工具与额外上下文交给 Jinja 模板渲染；Jinja 是聊天模型普遍采用的文本模板语言，模型发布方用它声明消息如何拼接成 prompt。模型对应的 `ModelDataProcessor` 负责剩下的输入转换与输出解析。
+多轮消息不能直接交给模型，需要先按模型的聊天模板拼接成文本。这层转换由三个对象分工。`Message` 是消息本身，一个 JSON 对象（`nlohmann::ordered_json` 的别名），既可以是 `{"role":"user","content":"..."}`，也可以携带工具调用或多模态字段。`PromptTemplate` 把消息序列、工具与额外上下文交给 Jinja 模板渲染；Jinja 是聊天模型普遍采用的文本模板语言，模型发布方用它声明消息如何拼接成 prompt。模型对应的 `ModelDataProcessor` 负责剩下的输入转换与输出解析。
 
 `ConversationConfig` 定义这层处理所需的配置。下列只读入口对应 Preface（对话的初始设定：初始消息、工具与额外上下文）、模板、约束解码开关与 Preface 预填充选项：
 
@@ -237,7 +237,7 @@ return new_string.substr(old_string.length());                       // (4)
 
 `include_preface` 只控制该辅助函数在旧消息为空时是否渲染 Preface：为 true 时旧串留空、返回值包含 Preface；为 false 时先渲染 Preface，再从新串中减掉它。调用方传入的值是 `prefill_preface_on_init` 的取反——初始化时已经预填充过 Preface 的，这里就不再包含它。
 
-全历史回退会向模板引擎重复提交旧消息。若每轮增加近似固定长度的消息，前 n 轮累计提交的历史文本量随轮数呈二次增长。以每轮渲染出约 500 字符估算：第 10 轮的回退先渲染约 4500 字符的旧串，再渲染约 5000 字符的新串；前 10 轮累计提交约 5 万字符，而十轮的新增输入合计只有 5000 字符。这个估算只给出待渲染的输入量，换算不出具体时延；单轮路径没有这部分重复开销。要不要为回退路径加渲染缓存，得在目标模板与设备上实测，而且缓存还得定义 Preface、模板或额外上下文变化时的失效规则。
+全历史回退会向模板引擎重复提交旧消息。若每轮增加近似固定长度的消息，前 n 轮累计提交的历史文本量随轮数呈二次增长。以每轮渲染出约 500 字符估算：第 10 轮的回退先渲染约 4500 字符的旧串，再渲染约 5000 字符的新串；前 10 轮累计提交约 5 万字符，而十轮的新增输入合计只有 5000 字符。这个估算只给出待渲染的输入量，换算不出具体时延；单轮路径没有这部分重复开销。是否为回退路径增加渲染缓存，需要在目标模板与设备上实测，而且缓存还需要定义 Preface、模板或额外上下文变化时的失效规则。
 
 `SendMessageAsync` 把本轮文本传递给 `ModelDataProcessor::ToInputDataVector`，再调用 `Session::RunPrefillAsync`。旧上下文能否复用，取决于单轮语义或前缀校验，而不是 `PromptTemplateInput` 的复制操作。
 
@@ -274,7 +274,7 @@ class Tokenizer {
 
 ## 3.5　prefill 输入：token id 与 embedding
 
-token id 变成向量有两种方式：主模型在内部自己查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再交给模型。执行器按模型配置 `use_token_as_lookup` 选择方式：为 true 时直接把 id 写入 token 输入缓冲，否则先查 embedding、写入 embedding 输入缓冲。主机侧查表不是所有模型的必经步骤，它主要用于多模态输入：图像与音频的 embedding 来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 10 章展开）。
+token id 变成向量有两种方式：由主模型在内部查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再交给模型。执行器按模型配置 `use_token_as_lookup` 选择方式：为 true 时直接把 id 写入 token 输入缓冲，否则先查 embedding、写入 embedding 输入缓冲。主机侧查表不是所有模型的必经步骤，它主要用于多模态输入：图像与音频的 embedding 来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 10 章展开）。
 
 `EmbeddingLookup` 的批量 prefill 接口如下：
 
