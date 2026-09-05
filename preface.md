@@ -10,12 +10,12 @@
 
 云端模型的能力仍然最强。OpenAI、Google、Anthropic 的闭源旗舰，DeepSeek、Kimi、GLM 等国产开放模型，以及 Gemma 4 这样的 Google 开放模型，都在上下文长度、多模态理解与原生工具调用上持续改进。以 Gemma 4 旗舰 31B 稠密模型为例，它在 256K 上下文窗口下支持多模态与原生函数调用；发布文章引用 Arena AI 文本榜单的口径，该模型在开放模型中排第 3 位，26B MoE（Mixture of Experts，混合专家）排第 6 位。[^preface-gemma4-launch] 排在开放模型前面的，仍是闭源服务。
 
-模型规模还在增长，但本书关注的是相反的方向：这些能力有多少可以在端侧设备上运行？端侧部署的价值、边界与代价在第 1 章 1.2 节展开，这里先回答第一件事：端侧模型目前的能力水平。比较两个时间点的代表性模型即可看出：
+模型规模还在增长，但本书关注的是设备资源受限时可以提供哪些功能。端侧部署的价值、边界与代价见第 1 章 1.2 节。下面对照两个时间点的模型功能与部署条件：
 
-- 2023 年 7 月发布的 Llama 2（7B、13B、70B 三档参数）还只是纯文本模型，上下文长度仅 4096 个 token，主要部署在数据中心；同期面向端侧的开放模型，停留在 TinyLlama 这类 1B 参数量级。[^preface-llama2][^preface-tinyllama]
-- 2026 年 4 月 2 日发布的 Gemma 4，让支持文本、图像、视频与音频输入和 128K 上下文的模型能在手机和笔记本的内存限制内运行。官方公布的部署数据称，其中 E2B（2B 有效参数）使用 2-bit/4-bit 权重与按层内存映射的 embedding，可在不足 1.5 GB 的内存中运行；decode 吞吐在 CPU 上（树莓派 5）约 7.6 tokens/s，在 NPU 上（Qualcomm Dragonwing IQ8）约 31 tokens/s。[^preface-gemma4-edge]
+- 2023 年 7 月发布的 Llama 2（7B、13B、70B 三档参数）是纯文本模型，上下文长度为 4096 个 token。[^preface-llama2] 同年 9 月 1 日开始训练的 TinyLlama 选择了 1.1B 参数规模，面向计算和内存受限的应用。[^preface-tinyllama]
+- 2026 年 4 月 2 日发布的 Gemma 4，让支持文本、图像、视频与音频输入和 128K 上下文的模型能在手机和笔记本的内存限制内运行。官方公布的部署数据称，其中 E2B（2B 有效参数）使用 2-bit/4-bit 权重与按层内存映射的 embedding，可在部分设备上以不足 1.5 GB 的内存运行；decode 吞吐在 CPU 上（树莓派 5）约 7.6 tokens/s，在 NPU 上（Qualcomm Dragonwing IQ8）约 31 tokens/s。[^preface-gemma4-edge]
 
-据这两组官方数据，我们保守推断：今天一部手机上的开放模型，能力组合大致相当于 2023 年云侧开放模型的水平。
+这些部署资料说明，端侧开放模型已能提供多模态输入与长上下文支持。[^preface-gemma4-edge] 上下文长度、输入模态和吞吐分别描述功能范围与运行性能，不能据此判定不同模型的任务能力相当。比较任务能力，还需要在相同评测集上检验输出质量。
 
 端侧能力的提升不只来自硬件和推理技术，也来自模型本身的变化。Andrej Karpathy 在 2024 年两次公开谈到这个方向。7 月他在 X 上写道，模型规模竞赛的方向反了：模型之所以大，是因为训练需要记住互联网文本、常见数字的散列值和冷门事实，而思考本身并不需要这么多参数；他预计会出现参数量非常小、却能够可靠思考的模型，甚至可能回到 GPT‑2 的参数规模。[^preface-karpathy-x] 到了 9 月的 No Priors 播客，他说得更具体：蒸馏极其有效，可以用大模型的大量计算教出一个小模型，而小模型能保留大模型的能力；思考核心也许 1B 参数就够，其余知识通过工具获取。他还设想未来的模型体系如同一家公司，强大的云侧模型担任 CEO，大量廉价的小模型分工执行；他自己运行在本地设备的个人知识助理（exo‑cortex）参数量不到 1B。[^preface-karpathy-nopriors]
 
@@ -65,12 +65,12 @@
 
 书中的理论上限，例如 decode 上限公式，均在正文中逐步推导，读者可据此验算。实测数据来自两套分别标注的基准：主基准为一台 Mac，运行 Gemma 4 E4B，decode 实测每秒可生成数十个 token；扩展基准为一台搭载 Qualcomm SoC 的手机，使用自编译二进制。方法与全部数据见附录 D；所有标注“〔基准 D〕”之处均出自这套数据，纸面推算与真机实测明确区分，不混用。对于仅有代码分析、尚未经真机验证的部分，如 NPU 的执行行为，书中均就地标明。
 
-[^preface-tinyllama]: Hugging Face，[TinyLlama/TinyLlama-1.1B-Chat-v1.0 模型卡](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)，2023-09 发布；访问日期：2026-08-04。
+[^preface-tinyllama]: TinyLlama 项目，[TinyLlama/TinyLlama-1.1B-Chat-v1.0 模型卡](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)，项目训练启动日期：2023-09-01（非 Chat-v1.0 发布日期）；访问日期：2026-09-05。
 [^preface-gemma4-launch]: Google DeepMind，Clement Farabet、Olivier Lacombe，[*Gemma 4: Byte for byte, the most capable open models*](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/)，2026-04-02；访问日期：2026-08-04。
 [^preface-llama2]: Meta AI，[*Meta and Microsoft Introduce the Next Generation of Llama*](https://ai.meta.com/blog/llama-2/)，2023-07-18；访问日期：2026-08-04。
 [^preface-karpathy-x]: Andrej Karpathy（@karpathy），X 帖文 [*LLM model size competition is intensifying... backwards!*](https://x.com/karpathy/status/1814038096218083497)，2024-07-19；访问日期：2026-08-04。
 [^preface-karpathy-nopriors]: No Priors 播客，[*The Road to Autonomous Intelligence with Andrej Karpathy*](https://podtail.com/pt-PT/podcast/no-priors/the-road-to-autonomous-intelligence-with-andrej-ka/)（Ep. 80，Sarah Guo、Elad Gil 主持），2024-09-05；视频版见 https://www.youtube.com/watch?v=6P2ItWQY_uw；访问日期：2026-08-04。
-[^preface-gemma4-edge]: Google Developers Blog，[*Bring state-of-the-art agentic skills to the edge with Gemma 4*](https://developers.googleblog.com/bring-state-of-the-art-agentic-skills-to-the-edge-with-gemma-4/)，2026-04-02；访问日期：2026-08-04。
+[^preface-gemma4-edge]: Google Developers Blog，[*Bring state-of-the-art agentic skills to the edge with Gemma 4*](https://developers.googleblog.com/bring-state-of-the-art-agentic-skills-to-the-edge-with-gemma-4/)，2026-04-02；访问日期：2026-09-05。
 [^preface-gemma4-aicore]: Android Developers Blog，[*Announcing Gemma 4 in the AICore Developer Preview*](https://android-developers.googleblog.com/2026/04/AI-Core-Developer-Preview.html)，2026-04；访问日期：2026-08-04。
 [^preface-gemma4-hackathon]: GDG China，[Gemma 4 开发者大赛｜2026](https://hackathon.googdg.cn/)，报名 2026-04-18 至 2026-05-18，决赛在 2026 Google I/O Connect 中国站（2026-08）举行；访问日期：2026-08-04。
 [^preface-litertlm-deploy]: Google Developers Blog，Yu-hui Chen、Ram Iyengar，[*On-device GenAI in Chrome, Chromebook Plus, and Pixel Watch with LiteRT-LM*](https://developers.googleblog.com/on-device-genai-in-chrome-chromebook-plus-and-pixel-watch-with-litert-lm/)，2025-09-24；访问日期：2026-07-18。
