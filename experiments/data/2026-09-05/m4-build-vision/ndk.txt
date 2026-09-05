@@ -1,0 +1,4 @@
+Pkg.Desc = Android NDK
+Pkg.Revision = 28.2.13676358
+Pkg.BaseRevision = 28.2.13676358
+Pkg.ReleaseName = r28c

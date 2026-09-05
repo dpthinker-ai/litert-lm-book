@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-label="从左到右为红色正方形、蓝色圆形和绿色三角形">
+<defs><style>.bg{fill:var(--fixture-bg,#ffffff)}.red{fill:var(--fixture-red,#dd2020)}.blue{fill:var(--fixture-blue,#205ddd)}.green{fill:var(--fixture-green,#169447)}</style></defs>
+<path class="bg" d="M0 0H640V480H0Z"/>
+<rect class="red" x="55" y="180" width="120" height="120"/>
+<circle class="blue" cx="320" cy="240" r="65"/>
+<path class="green" d="M525 170L600 310H450Z"/>
+</svg>

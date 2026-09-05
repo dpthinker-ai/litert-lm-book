@@ -1,0 +1,16 @@
+{
+  "parent_trial": "m4-033840-613074Z-vision-series",
+  "native_source_sha256": "e04294eb7d05b80bfeff7d71c3f19096d6ea0563b26d8dee574157bd69baa57a",
+  "native_binary_sha256": "869d0cc45c7edc7e70b0a0db18a82f111ff19a4057a0768e644662cfeb104726",
+  "model_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "source_commit": "a0afb5a56acd106b23a2b2385b8469834dc268c0",
+  "raw_sha256": {
+    "result.json": "50010c89b432718521c353d8343e6aa654c343aae90c9afe7641a15399cc7d20",
+    "part-0.txt": "816cfbc665b80f029c2bd00cccac5a65c8930b2fcf092fba21b525c0f1fb3583",
+    "part-1.txt": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "part-2.txt": "a94074cc301f37e243afff6b4eba029ff1c18e823cf173cf22374cc75cc41968",
+    "commands.jsonl": "5b2bbed0d8568a4aab419aebe236a5f6e2aefa8b1f6569cccdd8e86811f649b5",
+    "rendered.txt": "13bdaeef794e4a68165b5d0abfd1c7f5f0f610c0660f57aa9500cb19cb040309",
+    "m4_token_audit.cc": "e04294eb7d05b80bfeff7d71c3f19096d6ea0563b26d8dee574157bd69baa57a"
+  }
+}

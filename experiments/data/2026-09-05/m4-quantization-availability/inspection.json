@@ -1,0 +1,43 @@
+{
+  "accessed_utc": "2026-09-05T03:38:18.618517+00:00",
+  "sources": [
+    {
+      "name": "e4b-model-api",
+      "url": "https://huggingface.co/api/models/litert-community/gemma-4-E4B-it-litert-lm",
+      "sha256": "51cfec46f059b1f8b4d1e53ccd08a4a1adfd71f65f495548702459bd4ff8e4f1",
+      "bytes": 13594
+    },
+    {
+      "name": "gemma270m-model-api",
+      "url": "https://huggingface.co/api/models/litert-community/gemma-3-270m-it",
+      "sha256": "6d5d0dff6afbd213b60176c1900ba0141007e3746ee7f97d708b273c17efa255",
+      "bytes": 2370
+    },
+    {
+      "name": "litert-torch-pypi",
+      "url": "https://pypi.org/pypi/litert-torch/json",
+      "sha256": "590cec210ec8f29655ac1d86c9cb82f93615be58bcfb712c274eeef29debd221",
+      "bytes": 8512
+    },
+    {
+      "name": "e4b-readme",
+      "url": "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/raw/main/README.md",
+      "sha256": "f3ebc499f63a23e1fef97853252bde252997c83f2c828178aacc339276b2008f",
+      "bytes": 13270
+    },
+    {
+      "name": "converter-readme",
+      "url": "https://raw.githubusercontent.com/google-ai-edge/litert-torch/main/README.md",
+      "sha256": "e3d3d1d965646f4567970e5f12c2ed056cc70fb0f63dc771f1c9596166c6328b",
+      "bytes": 5630
+    }
+  ],
+  "local": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "docker_command": null,
+    "local_registry_models": [
+      "gemma-4-e4b"
+    ]
+  }
+}

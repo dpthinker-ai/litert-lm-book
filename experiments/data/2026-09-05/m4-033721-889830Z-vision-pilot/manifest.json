@@ -1,0 +1,92 @@
+{
+  "started_utc": "2026-09-05T03:37:21.889830+00:00",
+  "parameters": {
+    "serial": "AWPQUT6116001779",
+    "source": "/Users/dpthinker/workspace/LiteRT-LM-v0.13.1",
+    "backend": "gpu",
+    "seconds": 300,
+    "requests": 1,
+    "sample_ms": 500,
+    "label": "vision-pilot",
+    "environment_report": "experiments/data/2026-09-05/m3-environment-user-report.json",
+    "bundle": "tmp/m4-build/bundle",
+    "fixture": "experiments/fixtures/m4",
+    "vision_backend": "gpu",
+    "pilot": true
+  },
+  "source_commit": "a0afb5a56acd106b23a2b2385b8469834dc268c0",
+  "model_expected_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "remote_dir": "/data/local/tmp/litertlm/m4-033721-889830Z-vision-pilot",
+  "clock": "device CLOCK_MONOTONIC nanoseconds",
+  "environment_report": {
+    "recorded_utc": "2026-09-05T02:55:15.888971+00:00",
+    "source": "user report",
+    "case": "daily-use phone case, material unspecified",
+    "external_cooling": "no fan or heatsink",
+    "vendor_performance_mode": "not enabled",
+    "ambient_temperature_c_estimate": [
+      22,
+      25
+    ],
+    "ambient_temperature_measured": false
+  },
+  "max_context_tokens": 4096,
+  "max_output_tokens": 256,
+  "sampler": {
+    "type": "top_p",
+    "top_k": 1,
+    "top_p": 1.0,
+    "temperature": 1.0,
+    "seed": 42
+  },
+  "mtp": false,
+  "vision_backend": "gpu",
+  "cpu_threads": 4,
+  "cache_dir": "/data/local/tmp/litertlm/m4-cache",
+  "process_exit": 0,
+  "stop_reason": "completed",
+  "model_observed_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "cases": [
+    [
+      "budget70-1",
+      70,
+      "shapes.png"
+    ]
+  ],
+  "bundle_sha256": {
+    "libGemmaModelConstraintProvider.so": "985ec5778144730b80666a0f71f1e06038eb07dd1a3e941c6ab7f963eda00a8e",
+    "libLiteRt.so": "7dea9fe11af63e3b7a5506a44e00a72e98a64f6bbcffba28f6f19185a789ef98",
+    "libLiteRtGpuAccelerator.so": "776b19422095d818b862405eee16cf883d0a70c6a8a7ef9dd060864094edb0aa",
+    "libLiteRtOpenClAccelerator.so": "f7d9d273c4d46693140d312d164fac96a0e37f1f1954bfebf40384d40223504b",
+    "libLiteRtTopKOpenClSampler.so": "5ca7f34117d8299f88a52f2e6ba4c50219a62bfb870ba08c9f38c46c7122f984",
+    "libLiteRtTopKWebGpuSampler.so": "875c089d7ad163a236cc6f2675f9cc3ab03da0827bb4c1798d7ab94a710d7345",
+    "libLiteRtWebGpuAccelerator.so": "5db631d2ac82437d4fcccfdbf41715c1653b034815c9ffab329f1cfda87a0c99",
+    "liblitert-lm.so": "59013cb5232dbadf82b94312c508d981aa2875c4d335c6e175e34815aab171cd",
+    "m4_observe": "cdeaee057ba44c50f94f267724975b29cbabea4b96897902c08763bbb75ab323"
+  },
+  "observer_source_sha256": "8721a561e70346e44bedb7ba85da4e92b0a432b863a3316c182fbb2541cada85",
+  "inputs_sha256": {
+    "fixture.json": "ed37bc4f0be7b0e0a90b9697bb0d18ae26e9d3a0fdaf14176d6f5bb570bd2fad",
+    "shapes.png": "c0af586fb432d47af1e8e08f6401705b58688eeeaea9d1ac4deb1d5036a3d370",
+    "shapes.svg": "3c5e1c72a40764a517cb20900e307a9b02d1e4447a4e8d5827468fcb5fa3f739",
+    "invalid.png": "0fa50f4f902cf8d9ec1b0b3318d48f3466dbf9d46ed16915722dba0ffc997f4e",
+    "cases.tsv": "26de039c69e5733b975aa1ab96f5ffe6272de48747f5acdec68ecf49b4a05376",
+    "budget70-1.json": "8095bca32958f656f8ebde8b2d8fae7855aecc430a5567e1c6612e1a220aa1fe"
+  },
+  "command": "cd /data/local/tmp/litertlm/m4-033721-889830Z-vision-pilot && LD_PRELOAD=/data/local/tmp/litertlm/m4-033721-889830Z-vision-pilot/libLiteRt.so LD_LIBRARY_PATH=/data/local/tmp/litertlm/m4-033721-889830Z-vision-pilot ./m4_observe /data/local/tmp/litertlm/model.litertlm gpu gpu /data/local/tmp/litertlm/m4-033721-889830Z-vision-pilot/cases.tsv /data/local/tmp/litertlm/m4-033721-889830Z-vision-pilot/events.jsonl 500",
+  "finished_utc": "2026-09-05T03:38:05.089859+00:00",
+  "raw_sha256": {
+    "commands.jsonl": "a3f0ff6cc90c400bd7dfb746dfd6f1955c213a393f7b2c09d613b0e52ec2d92d",
+    "environment.json": "d46b5a8309152f099dbd8861e29b044c80c2d94d6dc86d25e1e1db1bc54638db",
+    "events.jsonl": "1f0469488b834584bff71d7d075362fed765c1f3da25da952d2b4ee976f0039e",
+    "inputs/budget70-1.json": "8095bca32958f656f8ebde8b2d8fae7855aecc430a5567e1c6612e1a220aa1fe",
+    "inputs/cases.tsv": "26de039c69e5733b975aa1ab96f5ffe6272de48747f5acdec68ecf49b4a05376",
+    "inputs/fixture.json": "ed37bc4f0be7b0e0a90b9697bb0d18ae26e9d3a0fdaf14176d6f5bb570bd2fad",
+    "inputs/invalid.png": "0fa50f4f902cf8d9ec1b0b3318d48f3466dbf9d46ed16915722dba0ffc997f4e",
+    "inputs/shapes.png": "c0af586fb432d47af1e8e08f6401705b58688eeeaea9d1ac4deb1d5036a3d370",
+    "inputs/shapes.svg": "3c5e1c72a40764a517cb20900e307a9b02d1e4447a4e8d5827468fcb5fa3f739",
+    "resources.jsonl": "01e4f9c269cbf3a7e13cef4eaa30d3b179f107d347d128a010ef628bcc573c33",
+    "stderr.txt": "e2865eca14a321a4ecb1836511b7f9ec81df4d6f25ca1cbe2f0a045cadd13d9d",
+    "stdout.txt": "88365d396df6b3a05cd7cbe794937f68adf3fd56ed5bd8197d278d5f71be5d72"
+  }
+}

@@ -1,0 +1,4 @@
+
+
+Name the three colored shapes from left to right. For each shape give its color and shape. Answer in one short sentence.<turn|>
+<|turn>model

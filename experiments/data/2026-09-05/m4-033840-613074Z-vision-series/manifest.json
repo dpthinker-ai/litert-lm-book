@@ -1,0 +1,148 @@
+{
+  "started_utc": "2026-09-05T03:38:40.613074+00:00",
+  "parameters": {
+    "serial": "AWPQUT6116001779",
+    "source": "/Users/dpthinker/workspace/LiteRT-LM-v0.13.1",
+    "backend": "gpu",
+    "seconds": 600,
+    "requests": 1,
+    "sample_ms": 500,
+    "label": "vision-series",
+    "environment_report": "experiments/data/2026-09-05/m3-environment-user-report.json",
+    "bundle": "tmp/m4-build/bundle",
+    "fixture": "experiments/fixtures/m4",
+    "vision_backend": "gpu",
+    "pilot": false
+  },
+  "source_commit": "a0afb5a56acd106b23a2b2385b8469834dc268c0",
+  "model_expected_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "remote_dir": "/data/local/tmp/litertlm/m4-033840-613074Z-vision-series",
+  "clock": "device CLOCK_MONOTONIC nanoseconds",
+  "environment_report": {
+    "recorded_utc": "2026-09-05T02:55:15.888971+00:00",
+    "source": "user report",
+    "case": "daily-use phone case, material unspecified",
+    "external_cooling": "no fan or heatsink",
+    "vendor_performance_mode": "not enabled",
+    "ambient_temperature_c_estimate": [
+      22,
+      25
+    ],
+    "ambient_temperature_measured": false
+  },
+  "max_context_tokens": 4096,
+  "max_output_tokens": 256,
+  "sampler": {
+    "type": "top_p",
+    "top_k": 1,
+    "top_p": 1.0,
+    "temperature": 1.0,
+    "seed": 42
+  },
+  "mtp": false,
+  "vision_backend": "gpu",
+  "cpu_threads": 4,
+  "cache_dir": "/data/local/tmp/litertlm/m4-cache",
+  "process_exit": 0,
+  "stop_reason": "completed",
+  "model_observed_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "cases": [
+    [
+      "budget70-1",
+      70,
+      "shapes.png"
+    ],
+    [
+      "budget280-1",
+      280,
+      "shapes.png"
+    ],
+    [
+      "budget280-2",
+      280,
+      "shapes.png"
+    ],
+    [
+      "budget70-2",
+      70,
+      "shapes.png"
+    ],
+    [
+      "budget70-3",
+      70,
+      "shapes.png"
+    ],
+    [
+      "budget280-3",
+      280,
+      "shapes.png"
+    ],
+    [
+      "invalid-image",
+      70,
+      "invalid.png"
+    ],
+    [
+      "invalid-budget",
+      0,
+      "shapes.png"
+    ],
+    [
+      "recovery",
+      70,
+      "shapes.png"
+    ]
+  ],
+  "bundle_sha256": {
+    "libGemmaModelConstraintProvider.so": "985ec5778144730b80666a0f71f1e06038eb07dd1a3e941c6ab7f963eda00a8e",
+    "libLiteRt.so": "7dea9fe11af63e3b7a5506a44e00a72e98a64f6bbcffba28f6f19185a789ef98",
+    "libLiteRtGpuAccelerator.so": "776b19422095d818b862405eee16cf883d0a70c6a8a7ef9dd060864094edb0aa",
+    "libLiteRtOpenClAccelerator.so": "f7d9d273c4d46693140d312d164fac96a0e37f1f1954bfebf40384d40223504b",
+    "libLiteRtTopKOpenClSampler.so": "5ca7f34117d8299f88a52f2e6ba4c50219a62bfb870ba08c9f38c46c7122f984",
+    "libLiteRtTopKWebGpuSampler.so": "875c089d7ad163a236cc6f2675f9cc3ab03da0827bb4c1798d7ab94a710d7345",
+    "libLiteRtWebGpuAccelerator.so": "5db631d2ac82437d4fcccfdbf41715c1653b034815c9ffab329f1cfda87a0c99",
+    "liblitert-lm.so": "59013cb5232dbadf82b94312c508d981aa2875c4d335c6e175e34815aab171cd",
+    "m4_observe": "cdeaee057ba44c50f94f267724975b29cbabea4b96897902c08763bbb75ab323"
+  },
+  "observer_source_sha256": "8721a561e70346e44bedb7ba85da4e92b0a432b863a3316c182fbb2541cada85",
+  "inputs_sha256": {
+    "fixture.json": "ed37bc4f0be7b0e0a90b9697bb0d18ae26e9d3a0fdaf14176d6f5bb570bd2fad",
+    "budget280-3.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "invalid-image.json": "c96f00dfe7769ba2b8bf003f13def6760adc17334e340ee6ab2bdf0813694ffc",
+    "budget70-2.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "shapes.png": "c0af586fb432d47af1e8e08f6401705b58688eeeaea9d1ac4deb1d5036a3d370",
+    "budget70-3.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "budget280-2.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "shapes.svg": "3c5e1c72a40764a517cb20900e307a9b02d1e4447a4e8d5827468fcb5fa3f739",
+    "invalid-budget.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "invalid.png": "0fa50f4f902cf8d9ec1b0b3318d48f3466dbf9d46ed16915722dba0ffc997f4e",
+    "cases.tsv": "b5ac3b4e460a6bb24a4d799b1e34c9bc81be38141a584dfc36602772342e2c0e",
+    "budget280-1.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "recovery.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "budget70-1.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8"
+  },
+  "command": "cd /data/local/tmp/litertlm/m4-033840-613074Z-vision-series && LD_PRELOAD=/data/local/tmp/litertlm/m4-033840-613074Z-vision-series/libLiteRt.so LD_LIBRARY_PATH=/data/local/tmp/litertlm/m4-033840-613074Z-vision-series ./m4_observe /data/local/tmp/litertlm/model.litertlm gpu gpu /data/local/tmp/litertlm/m4-033840-613074Z-vision-series/cases.tsv /data/local/tmp/litertlm/m4-033840-613074Z-vision-series/events.jsonl 500",
+  "finished_utc": "2026-09-05T03:39:40.305364+00:00",
+  "raw_sha256": {
+    "commands.jsonl": "dc3597ae1b77b7e28226bcc3b62efa00070bd5116c63c35bdd823279cb1884cb",
+    "environment.json": "d46b5a8309152f099dbd8861e29b044c80c2d94d6dc86d25e1e1db1bc54638db",
+    "events.jsonl": "86a49f6c1c21dfc0edf5f5341928df1c6e9f0e2eb78b55dd68a9645112e74081",
+    "inputs/budget280-1.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "inputs/budget280-2.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "inputs/budget280-3.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "inputs/budget70-1.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "inputs/budget70-2.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "inputs/budget70-3.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "inputs/cases.tsv": "b5ac3b4e460a6bb24a4d799b1e34c9bc81be38141a584dfc36602772342e2c0e",
+    "inputs/fixture.json": "ed37bc4f0be7b0e0a90b9697bb0d18ae26e9d3a0fdaf14176d6f5bb570bd2fad",
+    "inputs/invalid-budget.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "inputs/invalid-image.json": "c96f00dfe7769ba2b8bf003f13def6760adc17334e340ee6ab2bdf0813694ffc",
+    "inputs/invalid.png": "0fa50f4f902cf8d9ec1b0b3318d48f3466dbf9d46ed16915722dba0ffc997f4e",
+    "inputs/recovery.json": "446f9c7236e94dd6f821559deb3da4e0b1cb861354222074c009a78163090ed8",
+    "inputs/shapes.png": "c0af586fb432d47af1e8e08f6401705b58688eeeaea9d1ac4deb1d5036a3d370",
+    "inputs/shapes.svg": "3c5e1c72a40764a517cb20900e307a9b02d1e4447a4e8d5827468fcb5fa3f739",
+    "resources.jsonl": "2c2a23d452bd1f7341e9dbfe61f7934854c30e175f12374ba0df8685f825ef8f",
+    "stderr.txt": "ed774a87397f2c79647945cbf5cd305e4cc6eb2838df5b1038f26585d44102ee",
+    "stdout.txt": "88365d396df6b3a05cd7cbe794937f68adf3fd56ed5bd8197d278d5f71be5d72"
+  }
+}

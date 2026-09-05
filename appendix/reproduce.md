@@ -59,13 +59,15 @@ experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 �
 | 5 | 温度与种子 | 已做 | `experiments/data/temperature_test.md` |
 | 6 | `max_num_tokens` 扫描 | 已做 | `experiments/max_tokens_sweep.sh`；附录 D“预留宽度扫描” |
 | 7 | 编译缓存冷启动 | 部分记录 | `experiments/data/baseline.csv` 记录了 Init API 聚合值的批内变化；缺少 cache 开/关与外部墙钟对照 |
+| 7 | 同一 checkpoint 的量化质量与性能对照 | 未完成，缺少可比产物 | `experiments/M4_PROTOCOL.md`；附录 D 第十五节 |
 | 7 | 分段并行加载 | 未做 | 开关仅 C API 暴露 |
 | 8 | CPU/GPU 与线程扫描 | 已做 | `experiments/android_bench.sh`；`experiments/data/android_threads.csv` |
 | 8 | NPU 端到端推理 | 未完成 | 加载与失败阶段见 `experiments/data/npu_enablement.md` |
 | 9 | MTP 主基准、Android 开关、自然文本与聚合比例 | 已做；Mac 主基准只有 `false`/`auto`，均为关闭 | `mtp.csv`、`android_mtp.csv`、`mtp_natural_phone.md`、`mtp_acceptance.md` |
 | 9 | Mac / 手机自然代码长生成补测 | 单次摘要，缺完整输入与原始计时日志 | `experiments/data/mtp_ceiling.md`；证据范围见附录 D |
 | 10 | 约束解码开/关 | 已做，小样本 | `experiments/data/constraint_test.md` |
-| 10 | 多模态端到端 | 未做 | 无结果数据 |
+| 10 | 图片输入、视觉预算与输入错误 | 已做，单图小样本 | 本附录第五节；`experiments/data/2026-09-05/M4_RUNS.json` |
+| 10 | 音频端到端 | 未做 | 无结果数据 |
 | 11 | Python/C++ 一致性 | 未做 | 无结果数据 |
 
 > Android 扩展基准首次采集未保存 build fingerprint、RAM、温度与功耗模式，现有结果只能按附录 D 所列条件解释。已保存的元信息见 `experiments/data/_meta_android.txt`。
@@ -113,6 +115,44 @@ python3 experiments/m3_summarize.py experiments/data/<日期>/<运行目录>
 ```
 
 汇总文件给出阶段边界、离散采样最大值及每请求统计。`requests.csv` 用于逐轮比较。500 ms 是目标采样间隔，实际时刻与读取耗时均有记录。关闭内存采集的对照仍保留回调日志和系统热状态查询，所以两组差值不能解释为所有测量工具的总开销。
+
+## 五、图片输入、视觉预算与错误处理
+
+2026-09-05 的图片案例仍使用第四节的手机、模型文件与冻结运行库。固定输入为本仓生成的 640 × 480 RGB PNG，比较 70 和 280 两档视觉预算；损坏图片和零预算用于检查错误处理。实际结果、完整输出及测量边界见附录 D 第十五节。两档使用同一份权重，因此不属于量化对照；同一基础 checkpoint 的可比量化产物尚未备齐。
+
+先按第四节设置源码与 Android 工具路径，传输模型并完成预检。随后构建图片测试客户端与独立 tokenizer 诊断程序。运行器会上传输入、客户端和同批动态库，并核对模型哈希。测试保留 500 ms 内存采样；本轮没有无插桩对照，观察开销也包含在结果中。
+
+```bash
+bash experiments/build_m4_android.sh
+uv run --with pillow==11.3.0 python experiments/m4_make_fixture.py
+python3 experiments/m4_run.py --serial <设备序列号> --backend gpu \
+  --vision-backend gpu --pilot --label vision-pilot --timeout 300 \
+  --environment-report <本轮现场条件.json>
+```
+
+现场条件文件是 JSON，记录是否带壳、主动散热、性能模式、供电方式和室温；不清楚的项目写明未记录，不沿用别次测量的读数。试采成功后检查完整回答、实际后端和正常结束状态。主干与视觉编码器使用 GPU OpenCL，视觉适配器实际使用 CPU/XNNPACK。上下文上限 4096，输出上限 256，MTP 关闭；采样参数与第四节相同。
+
+```bash
+python3 experiments/m4_run.py --serial <设备序列号> --backend gpu \
+  --vision-backend gpu --label vision-series --timeout 600 \
+  --environment-report <本轮现场条件.json>
+python3 experiments/m4_summarize.py <本轮结果目录>
+python3 experiments/m4_audit_tokens.py <本轮结果目录> --serial <设备序列号>
+uv run --with tflite==2.18.0 --with numpy python experiments/m4_inspect_vision.py \
+  ~/.litert-lm/models/gemma-4-e4b/model.litertlm <本轮模型结构.json>
+```
+
+正式序列依次为 70、280、280、70、70、280、损坏图片、零预算、70 预算恢复请求。所有请求复用同一 Engine，各自新建 Conversation。首次请求含额外视觉初始化，必须单列。两条预期输入错误不计入成功时延统计；恢复请求使用新会话，不能据此判断原会话已经恢复。`--timeout` 限定整轮主机等待时间，包含引擎加载。
+
+tokenizer 诊断沿用指定结果目录的模型与动态库，只渲染和分词，不生成答案。它将文本片段计数与首轮 BOS、图像结束位置相加，得到非视觉位置数，再供报告从实际 prefill 计数中扣除。模型结构检查另存 signature 的输入、输出和 mask 形状。这种有效视觉位置数是间接复算，没有直接读取运行中的 mask。
+
+只复核本书已归档结果时，不需要连接手机或重新运行推理：
+
+```bash
+python3 experiments/m4_report.py experiments/data/2026-09-05/M4_RUNS.json
+```
+
+汇总器核对原始记录哈希并重算两档预算的结果。索引分别列出试采、正式序列、采用的 tokenizer 诊断，以及因遗漏 BOS 而排除的首次诊断。复现实验产生新目录后，应另建相应索引，不替换本书的原始记录。输入生成规则、预定检查条件与采集细节保存在 `experiments/M4_PROTOCOL.md`。
 
 [^appc-google-model]: Google，[*gemma-4-E4B-it* 模型卡](https://huggingface.co/google/gemma-4-E4B-it)；访问日期：2026-07-18。
 

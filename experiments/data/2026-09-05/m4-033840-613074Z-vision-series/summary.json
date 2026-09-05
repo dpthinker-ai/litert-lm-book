@@ -1,0 +1,577 @@
+{
+  "directory": "m4-033840-613074Z-vision-series",
+  "load_ms": 24274.29046,
+  "requests": [
+    {
+      "case": "budget70-1",
+      "request": 0,
+      "budget": 70,
+      "status": 0,
+      "callback_error": "",
+      "callback_final": true,
+      "request_to_first_text_ms": 8661.829945,
+      "send_to_first_text_ms": 1331.277604,
+      "prepare_ms": 7330.552341,
+      "total_request_ms": 9911.018747,
+      "text_callbacks": 22,
+      "output": "The three colored shapes from left to right are a red square, a blue circle, and a green triangle.",
+      "output_sha256": "47b640634ebb632b2954a9876189aeaed5bcdc038797fd7d4f1b89cd8de9258d",
+      "prefill_tokens": 101,
+      "prefill_ms": 238.317812,
+      "decode_tokens": 23,
+      "decode_ms": 2119.766249,
+      "rss_periodic_samples": 20,
+      "rss_periodic_max_kib": 1136836,
+      "after_Rss_kib": 1137184,
+      "after_Pss_kib": 1131233,
+      "after_Swap_kib": 12,
+      "expected_error": false,
+      "completed_as_expected": true,
+      "fixture_phrase_check": true
+    },
+    {
+      "case": "budget280-1",
+      "request": 1,
+      "budget": 280,
+      "status": 0,
+      "callback_error": "",
+      "callback_final": true,
+      "request_to_first_text_ms": 2116.327187,
+      "send_to_first_text_ms": 2112.462968,
+      "prepare_ms": 3.864219,
+      "total_request_ms": 3348.494217,
+      "text_callbacks": 22,
+      "output": "The three colored shapes from left to right are a red square, a blue circle, and a green triangle.",
+      "output_sha256": "47b640634ebb632b2954a9876189aeaed5bcdc038797fd7d4f1b89cd8de9258d",
+      "prefill_tokens": 304,
+      "prefill_ms": 1125.691458,
+      "decode_tokens": 23,
+      "decode_ms": 1289.3498430000002,
+      "rss_periodic_samples": 7,
+      "rss_periodic_max_kib": 1214052,
+      "after_Rss_kib": 1204204,
+      "after_Pss_kib": 1198253,
+      "after_Swap_kib": 12,
+      "expected_error": false,
+      "completed_as_expected": true,
+      "fixture_phrase_check": true
+    },
+    {
+      "case": "budget280-2",
+      "request": 2,
+      "budget": 280,
+      "status": 0,
+      "callback_error": "",
+      "callback_final": true,
+      "request_to_first_text_ms": 2041.653384,
+      "send_to_first_text_ms": 2037.698697,
+      "prepare_ms": 3.954687,
+      "total_request_ms": 3271.985102,
+      "text_callbacks": 22,
+      "output": "The three colored shapes from left to right are a red square, a blue circle, and a green triangle.",
+      "output_sha256": "47b640634ebb632b2954a9876189aeaed5bcdc038797fd7d4f1b89cd8de9258d",
+      "prefill_tokens": 304,
+      "prefill_ms": 1061.424896,
+      "decode_tokens": 23,
+      "decode_ms": 1286.852499,
+      "rss_periodic_samples": 7,
+      "rss_periodic_max_kib": 1214068,
+      "after_Rss_kib": 1204216,
+      "after_Pss_kib": 1198265,
+      "after_Swap_kib": 12,
+      "expected_error": false,
+      "completed_as_expected": true,
+      "fixture_phrase_check": true
+    },
+    {
+      "case": "budget70-2",
+      "request": 3,
+      "budget": 70,
+      "status": 0,
+      "callback_error": "",
+      "callback_final": true,
+      "request_to_first_text_ms": 501.151354,
+      "send_to_first_text_ms": 497.548385,
+      "prepare_ms": 3.602969,
+      "total_request_ms": 1725.412343,
+      "text_callbacks": 22,
+      "output": "The three colored shapes from left to right are a red square, a blue circle, and a green triangle.",
+      "output_sha256": "47b640634ebb632b2954a9876189aeaed5bcdc038797fd7d4f1b89cd8de9258d",
+      "prefill_tokens": 101,
+      "prefill_ms": 220.995156,
+      "decode_tokens": 23,
+      "decode_ms": 1280.3765620000001,
+      "rss_periodic_samples": 3,
+      "rss_periodic_max_kib": 1206556,
+      "after_Rss_kib": 1204220,
+      "after_Pss_kib": 1198269,
+      "after_Swap_kib": 12,
+      "expected_error": false,
+      "completed_as_expected": true,
+      "fixture_phrase_check": true
+    },
+    {
+      "case": "budget70-3",
+      "request": 4,
+      "budget": 70,
+      "status": 0,
+      "callback_error": "",
+      "callback_final": true,
+      "request_to_first_text_ms": 497.834375,
+      "send_to_first_text_ms": 494.332968,
+      "prepare_ms": 3.501407,
+      "total_request_ms": 1720.806354,
+      "text_callbacks": 22,
+      "output": "The three colored shapes from left to right are a red square, a blue circle, and a green triangle.",
+      "output_sha256": "47b640634ebb632b2954a9876189aeaed5bcdc038797fd7d4f1b89cd8de9258d",
+      "prefill_tokens": 101,
+      "prefill_ms": 218.976198,
+      "decode_tokens": 23,
+      "decode_ms": 1278.801458,
+      "rss_periodic_samples": 3,
+      "rss_periodic_max_kib": 1204220,
+      "after_Rss_kib": 1204220,
+      "after_Pss_kib": 1198269,
+      "after_Swap_kib": 12,
+      "expected_error": false,
+      "completed_as_expected": true,
+      "fixture_phrase_check": true
+    },
+    {
+      "case": "budget280-3",
+      "request": 5,
+      "budget": 280,
+      "status": 0,
+      "callback_error": "",
+      "callback_final": true,
+      "request_to_first_text_ms": 2045.904062,
+      "send_to_first_text_ms": 2042.142031,
+      "prepare_ms": 3.762031,
+      "total_request_ms": 3277.341666,
+      "text_callbacks": 22,
+      "output": "The three colored shapes from left to right are a red square, a blue circle, and a green triangle.",
+      "output_sha256": "47b640634ebb632b2954a9876189aeaed5bcdc038797fd7d4f1b89cd8de9258d",
+      "prefill_tokens": 304,
+      "prefill_ms": 1063.7222390000002,
+      "decode_tokens": 23,
+      "decode_ms": 1287.9217190000002,
+      "rss_periodic_samples": 7,
+      "rss_periodic_max_kib": 1214068,
+      "after_Rss_kib": 1204220,
+      "after_Pss_kib": 1198269,
+      "after_Swap_kib": 12,
+      "expected_error": false,
+      "completed_as_expected": true,
+      "fixture_phrase_check": true
+    },
+    {
+      "case": "invalid-image",
+      "request": 6,
+      "budget": 70,
+      "status": 3,
+      "callback_error": "",
+      "callback_final": false,
+      "request_to_first_text_ms": null,
+      "send_to_first_text_ms": null,
+      "prepare_ms": 3.776667,
+      "total_request_ms": 5.049219,
+      "text_callbacks": 0,
+      "output": "",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "prefill_tokens": null,
+      "prefill_ms": null,
+      "decode_tokens": null,
+      "decode_ms": null,
+      "rss_periodic_samples": 0,
+      "rss_periodic_max_kib": null,
+      "after_Rss_kib": 1204232,
+      "after_Pss_kib": 1198281,
+      "after_Swap_kib": 12,
+      "expected_error": true,
+      "completed_as_expected": true,
+      "fixture_phrase_check": null
+    },
+    {
+      "case": "invalid-budget",
+      "request": 7,
+      "budget": 0,
+      "status": 3,
+      "callback_error": "",
+      "callback_final": false,
+      "request_to_first_text_ms": null,
+      "send_to_first_text_ms": null,
+      "prepare_ms": 3.519115,
+      "total_request_ms": 4.587396,
+      "text_callbacks": 0,
+      "output": "",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "prefill_tokens": null,
+      "prefill_ms": null,
+      "decode_tokens": null,
+      "decode_ms": null,
+      "rss_periodic_samples": 0,
+      "rss_periodic_max_kib": null,
+      "after_Rss_kib": 1204232,
+      "after_Pss_kib": 1198281,
+      "after_Swap_kib": 12,
+      "expected_error": true,
+      "completed_as_expected": true,
+      "fixture_phrase_check": null
+    },
+    {
+      "case": "recovery",
+      "request": 8,
+      "budget": 70,
+      "status": 0,
+      "callback_error": "",
+      "callback_final": true,
+      "request_to_first_text_ms": 500.752135,
+      "send_to_first_text_ms": 497.419167,
+      "prepare_ms": 3.332968,
+      "total_request_ms": 1728.122812,
+      "text_callbacks": 22,
+      "output": "The three colored shapes from left to right are a red square, a blue circle, and a green triangle.",
+      "output_sha256": "47b640634ebb632b2954a9876189aeaed5bcdc038797fd7d4f1b89cd8de9258d",
+      "prefill_tokens": 101,
+      "prefill_ms": 219.930469,
+      "decode_tokens": 23,
+      "decode_ms": 1283.154687,
+      "rss_periodic_samples": 4,
+      "rss_periodic_max_kib": 1206484,
+      "after_Rss_kib": 1204232,
+      "after_Pss_kib": 1198281,
+      "after_Swap_kib": 12,
+      "expected_error": false,
+      "completed_as_expected": true,
+      "fixture_phrase_check": true
+    }
+  ],
+  "boundaries": [
+    {
+      "stage": "before_load",
+      "request": -1,
+      "Rss_kib": 12084,
+      "Pss_kib": 6167,
+      "Swap_kib": 4
+    },
+    {
+      "stage": "after_load",
+      "request": -1,
+      "Rss_kib": 911608,
+      "Pss_kib": 905661,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "before_request",
+      "request": 0,
+      "Rss_kib": 911608,
+      "Pss_kib": 905661,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_request",
+      "request": 0,
+      "Rss_kib": 1137184,
+      "Pss_kib": 1131233,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "conversation_released",
+      "request": 0,
+      "Rss_kib": 1137128,
+      "Pss_kib": 1131177,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "before_request",
+      "request": 1,
+      "Rss_kib": 1137128,
+      "Pss_kib": 1131177,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_request",
+      "request": 1,
+      "Rss_kib": 1204204,
+      "Pss_kib": 1198253,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "conversation_released",
+      "request": 1,
+      "Rss_kib": 1204192,
+      "Pss_kib": 1198241,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "before_request",
+      "request": 2,
+      "Rss_kib": 1204192,
+      "Pss_kib": 1198241,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_request",
+      "request": 2,
+      "Rss_kib": 1204216,
+      "Pss_kib": 1198265,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "conversation_released",
+      "request": 2,
+      "Rss_kib": 1204204,
+      "Pss_kib": 1198253,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "before_request",
+      "request": 3,
+      "Rss_kib": 1204204,
+      "Pss_kib": 1198253,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_request",
+      "request": 3,
+      "Rss_kib": 1204220,
+      "Pss_kib": 1198269,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "conversation_released",
+      "request": 3,
+      "Rss_kib": 1204220,
+      "Pss_kib": 1198269,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "before_request",
+      "request": 4,
+      "Rss_kib": 1204220,
+      "Pss_kib": 1198269,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_request",
+      "request": 4,
+      "Rss_kib": 1204220,
+      "Pss_kib": 1198269,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "conversation_released",
+      "request": 4,
+      "Rss_kib": 1204208,
+      "Pss_kib": 1198257,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "before_request",
+      "request": 5,
+      "Rss_kib": 1204208,
+      "Pss_kib": 1198257,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_request",
+      "request": 5,
+      "Rss_kib": 1204220,
+      "Pss_kib": 1198269,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "conversation_released",
+      "request": 5,
+      "Rss_kib": 1204208,
+      "Pss_kib": 1198257,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "before_request",
+      "request": 6,
+      "Rss_kib": 1204208,
+      "Pss_kib": 1198257,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_request",
+      "request": 6,
+      "Rss_kib": 1204232,
+      "Pss_kib": 1198281,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "conversation_released",
+      "request": 6,
+      "Rss_kib": 1204232,
+      "Pss_kib": 1198281,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "before_request",
+      "request": 7,
+      "Rss_kib": 1204232,
+      "Pss_kib": 1198281,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_request",
+      "request": 7,
+      "Rss_kib": 1204232,
+      "Pss_kib": 1198281,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "conversation_released",
+      "request": 7,
+      "Rss_kib": 1204232,
+      "Pss_kib": 1198281,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "before_request",
+      "request": 8,
+      "Rss_kib": 1204232,
+      "Pss_kib": 1198281,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_request",
+      "request": 8,
+      "Rss_kib": 1204232,
+      "Pss_kib": 1198281,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "conversation_released",
+      "request": 8,
+      "Rss_kib": 1204220,
+      "Pss_kib": 1198269,
+      "Swap_kib": 12
+    },
+    {
+      "stage": "after_release",
+      "request": 8,
+      "Rss_kib": 277976,
+      "Pss_kib": 272025,
+      "Swap_kib": 12
+    }
+  ],
+  "resize_log": [
+    {
+      "source_width": 640,
+      "source_height": 480,
+      "width": 432,
+      "height": 336,
+      "patches": 567,
+      "patch_limit": 630
+    },
+    {
+      "source_width": 640,
+      "source_height": 480,
+      "width": 912,
+      "height": 672,
+      "patches": 2394,
+      "patch_limit": 2520
+    },
+    {
+      "source_width": 640,
+      "source_height": 480,
+      "width": 912,
+      "height": 672,
+      "patches": 2394,
+      "patch_limit": 2520
+    },
+    {
+      "source_width": 640,
+      "source_height": 480,
+      "width": 432,
+      "height": 336,
+      "patches": 567,
+      "patch_limit": 630
+    },
+    {
+      "source_width": 640,
+      "source_height": 480,
+      "width": 432,
+      "height": 336,
+      "patches": 567,
+      "patch_limit": 630
+    },
+    {
+      "source_width": 640,
+      "source_height": 480,
+      "width": 912,
+      "height": 672,
+      "patches": 2394,
+      "patch_limit": 2520
+    },
+    {
+      "source_width": 640,
+      "source_height": 480,
+      "width": 432,
+      "height": 336,
+      "patches": 567,
+      "patch_limit": 630
+    }
+  ],
+  "thermal": [
+    {
+      "status": 1,
+      "skin_c": 37.964
+    },
+    {
+      "status": 1,
+      "skin_c": 37.937
+    },
+    {
+      "status": 1,
+      "skin_c": 38.035
+    },
+    {
+      "status": 1,
+      "skin_c": 38.065
+    },
+    {
+      "status": 1,
+      "skin_c": 38.046
+    },
+    {
+      "status": 1,
+      "skin_c": 38.009
+    },
+    {
+      "status": 1,
+      "skin_c": 38.031
+    },
+    {
+      "status": 1,
+      "skin_c": 38.054
+    },
+    {
+      "status": 1,
+      "skin_c": 38.001
+    },
+    {
+      "status": 1,
+      "skin_c": 38.134
+    },
+    {
+      "status": 1,
+      "skin_c": 38.451
+    }
+  ],
+  "lifetime_sampled_vmhwm_kib": 1226160,
+  "expected_input_error_log": [
+    "E0000 00:00:1788579576.404017   21459 engine.cc:1090] Failed to start message stream: INVALID_ARGUMENT: Failed to decode image. Reason: unknown image type",
+    "E0000 00:00:1788579576.544432   21459 engine.cc:1090] Failed to start message stream: INVALID_ARGUMENT: Visual token budget must be positive."
+  ],
+  "status_read_ms": {
+    "count": 103,
+    "min": 0.096354,
+    "median": 0.177344,
+    "max": 2.546823
+  },
+  "valid": true
+}

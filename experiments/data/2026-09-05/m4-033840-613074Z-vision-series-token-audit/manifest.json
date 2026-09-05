@@ -1,0 +1,15 @@
+{
+  "parent_trial": "m4-033840-613074Z-vision-series",
+  "native_source_sha256": "4af4b8153c9201b0c3565261fef87bf7a9008ea800b104fb01eef1c2c84ec58b",
+  "native_binary_sha256": "14d3ee8d7a761cbb4266f962da02d64d4e4b4276ff043b2d1ce300e5a323e195",
+  "model_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "source_commit": "a0afb5a56acd106b23a2b2385b8469834dc268c0",
+  "raw_sha256": {
+    "result.json": "598f552d397f81de026a287c1143abb133ad5daab289b57e2b6a333447076986",
+    "part-0.txt": "816cfbc665b80f029c2bd00cccac5a65c8930b2fcf092fba21b525c0f1fb3583",
+    "part-1.txt": "75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070",
+    "part-2.txt": "a94074cc301f37e243afff6b4eba029ff1c18e823cf173cf22374cc75cc41968",
+    "commands.jsonl": "be94a7024fb7bbe8ca103040f5146a246957cea46158696e69315848e1869d23",
+    "rendered.txt": "13bdaeef794e4a68165b5d0abfd1c7f5f0f610c0660f57aa9500cb19cb040309"
+  }
+}

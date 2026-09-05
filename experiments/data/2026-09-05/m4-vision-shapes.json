@@ -1,0 +1,237 @@
+{
+  "model_sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+  "signatures": [
+    {
+      "name": "vision_140",
+      "payload_offset": 1122271232,
+      "subgraph": 0,
+      "inputs": [
+        {
+          "signature_name": "images",
+          "tensor_name": "vision_140_images:0",
+          "shape": [
+            1,
+            1260,
+            768
+          ],
+          "type_enum": 0
+        },
+        {
+          "signature_name": "positions_xy",
+          "tensor_name": "vision_140_positions_xy:0",
+          "shape": [
+            1,
+            1260,
+            2
+          ],
+          "type_enum": 2
+        }
+      ],
+      "outputs": [
+        {
+          "signature_name": "features",
+          "tensor_name": "StatefulPartitionedCall:0",
+          "shape": [
+            1,
+            140,
+            768
+          ],
+          "type_enum": 0
+        },
+        {
+          "signature_name": "mask",
+          "tensor_name": "StatefulPartitionedCall:1",
+          "shape": [
+            1,
+            140
+          ],
+          "type_enum": 6
+        }
+      ]
+    },
+    {
+      "name": "vision_280",
+      "payload_offset": 1122271232,
+      "subgraph": 1,
+      "inputs": [
+        {
+          "signature_name": "images",
+          "tensor_name": "vision_280_images:0",
+          "shape": [
+            1,
+            2520,
+            768
+          ],
+          "type_enum": 0
+        },
+        {
+          "signature_name": "positions_xy",
+          "tensor_name": "vision_280_positions_xy:0",
+          "shape": [
+            1,
+            2520,
+            2
+          ],
+          "type_enum": 2
+        }
+      ],
+      "outputs": [
+        {
+          "signature_name": "features",
+          "tensor_name": "StatefulPartitionedCall_1:0",
+          "shape": [
+            1,
+            280,
+            768
+          ],
+          "type_enum": 0
+        },
+        {
+          "signature_name": "mask",
+          "tensor_name": "StatefulPartitionedCall_1:1",
+          "shape": [
+            1,
+            280
+          ],
+          "type_enum": 6
+        }
+      ]
+    },
+    {
+      "name": "vision_70",
+      "payload_offset": 1122271232,
+      "subgraph": 2,
+      "inputs": [
+        {
+          "signature_name": "images",
+          "tensor_name": "vision_70_images:0",
+          "shape": [
+            1,
+            630,
+            768
+          ],
+          "type_enum": 0
+        },
+        {
+          "signature_name": "positions_xy",
+          "tensor_name": "vision_70_positions_xy:0",
+          "shape": [
+            1,
+            630,
+            2
+          ],
+          "type_enum": 2
+        }
+      ],
+      "outputs": [
+        {
+          "signature_name": "features",
+          "tensor_name": "StatefulPartitionedCall_2:0",
+          "shape": [
+            1,
+            70,
+            768
+          ],
+          "type_enum": 0
+        },
+        {
+          "signature_name": "mask",
+          "tensor_name": "StatefulPartitionedCall_2:1",
+          "shape": [
+            1,
+            70
+          ],
+          "type_enum": 6
+        }
+      ]
+    },
+    {
+      "name": "vision_adapter_140",
+      "payload_offset": 1346420736,
+      "subgraph": 0,
+      "inputs": [
+        {
+          "signature_name": "soft_tokens",
+          "tensor_name": "vision_adapter_140_soft_tokens:0",
+          "shape": [
+            1,
+            140,
+            768
+          ],
+          "type_enum": 0
+        }
+      ],
+      "outputs": [
+        {
+          "signature_name": "mm_embedding",
+          "tensor_name": "StatefulPartitionedCall:0",
+          "shape": [
+            1,
+            140,
+            2560
+          ],
+          "type_enum": 0
+        }
+      ]
+    },
+    {
+      "name": "vision_adapter_280",
+      "payload_offset": 1346420736,
+      "subgraph": 1,
+      "inputs": [
+        {
+          "signature_name": "soft_tokens",
+          "tensor_name": "vision_adapter_280_soft_tokens:0",
+          "shape": [
+            1,
+            280,
+            768
+          ],
+          "type_enum": 0
+        }
+      ],
+      "outputs": [
+        {
+          "signature_name": "mm_embedding",
+          "tensor_name": "StatefulPartitionedCall_1:0",
+          "shape": [
+            1,
+            280,
+            2560
+          ],
+          "type_enum": 0
+        }
+      ]
+    },
+    {
+      "name": "vision_adapter_70",
+      "payload_offset": 1346420736,
+      "subgraph": 2,
+      "inputs": [
+        {
+          "signature_name": "soft_tokens",
+          "tensor_name": "vision_adapter_70_soft_tokens:0",
+          "shape": [
+            1,
+            70,
+            768
+          ],
+          "type_enum": 0
+        }
+      ],
+      "outputs": [
+        {
+          "signature_name": "mm_embedding",
+          "tensor_name": "StatefulPartitionedCall_2:0",
+          "shape": [
+            1,
+            70,
+            2560
+          ],
+          "type_enum": 0
+        }
+      ]
+    }
+  ],
+  "scope": "stored shapes, not a runtime tensor capture"
+}

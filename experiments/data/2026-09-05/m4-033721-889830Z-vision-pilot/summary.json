@@ -1,0 +1,126 @@
+{
+  "directory": "m4-033721-889830Z-vision-pilot",
+  "load_ms": 23792.216032,
+  "requests": [
+    {
+      "case": "budget70-1",
+      "request": 0,
+      "budget": 70,
+      "status": 0,
+      "callback_error": "",
+      "callback_final": true,
+      "request_to_first_text_ms": 8291.244841,
+      "send_to_first_text_ms": 1338.174948,
+      "prepare_ms": 6953.069893,
+      "total_request_ms": 9577.633434,
+      "text_callbacks": 22,
+      "output": "The three colored shapes from left to right are a red square, a blue circle, and a green triangle.",
+      "output_sha256": "47b640634ebb632b2954a9876189aeaed5bcdc038797fd7d4f1b89cd8de9258d",
+      "prefill_tokens": 101,
+      "prefill_ms": 357.52078099999994,
+      "decode_tokens": 23,
+      "decode_ms": 2042.248281,
+      "rss_periodic_samples": 19,
+      "rss_periodic_max_kib": 1137420,
+      "after_Rss_kib": 1136864,
+      "after_Pss_kib": 1130913,
+      "after_Swap_kib": 8,
+      "expected_error": false,
+      "completed_as_expected": true,
+      "fixture_phrase_check": true
+    }
+  ],
+  "boundaries": [
+    {
+      "stage": "before_load",
+      "request": -1,
+      "Rss_kib": 12096,
+      "Pss_kib": 6179,
+      "Swap_kib": 0
+    },
+    {
+      "stage": "after_load",
+      "request": -1,
+      "Rss_kib": 911668,
+      "Pss_kib": 905721,
+      "Swap_kib": 8
+    },
+    {
+      "stage": "before_request",
+      "request": 0,
+      "Rss_kib": 911668,
+      "Pss_kib": 905721,
+      "Swap_kib": 8
+    },
+    {
+      "stage": "after_request",
+      "request": 0,
+      "Rss_kib": 1136864,
+      "Pss_kib": 1130913,
+      "Swap_kib": 8
+    },
+    {
+      "stage": "conversation_released",
+      "request": 0,
+      "Rss_kib": 1136584,
+      "Pss_kib": 1130633,
+      "Swap_kib": 8
+    },
+    {
+      "stage": "after_release",
+      "request": 0,
+      "Rss_kib": 277884,
+      "Pss_kib": 271933,
+      "Swap_kib": 8
+    }
+  ],
+  "resize_log": [
+    {
+      "source_width": 640,
+      "source_height": 480,
+      "width": 432,
+      "height": 336,
+      "patches": 567,
+      "patch_limit": 630
+    }
+  ],
+  "thermal": [
+    {
+      "status": 1,
+      "skin_c": 38.778
+    },
+    {
+      "status": 1,
+      "skin_c": 38.799
+    },
+    {
+      "status": 1,
+      "skin_c": 38.968
+    },
+    {
+      "status": 1,
+      "skin_c": 38.926
+    },
+    {
+      "status": 1,
+      "skin_c": 38.948
+    },
+    {
+      "status": 1,
+      "skin_c": 39.069
+    },
+    {
+      "status": 1,
+      "skin_c": 38.848
+    }
+  ],
+  "lifetime_sampled_vmhwm_kib": 1138564,
+  "expected_input_error_log": [],
+  "status_read_ms": {
+    "count": 69,
+    "min": 0.109792,
+    "median": 0.166875,
+    "max": 0.611094
+  },
+  "valid": true
+}

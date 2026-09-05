@@ -1,0 +1,18 @@
+{
+  "kind": "synthetic geometric chart",
+  "width": 640,
+  "height": 480,
+  "mode": "RGB",
+  "creator": "book experiment fixture",
+  "expected_left_to_right": [
+    "red square",
+    "blue circle",
+    "green triangle"
+  ],
+  "pixel_generator": "Pillow; boundaries can differ by one pixel from SVG preview",
+  "files": {
+    "shapes.png": "c0af586fb432d47af1e8e08f6401705b58688eeeaea9d1ac4deb1d5036a3d370",
+    "shapes.svg": "3c5e1c72a40764a517cb20900e307a9b02d1e4447a4e8d5827468fcb5fa3f739",
+    "invalid.png": "0fa50f4f902cf8d9ec1b0b3318d48f3466dbf9d46ed16915722dba0ffc997f4e"
+  }
+}

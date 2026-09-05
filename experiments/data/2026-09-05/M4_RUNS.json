@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-05",
+  "E04": {"status": "not_completed", "decision": "m4-quantization-availability/decision.json"},
+  "E05": {
+    "pilot": "m4-033721-889830Z-vision-pilot",
+    "series": "m4-033840-613074Z-vision-series",
+    "token_audit": "m4-033840-613074Z-vision-series-token-audit-034531",
+    "model_shapes": "m4-vision-shapes.json",
+    "native_build": "m4-build-vision",
+    "excluded_diagnostics": [{"directory": "m4-033840-613074Z-vision-series-token-audit", "reason": "Text part counts were correct, but the total omitted the one BOS position inserted by a fresh Session. Replaced by the later audit; not used for effective visual token counts."}]
+  }
+}
