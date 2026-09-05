@@ -72,6 +72,19 @@ description: |
 - `鸟瞰`（章节标题）/ `耐人寻味` / `薄得几乎透明`
 - 修正：用功能性表述替换，或直接删掉。章节标题不是书名，不承载信息量的形容词一律去掉。
 
+**刻意修饰的文风（mannered prose）——有字面表达时直接陈述。**
+
+以下为作者新增要求原文，适用于本书的新增、改写与审校：
+
+> Mannered prose substitutes metaphor and flourish for direct statement. Instead of "a parameter worth varying," the mannered writer produces "a dial worth turning." Instead of "this point still matters," they write "this point earns its keep." The phrases exist to display the writer, not to convey the idea, and readers can tell. That is why mannered prose irritates: it makes the reader work harder so the writer can perform. It is also imprecise. Metaphors drag in connotations the writer did not choose and cannot control. The fix is to say what you mean. When a literal phrase is available, use it.
+
+审校时落实为以下检查：
+
+- 写明实际对象、动作、条件与结果。用“值得调整的参数”，不用“值得拧动的旋钮”；用“这一点仍然重要”，不用“这一点证明了自己的价值”。需要解释重要性时，直接说明它影响什么。
+- 比喻或修饰若只增加作者的表现感，没有帮助读者理解机制，就改成字面表达或删除。不能把一个比喻换成另一个，也不能只因“更生动”而保留。
+- 检查比喻带入的额外含义：原文是否误示主动意图、必然收益或不存在的因果关系。改为直陈时，保留技术条件与证据边界，不把可能写成必然。
+- 这不是机械替换技术术语的规则。`线程池`、`流水线`等通用术语按技术含义使用；本技能已有的例句也须服从本项要求，不能作为保留刻意修饰的理由。
+
 **文化特定指代**——假设读者共享同一语境：
 - `不是 PPT 上的方框` → `不是抽象的概念划分`
 - 修正：换成普遍可理解的技术描述。
@@ -118,6 +131,7 @@ description: |
 - [ ] `bash scripts/lint_prose.sh chapters/<slug>/chapter.md` 0 命中
 - [ ] `mdbook build` 0 WARN
 - [ ] 该章使命句是否短（不超过两句）、具体（给出了读者能获得什么）、说明了本章在全书中的角色？
+- [ ] 有准确的字面表达时是否直接陈述；比喻与修饰是否引入了技术事实之外的含义？
 
 ## 示例
 
