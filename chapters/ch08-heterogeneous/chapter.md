@@ -306,7 +306,7 @@ position 和 mask 张量需要保留当前轮与上一轮两组缓冲。交换�
 <figcaption>图 8-3　Backend 先选择执行器，再转换为编译选项；最终的数据驻留还取决于各 compiled model 创建的 buffer。</figcaption>
 </figure>
 
-零拷贝（zero-copy）指生产者与消费者复用同一底层存储，不为交接数据再复制一份字节。对异构执行而言，“代码里没有 `memcpy`”只是必要条件，不是充分条件。至少还要满足三项要求：两个计算阶段接受同一种 buffer 类型；张量形状、元素类型、布局与对齐相容；生产者的完成事件能传递给消费者。delegate 或驱动仍可能在绑定、格式转换或同步时创建内部副本。
+零拷贝（zero-copy）指生产者与消费者复用同一底层存储，不为交接数据再复制一份字节。对异构执行而言，“代码里没有 `memcpy`”只是必要条件，不是充分条件。两个计算阶段还须接受同一种 buffer 类型，张量形状、元素类型、布局与对齐也须相容。生产者的完成事件须能传递给消费者。delegate 或驱动仍可能在绑定、格式转换或同步时创建内部副本。
 
 常规 CPU/GPU 执行器把 compiled model 创建的 `TensorBuffer` 保存下来。每次绑定前，它调用 `Duplicate()` 生成句柄，清除输出句柄上的旧事件，再调用 `RunAsync`；decode 完成提交后，执行器交换 KV cache 的输入、输出 map：
 
@@ -340,13 +340,17 @@ compiled_model_->RunAsync(kDecodeSignatureRunner, decode_input_buffers,
 | GPU KV cache 的本轮→下一轮 | 两套 buffer 交换 map | 输出 buffer 可直接作为下一轮输入；事件可传递 | delegate 内部格式转换或等待不在 `std::swap` 中体现 |
 | NPU embedder/辅助图→主模型 | 对主模型输入 buffer 调用 `Duplicate()` | 子图接受同一 storage、类型和布局 | buffer 类型不相容时需重新分配；驱动内部行为尚未实测 |
 | GPU logits→约束解码 | 先读到 host，mask 后写回 | 当前实现只在 logits 已是 host memory 时直接修改 | 非 host buffer 执行完整 logits 回读与回写 |
-| Session Clone / 多候选 KV 变换 | 新分配后 `memcpy` | 语义要求独立副本或 batch 重排 | 必然产生按 `PackedSize()` 计的复制 |
+| Session 初次 Clone | 共享已处理的 LLM 上下文 | 尚未需要写时分离或切换独立上下文 | 后续保存上下文时，是否复制 KV 取决于后端缓冲集合 |
+| 执行器保存上下文快照 | 复制所选 KV 缓冲 | 不适用：需独立保存快照 | 每块选中的缓冲按 `PackedSize()` 复制；GPU 单缓冲路径的输入 KV map 为空 |
+| 多候选 KV 变换 | 按 batch 广播或抽取分支 | 不适用：需独立目标布局 | 按各分支跨度执行 `memcpy` |
 
 > 表 8-1　“共享句柄”“无显式复制”和“端到端零拷贝”是三种不同结论；只有最后一项需要把 delegate 与驱动行为也纳入证据。
 
 约束解码给出一条可以直接确认的退化路径。若 logits 已在 host memory，执行器原地调用 `MaskLogits`；若 buffer 不在 host，代码先读出全部 FP32 或 FP16 logits，修改后再写回。本书基准模型的 262144 词表对应 1 MiB FP32 logits，这条路径每个 decode step 都处理一整份 logits，而不是只处理最终 token id。
 
-KV cache 也有明确的深复制路径。多候选 decode 在首次 prefill/decode 转换时，锁定源、目标缓冲，按 batch 广播或抽取一个分支，两种分支都调用 `memcpy`。Session Clone 则通过 `CopyTensorBuffer` 分配同等大小的目标，再复制 `PackedSize()` 字节（6.4.3 节）。这些路径的开销不能归入 kernel 执行时间。
+KV cache 的复制要区分会话克隆、上下文快照与多候选变换。Session 初次 Clone 共享已处理的 LLM 上下文，不复制 LLM KV 字节。后续写时分离或切换独立上下文时，资源管理器才调用执行器保存快照。常规 compiled executor 复制活动输入 KV map 中的缓冲，NPU executor 复制所选的 K、V、C cache 缓冲。每块选中的缓冲通过 `CopyTensorBuffer` 分配并按 `PackedSize()` 复制。GPU 单缓冲路径的输入 KV map 为空，快照不含 KV 字节；具体限制见 6.4.3 节。
+
+多候选 decode 则在首次 prefill/decode 转换时锁定源、目标缓冲，按 batch 广播或抽取一个分支。两种变换都调用 `memcpy`，复制范围由 batch 布局决定。这些复制与同步操作也计入端到端耗时，不能只测 kernel 执行时间。
 
 <figure>
 {{#include figs/fig-8-4.svg}}

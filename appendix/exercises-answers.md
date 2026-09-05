@@ -46,7 +46,7 @@
 ## 第 6 章
 
 1. 28 KiB × 8192 = 224 MiB。32768 不小于占位值 32003，`GetTargetNumber` 改用占位值以下最大的 256 的倍数 32000 并打印警告；28672 B × 32000 = 917,504,000 B = 875 MiB。
-2. `Session::Clone` 本身不复制 LLM KV，复制量为 0。新旧 handler 共享同一个 `SharedProcessedContext`，各自持有按值复制的 `RuntimeConfig` 与 `RuntimeState`；其中 `RuntimeState::rand_gen` 是 `shared_ptr`，复制状态时不会复制底层随机数生成器。较短分支后续需要截断或改写共享历史时才触发写时分离。若此时使用 compiled executor，且上下文宽度为 4096，一组活动 KV 输入缓冲约为 \\(4096 \times 28\ \text{KiB} = 112\ \text{MiB}\\)；`CopyTensorBuffer` 按 `PackedSize()` 复制完整容量，不按有效前缀裁剪。
+2. `Session::Clone` 本身不复制 LLM KV，复制量为 0。新旧 handler 共享同一个 `SharedProcessedContext`，各自持有按值复制的 `RuntimeConfig` 与 `RuntimeState`；其中 `RuntimeState::rand_gen` 是 `shared_ptr`，复制状态时不会复制底层随机数生成器。较短分支后续需要截断或改写共享历史时才触发写时分离。若 compiled executor 的活动输入 map 含一套宽度为 4096 的基准模型 K/V 缓冲，复制量约为 \\(4096 \times 28\ \text{KiB} = 112\ \text{MiB}\\)；`CopyTensorBuffer` 按 `PackedSize()` 复制完整容量，不按有效前缀裁剪。
 3. 缓冲内容不复制，只交换输入和输出缓冲指针。读旧写新之后调用 `std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_)`；prefill 路径在 `runtime/executor/llm_litert_compiled_model_executor.cc:738`，decode 路径在 `runtime/executor/llm_litert_compiled_model_executor.cc:947`。
 4. 按 28 KiB/token 估算，预留容量从约 112 MiB 增至约 224 MiB。本书同 prompt 实验中，decode 从 26.4 降至 21.5 tokens/s，约下降 19%。实验没有用性能计数器分离注意力、KV 访存和其他执行成本，不能把全部降幅归到单一原因。
 5. compiled executor 的 `CloneContext` 只遍历活动的 `input_kv_cache_buffers_`，每块都按 `PackedSize()` 完整复制；非单缓冲恢复路径通过移动保存的 map 接管所有权，不再复制内容。NPU executor 则从 prefill 输入中选择名称以 K、V 或 C cache 前缀开头的缓冲，仍按各自 `PackedSize()` 完整复制；恢复时先核对源、目标大小，再把保存内容 `memcpy` 回固定输入缓冲。两条 executor 路径都不调用 `LitertKVCache::DeepCopy`；后者是 `KVCacheInterface` 的独立实现，会复制 bank 1 及可选的 bank 2。

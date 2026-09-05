@@ -93,11 +93,11 @@ return ContextHandler::Bundle(
 
 代码行 `(1)` 让新旧上下文 handler 指向同一个共享对象，实际的已处理上下文只有一份。这正是写时复制（copy-on-write）的“共享”一半：先共享，等哪条分支要改写时再复制。`(2)` 运行配置与运行状态则按值复制。到这里没有复制任何 KV cache buffer；接口注释也写明两个 handler 共享 processed context。
 
-深拷贝要等到分支真正分叉才发生。prefill 时执行器比较本次输入与已处理 token：一旦发现两者分叉，且当前分支不是共享链中最长的那条，就触发分离——把原上下文存回旧的共享对象，为当前分支建立新的共享对象，并调用 `CloneContext` 复制执行器侧状态。
+分支需要改写共享历史时才进行写时分离。prefill 时执行器比较本次输入与已处理 token。若两者分叉，且当前分支不是共享链中最长的一条，就调用 `CloneContext` 保存执行器侧状态。原上下文存回旧的共享对象，当前分支则使用新的共享对象。
 
-KV cache 的字节复制就发生在 `CloneContext` 里：compiled model 执行器遍历 KV cache 输入缓冲，逐块调用 `CopyTensorBuffer`；NPU 执行器的覆写版本按 K、V、C cache 名称匹配缓冲后做同样的复制。两条后端路径都只在写时分离阶段复制，初次共享上下文时不复制任何字节。
+`CloneContext` 按后端选择要复制的 KV 缓冲。compiled model 执行器遍历活动输入 KV map，逐块调用 `CopyTensorBuffer`；NPU 执行器则按 K、V、C cache 名称匹配缓冲。GPU 单缓冲路径的输入 KV map 为空，快照不含 KV 字节，具体限制见 6.4.3 节。除写时分离外，资源管理器切换独立上下文时也会调用 `CloneContext` 保存当前状态。
 
-`Clone` 的初始成本不能按一次完整 KV cache 拷贝估算。后续分支的 prefill 行为决定 buffer 是否以及何时复制。
+初次 `Clone` 共享 LLM 上下文，不复制 LLM KV 字节。后续复制的时机取决于分支改写与独立上下文切换，复制量则取决于后端实际保存的缓冲集合。
 
 ## 3.2　对话层：消息与模板文本
 
