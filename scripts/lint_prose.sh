@@ -2,7 +2,7 @@
 # 文风机检：禁词表、填充词、内部标签、退役叙事词、中英文空格、破折号（一段至多一处）。
 # 用法：scripts/lint_prose.sh [文件...]   缺省检查 chapters/**/chapter.md + appendix/*.md + preface.md + cover.md
 # 退出码：有命中返回 1，干净返回 0（可挂 pre-commit / CI）。
-# 规则依据 AGENTS.md 第三、五节；此脚本只查成书源文件，不查 notes.md（含源码摘录）。
+# 规则依据 CLAUDE.md 第三、五节；此脚本只查成书源文件，不查 notes.md（含源码摘录）。
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

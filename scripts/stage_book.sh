@@ -15,7 +15,7 @@ trap cleanup EXIT
 cp "$REPO_DIR/SUMMARY.md" "$REPO_DIR/preface.md" "$REPO_DIR/cover.md" \
   "$TEMP_STAGE/"
 
-for source_dir in assets preface parts chapters appendix; do
+for source_dir in assets parts chapters appendix; do
   mkdir -p "$TEMP_STAGE/$source_dir"
   rsync -a \
     --exclude='.DS_Store' \
