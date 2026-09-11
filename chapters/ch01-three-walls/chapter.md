@@ -142,11 +142,11 @@ $$ \frac{50 \times 10^{9}\ \text{字节/s}}{2.36 \times 2^{30}\ \text{字节/tok
 
 $$ E_{\mathrm{mem/token}} \approx D \times e_{\mathrm{byte}} $$
 
-\\(e_{\mathrm{byte}}\\) 随制造工艺、内存类型、访问局部性、功耗状态和测量口径变化，没有跨设备通用的常数，下面只演示代入方法。假定 \\(e_{\mathrm{byte}}=20\\) pJ/byte（1 pJ = \\(10^{-12}\\) J），每 token 的 DRAM 流量仍取 1.4 节的 \\(2\times10^9\\) 字节，则
+\\(e_{\mathrm{byte}}\\) 随制造工艺、内存类型、访问局部性、功耗状态和测量口径变化，没有跨设备通用的常数，下面只演示代入方法。这里先分清口径：能耗资料常按每比特给出 DRAM 访问能耗，Horowitz 给出的 640 pJ / 32 位访问即 20 pJ/bit，折合每字节 160 pJ。[^ch01-horowitz] 本节按每字节代入，取 \\(e_{\mathrm{byte}}=20\\) pJ/byte（1 pJ = \\(10^{-12}\\) J）；这个取值与上一句的 20 pJ/bit 数字相同、量纲不同，两者不可互引，换用其他来源时须先确认它按比特还是按字节给出。每 token 的 DRAM 流量仍取 1.4 节的 \\(2\times10^9\\) 字节，则
 
 $$ 2 \times 10^{9}\ \text{字节} \times 20 \times 10^{-12}\ \text{J/字节} = 0.04\ \text{J/token} $$
 
-20 pJ/byte 是示意假设，不是本书设备的实测值；算出的 0.04 J/token 也只覆盖 DRAM 访问一项，不含算术运算、量化解包、显示、操作系统、无线电和电源转换，不能据此推算手机续航或可生成的 token 总数。整机能耗要在目标设备上实测。
+20 pJ/byte 是按每字节计的示意取值，不是本书设备的实测值，也不存在跨设备通用的常数；若改用上一段的每比特口径（160 pJ/byte），这里的结果将是现在的 8 倍。算出的 0.04 J/token 也只覆盖 DRAM 访问一项，不含算术运算、量化解包、显示、操作系统、无线电和电源转换，不能据此推算手机续航或可生成的 token 总数。整机能耗要在目标设备上实测。
 
 减少 DRAM 流量能同时降低带宽占用与访问能耗，但只有当这两项在总成本中占主要部分时，收益才接近线性。软件侧另有一组影响功耗的可调参数：线程数、核心绑定和异步调度都会改变吞吐、功率与温度，取值应依据持续负载实验确定。
 
@@ -189,11 +189,12 @@ $$ 2 \times 10^{9}\ \text{字节} \times 20 \times 10^{-12}\ \text{J/字节} = 0
 
 1. 内存预算复算。一台 12 GiB 手机，题设假定操作系统与其他应用合计占用 5 GiB。按 KV cache 每 token 128 KiB 计算。求 7B 模型的理想 INT4 权重与 8K 上下文 KV cache 的字节数。仅凭这两项能否判定可运行？上下文增至 32K 时呢？
 2. 带宽侧上限复算。一款 SoC 使用 LPDDR5X-9600 与 64 bit 总线。先由数据率与总线宽度推导理论峰值带宽，再估算 INT8 4B 稠密模型的带宽侧 decode 上限。说明为什么它不是持续性能承诺。
-3. 能耗假设变体。题设明确假定 \\(e_{\mathrm{byte}}=20\\) pJ/byte。若 INT4 2B 模型每 token 产生约 1 GB DRAM 流量，计算 DRAM 访问能耗。再计算把 15 Wh 全部用于这一项时的算术上界，并说明它为什么不代表设备续航。
+3. 能耗假设变体。题设明确假定 \\(e_{\mathrm{byte}}=20\\) pJ/byte，按每字节计，不与 20 pJ/bit 混用。若 INT4 2B 模型每 token 产生约 1 GB DRAM 流量，计算 DRAM 访问能耗。再计算把 15 Wh 全部用于这一项时的算术上界，并说明它为什么不代表设备续航。
 4. Roofline 判断。解释为什么 batch=1 的稠密模型通常表现为 prefill 算术强度较高、decode 算术强度较低。再列出一个会破坏该简化判断的条件。
 5. 条件判断。某 decode 工作点已确认受带宽约束。若芯片计算吞吐翻倍而有效内存带宽不变，带宽侧上限是否变化？若尚未确认瓶颈，为什么不能直接作答？
 6. 层级判断。某次部署中，模型加载与编译成功，首次调用 `Run` 时返回硬件驱动错误。这个错误位于软件栈的哪一层？排查时应从哪个运行时开始看？
 
+[^ch01-horowitz]: Mark Horowitz，[*1.1 Computing's energy problem (and what we can do about it)*](https://doi.org/10.1109/ISSCC.2014.6757323)，2014 IEEE International Solid-State Circuits Conference（ISSCC）；访问日期：2026-09-12。
 [^ch01-issue-2281]: 4ntoine，[*Different inference result depending on backend*](https://github.com/google-ai-edge/LiteRT-LM/issues/2281)，LiteRT-LM issue #2281，2026-05-15；访问日期：2026-07-18。
 [^ch01-issue-2227]: Shoolife，[*MTP / speculative decoding regresses decode tok/s on PowerVR GPU (Tensor G6) — even with GPU sampler fully loaded*](https://github.com/google-ai-edge/LiteRT-LM/issues/2227)，LiteRT-LM issue #2227，2026-05-11；访问日期：2026-07-18。
 [^ch01-llama]: ggml-org，[llama.cpp](https://github.com/ggml-org/llama.cpp/tree/b9873)，tag `b9873`；访问日期：2026-07-18。
