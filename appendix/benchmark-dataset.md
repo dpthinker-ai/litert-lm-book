@@ -24,6 +24,7 @@
 - 指标：prefill tokens/s、decode tokens/s、Init API 聚合值（s）、TTFT（s）。（`litert-lm benchmark` 不报峰值内存，故本表不含该列。）C API 会把 `GetInitPhases()` 中可能重叠的阶段 duration 相加，因此 Init 列不是无重叠的端到端墙钟时间。
 - 证据范围：本书的性能数字只引用本数据集与注明出处的官方数据。更换后端、模型或机器后，结果作为另一组数据单独标注，不参与混合计算（第 8 章）。
 - 原始 CSV 存 `experiments/data/baseline.csv` 与 `mtp.csv`，元信息存 `experiments/data/_meta.txt`。
+- 缓存：CLI 使用 `--cache disk`，编译产物持久化在模型旁的缓存文件（取值含义见附录 C 第一节）。同一批次里，gpu/256 的第 1 次 Init API 聚合值为 5.29 s，该条件后两次为 1.76、1.75 s；gpu/4096 的第 1 次为 4.77 s。表中 Init 列是各条件 3 次的中位数，不含这些单次冷启动值。
 
 ## 三、结果
 

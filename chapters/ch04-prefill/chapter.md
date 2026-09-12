@@ -284,11 +284,22 @@ framework 里还有一个名字相近的独立原语 `ExecutionQueue`——单�
 
 ### 4.4.3　回调线程边界与背压
 
-流式回调与终态回调使用不同路径。`Tasks::Decode` 产生文本后直接调用流式回调，此时仍在执行池线程上。慢回调会延长当前 decode 迭代。任务结束时，`FinishTask` 把终态回调投递到回调池：
+流式回调与终态回调使用不同路径。`Tasks::Decode` 产生文本后直接调用流式回调，此时仍在执行池线程上；慢回调会延长当前 decode 迭代：
 
 ```cpp
-// runtime/core/tasks.cc:564
+// runtime/core/tasks.cc:563-567
+if (is_streaming && any_updates) {
+  callback(Responses(TaskState::kProcessing, std::move(step_texts),
+                     std::move(step_scores), /*token_lengths=*/{},
+                     std::move(step_token_ids)));
+}
+```
+
+任务结束时，`FinishTask` 把终态回调投递到回调池，随后等待它完成：
+
+```cpp
 // runtime/framework/resource_management/threaded_execution_manager.cc:434
+// runtime/framework/resource_management/threaded_execution_manager.cc:455
 if (callback_thread_pool_ != nullptr) {
   RETURN_IF_ERROR(callback_thread_pool_->Schedule(
       [callback = std::move(callback), responses = std::move(responses),

@@ -28,7 +28,7 @@
 - 第 4 章　Prefill：并行处理提示词——静态/动态形状两条路径、异步底座、取消时序
 - 第 5 章　Decode：单步解码循环——DecodeOneStep、采样、停止序列、流式回调（全书深度标尺）
 
-**第三部分 · 运行时优化与异构执行**
+**第三部分 · 模型加载、异构执行与投机解码**
 - 第 6 章　KV cache：容量、带宽与会话生命周期——内存账、双缓冲、Clone/Checkpoint/Rewind
 - 第 7 章　模型文件与权重：量化、容器格式与 LoRA——int4/int8 收益账、.litertlm 分段、weight cache、发布验收
 - 第 8 章　异构算力：CPU、GPU 与 NPU——后端分派、设备侧采样、buffer 交接、NPU 部分基于代码分析

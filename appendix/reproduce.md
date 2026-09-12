@@ -23,6 +23,8 @@ litert-lm run gemma-4-e4b \
 shasum -a 256 ~/.litert-lm/models/gemma-4-e4b/model.litertlm
 ```
 
+`run` 与 `benchmark` 还接受 `--cache`，它决定后端编译产物的缓存方式（`python/litert_lm_cli/common.py:95-106`）：`disk`（默认）把编译产物持久化到模型旁的缓存文件；`memory` 缓存在内存中，仅 CPU 后端支持，Windows 上不可用；`no` 关闭缓存，每次运行重新编译。本书用这两条命令采集的归档运行都使用 `disk`，因此同一设备上首次运行包含冷启动，初始化时间高于后续复用缓存的运行（记录见附录 D 第二节）。切换取值会改变初始化路径，比较 Init 时间时须固定该取值。
+
 ## 二、从源码编译
 
 需要 Bazel（经 Bazelisk 自动取 7.6.1）。冻结版的官方构建指南列出了对应平台的前置条件与命令。[^appc-build-guide] 编译 CLI 演示程序：
