@@ -27,7 +27,7 @@ enum class Backend {
 };
 ```
 
-代码行 `(1)` 带 ARTISAN 后缀的枚举值对应手写算子路径，`(2)` 不带后缀的 CPU、GPU 使用 LiteRT 编译路径；同一类硬件有两个枚举值，是因为底层算子实现不同。本章只讲 CPU、GPU 与 NPU 这条编译路径，其中 `(3)` NPU 在工厂里进入独立分支。GOOGLE_TENSOR_ARTISAN 对应 Pixel Tensor 的手写路径，此处不展开。
+代码行 `(1)` 的 `CPU_ARTISAN` 与 `GPU_ARTISAN` 对应手写算子路径，`(2)` 不带后缀的 CPU、GPU 使用 LiteRT 编译路径；同一类硬件有两个枚举值，是因为底层算子实现不同。本章只讲 CPU、GPU 与 NPU 这条编译路径，其中 `(3)` NPU 在工厂里进入独立分支。同一枚举里的 `GOOGLE_TENSOR_ARTISAN` 虽带 ARTISAN 后缀，源码注释标的是 Google Tensor 的 Emission Graph，也不属于手写算子路径，此处不展开。
 
 工厂函数按枚举值选择实现：
 
@@ -156,7 +156,7 @@ const TensorCoreAffinity kTensorAffinities[] = {
 识别芯片依据两个系统属性：
 
 ```cpp
-// runtime/engine/cpu_affinity_utils.cc:67
+// runtime/engine/cpu_affinity_utils.cc:67-84
 static const PixelSoc soc = []() {
   char manufacturer[PROP_VALUE_MAX] = {0};
   char soc_model[PROP_VALUE_MAX] = {0};
@@ -235,7 +235,7 @@ GPU 适合并行执行矩阵运算。第 5 章介绍过设备侧采样（device-
 采样器的后端和输入接管条件在执行器初始化采样器时确定：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor.cc:1335-1365
+// runtime/executor/llm_litert_compiled_model_executor.cc:1335-1366
 ASSIGN_OR_RETURN(auto sampler_backend, GetSamplerBackend(executor_settings_));  // (1)
 // ...
 ASSIGN_OR_RETURN(
@@ -311,7 +311,7 @@ position 和 mask 张量需要保留当前轮与上一轮两组缓冲。交换�
 常规 CPU/GPU 执行器把 compiled model 创建的 `TensorBuffer` 保存下来。每次绑定前，它调用 `Duplicate()` 生成句柄，清除输出句柄上的旧事件，再调用 `RunAsync`；decode 完成提交后，执行器交换 KV cache 的输入、输出 map：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor.cc:915-944
+// runtime/executor/llm_litert_compiled_model_executor.cc:915-948
 for (const auto& [input_name, input_buffer] : decode_input_buffers_) {
   LITERT_ASSIGN_OR_RETURN(auto input_buffer_dup, input_buffer.Duplicate());
   decode_input_buffers[input_name] = std::move(input_buffer_dup);
@@ -326,6 +326,9 @@ output_buffer_dup->ClearEvent();
 // ...
 compiled_model_->RunAsync(kDecodeSignatureRunner, decode_input_buffers,
                           decode_output_buffers, async));
+if (!gpu_optimized_single_buffer_cache_) {
+  std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_);
+}
 ```
 
 这些语句没有显式复制张量数据。`ClearEvent()` 与 `RunAsync` 又表明，句柄除指向存储外还参与完成事件的管理：后续消费者读取结果时，等待可能发生在 buffer 锁定、采样或下一次绑定处。仅统计 `RunAsync` 调用本身会漏掉这部分等待。
@@ -406,7 +409,7 @@ CPU/GPU 执行器并非总把 embedding 包含在主图内。初始化时它查�
 NPU 执行器在主 LLM 图之外还定义了多组上下文。以下三个结构展示了其中的 embedder、per-layer embedder 与辅助子图：
 
 ```cpp
-// runtime/executor/llm_litert_npu_compiled_model_executor.h:266
+// runtime/executor/llm_litert_npu_compiled_model_executor.h:266-320
 struct EmbedderContext {
   ::litert::Model embedder_model;                    // (1)
   ::litert::CompiledModel embedder_compiled_model;
