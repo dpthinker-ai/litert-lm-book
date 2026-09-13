@@ -1,0 +1,217 @@
+{
+  "started_at_utc": "2026-09-13T10:42:14.539568+00:00",
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "packages": {
+    "litert-lm-api": "0.17.0",
+    "litert-lm": "0.17.0",
+    "litert-lm-builder": "0.17.0"
+  },
+  "model": {
+    "path": "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "bytes": 15786524672,
+    "sha256": "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1"
+  },
+  "library_sha256": "a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc",
+  "script_sha256": "e564f16fad20b60a6abbdc2a8f3dd20a9cca25ed834d7b4e374e7cbfc27a6641",
+  "worker_command": [
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/moe_generation_check.py",
+    "--worker",
+    "--model",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "--sha256",
+    "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1",
+    "--output",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/data/2026-09-13/moe-full-model-retry/stream-ram-r1",
+    "--cache",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-stream-ram-r1-cache",
+    "--context",
+    "128",
+    "--output-tokens",
+    "32",
+    "--prompt",
+    "In one short sentence, explain what RAM stores.",
+    "--repeats",
+    "3"
+  ],
+  "requested_backend": "GPU",
+  "context_capacity": 128,
+  "max_output_tokens": 32,
+  "repetitions_in_engine": 3,
+  "machine": {
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "before_run": {
+    "vm_stat": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     6816.\nPages active:                                 189614.\nPages inactive:                              1071373.\nPages speculative:                              2903.\nPages throttled:                                   0.\nPages wired down:                             194909.\nPages purgeable:                                2905.\n\"Translation faults\":                     1374470511.\nPages copy-on-write:                        51120888.\nPages zero filled:                        1606399296.\nPages reactivated:                         270777654.\nPages purged:                               18952529.\nFile-backed pages:                           1062728.\nAnonymous pages:                              201162.\nPages stored in compressor:                   324697.\nPages occupied by compressor:                  29099.\nDecompressions:                            229010328.\nCompressions:                              258338148.\nPageins:                                    42483263.\nPageouts:                                    2121352.\nSwapins:                                     7164164.\nSwapouts:                                    8431709.\nPages tagged:                                 103940.\nPages tagged resident:                         86351.\nPages tagged compressed:                       17589.\nPages tag-storage:                             49152.\nPages tag-storage holding tags:                 4365.\nPages tag-storage free:                        18219.\nPages tag-storage non-tag pageable:            26560.\nPages tag-storage non-tag wired:                   8.\nBytes of compressed tags:                    2585344.\nTagged compressions:                         3088792.\nTagged decompressions:                       2801702.\n",
+    "swap": "vm.swapusage: total = 3072.00M  used = 1989.75M  free = 1082.25M  (encrypted)\n"
+  },
+  "thinking": false,
+  "speculative_decoding": false,
+  "top_k": 1,
+  "temperature": 0,
+  "seed": 42,
+  "timeout_seconds": 180.0,
+  "max_process_rss_gib": 18,
+  "limitations": [
+    "Prebuilt package; not a local build of frozen release source.",
+    "Fresh conversations share one engine; later repetitions reuse prepared model state.",
+    "Raw stream-final and runtime decode counts verify multi-token completion.",
+    "Client callback timestamps include queueing; callback count is not a token count.",
+    "Runtime benchmark fields retained verbatim; not yet a sustained-performance or quality benchmark.",
+    "Sampled process RSS and system pressure are stop guards and can miss short-lived peaks."
+  ],
+  "backend_errors": [],
+  "returncode": 2,
+  "status": "RUNTIME_ERROR",
+  "stop_reason": null,
+  "worker_result": {
+    "phase": "generation",
+    "engine_created": true,
+    "generation_completed": false,
+    "prompt": "In one short sentence, explain what RAM stores.",
+    "generations": [
+      {
+        "index": 0,
+        "events": [
+          {
+            "elapsed_seconds": 3.699427125044167,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.7132842499995604,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.7298619999783114,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.744794417056255,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.7598149169934914,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.776655958034098,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.793513666954823,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" instructions\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.810195332975127,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" that\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.8268445830326527,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" your\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.843401583028026,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computer\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.859902875032276,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.8765677920309827,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" actively\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.893185833003372,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" using\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.90973475005012,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" to\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.9264452080242336,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" run\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.9429842500248924,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.9595273749437183,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.9761110419640318,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" processes\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.9926340830279514,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.992752542020753,
+            "error": null,
+            "message": "",
+            "is_final": true
+          }
+        ],
+        "stream_final": true,
+        "stream_error": null,
+        "first_text_callback_seconds": 3.699427125044167,
+        "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes.",
+        "generation_wall_seconds": 3.9930783750023693
+      }
+    ],
+    "engine_create_seconds": 28.749598624999635,
+    "error_type": "RuntimeError",
+    "error": "Failed to get benchmark info."
+  },
+  "finished_at_utc": "2026-09-13T10:42:47.663817+00:00",
+  "files": {
+    "resource-guard.json": "947b17fc3c851e0ea047033b52b40c7e9cac8e4ec55d072dfce488f7653bc88f",
+    "stderr.log": "b4d0ff1d77bff1ad56e32e2cd36c457bb01603101b6f88099499128451733fe5",
+    "stdout.log": "d1a2d3d6f5b038ee7403ae07ec41c6dbf4994a56e3af196a83f8fe6fbc6be704",
+    "worker.json": "11c90d7d0e36138d5ca43a585ad3378f88594122b24aab40a951b493689b7ad9"
+  }
+}

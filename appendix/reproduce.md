@@ -373,3 +373,22 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_full_model_check.py \
 输出目录与缓存目录须为新目录。默认提示词要求仅返回 OK。第二项把提示词改为 `In one short sentence, explain what RAM stores.`，并将 `--output-tokens` 改为 32，另用新的输出和缓存目录。本次两项分别成功和被压力保护停止，详见附录 D 第二十五节；它们不是只改变一个变量的性能对照。
 
 只有 `GENERATION_COMPLETED`、返回文本、正常清理与退出码共同满足，才计为短生成完成。读取日志核对实际 Artisan／Metal 路径和上下文设置；不要把创建成功或无 Python 异常当作完整输出证据。持续性能测量还需另行记录首 token 和逐 step 事件。
+
+## 十六、完整 MoE 的重复生成与流式计数
+
+复用第十节的 v0.17.0 环境和完整 GPU 文件，使用新的 `moe_generation_check.py`。该脚本显式开启 benchmark，直接记录冻结 C API 的流事件，再读取会话的运行时计数。英文配置为：
+
+```bash
+tmp/moe-full-recheck-venv/bin/python experiments/moe_generation_check.py \
+  --model /path/to/gemma-4-26B-A4B-it-gpu.litertlm \
+  --sha256 94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1 \
+  --output tmp/moe-stream-english-r1 --cache tmp/moe-stream-english-cache-r1 \
+  --context 128 --output-tokens 32 --repeats 3 --timeout 180 \
+  --prompt 'In one short sentence, explain what RAM stores.'
+```
+
+同一命令使用不同输出和缓存目录运行三次，得到三个独立进程、每进程三个新会话。中文组只运行一个进程，把容量改为 256、输出上限改为 96，提示词改为“请用两句话解释 RAM 和 SSD 的区别。”。每次都使用新目录；不并行启动完整模型，以免模型之间争用内存。
+
+保护条件与第十五节相同，时限改为 180 秒。采集器保存初始化前的内存状态，以及生成期间的逐次流事件；事件时间戳位于消费队列之前。只有无错误的 final 事件、非空文本、至少两个 runtime decode 计数、会话及引擎关闭、进程正常退出共同满足，才计为完整多 token 生成。后端验证错误另行归类，不能只看运行 API 返回值。
+
+读 `summary.json` 时，将每个引擎的首次请求与后两个会话分别统计。`first_text_callback_seconds` 是客户端可见文本到达时间，benchmark 中的 TTFT 与初始化字段有不同定义，详见附录 D 第二十六节。每次回调不保证对应一个 token，也不能从完整模型文件大小或进程 RSS 推算 GPU 独占内存。

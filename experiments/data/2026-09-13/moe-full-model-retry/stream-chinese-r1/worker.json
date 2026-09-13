@@ -1,0 +1,1567 @@
+{
+  "phase": "completed",
+  "engine_created": true,
+  "generation_completed": true,
+  "prompt": "请用两句话解释 RAM 和 SSD 的区别。",
+  "generations": [
+    {
+      "index": 0,
+      "events": [
+        {
+          "elapsed_seconds": 1.9256058749742806,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"这里\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9381142919883132,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"用\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9507653750479221,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"两\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9633550000144169,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"句话\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9759467920521274,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"为你\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9884913329733536,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"解释\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.001022542011924,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"：\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0139569169841707,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.026558291981928,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.039061167044565,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0515804999740794,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"（\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0640847079921514,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"内存\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0765799999935552,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"）\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0890776669839397,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.101581208058633,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"是\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1140543329529464,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电脑\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1265172499697655,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"运行\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1390210420358926,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"时的\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1514668749878183,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"“\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1639094999991357,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"临时\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.176373500027694,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"工作\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.188852083054371,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"台\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2013217080384493,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"”，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2138461250578985,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"速度\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2266873329645023,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"极\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2392882079584524,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"快\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.251795458025299,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"但\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2644248330034316,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"断\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2772650419501588,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2898104999912903,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"后\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3023311670403928,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"数据\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3148328750394285,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"会\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3273682079743594,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"丢失\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3398595419712365,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.352317166980356,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"主要\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3648029169999063,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"负责\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3772782500600442,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"处理\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.389690374955535,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"当前\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.4024037499912083,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"正在\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.415486832964234,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"运行\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.4281726670451462,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"的任务\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.441245667054318,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"。\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.4543005420127884,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.467229458037764,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.4798646250274032,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"SSD\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.4925790829584002,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"（\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.505259042023681,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"固\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5179561669938266,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"态\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5307770000072196,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"硬盘\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5436380830360577,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"）\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.556262042024173,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5689229170093313,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"是\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5814491669880226,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电脑\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5939709580270573,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"的\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.6065712079871446,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"“\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.619207000010647,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"长期\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.631716832984239,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"储\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.6441863749641925,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"物\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.6566465829964727,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"间\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.6691335829673335,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"”，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.6816554580582306,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"速度\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.6941626250045374,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"虽\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.7068587499670684,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"慢\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.7193359170341864,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"于\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.7319875420071185,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"内存\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.7447089579654858,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"但\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.757260416983627,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"断\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.7698211669921875,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.7823584580328315,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"后\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.7950429579941556,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"数据\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.807817624998279,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"依然\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.820352250011638,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"保存\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.8329048750456423,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.8456037919968367,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"主要\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.8583459169603884,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"负责\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.870863875024952,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"永久\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.88346200005617,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"存储\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.895963625051081,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"你的\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.9084550000261515,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"文件\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.92095049994532,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"和\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.933449332951568,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"操作系统\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.9463782920502126,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"。\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.946633292012848,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 1.9256058749742806,
+      "text": "这里用两句话为你解释：\n\n**RAM（内存）**是电脑运行时的“临时工作台”，速度极快但断电后数据会丢失，主要负责处理当前正在运行的任务。\n\n**SSD（固态硬盘）**是电脑的“长期储物间”，速度虽慢于内存但断电后数据依然保存，主要负责永久存储你的文件和操作系统。",
+      "generation_wall_seconds": 2.9471317500574514,
+      "benchmark": {
+        "init_time_in_second": 41.754488042,
+        "time_to_first_token_in_second": 1.910587807,
+        "last_prefill_token_count": 24,
+        "last_prefill_tokens_per_second": 12.645119760893936,
+        "last_decode_token_count": 83,
+        "last_decode_tokens_per_second": 79.22429866510637
+      },
+      "conversation_token_count": 107,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 1,
+      "events": [
+        {
+          "elapsed_seconds": 0.11974820797331631,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"这里\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.13280925003346056,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"用\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.14582566602621228,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"两\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.15876991604454815,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"句话\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.17167824995703995,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"为你\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.18445795797742903,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"解释\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.19730533298570663,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"：\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.2105141249485314,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.22367041604593396,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.23679416603408754,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.24969166598748416,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"（\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.2623585000401363,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"内存\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.2749735410325229,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"）\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.28754758299328387,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.30021074996329844,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"是\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.31290695804636925,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电脑\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.32557833299506456,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"运行\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.33823837502859533,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"时的\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3509450829587877,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"“\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.363663541036658,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"临时\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.37655112496577203,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"工作\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3895835409639403,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"台\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4022563330363482,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"”，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4148068750509992,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"速度\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4275322499452159,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"极\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4402203749632463,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"快\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4529645829461515,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"但\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4656316250329837,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"断\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.47829074994660914,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4910151249496266,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"后\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5035980000393465,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"数据\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5161290830001235,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"会\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5286402079509571,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"丢失\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5412153330398723,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5538243750343099,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"主要\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5665123329963535,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"负责\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5790320000378415,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"处理\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5915797910420224,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"当前\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6042825829936191,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"正在\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6169402500381693,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"运行\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.629576375009492,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"的任务\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6426295830169693,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"。\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6554857910377905,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6682807080214843,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.680878582992591,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"SSD\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6934351660311222,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"（\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.706011165981181,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"固\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7185760829597712,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"态\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.731105332961306,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"硬盘\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7436674579512328,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"）\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.756230958038941,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7687112080166116,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"是\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7811936249490827,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电脑\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7937204160261899,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"的\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8062581659760326,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"“\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8187677910318598,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"长期\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.831240791012533,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"储\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8438041659537703,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"物\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8565332080470398,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"间\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8700280409539118,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"”，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8836758329998702,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"速度\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8965220829704776,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"虽\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9094801660394296,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"慢\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9220707080094144,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"于\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9345504579832777,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"内存\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9471678329864517,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"但\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9598916659597307,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"断\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9726328329415992,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9851949580479413,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"后\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9979028749512509,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"数据\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0104610830312595,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"依然\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0234659160487354,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"保存\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0364989580120891,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0491261660354212,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"主要\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0617024999810383,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"负责\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0743080410175025,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"永久\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0868728749919683,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"存储\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0994007079862058,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"你的\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1119333329843357,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"文件\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.124482832965441,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"和\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.137393041048199,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"操作系统\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1504919580183923,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"。\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1509800830390304,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.11974820797331631,
+      "text": "这里用两句话为你解释：\n\n**RAM（内存）**是电脑运行时的“临时工作台”，速度极快但断电后数据会丢失，主要负责处理当前正在运行的任务。\n\n**SSD（固态硬盘）**是电脑的“长期储物间”，速度虽慢于内存但断电后数据依然保存，主要负责永久存储你的文件和操作系统。",
+      "generation_wall_seconds": 1.15178495796863,
+      "benchmark": {
+        "init_time_in_second": 41.754485042,
+        "time_to_first_token_in_second": 0.11631001125000001,
+        "last_prefill_token_count": 24,
+        "last_prefill_tokens_per_second": 231.42809543057083,
+        "last_decode_token_count": 83,
+        "last_decode_tokens_per_second": 79.32671051129779
+      },
+      "conversation_token_count": 107,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 2,
+      "events": [
+        {
+          "elapsed_seconds": 0.11805854202248156,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"这里\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.1306503330124542,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"用\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.14320666703861207,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"两\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.1558994579827413,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"句话\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.1684948749607429,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"为你\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.18120762496255338,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"解释\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.19393258297350258,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"：\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.2065815000096336,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.21938054205384105,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.23210899997502565,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.24489391699898988,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"（\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.2575844170060009,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"内存\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.2701753330184147,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"）\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.28317708300892264,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.29579000000376254,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"是\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.30829725007060915,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电脑\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3208502499619499,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"运行\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.33335504203569144,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"时的\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3458430420141667,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"“\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3583373329602182,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"临时\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.37090175005141646,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"工作\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.38338987505994737,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"台\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.39588733296841383,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"”，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.40835383301600814,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"速度\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.42126824997831136,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"极\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.43397074996028095,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"快\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.44650675007142127,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"但\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4590251250192523,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"断\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.47149962501134723,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4840669580735266,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"后\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.49656112503726035,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"数据\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5091861670371145,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"会\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5216997080715373,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"丢失\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5341755830449983,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5471302920486778,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"主要\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.559611750068143,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"负责\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5720924580236897,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"处理\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.58462633297313,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"当前\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5971302080433816,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"正在\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.609651374979876,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"运行\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.622182667022571,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"的任务\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6347374999895692,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"。\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6472121670376509,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.659670582972467,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6721617920557037,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"SSD\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.684629249968566,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"（\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6971475420286879,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"固\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7095845830626786,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"态\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7220775000751019,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"硬盘\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7345917499624193,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"）\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7470632920740172,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"**\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7594791250303388,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"是\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.771949875052087,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电脑\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.784452166990377,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"的\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7969188330462202,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"“\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8098085420206189,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"长期\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8223842079751194,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"储\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8349159579956904,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"物\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8474185829982162,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"间\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.859868917032145,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"”，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8723604580154642,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"速度\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8848717500222847,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"虽\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8976908329641446,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"慢\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9106679999968037,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"于\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9234744580462575,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"内存\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9360647919820622,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"但\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.948571874992922,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"断\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9610557080013677,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"电\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9735684170154855,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"后\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9860742080491036,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"数据\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9985748330364004,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"依然\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0110362080158666,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"保存\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0240733330138028,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"，\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0371310419868678,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"主要\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0501973750069737,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"负责\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.063068417017348,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"永久\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0761050829896703,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"存储\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0889183749677613,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"你的\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.10181962500792,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"文件\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1150294169783592,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"和\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1282491669990122,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"操作系统\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1410973750753328,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"。\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1417305000359192,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.11805854202248156,
+      "text": "这里用两句话为你解释：\n\n**RAM（内存）**是电脑运行时的“临时工作台”，速度极快但断电后数据会丢失，主要负责处理当前正在运行的任务。\n\n**SSD（固态硬盘）**是电脑的“长期储物间”，速度虽慢于内存但断电后数据依然保存，主要负责永久存储你的文件和操作系统。",
+      "generation_wall_seconds": 1.1426439170027152,
+      "benchmark": {
+        "init_time_in_second": 41.754490042,
+        "time_to_first_token_in_second": 0.11545226,
+        "last_prefill_token_count": 24,
+        "last_prefill_tokens_per_second": 233.12410250863098,
+        "last_decode_token_count": 83,
+        "last_decode_tokens_per_second": 79.9820699086597
+      },
+      "conversation_token_count": 107,
+      "generation_completed": true,
+      "conversation_closed": true
+    }
+  ],
+  "engine_create_seconds": 20.900255333981477,
+  "engine_closed": true
+}

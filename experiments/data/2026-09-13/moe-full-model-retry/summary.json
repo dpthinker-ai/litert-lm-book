@@ -1,0 +1,274 @@
+{
+  "model": "Gemma 4 26B-A4B official GPU artifact",
+  "model_sha256": "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1",
+  "validated_processes": 4,
+  "validated_generations": 12,
+  "rows": [
+    {
+      "case": "stream-ram-r2",
+      "repetition": 0,
+      "context": 128,
+      "output_budget": 32,
+      "prefill_count": 23,
+      "decode_count": 20,
+      "decode_tps": 79.84879289605412,
+      "first_text_callback_ms": 2612.192083033733,
+      "generation_wall_ms": 2843.508958001621,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+    },
+    {
+      "case": "stream-ram-r2",
+      "repetition": 1,
+      "context": 128,
+      "output_budget": 32,
+      "prefill_count": 23,
+      "decode_count": 20,
+      "decode_tps": 82.82242251444734,
+      "first_text_callback_ms": 120.07512501440942,
+      "generation_wall_ms": 347.255083033815,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+    },
+    {
+      "case": "stream-ram-r2",
+      "repetition": 2,
+      "context": 128,
+      "output_budget": 32,
+      "prefill_count": 23,
+      "decode_count": 20,
+      "decode_tps": 82.9822719910427,
+      "first_text_callback_ms": 120.65333395730704,
+      "generation_wall_ms": 347.3080419935286,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+    },
+    {
+      "case": "stream-ram-r3",
+      "repetition": 0,
+      "context": 128,
+      "output_budget": 32,
+      "prefill_count": 23,
+      "decode_count": 20,
+      "decode_tps": 81.3952639400561,
+      "first_text_callback_ms": 1650.2209580503404,
+      "generation_wall_ms": 1875.8160000434145,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+    },
+    {
+      "case": "stream-ram-r3",
+      "repetition": 1,
+      "context": 128,
+      "output_budget": 32,
+      "prefill_count": 23,
+      "decode_count": 20,
+      "decode_tps": 82.12599564937538,
+      "first_text_callback_ms": 121.19104096200317,
+      "generation_wall_ms": 350.23516591172665,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+    },
+    {
+      "case": "stream-ram-r3",
+      "repetition": 2,
+      "context": 128,
+      "output_budget": 32,
+      "prefill_count": 23,
+      "decode_count": 20,
+      "decode_tps": 82.39774708409513,
+      "first_text_callback_ms": 120.13766693416983,
+      "generation_wall_ms": 348.9771250169724,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+    },
+    {
+      "case": "stream-ram-r4",
+      "repetition": 0,
+      "context": 128,
+      "output_budget": 32,
+      "prefill_count": 23,
+      "decode_count": 20,
+      "decode_tps": 80.05411658280998,
+      "first_text_callback_ms": 2813.3059999672696,
+      "generation_wall_ms": 3044.1326670115814,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+    },
+    {
+      "case": "stream-ram-r4",
+      "repetition": 1,
+      "context": 128,
+      "output_budget": 32,
+      "prefill_count": 23,
+      "decode_count": 20,
+      "decode_tps": 82.01017871793464,
+      "first_text_callback_ms": 124.64262498542666,
+      "generation_wall_ms": 354.0096249198541,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+    },
+    {
+      "case": "stream-ram-r4",
+      "repetition": 2,
+      "context": 128,
+      "output_budget": 32,
+      "prefill_count": 23,
+      "decode_count": 20,
+      "decode_tps": 83.71278770384718,
+      "first_text_callback_ms": 119.97058405540884,
+      "generation_wall_ms": 345.3926669899374,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+    },
+    {
+      "case": "stream-chinese-r1",
+      "repetition": 0,
+      "context": 256,
+      "output_budget": 96,
+      "prefill_count": 24,
+      "decode_count": 83,
+      "decode_tps": 79.22429866510637,
+      "first_text_callback_ms": 1925.6058749742806,
+      "generation_wall_ms": 2947.1317500574514,
+      "text": "这里用两句话为你解释：\n\n**RAM（内存）**是电脑运行时的“临时工作台”，速度极快但断电后数据会丢失，主要负责处理当前正在运行的任务。\n\n**SSD（固态硬盘）**是电脑的“长期储物间”，速度虽慢于内存但断电后数据依然保存，主要负责永久存储你的文件和操作系统。"
+    },
+    {
+      "case": "stream-chinese-r1",
+      "repetition": 1,
+      "context": 256,
+      "output_budget": 96,
+      "prefill_count": 24,
+      "decode_count": 83,
+      "decode_tps": 79.32671051129779,
+      "first_text_callback_ms": 119.74820797331631,
+      "generation_wall_ms": 1151.78495796863,
+      "text": "这里用两句话为你解释：\n\n**RAM（内存）**是电脑运行时的“临时工作台”，速度极快但断电后数据会丢失，主要负责处理当前正在运行的任务。\n\n**SSD（固态硬盘）**是电脑的“长期储物间”，速度虽慢于内存但断电后数据依然保存，主要负责永久存储你的文件和操作系统。"
+    },
+    {
+      "case": "stream-chinese-r1",
+      "repetition": 2,
+      "context": 256,
+      "output_budget": 96,
+      "prefill_count": 24,
+      "decode_count": 83,
+      "decode_tps": 79.9820699086597,
+      "first_text_callback_ms": 118.05854202248156,
+      "generation_wall_ms": 1142.6439170027152,
+      "text": "这里用两句话为你解释：\n\n**RAM（内存）**是电脑运行时的“临时工作台”，速度极快但断电后数据会丢失，主要负责处理当前正在运行的任务。\n\n**SSD（固态硬盘）**是电脑的“长期储物间”，速度虽慢于内存但断电后数据依然保存，主要负责永久存储你的文件和操作系统。"
+    }
+  ],
+  "processes": [
+    {
+      "case": "stream-ram-r2",
+      "pressure_levels": [
+        1
+      ],
+      "host_engine_create_seconds": 27.936184916994534,
+      "sampled_peak_process_rss_gib": 4.982147216796875
+    },
+    {
+      "case": "stream-ram-r3",
+      "pressure_levels": [
+        1
+      ],
+      "host_engine_create_seconds": 21.495816083974205,
+      "sampled_peak_process_rss_gib": 4.963592529296875
+    },
+    {
+      "case": "stream-ram-r4",
+      "pressure_levels": [
+        1
+      ],
+      "host_engine_create_seconds": 21.026873916038312,
+      "sampled_peak_process_rss_gib": 4.9578094482421875
+    },
+    {
+      "case": "stream-chinese-r1",
+      "pressure_levels": [
+        1
+      ],
+      "host_engine_create_seconds": 20.900255333981477,
+      "sampled_peak_process_rss_gib": 4.9861297607421875
+    }
+  ],
+  "aggregates": {
+    "english_first": {
+      "n": 3,
+      "decode_tps": {
+        "median": 80.05411658280998,
+        "minimum": 79.84879289605412,
+        "maximum": 81.3952639400561
+      },
+      "first_text_callback_ms": {
+        "median": 2612.192083033733,
+        "minimum": 1650.2209580503404,
+        "maximum": 2813.3059999672696
+      },
+      "generation_wall_ms": {
+        "median": 2843.508958001621,
+        "minimum": 1875.8160000434145,
+        "maximum": 3044.1326670115814
+      }
+    },
+    "english_reuse": {
+      "n": 6,
+      "decode_tps": {
+        "median": 82.61008479927123,
+        "minimum": 82.01017871793464,
+        "maximum": 83.71278770384718
+      },
+      "first_text_callback_ms": {
+        "median": 120.39550044573843,
+        "minimum": 119.97058405540884,
+        "maximum": 124.64262498542666
+      },
+      "generation_wall_ms": {
+        "median": 348.1425835052505,
+        "minimum": 345.3926669899374,
+        "maximum": 354.0096249198541
+      }
+    },
+    "chinese_first": {
+      "n": 1,
+      "decode_tps": {
+        "median": 79.22429866510637,
+        "minimum": 79.22429866510637,
+        "maximum": 79.22429866510637
+      },
+      "first_text_callback_ms": {
+        "median": 1925.6058749742806,
+        "minimum": 1925.6058749742806,
+        "maximum": 1925.6058749742806
+      },
+      "generation_wall_ms": {
+        "median": 2947.1317500574514,
+        "minimum": 2947.1317500574514,
+        "maximum": 2947.1317500574514
+      }
+    },
+    "chinese_reuse": {
+      "n": 2,
+      "decode_tps": {
+        "median": 79.65439020997874,
+        "minimum": 79.32671051129779,
+        "maximum": 79.9820699086597
+      },
+      "first_text_callback_ms": {
+        "median": 118.90337499789894,
+        "minimum": 118.05854202248156,
+        "maximum": 119.74820797331631
+      },
+      "generation_wall_ms": {
+        "median": 1147.2144374856725,
+        "minimum": 1142.6439170027152,
+        "maximum": 1151.78495796863
+      }
+    }
+  },
+  "limits": [
+    "Counts and decode TPS are runtime benchmark fields, not callback counts.",
+    "First text timestamp is taken in the Python C callback before queue insertion, excluding consumer queue residence and engine creation; callback scheduling/GIL and collection overhead are not subtracted.",
+    "Runtime TTFT is prefill duration plus mean decode-step duration; archived but not used as actual first-token timing.",
+    "Runtime init time adds init phases; use separate host wall-clock engine creation for elapsed time.",
+    "Repetitions share an engine and fixed prompt; first request separate from subsequent fresh conversations.",
+    "No claim of long-session stability, quality benchmark, Android results, power, or measured GPU memory.",
+    "User closed some applications before this run; other workload, file residency and cache state not experimentally isolated."
+  ],
+  "excluded_runs": {
+    "ram-32": "Successful blocking generation with benchmark disabled; no timing/count aggregation.",
+    "stream-ram-r1": "Full stream final and output received, then metrics collection failed because benchmark was disabled; original collector snapshot retained."
+  },
+  "collector_note": "collector-at-run.py matches benchmark-enabled run hashes; current script only corrects the metadata description of callback queue residence. collector-without-benchmark.py matches the metrics-error run."
+}
