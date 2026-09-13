@@ -212,3 +212,34 @@ tmp/moe-venv/bin/python experiments/moe_layer_check.py \
 脚本为每个案例启动新进程，保存序列化模型、输入、期望输出、实际输出和原生日志。预期数值案例必须完成 `LiteRtRunCompiledModel` 并满足容差；预期拒绝案例必须得到可定位的 API 错误，进程崩溃或 harness 失败不能算作通过。`--quick` 只运行第一个案例，不能替代完整 26 例验证。
 
 要检验完整模型导出，应另行固定转换器、原始模型和导出配置，并执行真实产物。将 CPU 单算子的通过结果迁移到 GPU 或完整 `.litertlm` 模型之前，还要核对 10.6 节的布局、量化元数据、激活函数与后端覆盖范围。
+
+## 八、MoE 真实导出与容器核查
+
+本节复现附录 D 第十八节的小型专家模块实验，适用于 macOS arm64。导出器从冻结源码安装，CPU 执行复用第七节的环境和公共 C ABI 脚本。先准备干净的源码目录和独立依赖环境：
+
+```bash
+git clone https://github.com/google-ai-edge/litert-torch.git tmp/litert-torch-moe
+git -C tmp/litert-torch-moe checkout --detach d592a2f09da4839ea34daaef92e53e638b57090a
+uv venv --python 3.12.13 tmp/moe-export-recheck-venv
+uv pip install --python tmp/moe-export-recheck-venv/bin/python \
+  -r experiments/data/2026-09-13/moe-export/requirements-macos.txt
+uv pip install --python tmp/moe-export-recheck-venv/bin/python \
+  --no-deps tmp/litert-torch-moe
+tmp/moe-export-recheck-venv/bin/python experiments/moe_export_check.py \
+  --source tmp/litert-torch-moe --worker-python tmp/moe-venv/bin/python \
+  --library /path/to/litert_lm/liblitert-lm.dylib \
+  --output tmp/moe-export-recheck
+```
+
+输出目录必须不存在。脚本导出 FP32／INT8、1／2 token 的四份原始产物，再分别建立只改变激活属性的诊断副本。所有 CPU 调用在独立进程执行，结果分别与 PyTorch、精确 GELU、tanh-GELU 比较。脚本退出 0 只表示八次 Invoke 均完成；是否数值一致须读取 `report.json` 中各项 `matches`，不能把退出码当作导出兼容性通过。
+
+依赖清单固定了本次安装的 nightly 包；版本号与环境完整保存在报告中。本次 `uv pip check` 对 backports-strenum 的 Python 版本声明报错，具体边界见附录 D 第十八节。若对应发行文件已不可取得，或安装工具拒绝该组合，应记录新的依赖组合并重新核查，不将新的产物重标为本次实验。该脚本不导出完整语言模型，也不运行 GPU 或性能测试。
+
+容器核查复用导出环境中的 litert-lm-builder 0.17.0：
+
+```bash
+tmp/moe-export-recheck-venv/bin/python experiments/moe_model_header.py \
+  --output tmp/moe-model-header-recheck
+```
+
+脚本固定模型仓库提交，只读取两份产物各自的前 32768 字节，并检查 HTTP Range 响应。报告区分本地头部哈希与发布方提供的完整文件哈希。读取元数据不创建推理引擎，也不验证完整权重、输出或运行内存。

@@ -1,0 +1,97 @@
+{
+  "fetched_at_utc": "2026-09-13T06:07:18.063392+00:00",
+  "repo": "litert-community/gemma-4-26B-A4B-it-litert-lm",
+  "revision": "7228819fa9580751b57b41a93ee54d5c08c4e001",
+  "script_sha256": "6524d629ff3bc8b34e8e44492c70ed878c8d594946fcf7cc196c9a178ab0abc5",
+  "builder_version": "0.17.0",
+  "files": [
+    {
+      "name": "gemma-4-26B-A4B-it-gpu.litertlm",
+      "url": "https://huggingface.co/litert-community/gemma-4-26B-A4B-it-litert-lm/resolve/7228819fa9580751b57b41a93ee54d5c08c4e001/gemma-4-26B-A4B-it-gpu.litertlm",
+      "published_size": 15786524672,
+      "published_lfs_sha256": "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1",
+      "http_status": 206,
+      "content_range": "bytes 0-32767/15786524672",
+      "header_file": "gemma-4-26B-A4B-it-gpu.litertlm.header",
+      "header_sha256": "eaa1bd38afd9b1e053f1db8cb3f9c196523c451a6ee4e8de9d05e9b78fbbea2d",
+      "container_version": [
+        1,
+        6,
+        0
+      ],
+      "sections": [
+        {
+          "index": 0,
+          "begin": 16384,
+          "end": 29231,
+          "data_type": 5,
+          "items": {}
+        },
+        {
+          "index": 1,
+          "begin": 32768,
+          "end": 4721781,
+          "data_type": 4,
+          "items": {}
+        },
+        {
+          "index": 2,
+          "begin": 4734976,
+          "end": 15786524672,
+          "data_type": 3,
+          "items": {
+            "model_type": "tf_lite_artisan_text_decoder",
+            "backend_constraint": "gpu_artisan",
+            "gpu_artisan_weights_version": "0.0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "gemma-4-26B-A4B-it-web.litertlm",
+      "url": "https://huggingface.co/litert-community/gemma-4-26B-A4B-it-litert-lm/resolve/7228819fa9580751b57b41a93ee54d5c08c4e001/gemma-4-26B-A4B-it-web.litertlm",
+      "published_size": 15786524672,
+      "published_lfs_sha256": "4523b2de695a7f22dc675b716253ba9a8512ca9f4852fb6a682fe4c2eb859c16",
+      "http_status": 206,
+      "content_range": "bytes 0-32767/15786524672",
+      "header_file": "gemma-4-26B-A4B-it-web.litertlm.header",
+      "header_sha256": "df8ff100ad680a91e20f2cb59fdf4ab2c79ceebc3cd136efb37f489d6284f19e",
+      "container_version": [
+        1,
+        5,
+        0
+      ],
+      "sections": [
+        {
+          "index": 0,
+          "begin": 16384,
+          "end": 28722,
+          "data_type": 5,
+          "items": {}
+        },
+        {
+          "index": 1,
+          "begin": 32768,
+          "end": 4721781,
+          "data_type": 4,
+          "items": {}
+        },
+        {
+          "index": 2,
+          "begin": 4734976,
+          "end": 15786524672,
+          "data_type": 3,
+          "items": {
+            "model_type": "tf_lite_artisan_text_decoder",
+            "backend_constraint": "gpu_artisan",
+            "gpu_artisan_weights_version": "0.0"
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Only first 32768 bytes read; no full model download, hash verification or inference.",
+    "Full-file hashes and sizes are publisher metadata, not local verification."
+  ]
+}

@@ -484,3 +484,41 @@ MTP 组固定 prefill 1024、decode 128、KV 容量 8192。关闭组复用主矩
 归档目录为 `experiments/data/2026-09-13/moe-layer/`。`report.json` 记录环境、脚本和动态库哈希、逐案例状态与文件哈希。`provenance.json` 保存包元数据及 ABI 参考信息。`fixture-readback.json` 保存序列化模型、属性、常量和输入字节的核对结果。每例保留模型、原始输入及 API 调用日志；23 个数值案例另保留参考和实际输出。`pilot/` 为初次试运行，不计入 26 例。
 
 这些合成模型未经 litert-torch 导出，不含路由器、注意力、KV cache 或生成循环。结果不证明完整模型正确性、跨后端一致性或端侧部署收益。GPU MoE、匹配的完整模型导出、手机运行与性能测量均待完成；Android v0.17.0 数据待重跑的状态保持不变。
+
+## 十八、MoE 导出兼容性与公开产物核查（2026-09-13）
+
+### 真实导出与 CPU 数值比较
+
+设备与 LiteRT-LM 0.17.0 动态库沿用第十七节。转换器为从干净 checkout 安装的 litert-torch 0.10.0，完整提交为 `d592a2f09da4839ea34daaef92e53e638b57090a`。独立导出环境使用 Python 3.12.13、torch 2.12.0、torchao 0.17.0、litert-converter 0.5.0.dev20260911 和 ai-edge-litert-nightly 2.3.0.dev20260912。安装包的 443 个 Python 文件与冻结 checkout 一致；其他依赖没有从这些源码本地构建。
+
+该环境能够完成下述导出，但没有完全通过依赖一致性检查。`uv pip check` 报告 backports-strenum 1.3.1 的 Python 版本声明为 `<3.11`，与本次 Python 3.12.13 不符。安装及执行成功不能据此解释为整套依赖正式支持该组合。检查日志、冻结清单解析记录及安装文件哈希另存于归档的 `environment-verification.json` 所列文件中。
+
+实验通过 `litert_torch.convert` 实际导出小型专家模块，固定 `E=3,K=2,D=4,H=6`。权重来自固定种子的正态分布，INT8 模式按每专家、每输出行的最大绝对值确定 scale，再舍入为有符号整数。token 数为 1 的输入是 2-token 输入的前缀；它们不是独立随机抽样。路由由输入提供，不包含路由器、注意力、KV cache 或生成循环。
+
+4 份原始产物都包含一个 custom `moe`，属性为 `activation=gelu`。逐份执行 CPU Invoke，并与导出前的 PyTorch 输出比较。绝对容差为 `2e-6`，相对容差为 `2e-5`，判据沿用第十七节；下表误差是输出各元素绝对差的最大值。4 份原始产物均未通过该比较。
+
+| 权重 | token 数 | 原始产物对 PyTorch 最大绝对误差 | 仅改为 gelu_tanh 后的误差 | 诊断副本数值比较 |
+|---|---:|---:|---:|---|
+| FP32 | 1 | 3.7407875e-4 | 4.7683716e-7 | 通过 |
+| FP32 | 2 | 9.8729134e-4 | 4.7683716e-7 | 通过 |
+| INT8 | 1 | 3.7443638e-4 | 9.5367432e-7 | 通过 |
+| INT8 | 2 | 9.8109245e-4 | 9.5367432e-7 | 通过 |
+
+诊断副本只改变 custom options 中的激活属性，输入字节、权重与其他模型字段保持相同。另从序列化权重独立计算精确 GELU 和 tanh-GELU 的 float64 参考。4 份原始 CPU 输出均匹配精确 GELU，最大绝对误差约为 `5.97e-7`；PyTorch 输出均匹配 tanh-GELU 参考。对量化模式，参考从产物的整数权重与 scale 还原，不与量化前的浮点权重混用。
+
+这组对照支持将本例差异归因于激活语义不一致。它没有测量这种误差对完整模型质量的影响。诊断副本不属于导出器的原始输出，且 `gelu_tanh` 不在本章冻结 GPU parser 接受的属性范围内；不能据此声称已经修复导出链或实现跨后端一致性。
+
+INT8 两份原始产物的三组权重均为 INT8，并带独立 FP32 scale 输入。权重张量的量化 scale 和 zero point 数组长度均为 0，未携带 GPU parser 要求的仿射量化元数据。此结论来自产物检查与 10.6 节源码条件的对照，本轮没有执行 GPU Invoke。CPU 对这些产物的接受行为不能外推到 GPU。
+
+归档目录为 `experiments/data/2026-09-13/moe-export/`。`report.json` 保存完整依赖版本、脚本与动态库哈希、容差、8 次执行及比较结果。每份原始产物另保留导出日志、PyTorch 输出及两种独立参考；诊断副本明确以 `diagnostic-tanh` 命名。`model-inspection.json` 保存布局、属性和量化元数据长度。全部输入、模型、实际输出与原生日志均有 SHA-256；复现依赖见同目录的 `requirements-macos.txt`。
+
+### 公开完整模型的容器头
+
+10.6.3 节所述公开模型冻结到仓库提交 `7228819fa9580751b57b41a93ee54d5c08c4e001`。本书只以 HTTP Range 读取 GPU、Web 两份文件各自的前 32768 字节；没有下载完整权重或运行推理。两次响应均为 HTTP 206，字节范围和总文件大小与发布元数据一致。
+
+| 产物文件后缀 | 发布文件大小（字节） | 容器格式版本 | 文本模型类型 | 后端约束 |
+|---|---:|---|---|---|
+| `-gpu.litertlm` | 15786524672 | 1.6.0 | `tf_lite_artisan_text_decoder` | `gpu_artisan` |
+| `-web.litertlm` | 15786524672 | 1.5.0 | `tf_lite_artisan_text_decoder` | `gpu_artisan` |
+
+归档目录 `experiments/data/2026-09-13/moe-model-header/` 保存容器头及 `report.json`，后者记录固定 URL、读取范围、头部哈希、section 元数据和发布方提供的完整文件哈希。完整文件哈希未经本地校验，不能当作完整模型已下载验证的证明。此核查只确认容器声明；它不提供 GPU 专家 kernel 覆盖、模型质量或性能证据。

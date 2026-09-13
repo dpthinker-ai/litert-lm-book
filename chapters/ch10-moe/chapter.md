@@ -180,9 +180,9 @@ FP32 权重模式有 7 个输入：激活、路由权重、专家索引、gate �
 
 自定义算子被解析后，还需要由可执行的 kernel 接管。LiteRT 的 CPU 编译路径注册了 `moe` 占位算子，其 Prepare 返回成功，实际 Invoke 则报错；需要由支持该节点的 delegate 接管执行。XNNPACK 检查节点名和支持条件，将符合条件的 MoE 节点交给专用 kernel。该分派代码没有以专用 MoE 开关为前提。[^moe-registration]
 
-部署验证至少包含三项检查。转换产物须符合输入契约，目标后端须接受该算子，实际输出须与参考结果一致。模型加载成功只能覆盖其中的一部分。10.7 节的最小实验直接构造算子产物，用来检验后两项；它不能代替转换器对完整模型的导出验证。
+部署验证至少包含三项检查。转换产物须符合输入契约，目标后端须接受该算子，实际输出须与参考结果一致。模型加载成功只能覆盖其中的一部分。10.7 节分别验证直接构造的算子与真实导出的小型专家模块；两组实验都没有包含完整语言模型。
 
-另取 litert-torch 提交 `d592a2f09da4839ea34daaef92e53e638b57090a` 核查导出端。该版本封装的 FP32／INT8 输入顺序及权重布局与上述契约对应，但不提供同一路径的 INT4 包装分支。INT8 的独立 scale 输入也不足以证明产物满足 GPU 所要求的量化元数据；仍需实际导出并检查。它是本章的导出端分析版本，尚未与冻结运行时完成全链路验证。[^moe-export]
+另取 litert-torch 提交 `d592a2f09da4839ea34daaef92e53e638b57090a` 核查导出端。该版本封装的 FP32／INT8 输入顺序及权重布局与上述契约对应，但不提供同一路径的 INT4 包装分支。[^moe-export] 本书用该版本导出的小型 INT8 模块保留了独立 scale 输入。其权重张量没有量化 scale 与 zero point 元数据，不满足下述 GPU parser 的仿射量化要求。CPU 执行成功不能证明 GPU 支持。导出环境与产物检查见附录 D 第十八节。
 
 导出配置也可能改变计算方式。该版本的 `split_cache` 配置会将专家实现改为顺序封装，逐个专家做稠密运算后按 mask 累加。因而分析产物时必须确认使用了哪条实现，不能只根据原模型属于 MoE，就认定导出后会跳过未选专家。[^moe-export-config]
 
@@ -255,13 +255,15 @@ GPU 的专家计算图同样接收外部已经选择好的索引和系数。构�
 
 分组路径需要映射表、计数、偏移，以及重排后的输入输出等临时张量。其映射表的一个形状为 \\([1,E,T,2]\\)，所以减少未选专家的计算并不意味着所有工作区都只随 \\(K\\) 增长。内层采用全连接还是特定矩阵实现，还受每专家任务规模和设备能力影响。[^moe-remap]
 
-激活函数还存在一个必须单独核对的数值边界。导出参考使用 GELU 的 tanh 近似，却把算子属性写成 `gelu`；GPU 对应实现也固定使用 tanh 近似。CPU 则将 `gelu` 与 `gelu_tanh` 分别处理。两种 GELU 通常接近，但不能把这条导出链描述为跨后端逐值一致。[^moe-export] [^moe-cpu] [^moe-gpu]
+激活函数还存在一个必须单独核对的数值边界。导出参考使用 GELU 的 tanh 近似，却把算子属性写成 `gelu`；GPU 对应实现也固定使用 tanh 近似。CPU 则将 `gelu` 与 `gelu_tanh` 分别处理。[^moe-export] [^moe-cpu] [^moe-gpu] 10.7 节的小型导出实验观察到了这种差异。在该实验的诊断副本中，仅将激活属性改为 `gelu_tanh`，CPU 结果便通过了参考比较。但 GPU parser 不接受该属性值，因此这项修改不能通用于两个后端。
 
 GPU parser 对量化权重要求仿射量化元数据及全零 zero point，独立 scale 对应每专家、每输出通道；这与 CPU 可接收的 INT4 分组配置不是同一范围。它接受的激活属性也只有 `gelu`。这些支持检查应当在性能测量之前完成。[^moe-gpu-parser]
 
 GPU 代码为量化专家权重建立描述与转换步骤，不能由此套用 CPU 的“先展开为 FP32”结论。反过来，构图代码也不足以证明某设备最终选用了原生 INT4 指令，或全模型都留在同一 GPU 路径上。需要结合生成的 kernel、实际后端与分配记录验证。[^moe-gpu]
 
 上述代码说明了 LiteRT 如何构建 GPU 专家计算图。本书附录 D 第十六节的 Mac E4B 基准走 WebGPU/Metal，不能拿那组结果证明此 MoE 路径的吞吐，更不能推断手机 NPU 的支持情况。完整 MoE 模型的转换、后端覆盖和持续运行，需要单独建立实验记录。
+
+公开模型产物也要核对执行路径。LiteRT Community 发布的 Gemma 4 26B-A4B LiteRT-LM 模型卡说明了 Web 文本部署能力。[^moe-gemma-artifact] 本书读取冻结版本中 GPU、Web 两个文件的容器头。两者均将文本模型标为 `tf_lite_artisan_text_decoder`，后端约束为 `gpu_artisan`。v0.17.0 的 `EngineSettings::CreateDefault` 检测到这种模型时，会把请求的 GPU 改为 `GPU_ARTISAN`。[^moe-artisan-selection] 因此，这两份公开产物不能直接验证本节分析的专家构图路径。容器核查记录见附录 D 第十八节，本书没有运行这两个完整模型。
 
 ## 10.7　如何验证部署收益
 
@@ -270,6 +272,10 @@ GPU 代码为量化专家权重建立描述与转换步骤，不能由此套用 
 本书在 Apple M5 Pro、macOS 26.5 上，使用 LiteRT-LM 0.17.0 的预编译动态库完成了 CPU 单算子验证。固定 \\(E=3,K=2,D=4,H=6\\)，改变 token 数、权重类型和 GELU 形式。23 个数值案例均实际完成 Invoke，最大绝对误差约为 \\(6.88\times10^{-9}\\)；另有 3 个非法输入案例按预期返回错误。输入、模型、输出与日志见附录 D 第十七节，复现步骤见附录 C 第七节。
 
 这些小型产物由实验脚本直接构造，未经过 litert-torch 完整模型导出。实验使用默认 CPU 编译选项，日志确认 XNNPACK delegate；预编译包执行成功也不等于本地冻结源码构建成功。该结果不包含路由器、语言模型质量、GPU/NPU、吞吐或峰值内存测量。
+
+真实导出还要与导出前的模块比较。在同一设备与动态库上，本书用 10.6.1 节冻结的 litert-torch 导出小型专家模块。FP32／INT8 权重分别搭配 1／2 个 token，共得到 4 份原始产物。它们均完成 CPU Invoke，但均未满足与 PyTorch 参考值的比较容差。FP32 两例的最大绝对误差约为 \\(9.87\times10^{-4}\\)，INT8 两例约为 \\(9.81\times10^{-4}\\)。这里比较的是专家层输出，不是语言模型的质量指标。
+
+使用序列化权重，分别以两种 GELU 计算独立参考，可以核对激活语义。CPU 输出符合精确 GELU，PyTorch 参考符合 tanh 近似。为每份原始产物建立一个诊断副本，保持输入和权重不变，仅将激活属性改为 `gelu_tanh`。4 份诊断副本均通过了与 PyTorch 的比较。最大绝对误差降至约 \\(9.54\times10^{-7}\\)。这组对照支持将本例差异归因于激活语义，不能证明完整模型已经兼容。诊断副本不代表导出器的原始输出。产物、容差与逐例数据见附录 D 第十八节，复现步骤见附录 C 第八节。
 
 正确性检查还应覆盖 token 顺序改变、同一专家接收多行、未选专家、非单位路由系数，以及量化边界。比较量化执行时，要以量化后再反量化的权重计算参考值；若只与原始浮点权重比较，量化误差和 kernel 错误就会混在一起。容差应同时报告绝对误差和相对误差，并说明零附近的相对误差如何处理。
 
@@ -306,3 +312,6 @@ MoE 将总参数量与单 token 的参数选择范围分开，也使资源分析
 [^moe-export-config]: Google AI Edge，litert-torch，[专家导出实现选择](https://github.com/google-ai-edge/litert-torch/blob/d592a2f09da4839ea34daaef92e53e638b57090a/litert_torch/generative/export_hf/core/exportable_module_config.py#L192-L197)，192–197 行；[顺序专家实现](https://github.com/google-ai-edge/litert-torch/blob/d592a2f09da4839ea34daaef92e53e638b57090a/litert_torch/generative/layers/moe.py#L480-L528)，480–528 行；提交 `d592a2f09da4839ea34daaef92e53e638b57090a`；访问日期：2026-09-13。
 [^moe-remap]: Google AI Edge，LiteRT，[专家重排缓冲与矩阵实现选择](https://github.com/google-ai-edge/LiteRT/blob/9fe5be45564c868408e6514c8aabb83e211a0911/ml_drift_delegate/delegate/composite/experts_remap_builder.cc#L43-L119)，`ml_drift_delegate/delegate/composite/experts_remap_builder.cc`，43–119、173–221 行；提交 `9fe5be45564c868408e6514c8aabb83e211a0911`；访问日期：2026-09-13。
 [^moe-gpu-parser]: Google AI Edge，LiteRT，[GPU 专家算子支持检查](https://github.com/google-ai-edge/LiteRT/blob/9fe5be45564c868408e6514c8aabb83e211a0911/ml_drift_delegate/delegate/composite/moe_experts_parser.cc#L75-L198)，`ml_drift_delegate/delegate/composite/moe_experts_parser.cc`，75–198、345–482 行；提交 `9fe5be45564c868408e6514c8aabb83e211a0911`；访问日期：2026-09-13。
+
+[^moe-gemma-artifact]: LiteRT Community，[*Gemma 4 26B-A4B LiteRT-LM 模型卡*](https://huggingface.co/litert-community/gemma-4-26B-A4B-it-litert-lm/blob/7228819fa9580751b57b41a93ee54d5c08c4e001/README.md)，仓库提交 `7228819fa9580751b57b41a93ee54d5c08c4e001`；访问日期：2026-09-13。
+[^moe-artisan-selection]: Google AI Edge，LiteRT-LM，[Artisan 模型的后端选择](https://github.com/google-ai-edge/LiteRT-LM/blob/e9fd8c53ff968071774206163027dd84bedfe925/runtime/engine/engine_settings.cc#L145-L199)，`runtime/engine/engine_settings.cc`，145–199 行，v0.17.0；访问日期：2026-09-13。

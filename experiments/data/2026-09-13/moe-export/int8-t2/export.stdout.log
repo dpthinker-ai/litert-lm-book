@@ -1,0 +1,38 @@
+(00:00) [START] LiteRT-Torch Convert
+(00:00) [START] LiteRT-Torch Convert > Torch Export: serving_default
+(00:00) [START] LiteRT-Torch Convert > Torch Export: serving_default > 
+ExportedProgram Run Decompositions
+(00:00) [ DONE] LiteRT-Torch Convert > Torch Export: serving_default > 
+ExportedProgram Run Decompositions (+00:00)
+(00:00) [ DONE] LiteRT-Torch Convert > Torch Export: serving_default (+00:00)
+(00:00) [START] LiteRT-Torch Convert > Run FX Passes
+(00:00) [START] LiteRT-Torch Convert > Run FX Passes > ExportedProgram Run 
+Decompositions
+(00:00) [ DONE] LiteRT-Torch Convert > Run FX Passes > ExportedProgram Run 
+Decompositions (+00:00)
+(00:00) [ DONE] LiteRT-Torch Convert > Run FX Passes (+00:00)
+(00:00) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default
+(00:00) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions
+(00:00) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions (+00:00)
+(00:00) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions
+(00:00) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions (+00:00)
+(00:00) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default > Create 
+MLIR Module
+(00:00) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default > Create 
+MLIR Module (+00:00)
+(00:00) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default (+00:00)
+(00:00) [START] LiteRT-Torch Convert > Merge MLIR Modules
+(00:00) [ DONE] LiteRT-Torch Convert > Merge MLIR Modules (+00:00)
+(00:00) [START] LiteRT-Torch Convert > Run LiteRT Converter Passes
+(00:00) [ DONE] LiteRT-Torch Convert > Run LiteRT Converter Passes (+00:00)
+(00:00) [ DONE] LiteRT-Torch Convert (+00:00)
+(00:00) [START] Write Model to 
+/Users/dpthinker/workspace/litert-lm-book/experiments/data/2026-09-13/moe-export
+/int8-t2/model.tflite
+(00:00) [ DONE] Write Model to 
+/Users/dpthinker/workspace/litert-lm-book/experiments/data/2026-09-13/moe-export
+/int8-t2/model.tflite (+00:00)
