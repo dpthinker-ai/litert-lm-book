@@ -1,0 +1,109 @@
+W0000 00:00:1789297994.546122 6652387 litert_lm_loader.cc:291] Section not found: 
+W0000 00:00:1789297994.546188 6652387 litert_lm_loader.h:129] TFLite model for type: TF_LITE_PREFILL_DECODE not found. Skipping.
+I0000 00:00:1789297994.546197 6652387 litert_executor_utils.cc:444] Build ModelResources for Artisan Text Decoder.
+W0000 00:00:1789297994.568608 6652387 litert_lm_loader.h:158] TFLite model type: TF_LITE_PREFILL_DECODE not found for backend constraints. Skipping.
+W0000 00:00:1789297994.568646 6652387 litert_lm_loader.h:158] TFLite model type: TF_LITE_VISION_ENCODER not found for backend constraints. Skipping.
+W0000 00:00:1789297994.568651 6652387 litert_lm_loader.h:158] TFLite model type: TF_LITE_AUDIO_ENCODER_HW not found for backend constraints. Skipping.
+W0000 00:00:1789297994.568654 6652387 litert_lm_loader.h:174] TFLite model type: TF_LITE_PREFILL_DECODE not found for prefer activation type. Use system's default backend activation type. System's default activation type for Text decoder is fp16. Vision encoder and audio encoder default is fp32.
+W0000 00:00:1789297994.568657 6652387 litert_lm_loader.h:174] TFLite model type: TF_LITE_VISION_ENCODER not found for prefer activation type. Use system's default backend activation type. System's default activation type for Text decoder is fp16. Vision encoder and audio encoder default is fp32.
+W0000 00:00:1789297994.568659 6652387 litert_lm_loader.h:174] TFLite model type: TF_LITE_AUDIO_ENCODER_HW not found for prefer activation type. Use system's default backend activation type. System's default activation type for Text decoder is fp16. Vision encoder and audio encoder default is fp32.
+W0000 00:00:1789297994.613381 6652387 litert_lm_loader.cc:291] Section not found: 
+W0000 00:00:1789297994.613405 6652387 litert_lm_loader.h:129] TFLite model for type: TF_LITE_END_OF_VISION not found. Skipping.
+I0000 00:00:1789297994.613412 6652387 llm_gpu_artisan_executor.cc:308] LlmGpuArtisanExecutor::Create with the following config: 
+I0000 00:00:1789297994.613415 6652387 llm_gpu_artisan_executor.cc:309]   LlmExecutorSettings: backend: GPU_ARTISAN
+backend_config:
+num_output_candidates: 1
+wait_for_weight_uploads: false
+num_decode_steps_per_sync: 1
+sequence_batch_size: 0
+supported_lora_ranks: vector of 0 elements: []
+max_top_k: 64
+enable_decode_logits: false
+enable_external_embeddings: false
+use_submodel: false
+prefer_texture_weights: false
+set_enable_host_mapped_pointer: true
+disallow_8bit_convs: true
+
+max_tokens: 2048
+activation_data_type: Not set
+max_num_images: 0
+lora_rank: 0
+pad_token_id: -1
+cache_dir: /Users/dpthinker/workspace/litert-lm-book/tmp/moe-context-notes-c2048-cache
+cache_file: Not set
+litert_dispatch_lib_dir: Not set
+model_assets: model_path: /Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm
+fake_weights_mode: FAKE_WEIGHTS_NONE
+
+advanced_settings: prefill_batch_sizes: []
+num_output_candidates: 1
+configure_magic_numbers: true
+verify_magic_numbers: false
+clear_kv_cache_before_prefill: true
+num_logits_to_print_after_decode: 0
+gpu_madvise_original_shared_tensors: true
+gpu_enable_metal_residency_set: false
+is_benchmark: true
+enable_profiling: false
+preferred_device_substr: 
+num_threads_to_upload: -1
+num_threads_to_compile: -1
+convert_weights_on_gpu: true
+wait_for_weights_conversion_complete_in_benchmark: true
+optimize_shader_compilation: true
+cache_compiled_shaders_only: false
+share_constant_tensors: true
+sampler_handles_input: true
+allow_src_quantized_fc_conv_ops: true
+hint_waiting_for_completion: false
+gpu_context_low_priority: Not set
+enable_speculative_decoding: false
+disable_delegate_clustering: true
+hint_kernel_batch_size: Not set
+error_on_invalid_sampled_token_id: false
+
+diffusion_config: Not set
+I0000 00:00:1789297994.613436 6652387 gpu_model_info_generator.cc:32] CalculationsPrecision::F16
+I0000 00:00:1789297994.613438 6652387 gpu_model_info_generator.cc:47] Enable Host Mapped Pointer
+I0000 00:00:1789297994.613440 6652387 gpu_model_info_generator.cc:51] Fast Tuning
+I0000 00:00:1789297994.613442 6652387 gpu_model_info_generator.cc:55] No Winograd
+I0000 00:00:1789297994.613452 6652387 gpu_model_info_generator.cc:59] Disallow 8bit convs
+I0000 00:00:1789298020.591284 6652387 llm_metal_runner.mm:170] Metal LLM tokens initialized.
+INFO: [environment.cc:36] Creating LiteRT environment with options
+WARNING: [npu_registry.cc:34] NPU accelerator could not be loaded and registered: kLiteRtStatusErrorInvalidArgument.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0x9411b0780, name=GPU WebGPU
+INFO: [gpu_registry.cc:109] Statically linked GPU accelerator registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0x9411b07e0, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+W0000 00:00:1789298020.657887 6652387 mel_filterbank.cc:137] Missing 10 bands  starting at 0 in mel-frequency design. Perhaps too many channels or not enough frequency resolution in spectrum. (fft_length: 257 sample_rate: 16000 mel_channel_count: 128 lower_frequency_limit: 0 upper_frequency_limit: 8000
+INFO: [environment.cc:36] Creating LiteRT environment with options
+WARNING: [npu_registry.cc:34] NPU accelerator could not be loaded and registered: kLiteRtStatusErrorInvalidArgument.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0x9411b08a0, name=GPU WebGPU
+INFO: [gpu_registry.cc:109] Statically linked GPU accelerator registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0x9411b0840, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+W0000 00:00:1789298025.399896 6655628 tasks.cc:581] Failed to get prefill profile summary: UNIMPLEMENTED: GetProfileSummary not implemented for backend: GpuArtisan
+=== Source Location Trace: === 
+./third_party/odml/litert_lm/runtime/executor/llm_executor_base.h:233
+W0000 00:00:1789298025.799162 6655628 tasks.cc:800] Failed to get decode profile summary: UNIMPLEMENTED: GetProfileSummary not implemented for backend: GpuArtisan
+=== Source Location Trace: === 
+./third_party/odml/litert_lm/runtime/executor/llm_executor_base.h:233
+W0000 00:00:1789298025.801793 6652387 mel_filterbank.cc:137] Missing 10 bands  starting at 0 in mel-frequency design. Perhaps too many channels or not enough frequency resolution in spectrum. (fft_length: 257 sample_rate: 16000 mel_channel_count: 128 lower_frequency_limit: 0 upper_frequency_limit: 8000
+W0000 00:00:1789298027.392892 6655628 tasks.cc:581] Failed to get prefill profile summary: UNIMPLEMENTED: GetProfileSummary not implemented for backend: GpuArtisan
+=== Source Location Trace: === 
+./third_party/odml/litert_lm/runtime/executor/llm_executor_base.h:233
+W0000 00:00:1789298027.766080 6655628 tasks.cc:800] Failed to get decode profile summary: UNIMPLEMENTED: GetProfileSummary not implemented for backend: GpuArtisan
+=== Source Location Trace: === 
+./third_party/odml/litert_lm/runtime/executor/llm_executor_base.h:233
+W0000 00:00:1789298027.768369 6652387 mel_filterbank.cc:137] Missing 10 bands  starting at 0 in mel-frequency design. Perhaps too many channels or not enough frequency resolution in spectrum. (fft_length: 257 sample_rate: 16000 mel_channel_count: 128 lower_frequency_limit: 0 upper_frequency_limit: 8000
+W0000 00:00:1789298029.357192 6655628 tasks.cc:581] Failed to get prefill profile summary: UNIMPLEMENTED: GetProfileSummary not implemented for backend: GpuArtisan
+=== Source Location Trace: === 
+./third_party/odml/litert_lm/runtime/executor/llm_executor_base.h:233
+W0000 00:00:1789298029.731667 6655628 tasks.cc:800] Failed to get decode profile summary: UNIMPLEMENTED: GetProfileSummary not implemented for backend: GpuArtisan
+=== Source Location Trace: === 
+./third_party/odml/litert_lm/runtime/executor/llm_executor_base.h:233
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0x9411b07e0, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0x9411b0780, name=GPU WebGPU
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0x9411b0840, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0x9411b08a0, name=GPU WebGPU

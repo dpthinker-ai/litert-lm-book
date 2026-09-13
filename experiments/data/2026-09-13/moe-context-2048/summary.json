@@ -1,0 +1,152 @@
+{
+  "experiment": "Full Gemma 4 26B-A4B at 2048 context capacity",
+  "date": "2026-09-13",
+  "runs": [
+    {
+      "name": "short-c2048",
+      "context_capacity": 2048,
+      "output_cap": 32,
+      "raw_input_tokens": null,
+      "record_count": null,
+      "engine_create_ms": 24605.362415895797,
+      "pressure_sample_counts": {
+        "1": 116,
+        "2": 3
+      },
+      "status": "GENERATION_COMPLETED",
+      "requests": [
+        {
+          "index": 0,
+          "prefill_tokens": 23,
+          "decode_tokens": 20,
+          "first_text_callback_ms": 4467.663041898049,
+          "runtime_decode_tokens_per_second": 52.18851452759806,
+          "runtime_prefill_tokens_per_second": 5.190209079740074,
+          "answer_contains_marker": null,
+          "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+        },
+        {
+          "index": 1,
+          "prefill_tokens": 23,
+          "decode_tokens": 20,
+          "first_text_callback_ms": 172.46775003150105,
+          "runtime_decode_tokens_per_second": 54.05472360215748,
+          "runtime_prefill_tokens_per_second": 152.1382448215515,
+          "answer_contains_marker": null,
+          "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+        },
+        {
+          "index": 2,
+          "prefill_tokens": 23,
+          "decode_tokens": 20,
+          "first_text_callback_ms": 174.66924991458654,
+          "runtime_decode_tokens_per_second": 53.051828447978785,
+          "runtime_prefill_tokens_per_second": 150.26615075288242,
+          "answer_contains_marker": null,
+          "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+        }
+      ],
+      "first_request": {
+        "index": 0,
+        "prefill_tokens": 23,
+        "decode_tokens": 20,
+        "first_text_callback_ms": 4467.663041898049,
+        "runtime_decode_tokens_per_second": 52.18851452759806,
+        "runtime_prefill_tokens_per_second": 5.190209079740074,
+        "answer_contains_marker": null,
+        "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes."
+      },
+      "reused_engine": {
+        "first_text_callback_ms": {
+          "n": 2,
+          "median": 173.5684999730438,
+          "min": 172.46775003150105,
+          "max": 174.66924991458654
+        },
+        "runtime_decode_tokens_per_second": {
+          "n": 2,
+          "median": 53.55327602506813,
+          "min": 53.051828447978785,
+          "max": 54.05472360215748
+        }
+      }
+    },
+    {
+      "name": "notes-c2048",
+      "context_capacity": 2048,
+      "output_cap": 64,
+      "raw_input_tokens": 1920,
+      "record_count": 118,
+      "engine_create_ms": 26113.15308290068,
+      "pressure_sample_counts": {
+        "1": 133,
+        "2": 3
+      },
+      "status": "GENERATION_COMPLETED",
+      "requests": [
+        {
+          "index": 0,
+          "prefill_tokens": 1933,
+          "decode_tokens": 20,
+          "first_text_callback_ms": 4787.885583937168,
+          "runtime_decode_tokens_per_second": 50.112502568265754,
+          "runtime_prefill_tokens_per_second": 407.80786086516974,
+          "answer_contains_marker": true,
+          "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs."
+        },
+        {
+          "index": 1,
+          "prefill_tokens": 1933,
+          "decode_tokens": 20,
+          "first_text_callback_ms": 1613.9938751002774,
+          "runtime_decode_tokens_per_second": 53.6042611335119,
+          "runtime_prefill_tokens_per_second": 1216.2884498494063,
+          "answer_contains_marker": true,
+          "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs."
+        },
+        {
+          "index": 2,
+          "prefill_tokens": 1933,
+          "decode_tokens": 20,
+          "first_text_callback_ms": 1609.3152919784188,
+          "runtime_decode_tokens_per_second": 53.41851806347188,
+          "runtime_prefill_tokens_per_second": 1217.8407047977441,
+          "answer_contains_marker": true,
+          "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs."
+        }
+      ],
+      "first_request": {
+        "index": 0,
+        "prefill_tokens": 1933,
+        "decode_tokens": 20,
+        "first_text_callback_ms": 4787.885583937168,
+        "runtime_decode_tokens_per_second": 50.112502568265754,
+        "runtime_prefill_tokens_per_second": 407.80786086516974,
+        "answer_contains_marker": true,
+        "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs."
+      },
+      "reused_engine": {
+        "first_text_callback_ms": {
+          "n": 2,
+          "median": 1611.654583539348,
+          "min": 1609.3152919784188,
+          "max": 1613.9938751002774
+        },
+        "runtime_decode_tokens_per_second": {
+          "n": 2,
+          "median": 53.51138959849189,
+          "min": 53.41851806347188,
+          "max": 53.6042611335119
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Two processes, three fresh conversations per engine; repeated conversations are not independent starts.",
+    "First requests and later requests are reported separately.",
+    "Raw tokenizer counts exclude chat formatting; runtime prefill counts are retained separately.",
+    "Marker inclusion is a case-insensitive substring check, not a general retrieval-quality benchmark.",
+    "Timing and pressure remain affected by unisolated background load and file/cache state.",
+    "No sustained decode, maximum supported context, model-exclusive memory or GPU allocation conclusion."
+  ]
+}

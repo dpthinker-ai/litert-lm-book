@@ -395,11 +395,11 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_generation_check.py \
 
 ## 十七、完整 MoE 的上下文容量与实际输入
 
-沿用第十六节的环境与完整 GPU 文件。先用 `moe_generation_check.py` 保持英文短提示词和输出上限 32，将容量分别设为 512、1024。每项仍运行三个新会话，并分别指定新的输出和缓存目录；这一步只改变容量，实际输入长度须读取运行时 prefill 计数。
+沿用第十六节的环境与完整 GPU 文件。先用 `moe_generation_check.py` 保持英文短提示词和输出上限 32，将容量分别设为 512、1024、2048。每项仍运行三个新会话，并分别指定新的输出和缓存目录；这一步只改变容量，实际输入长度须读取运行时 prefill 计数。
 
-材料生成器把识别码放在开头，用带编号的说明逐条填充原始 token 预算，最后添加问题。原文和分词 ID 分别保存为 `prompt.txt`、`prompt-tokenization.json`，构造与分词均不进入生成计时。预算不含对话格式；脚本要求原始预算、输出上限与预留的 32 token 之和不超过容量。这个预留值不是固定格式开销的定义，运行后还要核对实际 prefill 与容量。本次两组原始计数为 384、896，运行时分别为 397、909。
+材料生成器把识别码放在开头，用带编号的说明逐条填充原始 token 预算，最后添加问题。原文和分词 ID 分别保存为 `prompt.txt`、`prompt-tokenization.json`，构造与分词均不进入生成计时。预算不含对话格式；脚本要求原始预算、输出上限与预留的 32 token 之和不超过容量。这个预留值不是固定格式开销的定义，运行后还要核对实际 prefill 与容量。本次三组原始计数为 384、896、1920，运行时分别为 397、909、1933。
 
-较长输入使用新的 `moe_context_check.py`。下面的配置将原始文本预算设为 384，另预留输出上限 64 与对话格式空间：
+材料输入的采集命令如下，原始预算 384、输出上限 64：
 
 ```bash
 tmp/moe-full-recheck-venv/bin/python experiments/moe_context_check.py \
@@ -409,6 +409,6 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_context_check.py \
   --context 512 --input-tokens 384 --output-tokens 64 --repeats 3 --timeout 180
 ```
 
-1024 容量的材料测试将 `--context` 改为 1024、`--input-tokens` 改为 896，并使用新目录。四项按短输入 512、材料 512、短输入 1024、材料 1024 的顺序串行执行。保护阈值与第十六节相同。
+1024 容量的材料测试将 `--context` 改为 1024、`--input-tokens` 改为 896；2048 容量对应 2048 与 1920。每项均使用新目录，输出上限保持 64。按容量 512、1024、2048 的顺序，每档先测短输入、再测材料，六项串行执行。保护阈值与第十六节相同。
 
 生成完成条件沿用第十六节；识别码检查是独立字段，不决定 `GENERATION_COMPLETED`。查看 `answer_contains_marker` 后，还要核对完整回答是否与材料相符。这个固定材料任务不代替系统性质量测试。逐轮计时、首次与复用请求以及压力边界见附录 D 第二十七节。
