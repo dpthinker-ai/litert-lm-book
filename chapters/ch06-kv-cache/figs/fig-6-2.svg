@@ -37,8 +37,8 @@
   <text class="blue" x="548" y="65">③ A 在 2048 后改写</text>
   <rect class="copy" x="540" y="82" width="186" height="72" rx="7"/>
   <text class="label" x="633" y="107" text-anchor="middle">触发写时分离</text>
-  <text class="soft" x="633" y="129" text-anchor="middle">复制活动输入 map</text>
-  <text class="soft" x="633" y="146" text-anchor="middle">增量约 112 MiB</text>
+  <text class="soft" x="633" y="129" text-anchor="middle">复制两套状态缓冲</text>
+  <text class="soft" x="633" y="146" text-anchor="middle">增量约 224 MiB</text>
   <line class="rule" x1="34" y1="186" x2="726" y2="186"/>
   <text class="label" x="34" y="218">逻辑 token 与物理复制量</text>
   <rect class="box" x="34" y="238" width="692" height="72" rx="7"/>
@@ -46,17 +46,17 @@
   <rect x="370" y="260" width="316" height="18" rx="3" fill="var(--fig-surface-2, #eef1f5)" stroke="var(--fig-border, #d0d7de)"/>
   <text x="212" y="274" text-anchor="middle" fill="#ffffff" style="font-size:10px;font-weight:700">已使用 2048 槽位 ≈ 56 MiB</text>
   <text class="dim" x="528" y="274" text-anchor="middle">尚未使用 2048 槽位</text>
-  <text class="soft" x="380" y="300" text-anchor="middle">固定形状快照仍复制全部 4096 槽位：约 112 MiB</text>
+  <text class="soft" x="380" y="300" text-anchor="middle">固定形状快照复制两套完整 4096 槽位：约 224 MiB</text>
   <path class="dash" d="M380,310 V342" marker-end="url(#f62-arrow-dim)"/>
   <text class="label" x="34" y="358">预留宽度放大两类成本</text>
   <rect class="active" x="34" y="378" width="320" height="78" rx="7"/>
   <text class="label" x="194" y="403" text-anchor="middle">4096 槽位</text>
   <text class="soft" x="194" y="425" text-anchor="middle">双缓冲约 224 MiB</text>
-  <text class="soft" x="194" y="444" text-anchor="middle">一次相同快照约 112 MiB</text>
+  <text class="soft" x="194" y="444" text-anchor="middle">一次相同快照约 224 MiB</text>
   <path class="edge" d="M354,417 H404" marker-end="url(#f62-arrow)"/>
   <rect class="copy" x="412" y="378" width="314" height="78" rx="7"/>
   <text class="label" x="569" y="403" text-anchor="middle">8192 槽位</text>
   <text class="soft" x="569" y="425" text-anchor="middle">双缓冲约 448 MiB</text>
-  <text class="soft" x="569" y="444" text-anchor="middle">一次相同快照约 224 MiB</text>
-  <text class="dim" x="380" y="484" text-anchor="middle">张量形状取自基准模型；本图条件不是其实际 GPU 单缓冲配置</text>
+  <text class="soft" x="569" y="444" text-anchor="middle">一次相同快照约 448 MiB</text>
+  <text class="dim" x="380" y="484" text-anchor="middle">张量形状取自历史基准产物；按本版条件，该产物会选择 GPU 单缓冲</text>
 </svg>

@@ -1,4 +1,4 @@
-<svg viewBox="0 0 660 320" width="660" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="后端工厂分派">
+<svg viewBox="0 0 660 320" width="660" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CPU GPU 通用执行器和按辅助模型段分派的 NPU 路径">
   <defs>
     <style>text{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}.box{fill:var(--fig-surface,#f6f8fa);stroke:var(--fig-border,#d0d7de);stroke-width:1.5}.fac{fill:var(--fig-bg,#fff);stroke:var(--fig-accent,#0b57d0);stroke-width:1.8}.hw{fill:var(--fig-surface-2,#eef1f5);stroke:var(--fig-border,#d0d7de);stroke-width:1.5}.abs{fill:var(--fig-bg,#fff);stroke:var(--fig-accent-2,#6639ba);stroke-width:1.8}.t{fill:var(--fig-text,#1f2328)}.ts{fill:var(--fig-text-soft,#57606a)}.accent{fill:var(--fig-accent,#0b57d0)}.a2{fill:var(--fig-accent-2,#6639ba)}.edge{stroke:var(--fig-text-soft,#57606a);stroke-width:1.5;fill:none}</style>
     <marker id="a8" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft,#57606a)"/></marker>
@@ -7,16 +7,18 @@
   <rect class="box" x="30" y="120" width="130" height="70" rx="6"/>
   <text class="t" x="95" y="142" text-anchor="middle" style="font-size:12px;font-weight:700">Backend 枚举</text>
   <text class="ts" x="95" y="160" text-anchor="middle" style="font-size:10px">CPU · GPU · NPU</text>
-  <text class="ts" x="95" y="175" text-anchor="middle" style="font-size:10px">(+ ARTISAN 手写路径)</text>
+  <text class="ts" x="95" y="175" text-anchor="middle" style="font-size:10px">（本图仅列编译路径）</text>
   <rect class="fac" x="200" y="122" width="130" height="66" rx="6"/>
   <text class="accent" x="265" y="148" text-anchor="middle" style="font-size:12px;font-weight:700">工厂函数</text>
   <text class="ts" x="265" y="165" text-anchor="middle" style="font-size:10px">switch(GetBackend())</text>
   <rect class="hw" x="378" y="70" width="150" height="46" rx="6"/>
-  <text class="t" x="453" y="90" text-anchor="middle" style="font-size:12px;font-weight:700">CPU / GPU 一路</text>
-  <text class="ts" x="453" y="106" text-anchor="middle" style="font-size:9.5px">CompiledModel 执行器</text>
+  <text class="t" x="453" y="90" text-anchor="middle" style="font-size:12px;font-weight:700">通用执行器</text>
+  <text class="ts" x="453" y="106" text-anchor="middle" style="font-size:9.5px">CPU / GPU / 无辅助段的 NPU</text>
   <rect class="hw" x="378" y="194" width="150" height="46" rx="6"/>
-  <text class="t" x="453" y="214" text-anchor="middle" style="font-size:12px;font-weight:700">NPU 专用路径</text>
-  <text class="ts" x="453" y="230" text-anchor="middle" style="font-size:9.5px">多子图执行器</text>
+  <text class="t" x="453" y="214" text-anchor="middle" style="font-size:12px;font-weight:700">NPU 检查辅助模型段</text>
+  <text class="ts" x="453" y="230" text-anchor="middle" style="font-size:9.5px">有：多子图执行器</text>
+  <path class="edge" marker-end="url(#a8)" d="M453,194 V118"/>
+  <text class="ts" x="457" y="150" style="font-size:9px">无辅助段时</text>
   <rect class="abs" x="560" y="122" width="80" height="66" rx="6"/>
   <text class="a2" x="600" y="148" text-anchor="middle" style="font-size:12px;font-weight:700">LlmExecutor</text>
   <text class="ts" x="600" y="165" text-anchor="middle" style="font-size:9.5px">同一接口</text>

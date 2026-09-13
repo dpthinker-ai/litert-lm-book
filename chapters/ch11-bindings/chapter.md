@@ -2,39 +2,43 @@
 
 > 本章分析 Python、Kotlin、Swift 与 Web 如何经 C ABI、JNI 或 Embind 进入同一套 C++ runtime，并说明流式回调、数据复制、字符串所有权和显式释放的边界契约。本章还比较绑定层的并发隔离方式，并介绍测试替身与跨平台构建。
 
-LiteRT-LM 的 README 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。[^ch11-readme] 这些绑定并不共用同一条原生调用路径：Python 与 Swift 经过一个 C 兼容的头文件，Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章分析其中 Python、Kotlin、Swift 与 Web 四种绑定，Flutter 不展开。前四节说明三类原生边界各自怎样持有原生对象、怎样配对创建与释放（11.1 至 11.4 节）；中间四节说明数据经过边界时的契约，包括流式回调、多模态输入的复制、字符串的所有权与编码，以及 Swift 上两个显式释放问题（11.5 至 11.8 节）；最后三节说明并发隔离、测试替身与跨平台构建。
+LiteRT-LM 的 README 列出 Python、Kotlin、Swift、JavaScript、Flutter 和 C++ 六种 API。[^ch11-readme] 这些绑定并不共用同一条原生调用路径：Python 与 Swift 经过 C 兼容的接口头文件，Kotlin 的 JNI 和 Web 的 Embind 直接调用 C++。本章分析其中 Python、Kotlin、Swift 与 Web 四种绑定，Flutter 不展开。前四节说明三类原生边界各自怎样持有原生对象、怎样配对创建与释放（11.1 至 11.4 节）；中间四节说明数据经过边界时的契约，包括流式回调、多模态输入的复制、字符串的所有权与编码，以及 Swift 上两个显式释放问题（11.5 至 11.8 节）；最后三节说明并发隔离、测试替身与跨平台构建。
 
 ## 11.1　C ABI：C 兼容的原生边界
 
-C++ 的名字修饰（name mangling）、异常、模板和对象布局都随编译器与标准库的 ABI 变化。Python 的 `ctypes` 与 Swift 的 C 互操作只接受 C 兼容的符号和数据类型，不能直接导入任意 C++ 类的方法。LiteRT-LM 因此提供一个 C 头文件作为接口：它是 Python 与 Swift 共用的 C 兼容边界，但不是 Kotlin 和 Web 的必经路径。
+C++ 的名字修饰（name mangling）、异常、模板和对象布局都随编译器与标准库的 ABI 变化。Python 的 `ctypes` 与 Swift 的 C 互操作只接受 C 兼容的符号和数据类型，不能直接导入任意 C++ 类的方法。LiteRT-LM 因此提供一组 C 头文件作为接口：它是 Python 与 Swift 共用的 C 兼容边界，但不是 Kotlin 和 Web 的必经路径。
 
-这个头文件先用不透明句柄（opaque handle）声明 engine 和 session，两者只有结构体类型名，不公开成员：
+引擎头文件先用不透明句柄（opaque handle）声明 engine 和 session，两者只有结构体类型名，不公开成员：
 
 ```cpp
-// c/engine.h:40-44
+// c/engine.h:40-48
 // Opaque pointer for the LiteRT LM Engine.
-typedef struct LiteRtLmEngine LiteRtLmEngine;    // (1)
+//
+// Added in version 0.1.0.
+typedef struct LiteRtLmEngine LiteRtLmEngine;  // (1)
 
 // Opaque pointer for the LiteRT LM Session.
+//
+// Added in version 0.1.0.
 typedef struct LiteRtLmSession LiteRtLmSession;  // (2)
 ```
 
 代码行 `(1)`、`(2)` 是 C 的前向声明。编译器知道 `LiteRtLmEngine` 是一个结构体类型，但头文件不公开其字段，绑定层只能把 `LiteRtLmEngine*` 当作句柄传回 C API，不能解引用、计算 `sizeof` 或访问成员。C++ 对象的布局因而不进入公开 ABI。
 
-该结构体在实现文件中的完整定义如下：
+该结构体在内部头文件中的完整定义如下：
 
 ```cpp
-// c/engine.cc:176-182
+// c/engine_internal.h:68-74
 struct LiteRtLmEngine {
-  std::unique_ptr<Engine> engine;    // (1)
+  std::unique_ptr<litert::lm::Engine> engine;  // (1)
 };
 
 struct LiteRtLmSession {
-  std::unique_ptr<Engine::Session> session;
+  std::unique_ptr<litert::lm::Engine::Session> session;
 };
 ```
 
-代码行 `(1)` 表明 `LiteRtLmEngine` 持有 `std::unique_ptr<Engine>`。头文件只公开句柄类型，实现文件独占句柄字段与 `Engine` 的具体布局；只要函数签名和句柄契约保持兼容，内部 C++ 类型就可以独立演进。
+代码行 `(1)` 表明 `LiteRtLmEngine` 持有 `std::unique_ptr<Engine>`。头文件只公开句柄类型，内部头文件保留句柄字段与 `Engine` 的具体布局；只要函数签名和句柄契约保持兼容，内部 C++ 类型就可以独立演进。
 
 操作接口是普通的 C 函数，签名中只出现 C 类型和不透明指针：`litert_lm_engine_create` 返回句柄，`litert_lm_engine_delete` 释放它，创建 session 与执行 prefill 的函数采用同一形式。C++ 成员函数就这样映射为 C 自由函数，对象句柄成为第一个参数。头文件注释写明调用方负责用 delete 函数销毁 engine，这是调用方必须履行的释放契约。
 
@@ -48,11 +52,11 @@ struct LiteRtLmSession {
 不透明句柄隐藏了对象布局，也就要求 API 明确对象的所有权。C 接口没有 C++ 的析构语义，调用方必须让创建和释放成对：`litert_lm_engine_create` 返回的引擎由 `litert_lm_engine_delete` 释放，session 由对应的 delete 函数释放。引擎创建与释放的实现如下：
 
 ```cpp
-// c/engine.cc:537-556
+// c/engine.cc:790-809
 LiteRtLmEngine* litert_lm_engine_create(
     const LiteRtLmEngineSettings* settings) {
   if (!settings || !settings->settings) {
-    return nullptr;                                          // (1)
+    return nullptr;  // (1)
   }
 
   absl::StatusOr<std::unique_ptr<Engine>> engine =
@@ -60,10 +64,10 @@ LiteRtLmEngine* litert_lm_engine_create(
 
   if (!engine.ok()) {
     ABSL_LOG(ERROR) << "Failed to create engine: " << engine.status();
-    return nullptr;                                          // (2)
+    return nullptr;  // (2)
   }
 
-  auto* c_engine = new LiteRtLmEngine;                       // (3)
+  auto* c_engine = new LiteRtLmEngine;  // (3)
   c_engine->engine = *std::move(engine);
   return c_engine;
 }
@@ -73,20 +77,20 @@ void litert_lm_engine_delete(LiteRtLmEngine* engine) { delete engine; }  // (4)
 
 代码行 `(3)` 用 `new` 分配句柄，再把工厂返回的 `unique_ptr<Engine>` 移入其中；`(4)` 删除句柄，句柄析构又触发 `unique_ptr<Engine>` 析构。RAII 仍负责句柄内部的清理，但跨语言调用方必须显式调用 delete，才能启动这条析构链。`(1)`、`(2)` 以 `nullptr` 表示创建失败，这条 C 接口没有把内部的 `absl::Status` 细节传给调用方。
 
-绑定层需要把 create/delete 契约映射为本语言的资源管理接口：Python 提供上下文管理器和 `__del__`，Kotlin 使用 `AutoCloseable`，Swift 则主要依赖 `deinit`。
+绑定层需要把 create/delete 契约映射为本语言的资源管理接口：Python 提供 `close()`、上下文管理器和 `__del__`，Kotlin 使用 `AutoCloseable`，Swift 则主要依赖 `deinit`。
 
 ## 11.3　三类原生边界
 
 四种绑定采用三类原生边界：Python 与 Swift 使用 C ABI，Kotlin 使用 JNI，Web 使用 Embind。
 
-Python 使用 `ctypes`，在运行时按签名声明 C 结构和函数并调用共享库。引擎句柄的类型声明如下：
+Python 使用 `ctypes`，在运行时声明 C 函数签名并调用共享库。引擎句柄的类型声明如下：
 
 ```python
-# python/litert_lm/_ffi.py:171-174
-# Engine
-lib.litert_lm_engine_create.restype = ctypes.c_void_p    # (1)
-lib.litert_lm_engine_create.argtypes = [ctypes.c_void_p]
-lib.litert_lm_engine_delete.argtypes = [ctypes.c_void_p] # (2)
+# python/litert_lm/_ffi.py:253-256
+  # Engine
+  lib.litert_lm_engine_create.restype = ctypes.c_void_p  # (1)
+  lib.litert_lm_engine_create.argtypes = [ctypes.c_void_p]
+  lib.litert_lm_engine_delete.argtypes = [ctypes.c_void_p]  # (2)
 ```
 
 代码行 `(1)` 把创建函数的返回类型声明为 `c_void_p`，对应 C 侧的不透明指针；`(2)` 声明删除函数接收同一类型。`ctypes` 在运行时根据这些声明调用共享库，无需另行编译扩展模块。绑定里的字符串辅助类型还会在传参时统一做 UTF-8 编码。
@@ -94,15 +98,16 @@ lib.litert_lm_engine_delete.argtypes = [ctypes.c_void_p] # (2)
 Kotlin/Android 使用 JNI：一个内部对象集中声明 `external fun`，由编译后的原生实现提供，其中创建与删除 engine 的声明如下：
 
 ```kotlin
-// kotlin/java/com/google/ai/edge/litertlm/LiteRtLmJni.kt:52-94
-external fun nativeCreateEngine(
-  modelPath: String,
-  backend: String,
+// kotlin/java/com/google/ai/edge/litertlm/LiteRtLmJni.kt:53-98
+  external fun nativeCreateEngine(
+    modelPath: String,
+    backend: String,
   // ...
-  audioBackendNumThreads: Int,
-): Long                                        // (1)
-// ...
-external fun nativeDeleteEngine(enginePointer: Long)  // (2)
+    audioBackendNumThreads: Int,
+    maxVisionTokensPerImage: Int,
+  ): Long  // (1)
+  // ...
+  external fun nativeDeleteEngine(enginePointer: Long)  // (2)
 ```
 
 代码行 `(1)` 以 `Long` 保存原生指针的位模式，`(2)` 把同一数值传给删除函数。Kotlin 不解释这个数值指向的对象。JNI 需要一层编译后的原生实现把 `jlong` 转回 C++ 指针，这一点与运行时声明签名的 `ctypes` 不同。
@@ -111,9 +116,9 @@ Swift（iOS 与 macOS）使用 C 互操作，导入 C 模块后可直接调用 `
 
 ```swift
 // swift/Engine.swift:28-38
-public actor Engine {                         // (1)
+public actor Engine {  // (1)
   // ...
-  private var handle: OpaquePointer? = nil     // (2)
+  private var handle: OpaquePointer? = nil  // (2)
 ```
 
 代码行 `(1)` 把 `Engine` 定义为 actor：actor 隔离使其可变状态只能在该 actor 的隔离域内访问，这项语义不等于固定线程或后台线程调度。`(2)` 用 `OpaquePointer?` 保存 C 句柄。与 Python 的 `c_void_p` 和 Kotlin 的 `Long` 一样，绑定代码只保存并传递句柄，不访问原生对象布局。
@@ -127,21 +132,21 @@ Web 把核心编译为 WebAssembly，再用 TypeScript 封装。该路径使用 
 Kotlin 和 Web 不经过 C 头文件。Kotlin 的 JNI 原生实现直接包含 runtime 的 C++ 头文件，能访问 `Engine`、`Engine::Session` 和 `EngineFactory`，不需要经不透明句柄中转。创建 engine 的原生函数返回指针：
 
 ```cpp
-// kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:535-542
-auto engine = EngineFactory::CreateDefault(*settings);
-if (!engine.ok()) {
-  ThrowLiteRtLmJniException(
-      env, "Failed to create engine: " + engine.status().ToString());
-  return 0;
-}
+// kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:688-695
+  auto engine = EngineFactory::CreateDefault(*settings);
+  if (!engine.ok()) {
+    ThrowLiteRtLmJniException(
+        env, "Failed to create engine: " + engine.status().ToString());
+    return 0;
+  }
 
-return reinterpret_cast<jlong>(engine->release());  // (1)
+  return reinterpret_cast<jlong>(engine->release());  // (1)
 ```
 
 `EngineFactory::CreateDefault` 返回 `absl::StatusOr<std::unique_ptr<Engine>>`。代码行 `(1)` 调用 `release()` 后，`unique_ptr` 不再拥有该 `Engine`，裸指针随后被重解释为 `jlong`，Kotlin 保存的就是这个数值句柄。原生对象仍需由释放函数删除：
 
 ```cpp
-// kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:615-617
+// kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:781-783
 JNI_METHOD(nativeDeleteEngine)(JNIEnv* env, jclass thiz, jlong engine_pointer) {
   delete reinterpret_cast<Engine*>(engine_pointer);  // (1)
 }
@@ -153,7 +158,7 @@ Web 的 Embind 也在编译期从 C++ 导出 JavaScript 可见对象。源码可
 
 | 语言 | FFI 机制 | 经 C ABI？ | 句柄形态 | 资源释放位置 |
 |---|---|---|---|---|
-| Python | ctypes（运行时声明签名） | 是 | `c_void_p` | 上下文管理器 / `__del__` |
+| Python | ctypes（运行时声明签名） | 是 | `c_void_p` | `close()` / 上下文管理器 / `__del__` |
 | Kotlin | JNI（`external fun` 声明） | 否，直连 C++ | `jlong`（`Engine*` 位模式） | `AutoCloseable` |
 | Swift | C 互操作（import C 头） | 是 | `OpaquePointer` | 由 `deinit` 释放 |
 | Web | Emscripten Embind | 否，直连 C++ | 带 `.delete()` 的 JS 对象 | 手动 `.delete()` 配对 |
@@ -164,79 +169,79 @@ Web 的 Embind 也在编译期从 C++ 导出 JavaScript 可见对象。源码可
 
 阻塞式接口在函数返回时交付结果，流式生成则要多次传递增量文本和终止状态。C ABI 用回调表达这组异步事件，并为回调参数规定明确的生命周期。
 
-C ABI 表达回调的方式是函数指针加一个透传的用户数据指针：
+C ABI 用函数指针接收回调，参数包括透传的用户数据指针和不透明的流式块句柄：
 
 ```cpp
-// c/engine.h:652-653
-typedef void (*LiteRtLmStreamCallback)(void* callback_data, const char* chunk,
-                                       bool is_final, const char* error_msg);
+// c/engine.h:1192-1193
+typedef void (*LiteRtLmStreamCallback)(void* callback_data,
+                                       const LiteRtLmStreamChunk* chunk);
 ```
 
-`callback_data` 是调用方登记的 `void*`，C ABI 只负责原样传回，绑定层可用它定位本语言的对象或闭包上下文。`chunk` 携带增量文本，`is_final` 标记流结束，非空的 `error_msg` 表示错误。头文件注明 `chunk` 只在本次回调期间有效：绑定层若要在回调返回后保留文本，必须在回调内复制内容。
+`callback_data` 是调用方登记的 `void*`，C ABI 将它原样传回。绑定层可用它定位本语言的对象或闭包上下文。`chunk` 指向 `LiteRtLmStreamChunk`，访问函数分别读取文本、终止标记和错误消息。头文件规定该句柄只在本次回调期间有效；绑定层若要在回调返回后保留文本或错误消息，必须在回调内复制内容。
 
-C++ 侧用 `absl::AnyInvocable` 接收 `absl::StatusOr<Responses>`，一个适配函数把它变成四参数的 C 回调：
+C++ 侧用 `absl::AnyInvocable` 接收 `absl::StatusOr<Responses>`，再把结果包装成流式块。下面保留错误分支和增量文本分支：
 
 ```cpp
-// c/engine.cc:50-75
+// c/engine.cc:56-98
 absl::AnyInvocable<void(absl::StatusOr<litert::lm::Responses>)> CreateCallback(
     LiteRtLmStreamCallback callback, void* callback_data) {
   return [callback,
           callback_data](absl::StatusOr<litert::lm::Responses> responses) {
     if (!responses.ok()) {
-      callback(callback_data, /*text=*/nullptr, /*is_final=*/true,
-               responses.status().ToString().c_str());        // (1)
+      LiteRtLmStreamChunk chunk;
+      chunk.text = nullptr;
+      chunk.is_final = true;
+      std::string error_str = responses.status().ToString();
+      chunk.error_msg = error_str.c_str();  // (1)
+      callback(callback_data, &chunk);  // (2)
       return;
     }
-    if (responses->GetTaskState() == litert::lm::TaskState::kDone) {
-      callback(callback_data, /*text=*/nullptr, /*is_final=*/true,
-               /*error_message=*/nullptr);                     // (2)
-    } else if (responses->GetTaskState() ==
-               litert::lm::TaskState::kMaxNumTokensReached) {
-      callback(callback_data, /*text=*/nullptr, /*is_final=*/true,
-               "Max number of tokens reached.");               // (3)
-    } else if (responses->GetTaskState() == litert::lm::TaskState::kCancelled) {
-      callback(callback_data, /*text=*/nullptr, /*is_final=*/true,
-               "CANCELLED.");                                  // (4)
+  // ...
     } else {
       for (const auto& text : responses->GetTexts()) {
-        callback(callback_data, text.data(), /*is_final=*/false,
-                 /*error_message=*/nullptr);                   // (5)
+        LiteRtLmStreamChunk chunk;
+        chunk.text = text.data();  // (3)
+        chunk.is_final = false;
+        chunk.error_msg = nullptr;
+        callback(callback_data, &chunk);  // (4)
       }
     }
   };
 }
 ```
 
-这个 lambda 把 C++ 状态映射为 C 参数。代码行 `(1)` 在 `StatusOr` 失败时把状态字符串写入 `error_msg`，同时把 `is_final` 置为 true；`(2)` 表示正常结束；`(3)` 和 `(4)` 分别传递达到 token 上限与取消状态；`(5)` 对每条增量文本调用一次回调，并保持 `is_final` 为 false。`(5)` 传入的是 `text.data()`，没有转移底层缓冲的所有权：绑定层只能在回调期间读取该指针，把指针本身保存到回调之外会违反接口契约。Python 或 Swift 若需要保留增量文本，应先复制为本语言拥有的字符串。
+错误分支在代码行 `(1)` 把局部字符串的指针写入 `chunk`，`(2)` 将局部流式块的地址交给回调。增量文本分支在 `(3)` 引用响应中的字符串，再由 `(4)` 调用回调。两条路径都没有转移字符串或流式块的所有权，绑定层不能把这些指针保存到回调之外。
+
+省略的终止分支也使用同一种流式块：正常结束时终止标记为 true、错误消息为空；达到 token 上限和取消时，终止标记同样为 true，但带有对应错误消息。回调签名因此保持两个参数，各项数据通过句柄的访问函数读取。
 
 发起流式的入口：
 
 ```cpp
-// c/engine.cc:653-666
+// c/engine.cc:949-962
 int litert_lm_session_run_decode_async(LiteRtLmSession* session,
                                        LiteRtLmStreamCallback callback,
                                        void* callback_data) {
   if (!session || !session->session) {
-    return -1;                                                     // (1)
+    return -1;  // (1)
   }
   auto status =
       session->session->RunDecodeAsync(CreateCallback(callback, callback_data));
   if (!status.ok()) {
     ABSL_LOG(ERROR) << "Failed to start decode stream: " << status.status();
-    return static_cast<int>(status.status().code());               // (2)
+    return static_cast<int>(status.status().code());  // (2)
   }
-  return 0;                                                        // (3)
+  return 0;  // (3)
 }
 ```
 
 该函数先把 C 回调和 `callback_data` 交给适配函数，再调用 `RunDecodeAsync`。代码行 `(1)` 在参数无效时返回 -1，`(2)` 在启动失败时返回 `absl::StatusCode` 的整数值，`(3)` 在成功启动时返回 0。返回码只描述启动结果，后续文本和终止状态均由回调传递；绑定层还要保证回调上下文至少存活到最终回调完成。
 
-## 11.6　多模态输入在 C 边界的扁平化
+## 11.6　多模态输入在 C 边界的表示与复制
 
-第 10 章说明了图像和音频如何变成 embedding 进入 prefill。本节只说明文本、图像和音频怎样表示为 C ABI 可接收的数据。C ABI 用带类型标签的结构体表示输入：
+第 10 章说明了图像和音频如何变成 embedding 进入 prefill。本节只说明文本、图像和音频怎样表示为 C ABI 可接收的数据。调用方提供类型标签、缓冲指针与字节数，由创建函数返回不透明的输入句柄：
 
 ```cpp
-// c/engine.h:243-260
+// c/engine.h:453-483
 typedef enum {
   kLiteRtLmInputDataTypeText,
   kLiteRtLmInputDataTypeImage,
@@ -244,56 +249,66 @@ typedef enum {
   kLiteRtLmInputDataTypeAudio,
   kLiteRtLmInputDataTypeAudioEnd,
 } LiteRtLmInputDataType;
-
-// Represents a single piece of input data.
-typedef struct {
-  LiteRtLmInputDataType type;
-  // The data pointer. The interpretation depends on the `type`.
-  // For kInputText, it's a UTF-8 string.
-  // For kInputImage and kInputAudio, it's a pointer to the raw bytes.
-  const void* data;   // (1)
-  // The size of the data in bytes.
-  size_t size;        // (2)
-} LiteRtLmInputData;
+  // ...
+LiteRtLmInputData* litert_lm_input_data_create(LiteRtLmInputDataType type,
+                                               const void* data, size_t size);
+  // ...
+void litert_lm_input_data_delete(LiteRtLmInputData* input_data);
 ```
 
-每个元素由 `type` 和 `(data, size)` 组成。代码行 `(1)` 的 `const void*` 指向缓冲，`(2)` 给出字节数；文本数据采用 UTF-8，图像与音频使用相应的编码字节，`type` 决定 C++ 侧如何解释缓冲。转换函数把这个数组变成 C++ 的 `InputData`：
+`type` 决定如何解释 `(data, size)`：文本采用 UTF-8，图像与音频使用相应的编码字节。调用方不能直接构造句柄内部的 C++ 对象，也必须用 `litert_lm_input_data_delete` 释放创建的输入句柄。创建函数的文本、图像与结束标记分支如下：
 
 ```cpp
-// c/engine.cc:127-154
-std::vector<litert::lm::InputData> ToEngineInputData(
-    const LiteRtLmInputData* inputs, size_t num_inputs) {
+// c/engine.cc:126-153
+LiteRtLmInputData* litert_lm_input_data_create(LiteRtLmInputDataType type,
+                                               const void* data, size_t size) {
+  switch (type) {
+    case kLiteRtLmInputDataTypeText:
+      return std::make_unique<LiteRtLmInputData>(
+                 litert::lm::InputText(
+                     std::string(static_cast<const char*>(data), size)))  // (1)
+          .release();
+    case kLiteRtLmInputDataTypeImage:
+      return std::make_unique<LiteRtLmInputData>(
+                 litert::lm::InputImage(
+                     std::string(static_cast<const char*>(data), size)))  // (2)
+          .release();
+    case kLiteRtLmInputDataTypeImageEnd:
+      return std::make_unique<LiteRtLmInputData>(litert::lm::InputImageEnd())  // (3)
+          .release();
+  // ...
+    default:
+      return nullptr;
+  }
+}
+```
+
+代码行 `(1)`、`(2)` 用 `std::string(ptr, size)` 复制原始缓冲，分别构造 `InputText` 和 `InputImage`。`(3)` 创建不含缓冲的 `InputImageEnd`，音频分支采用相同结构。创建函数返回后，调用方可以释放原始字节缓冲；输入句柄仍须保留到提交调用完成。
+
+提交时，C API 接收输入句柄指针数组，再为 runtime 构造独立的输入副本：
+
+```cpp
+// c/engine.cc:100-114
+absl::StatusOr<std::vector<litert::lm::InputData>> ToEngineInputData(
+    const LiteRtLmInputData* const* inputs, size_t num_inputs) {
   std::vector<litert::lm::InputData> engine_inputs;
   engine_inputs.reserve(num_inputs);
   for (size_t i = 0; i < num_inputs; ++i) {
-    switch (inputs[i].type) {
-      case kLiteRtLmInputDataTypeText:
-        engine_inputs.emplace_back(litert::lm::InputText(std::string(
-            static_cast<const char*>(inputs[i].data), inputs[i].size)));  // (1)
-        break;
-      case kLiteRtLmInputDataTypeImage:
-        engine_inputs.emplace_back(litert::lm::InputImage(std::string(
-            static_cast<const char*>(inputs[i].data), inputs[i].size)));  // (2)
-        break;
-      case kLiteRtLmInputDataTypeImageEnd:
-        engine_inputs.emplace_back(litert::lm::InputImageEnd());          // (3)
-        break;
-      case kLiteRtLmInputDataTypeAudio:
-        engine_inputs.emplace_back(litert::lm::InputAudio(std::string(
-            static_cast<const char*>(inputs[i].data), inputs[i].size)));
-        break;
-      case kLiteRtLmInputDataTypeAudioEnd:
-        engine_inputs.emplace_back(litert::lm::InputAudioEnd());
-        break;
+    if (inputs[i] != nullptr) {
+      auto copy_status = litert::lm::CreateInputDataCopy(inputs[i]->data);  // (1)
+      if (!copy_status.ok()) {
+        return copy_status.status();
+      }
+      engine_inputs.push_back(std::move(*copy_status));  // (2)
     }
   }
   return engine_inputs;
 }
 ```
 
-`switch` 根据标签构造对应类型：代码行 `(1)` 生成 `InputText`，`(2)` 生成 `InputImage`，`(3)` 生成不含缓冲的 `InputImageEnd`，音频分支采用相同结构。`(1)`、`(2)` 中的 `std::string(ptr, size)` 会把 C 缓冲复制到新字符串，复制量等于输入的字节数。
+代码行 `(1)` 调用 `CreateInputDataCopy`，复制失败时返回状态；`(2)` 把副本移入输入数组。对这里的文本、图像和音频字节输入，创建句柄与提交输入是两个独立的复制步骤。C API 不接管调用方输入句柄的所有权，调用方仍需在提交调用返回后释放句柄。
 
-接口因此不接管调用方缓冲的所有权，也不要求缓冲在函数返回后继续存活：实现复制了数据，`InputData` 独立拥有内容。若要避免复制，C ABI 需要增加可验证的生命周期契约，例如所有权转移或释放回调，当前没有实现这些方案。本书也没有测量这次复制在端到端时延中的占比。
+这种接口让原始缓冲、C 输入句柄和 runtime 输入各自拥有内容，代价是复制及其临时内存。本书没有测量这些复制在端到端时延中的占比，也不能将当前接口当作零复制输入通道。
 
 ## 11.7　跨语言字符串的所有权与编码
 
@@ -302,7 +317,7 @@ std::vector<litert::lm::InputData> ToEngineInputData(
 取响应文本的函数返回内部字符串的 `data()`：
 
 ```cpp
-// c/engine.cc:725-733
+// c/engine.cc:1027-1036
 const char* litert_lm_responses_get_response_text_at(
     const LiteRtLmResponses* responses, int index) {
   if (!responses || index < 0 ||
@@ -320,23 +335,22 @@ const char* litert_lm_responses_get_response_text_at(
 消息渲染会产生一段新的字符串，conversation 句柄用一个成员保存它：
 
 ```cpp
-// c/engine.cc:192-199
+// c/conversation_internal.h:45-52
 struct LiteRtLmConversation {
-  std::unique_ptr<Conversation> conversation;
+  std::unique_ptr<litert::lm::Conversation> conversation;
   // This field stores the result of the last call to
   // `litert_lm_conversation_render_message_to_string`. This ties the lifetime
   // of the returned `const char*` to the `LiteRtLmConversation` object,
   // ...
   std::string last_rendered_message;  // (1)
-};
 ```
 
 渲染函数把结果移入该成员，再返回它的 `c_str()`：
 
 ```cpp
-// c/engine.cc:1115-1116
+// c/conversation.cc:623-624
   conversation->last_rendered_message = std::move(*rendered);  // (1)
-  return conversation->last_rendered_message.c_str();          // (2)
+  return conversation->last_rendered_message.c_str();  // (2)
 ```
 
 代码行 `(1)` 让 conversation 句柄拥有渲染结果，`(2)` 返回其 C 字符串指针。下一次渲染会覆盖这个成员，删除 conversation 也会销毁它；绑定层若要保留旧结果，必须在下一次渲染或删除句柄之前复制。调用方不需要单独释放这个指针。
@@ -344,21 +358,21 @@ struct LiteRtLmConversation {
 JNI 的 `NewStringUTF` 接收的是 modified UTF-8。它对空字符和基本多文种平面（BMP）之外字符的编码与标准 UTF-8 不同，不能直接用来转换标准 UTF-8 文本。JNI 层因此自定义了一个转换函数：
 
 ```cpp
-// kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:104-146
+// kotlin/java/com/google/ai/edge/litertlm/jni/litertlm.cc:122-164
 jstring NewStringStandardUTF(JNIEnv* env, std::string standard_utf8_str) {
   // ...
-  jbyteArray bytes = env->NewByteArray(standard_utf8_str.length());   // (1)
+  jbyteArray bytes = env->NewByteArray(standard_utf8_str.length());  // (1)
   if (bytes == nullptr) return nullptr;
   env->SetByteArrayRegion(
       bytes, 0, standard_utf8_str.length(),
-      reinterpret_cast<const jbyte*>(standard_utf8_str.c_str()));     // (2)
+      reinterpret_cast<const jbyte*>(standard_utf8_str.c_str()));  // (2)
   // ...
   jclass string_class = env->FindClass("java/lang/String");
   // ...
   jmethodID string_ctor =
       env->GetMethodID(string_class, "<init>", "([BLjava/lang/String;)V");  // (3)
   // ...
-  jstring charset_name = env->NewStringUTF("UTF-8");                  // (4)
+  jstring charset_name = env->NewStringUTF("UTF-8");  // (4)
   // ...
   jstring result =
       (jstring)env->NewObject(string_class, string_ctor, bytes, charset_name);  // (5)
@@ -378,39 +392,41 @@ jstring NewStringStandardUTF(JNIEnv* env, std::string standard_utf8_str) {
 当前的 Swift 封装仍只在 `deinit` 中删除 `Conversation` 句柄：
 
 ```swift
-// swift/Conversation.swift:46-69
-public class Conversation {                    // (1)
+// swift/Conversation.swift:57-91
+public final class Conversation: Sendable {  // (1)
   // ...
-  private var handle: CConversationHandle?
+  private let handle: CConversationHandle?
   // ...
-  deinit {                                      // (2)
+  private let engine: Engine
+  // ...
+  deinit {  // (2)
     if let handle = handle {
-      litert_lm_conversation_delete(handle)     // (3)
+      litert_lm_conversation_delete(handle)  // (3)
     }
   }
 ```
 
-代码行 `(1)` 是 ARC 管理的引用类型，`(2)` 在最后一个强引用释放后执行，`(3)` 删除 C conversation 句柄。调用方把一个变量设为 `nil`，并不能保证其他闭包、任务或对象没有继续持有引用。`deinit` 适合作为最终清理路径，却不能代替由调用方确定时点的 `close()`。
+代码行 `(1)` 是 ARC 管理的 `final` 引用类型，并声明遵守 `Sendable`。它保存不可变的句柄和一个 `Engine` 强引用，使引擎至少存活到该 conversation 释放。`(2)` 在最后一个强引用释放后执行，`(3)` 删除 C conversation 句柄。调用方把一个变量设为 `nil`，并不能保证其他闭包、任务或对象没有继续持有引用。`deinit` 适合作为最终清理路径，却不能代替由调用方确定时点的 `close()`。
 
 Kotlin 对同一种资源提供了公开的确定释放接口。`Conversation` 实现 `AutoCloseable`，并在 `close()` 中删除原生句柄：
 
 ```kotlin
-// kotlin/java/com/google/ai/edge/litertlm/Conversation.kt:69-472
+// kotlin/java/com/google/ai/edge/litertlm/Conversation.kt:69-749
 class Conversation(
   private val handle: Long,
   val toolManager: ToolManager = ToolManager(),
   val automaticToolCalling: Boolean = true,
-) : AutoCloseable {                                    // (1)
+  val enableResponseFormat: Boolean = false,
+) : AutoCloseable {  // (1)
   private val _isAlive = AtomicBoolean(true)
   // ...
-  override fun close() {                              // (2)
+  override fun close() {  // (2)
     if (_isAlive.compareAndSet(true, false)) {
-      LiteRtLmJni.nativeDeleteConversation(handle)    // (3)
+      LiteRtLmJni.nativeDeleteConversation(handle)  // (3)
     } else {
       throw IllegalStateException("Conversation is closed already.")
     }
   }
-}
 ```
 
 代码行 `(1)` 声明 `AutoCloseable`，`(2)` 允许调用方主动释放，`(3)` 同步删除原生 `Conversation*`。原子状态转换防止重复删除，第二次 `close()` 会抛出异常；调用方也可以用 Kotlin 的 `use { }` 在作用域结束时执行 `close()`。`LiteRT-LM#2589` 正是用这个 `Conversation.close()` 对照 Swift API，讨论对象不是 `Engine.close()`。[^ch11-issue-2589]
@@ -437,7 +453,7 @@ Swift 和 Kotlin 都限制对 Engine 句柄的并发访问，但采用不同的�
   public func initialize() throws {
 ```
 
-`initialize()` 是同步的 actor 隔离方法：它取得 actor 隔离后同步调用原生初始化，函数体内没有可见的挂起点。因此，`actor` 声明本身不能视为后台执行保证，应用仍需按平台集成方式安排耗时初始化，并验证主线程是否会被占用。
+`initialize()` 是同步的 actor 隔离方法，经内部辅助函数同步调用原生初始化。这条调用路径没有可见的挂起点。因此，`actor` 声明本身不能视为后台执行保证，应用仍需按平台集成方式安排耗时初始化，并验证主线程是否会被占用。
 
 Kotlin 的 `Engine` 定义一把锁和 `@Volatile` 句柄。`initialize()` 与 `close()` 使用 `synchronized(lock)`，`createConversation()` 也使用同一把锁。锁提供互斥，`@Volatile` 提供跨线程可见性，二者都不负责把同步的原生调用调度到后台；Kotlin 的 `initialize()` 同样要求调用方选择合适的线程或协程调度器。
 
@@ -448,15 +464,16 @@ Kotlin 的 `Engine` 定义一把锁和 `@Volatile` 句柄。`initialize()` 与 `
 真实模型推理依赖模型文件和后端环境，不适合承担全部单元测试。LiteRT-LM 提供测试替身 `FakeLlmExecutor`：
 
 ```cpp
-// runtime/executor/fake_llm_executor.h:37-59
-class FakeLlmExecutor : public LlmExecutor {    // (1)
+// runtime/executor/fake_llm_executor.h:38-68
+class FakeLlmExecutor : public LlmExecutor {  // (1)
  public:
   // ...
-  FakeLlmExecutor(
-      int vocab_size, const std::vector<std::vector<int>>& prefill_tokens_set,
-      const std::vector<std::vector<int>>& decode_tokens_set,  // (2)
-      int batch_size = 1,
-      std::optional<std::vector<float>> audio_embedding = std::nullopt);
+  FakeLlmExecutor(int vocab_size,
+                  const std::vector<std::vector<int>>& prefill_tokens_set,
+                  const std::vector<std::vector<int>>& decode_tokens_set,  // (2)
+                  int batch_size = 1,
+                  std::optional<std::vector<float>> projected_audio_embedding =
+                      std::nullopt);
 ```
 
 代码行 `(1)` 表明它实现第 4、5 章讨论的 `LlmExecutor` 接口；`(2)` 接收两组预设数据：`prefill_tokens_set` 描述各次 prefill 的预期输入，`decode_tokens_set` 描述各次 decode 的预定输出。该实现不加载模型，也不调用真实推理后端。
@@ -464,9 +481,9 @@ class FakeLlmExecutor : public LlmExecutor {    // (1)
 它的 `Prefill` 同时检查调用次数和输入 token：
 
 ```cpp
-// runtime/executor/fake_llm_executor.cc:128-158
+// runtime/executor/fake_llm_executor.cc:134-169
 absl::Status FakeLlmExecutor::Prefill(const ExecutorInputs& inputs) {
-  RETURN_IF_ERROR(prefill_status_);
+  ABSL_RETURN_IF_ERROR(prefill_status_);
   if (prefill_times_ >= prefill_tokens_set_.size()) {
     return absl::InvalidArgumentError(absl::StrCat(  // (1)
         "Prefill function has been called more times than the number of "
@@ -474,15 +491,17 @@ absl::Status FakeLlmExecutor::Prefill(const ExecutorInputs& inputs) {
         prefill_times_));
   }
   // ...
-  auto text_token_ids_span =
-      ReferTensorBufferAsSpan<int>(text_data->GetTokenIds());
-  RETURN_IF_ERROR(
-      CheckEquivalent(absl::MakeSpan(prefill_tokens_set_[prefill_times_]),  // (2)
-                      *text_token_ids_span));
-  // ...
+  ABSL_ASSIGN_OR_RETURN(auto text_data, inputs.GetTextDataPtr());
+  LITERT_ASSIGN_OR_RETURN(
+      auto text_token_ids_span,
+      ReferTensorBufferAsSpan<int>(text_data->GetTokenIds()));
+  ABSL_RETURN_IF_ERROR(CheckEquivalent<const int>(  // (2)
+      absl::MakeSpan(prefill_tokens_set_[prefill_times_]),
+      text_token_ids_span));
+  last_op_ = LastOp::kPrefill;
   processed_tokens_.AddProcessedTokens(prefill_tokens_set_[prefill_times_]);
-  prefill_times_++;                                                         // (3)
-  current_step_ += text_token_ids_span->size();
+  prefill_times_++;  // (3)
+  current_step_ += text_token_ids_span.size();
   // ...
   return absl::OkStatus();
 }
@@ -490,36 +509,37 @@ absl::Status FakeLlmExecutor::Prefill(const ExecutorInputs& inputs) {
 
 代码行 `(1)` 在调用次数超过预设数据时返回错误；`(2)` 比较实际输入与第 `prefill_times_` 组预期 token，不一致时返回 `InvalidArgumentError`；`(3)` 在成功后推进游标。无约束的 decode 则按调用次数返回预定 token。上层只依赖 `LlmExecutor` 接口，测试因此可以在不加载模型的情况下覆盖 prefill/decode 编排、停止条件和错误传播；该测试替身不能验证真实模型数值、后端 kernel 或设备性能。
 
-`FakeLlmExecutor` 还实现了约束解码测试路径：从预定 token 构造 logits，调用真实的约束解码器修改 logits，再把结果转换回 token：
+`FakeLlmExecutor` 还实现了约束解码测试路径：从预定 token 构造 logits，调用真实的约束解码处理器修改 logits，再把结果转换回 token：
 
 ```cpp
-// runtime/executor/fake_llm_executor.cc:191-228
+// runtime/executor/fake_llm_executor.cc:201-238
   std::vector<std::vector<int>> output_tokens;
-  if (decode_params.HasConstraintDecoder()) {                 // (1)
-    auto constraint_decoder = decode_params.GetConstraintDecoder();
-    // ...
-    if (last_op_ == LastOp::kDecode) {                        // (2)
-      // ...
+  if (ConstrainedDecoder* constrained_decoder =
+          decode_params.GetConstrainedDecoder();
+      constrained_decoder != nullptr) {  // (1)
+  // ...
+    if (last_op_ == LastOp::kDecode) {  // (2)
+  // ...
       const auto& last_decode_tokens = decode_tokens_set_[decode_times_ - 1];
-      // ...
-      RETURN_IF_ERROR(
-          constraint_decoder->UpdateConstraintState(last_token_ids));  // (3)
+  // ...
+      ABSL_RETURN_IF_ERROR(constrained_decoder->UpdateState(last_token_ids));  // (3)
     }
-    // ...
+  // ...
     DecodeIdsToLogits(decode_tokens_set_[decode_times_], vocab_size_,
-                      output_logits);                          // (4)
-    RETURN_IF_ERROR(constraint_decoder->MaskLogits(output_logits));    // (5)
+                      output_logits, decode_logits_options_);  // (4)
+  // ...
+    ABSL_RETURN_IF_ERROR(constrained_decoder->ProcessLogits(output_logits));  // (5)
     output_tokens = DecodeLogitsToIds(batch_size_, vocab_size_, output_logits,
-                                      decode_tokens_set_);      // (6)
+                                      decode_tokens_set_);  // (6)
   } else {
     for (int i = 0; i < decode_tokens_set_[decode_times_].size(); ++i) {
       output_tokens.push_back({decode_tokens_set_[decode_times_][i]});  // (7)
     }
   }
-  last_op_ = LastOp::kDecode;                                  // (8)
+  last_op_ = LastOp::kDecode;  // (8)
 ```
 
-代码行 `(7)` 是无约束分支，直接返回预定 token。约束分支在 `(4)` 构造 logits，在 `(5)` 调用 `MaskLogits`，再由 `(6)` 转回 token；`(2)`、`(3)` 在连续 decode 时先用上一轮 token 更新约束状态，`(8)` 记录上一项操作的类型。`FakeLlmExecutor` 因而能确定性地测试状态更新与 logits mask 的接口交互，但不能替代真实模型 logits 上的集成测试。
+代码行 `(7)` 是无约束分支，直接返回预定 token。约束分支在 `(4)` 构造 logits，在 `(5)` 调用 `ProcessLogits`，再由 `(6)` 转回 token；`(2)`、`(3)` 在连续 decode 时先用上一轮 token 更新约束状态，`(8)` 记录上一项操作的类型。`FakeLlmExecutor` 因而能确定性地测试状态更新与 logits mask 的接口交互，但不能替代真实模型 logits 上的集成测试。
 
 ## 11.11　跨平台构建
 
@@ -527,7 +547,7 @@ LiteRT-LM 为 Android、iOS、Linux、macOS、Windows 和 Web 提供构建目标
 
 ## 小结
 
-LiteRT-LM 的多语言 API 采用三类原生边界：Python 与 Swift 经 C ABI 调用 runtime，Kotlin 通过 JNI 直接持有 C++ 指针，Web 通过 Embind 导出 C++ 对象。流式回调要求绑定层在回调期间复制短生命周期字符串；多模态 C 接口则主动复制输入缓冲。返回字符串的有效期由所属句柄限定，JNI 另行处理标准 UTF-8 与 modified UTF-8 的差异。
+LiteRT-LM 的多语言 API 采用三类原生边界：Python 与 Swift 经 C ABI 调用 runtime，Kotlin 通过 JNI 直接持有 C++ 指针，Web 通过 Embind 导出 C++ 对象。流式回调要求绑定层在回调期间复制短生命周期字符串；多模态 C 接口在创建输入句柄与提交输入时分别复制内容。返回字符串的有效期由所属句柄限定，JNI 另行处理标准 UTF-8 与 modified UTF-8 的差异。
 
 资源管理和并发隔离属于绑定 API 契约的一部分。`LiteRT-LM#2589` 讨论 `Conversation` 的确定释放，[^ch11-issue-2589] `LiteRT-LM#2613` 讨论 `Engine` 销毁的执行上下文，[^ch11-issue-2613] 两者需要分别处理。Swift actor 与 Kotlin `synchronized` 只定义访问隔离，不自动提供后台线程调度。`FakeLlmExecutor` 支持脱离真实模型的确定性测试，跨平台构建配置则生成各平台所需产物。
 
@@ -544,4 +564,4 @@ LiteRT-LM 的多语言 API 采用三类原生边界：Python 与 Swift 经 C ABI
 [^ch11-issue-2589]: google-ai-edge/LiteRT-LM，[*[Swift] Add a public `close()` method to `Conversation` for deterministic session release*](https://github.com/google-ai-edge/LiteRT-LM/issues/2589)，LiteRT-LM issue #2589，2026-06-16；访问日期：2026-07-18。
 
 [^ch11-issue-2613]: google-ai-edge/LiteRT-LM，[*[Swift] Engine teardown crashes with `litert_lm_engine_delete` running on an arbitrary thread in `deinit` - adding a public `close()` to solve*](https://github.com/google-ai-edge/LiteRT-LM/issues/2613)，LiteRT-LM issue #2613，2026-06-19；访问日期：2026-07-18。
-[^ch11-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.13.1/README.md#L99-L106)，版本 v0.13.1；访问日期：2026-09-02。
+[^ch11-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.17.0/README.md#L108-L113)，版本 v0.17.0；访问日期：2026-09-13。

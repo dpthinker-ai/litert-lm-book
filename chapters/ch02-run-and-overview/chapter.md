@@ -6,10 +6,10 @@
 
 ## 2.1　运行命令行工具
 
-这一节回答三个问题：怎么运行 LiteRT-LM，运行后能看到什么，哪些行为和直觉不同。使用官方 Python 包就无需本地编译 C++。以下沿用官方 README 的运行方式，并将安装版本固定为本书的 v0.13.1。[^ch02-litertlm-readme]
+这一节回答三个问题：怎么运行 LiteRT-LM，运行后能看到什么，哪些行为和直觉不同。使用官方 Python 包就无需本地编译 C++。以下沿用官方 README 的命令形式，模型换成本书所用的 Gemma 4 E4B，并把安装版本固定为 v0.17.0。[^ch02-litertlm-readme]
 
 ```bash
-uv tool install 'litert-lm==0.13.1'
+uv tool install 'litert-lm==0.17.0'
 litert-lm run \
   --from-huggingface-repo=litert-community/gemma-4-E4B-it-litert-lm \
   gemma-4-E4B-it.litertlm \
@@ -26,10 +26,10 @@ ALL_PROXY=http://127.0.0.1:7890 litert-lm run \
   --prompt="What is the capital of France?"
 
 # 方案二（一次性）：重装补上 socks 依赖，此后按原命令运行
-uv tool install --force --with 'httpx[socks]' 'litert-lm==0.13.1'
+uv tool install --force --with 'httpx[socks]' 'litert-lm==0.17.0'
 ```
 
-指定 `--from-huggingface-repo` 时，`run` 调用 `common.download_from_huggingface`。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，回答逐段出现在终端里。上面的 README 示例用默认采样，输出不保证每次相同；要展示一条可逐字核对的输出，得换用温度 0 的归档运行（采样确定性实验，实录见附录 D 第八节）。下面的 `gemma-4-e4b` 是本地注册名称，须先按附录 C 第一节导入模型。前面的直接下载运行不会建立这个名称。命令与输出如下：
+指定 `--from-huggingface-repo` 时，`run` 调用下载模块。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，回答逐段出现在终端里。上面的 README 示例用默认采样，输出不保证每次相同；要展示一条可逐字核对的输出，得换用温度 0 的 v0.13.1 归档运行（采样确定性实验，实录见附录 D 第八节）。下面的 `gemma-4-e4b` 是本地注册名称，须先按附录 C 第一节导入模型。前面的直接下载运行不会建立这个名称。命令与输出如下：
 
 ```bash
 litert-lm run gemma-4-e4b --backend cpu \
@@ -44,21 +44,20 @@ teeming with diverse life and holding immense power.
 
 归档实验中这条命令连续运行两次，输出逐字一致；但确定性只在同一环境内成立：2026 年 8 月用重装的新版运行时复测，同一命令在温度 0 下给出了另一句（实录见附录 D 第八节）。可复现的是“同一环境内重复运行结果一致”，不是“任何机器都得到这一句”；采样参数如何影响输出，见第 5 章。
 
-命令行工具本身没有多少需要展开的：它用 click（Python 的命令行框架）把 `run`、`benchmark` 等八个子命令注册在同一个入口下，一个子命令一个模块。`run` 的职责只有三步：解析参数，创建 `Engine` 并开启会话，随 Python 上下文管理器退出时关闭并释放原生句柄；至于各后端何时真正释放设备资源，由其实现自行决定。命令行只是一层很薄的封装，需要细看的是它之下三个和直觉不同的行为。
+命令行工具本身没有多少需要展开的：它用 click（Python 的命令行框架）把 `run`、`benchmark` 等子命令注册在同一个入口下，一个子命令一个模块。`run` 的职责只有三步：解析参数，创建 `Engine` 并开启会话，随 Python 上下文管理器退出时关闭并释放原生句柄；至于各后端何时真正释放设备资源，由其实现自行决定。命令行只是一层很薄的封装，需要细看的是它之下三个和直觉不同的行为。
 
 第一个行为就在刚才的输出方式里：文字逐段出现，但一次迭代拿到的既不是一个 token，也不是一次 decode step。`run` 迭代 `send_message_async` 返回的 stream，打印每个响应字典中的文本项：
 
 ```python
-# python/litert_lm_cli/commands/run.py:101
-  stream = conversation.send_message_async(prompt)
+# python/litert_lm_cli/commands/run.py:105
+    stream = conversation.send_message_async(prompt)
+
   try:
-    for chunk in stream:                          # (1)
+    for chunk in stream:  # (1)
       content_list = chunk.get("content", [])
       for item in content_list:
         if item.get("type") == "text":
-          if state.active_channel is not None:
-            click.echo()
-            state.active_channel = None
+          state.close_channel()
           click.echo(click.style(item.get("text", ""), fg="yellow"), nl=False)
 ```
 
@@ -67,7 +66,7 @@ teeming with diverse life and holding immense power.
 第二个行为：按下 Ctrl-C，生成不会立即停。`run` 捕获 `KeyboardInterrupt` 后调用 `cancel_process()`，随后继续消费 stream，直至后台处理结束：
 
 ```python
-# python/litert_lm_cli/commands/run.py:123
+# python/litert_lm_cli/commands/run.py:126
   except KeyboardInterrupt:
     conversation.cancel_process()
     for _ in stream:
@@ -90,7 +89,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 
 ## 2.2　benchmark 输出的四项指标
 
-上一节验证的是功能，本节起转向性能。第 1 章的推算要靠实测的性能数据来检验，数据来自 `litert-lm benchmark`：它以固定输入触发一次生成，用参数指定 prefill 与 decode 的 token 数，完成后打印四项指标，即 prefill 吞吐、decode 吞吐、初始化时间与 TTFT。下面是本书主基准矩阵（下文称主矩阵，完整数据集与采集方法见附录 D）的一组中位数，条件为 Apple M5 Pro、Gemma 4 E4B、cpu 后端、prefill 256 token、decode 128 token。
+上一节验证的是功能，本节起转向性能。第 1 章的推算要靠实测的性能数据来检验，数据来自 `litert-lm benchmark`：它用参数指定 prefill 与 decode 的 token 数，并打印四项指标，即 prefill 吞吐、decode 吞吐、初始化时间与 TTFT。下面仍使用 v0.13.1 的本书主基准矩阵，不表示 v0.17.0 性能。主矩阵（完整数据集与采集方法见附录 D）的一组中位数如下，条件为 Apple M5 Pro、Gemma 4 E4B、cpu 后端、prefill 256 token、decode 128 token。
 
 ```text
 Backend                    : cpu
@@ -103,14 +102,16 @@ Init time:            0.5400 s
 Time to first token:  3.9400 s
 ```
 
+v0.17.0 的 CLI 默认先执行一次不计入结果的 warmup，再运行 `--runs` 指定的测量次数（默认 1）。每次 `Benchmark.run()` 都创建并销毁自己的 Engine 与 Session，不能把它理解为同一引擎连续多轮对话。多次测量时，CLI 对 TTFT 和两项吞吐取算术平均，Init 取首个测量结果；本书主矩阵仍按归档脚本取中位数。
+
 四项数据由 C++ `BenchmarkInfo` 提供，C API 分别暴露读取函数：
 
 | 指标 | 源码定义 | 对比时须固定的条件 | C API |
 |---|---|---|---|
-| TTFT（s） | 首轮 prefill 完整耗时，加首轮 decode 的平均单 token 耗时；不含初始化 | prompt 长度、prefill 形状、首轮 decode turn 的 token 数 | `litert_lm_benchmark_info_get_time_to_first_token`（`c/engine.h:583`） |
-| prefill 吞吐（tokens/s） | 本 turn 的输入 token 数除以耗时 | 序列长度、固定形状填充率、后端与 kernel | `litert_lm_benchmark_info_get_prefill_tokens_per_sec_at`（`c/engine.h:634`） |
-| decode 吞吐（tokens/s） | 本 turn 的生成 token 数除以耗时 | 上下文长度、KV cache、采样、后端与 kernel | `litert_lm_benchmark_info_get_decode_tokens_per_sec_at`（`c/engine.h:643`） |
-| 初始化时间（s） | C API 将 `GetInitPhases()` 中各条 duration 相加；阶段可能重叠 | 文件缓存、模型映射、delegate 初始化与缓存 | `litert_lm_benchmark_info_get_total_init_time_in_second`（`c/engine.h:591`） |
+| TTFT（s） | 首轮 prefill 完整耗时，加首轮 decode 的平均单 token 耗时；不含初始化 | prompt 长度、prefill 形状、首轮 decode turn 的 token 数 | `litert_lm_benchmark_info_get_time_to_first_token` |
+| prefill 吞吐（tokens/s） | 本 turn 的输入 token 数除以耗时 | 序列长度、固定形状填充率、后端与 kernel | `litert_lm_benchmark_info_get_prefill_tokens_per_sec_at` |
+| decode 吞吐（tokens/s） | 本 turn 的生成 token 数除以耗时 | 上下文长度、KV cache、采样、后端与 kernel | `litert_lm_benchmark_info_get_decode_tokens_per_sec_at` |
+| 初始化时间（s） | C API 将 `GetInitPhases()` 中各条 duration 相加；阶段可能重叠 | 文件缓存、模型映射、delegate 初始化与缓存 | `litert_lm_benchmark_info_get_total_init_time_in_second` |
 
 > 表 2-1　benchmark 四项指标的源码定义、对比时须固定的条件与对应的 C API 读取函数。
 
@@ -127,25 +128,25 @@ Time to first token:  3.9400 s
 这些数字的可信程度，取决于计时器实际测量的是什么。源码里的计时单位叫 turn：每执行一次 prefill 或 decode 调用，就记下这次处理的 token 数和耗时；两项吞吐就是各自 turn 的 token 数除以耗时，没有其他成分。2.2 节提到 TTFT 是计算出来的，其依据就在源码实现里：
 
 ```cpp
-// runtime/engine/io_types.cc:455
-double first_decode_token_seconds = absl::ToDoubleSeconds(
-    decode_turns_[0].duration / decode_turns_[0].num_tokens);   // (1)
-double first_prefill_token_seconds =
-    absl::ToDoubleSeconds(prefill_turns_[0].duration);          // (2)
-return first_decode_token_seconds + first_prefill_token_seconds;
+// runtime/engine/io_types.cc:352
+  double first_decode_token_seconds = absl::ToDoubleSeconds(
+      decode_turns_[0].duration / decode_turns_[0].num_tokens);  // (1)
+  double first_prefill_token_seconds =
+      absl::ToDoubleSeconds(prefill_turns_[0].duration);  // (2)
+  return first_decode_token_seconds + first_prefill_token_seconds;
 ```
 
 代码行 `(1)` 取首轮 decode turn 的平均单 token 耗时，`(2)` 取首轮 prefill 的完整耗时，函数返回二者之和。整个过程没有测量“首个流式回调发生的时刻”。因此，当首轮 decode turn 包含多个 token 且各 token 耗时不同时，这个和不等于用户真实等到首字的时间。C API 也明确规定该值以秒为单位返回，并且不包含初始化时间。
 
-测量本身还改变了两处被测路径。第一处是要求 prefill 等待完成：
+测量本身还改变了被测路径。v0.17.0 的 Python benchmark 在 GPU 路径要求等待权重上传完成，CLI 还默认启用可用的局部注意力环形缓冲。除此之外，任务层要求 benchmark 的 prefill 等待完成：
 
 ```cpp
-// runtime/core/tasks.cc:435
-// Wait for prefill to complete if benchmark mode is enabled.
-params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
+// runtime/core/tasks.cc:562
+  // Wait for prefill to complete if benchmark mode is enabled.
+  params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 ```
 
-`SetWaitForCompletion` 会让 benchmark 请求同步完成 prefill，避免只记录异步提交本身消耗的 host 时间。具体后端如何实现等待，见第 4 章。第二处改动在停止判断上：只要 benchmark 指定的 decode 步数大于 0，即使命中停止序列也不会提前结束，循环会在达到指定步数后停止。这样，每次吞吐记录都使用相同的 decode step 数。
+`SetWaitForCompletion` 会让 benchmark 请求同步完成 prefill，避免只记录异步提交本身消耗的 host 时间。具体后端如何实现等待，见第 4 章。停止判断也有测量专用条件：只要 benchmark 指定的 decode 步数大于 0，即使命中停止序列也不会提前结束，循环会在达到指定步数后停止。这样，每次吞吐记录都使用相同的 decode step 数。
 
 因此，benchmark 的数字反映的是启用等待、固定 decode 步数后的测量结果，不能直接等同于真实对话的端到端时延。报告结果时，需要同时给出参数与执行模式。
 
@@ -158,7 +159,7 @@ params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value());
 
 ### 2.3.1　从请求开始测到实际文本回调
 
-测量首段文本的等待时间，需要在客户端记录请求开始与首个非空回调的时刻，而不是用平均 decode 耗时替代。附录 D 第十四节给出一组手机数据：HONOR MEP-AN00 使用 Gemma 4 E4B、GPU OpenCL 和设备侧采样，输入为 77 token，上下文上限 4096，该组连续执行 5 个独立会话，每次 decode 计数为 201 token。
+测量首段文本的等待时间，需要在客户端记录请求开始与首个非空回调的时刻，而不是用平均 decode 耗时替代。附录 D 第十四节给出一组 v0.13.1 手机数据：HONOR MEP-AN00 使用 Gemma 4 E4B、GPU OpenCL 和设备侧采样，输入为 77 token，上下文上限 4096，该组连续执行 5 个独立会话，每次 decode 计数为 201 token。
 
 在这组关闭内存采集的对照中，引擎加载完成后的首次请求，从客户端请求开始到首段文本为 1663 ms，同一引擎上的后续 4 次为 489–498 ms；若把首次加载也纳入等待，从客户端启动计时点到首段文本约为 37791 ms。三个数字分别回答“首次请求要等多久”“同进程后续请求要等多久”和“还没有引擎时要等多久”，不能合并成一个 TTFT，也不能用这 5 次运行估计 P99。
 
@@ -242,41 +243,36 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{S}\left(\frac{R_s}{R_l}-1\right) $$
 对外接口层的主要入口之一是 `SessionInterface`。类注释说明，Session 保存一次独立交互的内部状态，并负责生成、prefill 与 decode：
 
 ```cpp
-// runtime/engine/engine.h:65
-class SessionInterface {
- public:
-  // ...
-  virtual absl::StatusOr<Responses> GenerateContent(   // (1)
+// runtime/engine/engine.h:119
+  ABSL_DEPRECATED(
+      "Prefer Conversation API for chat/context management, or RunPrefill and "
+      "RunDecode for fine-grained execution control.")
+  virtual absl::StatusOr<Responses> GenerateContent(  // (1)
       const std::vector<InputData>& contents) = 0;
-  // ...
-  virtual absl::Status RunPrefill(const std::vector<InputData>& contents) = 0; // (2)
-  // ...
-  virtual absl::StatusOr<Responses> RunDecode() = 0;   // (3)
-};
+// ...
+  virtual absl::Status RunPrefill(const std::vector<InputData>& contents) = 0;  // (2)
+// ...
+  virtual absl::StatusOr<Responses> RunDecode() = 0;  // (3)
 ```
 
-代码行 `(1)` 的 `GenerateContent` 在一次调用中同时处理 prefill 和 decode；`(2)`、`(3)` 则允许调用方分开执行两个阶段。`= 0` 表示这些方法由具体 Session 实现提供，接口本身不绑定后端。
+代码行 `(1)` 的 `GenerateContent` 在一次调用中处理 prefill 和 decode，但已被标记为弃用。聊天与上下文管理应使用 Conversation；需要单独控制两个阶段时，使用 `(2)`、`(3)` 的接口。`= 0` 表示这些方法由具体 Session 实现提供，接口本身不绑定后端。
 
-对话与编排层的核心是 prefill 和 decode 的调度循环。`Prefill` 在调用 executor 之前会校验输入 token 数是否严格小于 executor 给出的上限，超限直接拒绝；这个上限与 KV cache 容量的关系见第 6 章。decode 循环里各步骤的顺序决定了取消和输出的语义：每轮先读取消标志，再执行一步 decode，有可输出的文本就发一次流式回调，轮末统一检查停止条件，包括停止序列、benchmark 步数、`max_num_tokens` 和 `max_output_tokens`。这个顺序决定了取消的行为：取消不会中断已经进入 executor 的当前 step，只能在下一轮检查点生效。第 4、5 章分别展开取消、停止序列与 UTF-8 输出处理。
+对话与编排层的核心是 prefill 和 decode 的调度循环。`Prefill` 在调用 executor 之前会校验输入 token 数是否严格小于 executor 给出的上限，超限直接拒绝；这个上限与 KV cache 容量的关系见第 6 章。decode 循环里各步骤的顺序决定了取消和输出的语义：每轮先读取消标志，再执行一步 decode，有可输出的文本就发一次流式回调，轮末统一检查停止条件，包括停止序列、benchmark 步数、`max_num_tokens` 和 `max_output_tokens`。这个顺序决定了取消的行为：取消不会中断已经进入 executor 的当前 step，任务层在下一轮检查点观察到取消；内部采样还会把标志传给 executor，是否提前响应取决于具体实现。第 4、5 章分别展开取消、停止序列与 UTF-8 输出处理。
 
 推理执行层的公共边界是 `LlmExecutorBase`：
 
 ```cpp
-// runtime/executor/llm_executor_base.h:40
-class LlmExecutorBase {
- public:
-  // ...
-  virtual absl::Status Prefill(const ExecutorInputs& inputs) = 0;        // (1)
-  // ...
-  virtual absl::StatusOr<std::vector<std::vector<int>>> Decode() = 0;    // (2)
-  // ...
-  virtual absl::string_view ExecutorBackendName() const = 0;             // (3)
-};
+// runtime/executor/llm_executor_base.h:48
+  virtual absl::Status Prefill(const ExecutorInputs& inputs) = 0;  // (1)
+// ...
+  virtual absl::StatusOr<std::vector<std::vector<int>>> Decode() = 0;  // (2)
+// ...
+  virtual absl::string_view ExecutorBackendName() const = 0;  // (3)
 ```
 
 代码行 `(1)` 定义了基本的 prefill 接口，编排层实际使用的是它的参数化重载；基类默认返回未实现，支持该路径的具体 executor 需要覆盖它。`(2)` 定义基本 decode 接口；`(3)` 返回 executor 的后端名称。工厂选择的 executor 与 delegate 配置可能因 CPU、GPU、NPU 路径而异，但上层编排仍通过这些公共方法调用。
 
-第四、五层的代码位置更简单：组件层主要位于 `runtime/components/`，文件格式实现位于 `schema/`。
+组件层包括运行时组件与共享支持库中的 tokenizer、采样器等；文件格式与模型资源分别管理分段描述和内容加载。
 
 图 2-3 沿调用方向展开一次生成请求的主数据流：
 
@@ -341,9 +337,9 @@ TFLite section 的读取路径先用 `end_offset - begin_offset` 算出模型大
 
 4. **代码定位**：找到 benchmark 模式要求 prefill 等待完成的语句，并说明如果不等待，计时可能覆盖什么范围。
 
-5. **架构归位**：约束解码中的 `MaskLogits` 调用属于五层视图中的哪一层？它接收的 logits 来自哪一层？
+5. **架构归位**：约束解码中的 `ProcessLogits` 调用属于五层视图中的哪一层？它接收的 logits 来自哪一层？
 
-[^ch02-litertlm-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/tree/v0.13.1)，版本 v0.13.1；访问日期：2026-07-18。
+[^ch02-litertlm-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.17.0/README.md#L88-L98)，版本 v0.17.0；访问日期：2026-09-13。
 [^ch02-m5pro-bandwidth]: Apple，[*Apple debuts M5 Pro and M5 Max to supercharge the most demanding pro workflows*](https://www.apple.com/au/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/)，2026-03-04；访问日期：2026-08-30。
 [^ch02-issue-2568]: Yegorsh，[*`--max-num-tokens` unreasonably affects decoding speed*](https://github.com/google-ai-edge/LiteRT-LM/issues/2568)，LiteRT-LM issue #2568，2026-06-13；访问日期：2026-07-18。
 [^ch02-issue-2281]: 4ntoine，[*Different inference result depending on backend*](https://github.com/google-ai-edge/LiteRT-LM/issues/2281)，LiteRT-LM issue #2281，2026-05-15；访问日期：2026-07-18。

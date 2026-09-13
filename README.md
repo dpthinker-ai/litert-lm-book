@@ -30,7 +30,7 @@ SUMMARY.md book.toml      mdBook 配置
 scripts/lint_prose.sh     文风机检（禁词/填充词/内部标签/中英文空格/破折号）
 scripts/check_book_consistency.py  SUMMARY、章标题、目录层级与 PDF 单元表一致性
 scripts/check_citations.py         页下注完整性与正文、附录间来源去重
-scripts/check_code_references.py   源码锚点文件与行号检查（对照 v0.13.1 worktree）
+scripts/check_code_references.py   源码锚点与代码片段原文检查（对照 v0.17.0 worktree）
 scripts/check_book_links.py        成书 HTML 本地链接与锚点检查
 scripts/check_pdf_outline.py       PDF 目录与书签检查
 scripts/stage_book.sh     白名单 staging：只把正文、附录、图和样式放进书稿源
@@ -60,5 +60,10 @@ HTML 保留可点击的语义脚注。PDF 构建会把同一来源排在引用�
 
 ## 代码锚点
 
-全书代码引用锁定 `google-ai-edge/LiteRT-LM @ v0.13.1`。核对代码时在**独立 worktree** checkout 该 tag，
+全书代码引用锁定 `google-ai-edge/LiteRT-LM @ v0.17.0`。核对代码时在**独立 worktree** checkout 该 tag，
 不扰动 `/Users/dpthinker/workspace/LiteRT-LM` 的 main 工作区。
+
+本基线来自 `release/v0.17.0`，冻结提交为 `e9fd8c53ff968071774206163027dd84bedfe925`；不跟随 main。
+附录 D 与历史实验脚本保留原采集版本，升级后的基础生成检查不构成性能复测。
+
+该 release 的 `WORKSPACE` 固定 LiteRT 提交为 `9fe5be45564c868408e6514c8aabb83e211a0911`；下层算子核对沿用这份依赖，不改用 LiteRT main。

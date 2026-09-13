@@ -1,0 +1,187 @@
+{
+  "recorded_at_utc": "2026-09-13T02:54:28.118627+00:00",
+  "purpose": "v0.17.0 release upgrade: basic CPU/GPU text generation, not a benchmark or source-build validation",
+  "source_baseline": {
+    "branch": "release/v0.17.0",
+    "tag": "v0.17.0",
+    "commit": "e9fd8c53ff968071774206163027dd84bedfe925",
+    "litert_dependency_commit": "9fe5be45564c868408e6514c8aabb83e211a0911"
+  },
+  "runtime": {
+    "kind": "prebuilt Python packages in an isolated uv virtual environment",
+    "python": "3.12.13",
+    "packages": {
+      "click": "8.5.0",
+      "prompt_toolkit": "3.0.53",
+      "tomli": "2.4.1",
+      "wcwidth": "0.8.3",
+      "absl-py": "2.5.0",
+      "litert-lm-builder": "0.17.0",
+      "flatbuffers": "25.12.19",
+      "typing_extensions": "4.16.0",
+      "questionary": "2.1.1",
+      "litert-lm-api": "0.17.0",
+      "protobuf": "7.36.1",
+      "litert-lm": "0.17.0"
+    },
+    "native_libraries": [
+      {
+        "file": "litert_lm/liblitert-lm.dylib",
+        "size_bytes": 69213280,
+        "sha256": "a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc"
+      }
+    ]
+  },
+  "host": {
+    "os": "macOS 26.5",
+    "build": "25F71",
+    "model": "Mac17,9",
+    "cpu": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "model": {
+    "name": "Gemma 4 E4B",
+    "size_bytes": 3659530240,
+    "sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"
+  },
+  "cache_isolation": "Successful runs used a hard link to the model in tmp/upgrade; disk cache files were created alongside that link, separately from historical model caches.",
+  "trials": [
+    {
+      "argv": [
+        "litert-lm",
+        "run",
+        "<model.litertlm>",
+        "--backend",
+        "cpu",
+        "--max-num-tokens",
+        "256",
+        "--cache",
+        "memory",
+        "--prompt",
+        "Reply with only the word OK.",
+        "--thinking",
+        "false",
+        "--top-k",
+        "1",
+        "--temperature",
+        "0",
+        "--seed",
+        "42",
+        "--speculative-decoding",
+        "false"
+      ],
+      "exit_code": 0,
+      "result": "failed_generation",
+      "log": "cpu-256-memory.log",
+      "log_sha256": "d7bdbf68aac68d1c0a70f56255c635c1faacef310fc4bed251fb8d7707f6f0d1",
+      "has_ok_line": false,
+      "has_error_log": true
+    },
+    {
+      "argv": [
+        "litert-lm",
+        "run",
+        "<model.litertlm>",
+        "--backend",
+        "cpu",
+        "--max-num-tokens",
+        "4096",
+        "--cache",
+        "memory",
+        "--prompt",
+        "Reply with only the word OK.",
+        "--thinking",
+        "false",
+        "--top-k",
+        "1",
+        "--temperature",
+        "0",
+        "--seed",
+        "42",
+        "--speculative-decoding",
+        "false",
+        "--ringbuffers-local-attention",
+        "false"
+      ],
+      "exit_code": 0,
+      "result": "generated_text_with_cache_errors",
+      "log": "cpu-4096-memory.log",
+      "log_sha256": "ec30fd8dc44ac06e52b964b9c8ccd93c7130072a3d24f3c41cc96581d6aab7d3",
+      "has_ok_line": true,
+      "has_error_log": true
+    },
+    {
+      "argv": [
+        "litert-lm",
+        "run",
+        "<model.litertlm>",
+        "--backend",
+        "cpu",
+        "--max-num-tokens",
+        "4096",
+        "--cache",
+        "disk",
+        "--prompt",
+        "Reply with only the word OK.",
+        "--thinking",
+        "false",
+        "--top-k",
+        "1",
+        "--temperature",
+        "0",
+        "--seed",
+        "42",
+        "--speculative-decoding",
+        "false",
+        "--ringbuffers-local-attention",
+        "false"
+      ],
+      "exit_code": 0,
+      "result": "passed_basic_generation",
+      "log": "cpu-4096-disk.log",
+      "log_sha256": "a12b7cb43c9d9134b5bb1b35e9096b66775d9e92e7611d1cc92b02edd6782a87",
+      "has_ok_line": true,
+      "has_error_log": false
+    },
+    {
+      "argv": [
+        "litert-lm",
+        "run",
+        "<model.litertlm>",
+        "--backend",
+        "gpu",
+        "--max-num-tokens",
+        "4096",
+        "--cache",
+        "disk",
+        "--prompt",
+        "Reply with only the word OK.",
+        "--thinking",
+        "false",
+        "--top-k",
+        "1",
+        "--temperature",
+        "0",
+        "--seed",
+        "42",
+        "--speculative-decoding",
+        "false",
+        "--ringbuffers-local-attention",
+        "false"
+      ],
+      "exit_code": 0,
+      "result": "passed_basic_generation",
+      "log": "gpu-4096-disk.log",
+      "log_sha256": "a12b7cb43c9d9134b5bb1b35e9096b66775d9e92e7611d1cc92b02edd6782a87",
+      "has_ok_line": true,
+      "has_error_log": false
+    }
+  ],
+  "limitations": [
+    "The first and second trials changed both context capacity and the ring-buffer setting; they do not isolate the failure cause.",
+    "CLI process exit code alone did not detect the first failed generation; logs and returned text were checked.",
+    "The memory-cache trials reported that in-memory XNNPACK caching was unavailable in this build.",
+    "No performance, memory, quality, multi-turn, NPU, MoE, image, audio, or speculative-decoding validation was performed.",
+    "The checked-out C++ release was not compiled locally; execution used the matching version of the prebuilt package."
+  ]
+}

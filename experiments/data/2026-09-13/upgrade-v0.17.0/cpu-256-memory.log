@@ -1,0 +1,30 @@
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.xnnpack_cache'): Invalid argument.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.xnnpack_cache'. Check that this location is readable and writable.
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.static_audio_encoder.xnnpack_cache'): No such file or directory.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.static_audio_encoder.xnnpack_cache'. Check that this location is readable and writable.
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.audio_adapter.xnnpack_cache'): No such file or directory.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.audio_adapter.xnnpack_cache'. Check that this location is readable and writable.
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.vision_encoder.xnnpack_cache'): No such file or directory.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.vision_encoder.xnnpack_cache'. Check that this location is readable and writable.
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.vision_adapter.xnnpack_cache'): No such file or directory.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.vision_adapter.xnnpack_cache'. Check that this location is readable and writable.
+ERROR: third_party/tensorflow/lite/kernels/dynamic_update_slice.cc:68 SizeOfDimension(update, i) <= SizeOfDimension(operand, i) was not true.
+ERROR: Node number 1830 (DYNAMIC_UPDATE_SLICE) failed to prepare.
+ERROR: [litert_compiled_model.cc:164] Failed to allocate tensors
+An error occurred
+Traceback (most recent call last):
+  File "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm_cli/commands/run.py", line 363, in run_interactive
+    _execute_prompt(state, runner, prompt, attachments=attachments)
+  File "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm_cli/commands/run.py", line 108, in _execute_prompt
+    for chunk in stream:
+                 ^^^^^^
+  File "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm/conversation.py", line 434, in send_message_async
+    raise item
+RuntimeError: INTERNAL: ERROR: [third_party/odml/litert_lm/runtime/executor/llm_litert_compiled_model_executor.cc:746]
+└ Failed to invoke the compiled model
+└ Failed to allocate tensors

@@ -30,7 +30,7 @@
     <text class="ts" x="580" y="85" text-anchor="middle" style="font-size:9.5px">WebAssembly</text>
   </g>
   <rect class="boundary" x="35" y="140" width="280" height="56" rx="8"/>
-  <text class="accent" x="175" y="164" text-anchor="middle" style="font-size:13px;font-weight:700">C ABI（c/engine.h）</text>
+  <text class="accent" x="175" y="164" text-anchor="middle" style="font-size:13px;font-weight:700">C ABI（不透明句柄接口）</text>
   <text class="ts" x="175" y="182" text-anchor="middle" style="font-size:10.5px">不透明句柄 · 纯 C 函数</text>
   <rect class="boundary" x="365" y="140" width="130" height="56" rx="8"/>
   <text class="accent" x="430" y="164" text-anchor="middle" style="font-size:13px;font-weight:700">JNI</text>

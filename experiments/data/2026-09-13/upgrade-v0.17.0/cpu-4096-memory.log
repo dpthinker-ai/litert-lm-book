@@ -1,0 +1,16 @@
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.xnnpack_cache'): Invalid argument.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.xnnpack_cache'. Check that this location is readable and writable.
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.static_audio_encoder.xnnpack_cache'): No such file or directory.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.static_audio_encoder.xnnpack_cache'. Check that this location is readable and writable.
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.audio_adapter.xnnpack_cache'): No such file or directory.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.audio_adapter.xnnpack_cache'. Check that this location is readable and writable.
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.vision_encoder.xnnpack_cache'): No such file or directory.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.vision_encoder.xnnpack_cache'. Check that this location is readable and writable.
+ERROR: XNNPack weight cache: in-memory cache is not enabled for this build.
+ERROR: third_party/tensorflow/lite/delegates/xnnpack/weight_cache.cc:474: could not open file (':memory/model.litertlm_1783218351_3659530240.vision_adapter.xnnpack_cache'): No such file or directory.
+ERROR: XNNPack weight cache could neither be loaded from or saved to ':memory/model.litertlm_1783218351_3659530240.vision_adapter.xnnpack_cache'. Check that this location is readable and writable.
+OK

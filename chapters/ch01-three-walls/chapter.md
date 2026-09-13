@@ -208,6 +208,6 @@ $$ 2 \times 10^{9}\ \text{字节} \times 20 \times 10^{-12}\ \text{J/字节} = 0
 [^ch01-llama]: ggml-org，[llama.cpp](https://github.com/ggml-org/llama.cpp/tree/b9873)，tag `b9873`；访问日期：2026-07-18。
 [^ch01-mlc]: MLC LLM，[*Welcome to MLC LLM*](https://llm.mlc.ai/docs/)，文档版本 0.1.0；访问日期：2026-07-18。
 [^ch01-executorch]: PyTorch，[ExecuTorch](https://github.com/pytorch/executorch)，GitHub 仓库；访问日期：2026-07-18。
-[^ch01-litertlm]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/tree/v0.13.1)，版本 v0.13.1；访问日期：2026-07-18。
-[^ch01-litertlm-overview]: Google AI Edge，[*LiteRT-LM Overview*](https://developers.google.com/edge/litert-lm/overview)，文档对应 LiteRT‑LM v0.14.0；访问日期：2026-08-15。该页对 LiteRT‑LM 与 LiteRT 的层级定义也与本书冻结的 v0.13.1 代码调用关系一致。
+[^ch01-litertlm]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/tree/v0.17.0)，版本 v0.17.0；访问日期：2026-09-13。
+[^ch01-litertlm-overview]: Google AI Edge，[*LiteRT-LM Overview*](https://developers.google.com/edge/litert-lm/overview)，文档对应 LiteRT‑LM v0.14.0；访问日期：2026-08-15。该页对 LiteRT‑LM 与 LiteRT 的层级定义也与本书冻结的 v0.17.0 代码调用关系一致。
 [^ch01-litert-overview]: Google AI Edge，[*LiteRT overview*](https://developers.google.com/edge/litert/overview)，LiteRT 2.x `CompiledModel` API；访问日期：2026-08-15。

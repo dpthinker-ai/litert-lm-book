@@ -4,10 +4,10 @@
 
 ## 一、使用预编译 Python 包
 
-不需要编译源码。用 Python CLI（第 2 章）：
+本节运行当前 v0.17.0。第三节起的历史实验仍使用各自记录的 v0.13.1 环境，不应以新版重装结果覆盖归档数据。用 Python CLI（第 2 章）：
 
 ```bash
-uv tool install 'litert-lm==0.13.1'
+uv tool install 'litert-lm==0.17.0'
 litert-lm import \
   --from-huggingface-repo litert-community/gemma-4-E4B-it-litert-lm \
   gemma-4-E4B-it.litertlm gemma-4-e4b
@@ -23,7 +23,7 @@ litert-lm run gemma-4-e4b \
 shasum -a 256 ~/.litert-lm/models/gemma-4-e4b/model.litertlm
 ```
 
-`run` 与 `benchmark` 还接受 `--cache`，它决定后端编译产物的缓存方式（`python/litert_lm_cli/common.py:95-106`）：`disk`（默认）把编译产物持久化到模型旁的缓存文件；`memory` 缓存在内存中，仅 CPU 后端支持，Windows 上不可用；`no` 关闭缓存，每次运行重新编译。本书用这两条命令采集的归档运行都使用 `disk`，因此同一设备上首次运行包含冷启动，初始化时间高于后续复用缓存的运行（记录见附录 D 第二节）。切换取值会改变初始化路径，比较 Init 时间时须固定该取值。
+`run` 与 `benchmark` 还接受 `--cache`，它决定后端编译产物的缓存方式（`python/litert_lm_cli/common.py:95-116`）：`disk`（默认）把编译产物持久化到模型旁的缓存文件；`memory` 请求内存缓存，实际可用性取决于后端与构建是否启用；`no` 关闭缓存，每次运行重新编译。本书用这两条命令采集的归档运行都使用 `disk`，因此同一设备上首次运行包含冷启动，初始化时间高于后续复用缓存的运行（记录见附录 D 第二节）。切换取值会改变初始化路径，比较 Init 时间时须固定该取值。
 
 ## 二、从源码编译
 
@@ -31,18 +31,20 @@ shasum -a 256 ~/.litert-lm/models/gemma-4-e4b/model.litertlm
 
 ```bash
 git clone https://github.com/google-ai-edge/LiteRT-LM.git
-cd LiteRT-LM && git checkout v0.13.1
+cd LiteRT-LM
+git checkout --detach v0.17.0
+git lfs pull
 bazel build //runtime/engine:litert_lm_main
 bazel-bin/runtime/engine/litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 ```
 
-- GPU：加 `--define=litert_link_capi_so=true --define=resolve_symbols_in_exec=false`，并把 `prebuilt/<平台>/` 下的动态库放到二进制同目录。
-- Android 扩展基准使用 advanced CLI，以便取得 benchmark、线程数和峰值内存参数：`bazel build --config=android_arm64 --define=litert_link_capi_so=true --define=resolve_symbols_in_exec=false //runtime/engine:litert_lm_advanced_main`。再把 `bazel-bin/runtime/engine/litert_lm_advanced_main`、模型和 `prebuilt/android_arm64/*.so` 推送到 `/data/local/tmp/litertlm/`；其中 constraint provider 是进程启动依赖，GPU 后端还需要 accelerator 与 sampler 动态库。
+- GPU：加 `--define=litert_runtime_link_mode=dynamic`，并把 `prebuilt/<平台>/` 下的动态库放到二进制同目录。
+- Android 扩展基准使用 advanced CLI，以便取得 benchmark、线程数和峰值内存参数：`bazel build --config=android_arm64 --define=litert_runtime_link_mode=dynamic //runtime/engine:litert_lm_advanced_main`。再把 `bazel-bin/runtime/engine/litert_lm_advanced_main`、模型和 `prebuilt/android_arm64/*.so` 推送到 `/data/local/tmp/litertlm/`；其中 constraint provider 是进程启动依赖，GPU 后端还需要 accelerator 与 sampler 动态库。
 - 嵌入式/无 Bazel：改用 CMake 超级构建，见 `docs/getting-started/cmake.md`。
 
 ## 三、复现书中实验
 
-采集脚本位于本仓库的 `experiments/`。基准数据集可用以下命令一次性采集：
+采集脚本位于本仓库的 `experiments/`。以下脚本用于复现原采集流程。先在独立环境安装 `litert-lm==0.13.1`；手机客户端及其构建脚本也锁定旧版 C ABI。升级后的 CLI 参数、分块与回调行为已有变化，不能直接把这些脚本的输出作为同条件新版对照。主基准矩阵的命令为：
 
 ```bash
 # 前置：litert-lm 已装、模型已 import（litert-lm list 可见；litert-community 公开模型无需登录）
@@ -160,4 +162,4 @@ python3 experiments/m4_report.py experiments/data/2026-09-05/M4_RUNS.json
 
 [^appc-hf-auth]: Hugging Face，[*Command Line Interface (CLI)*](https://huggingface.co/docs/huggingface_hub/en/guides/cli)，`hf auth login`；访问日期：2026-07-18。
 
-[^appc-build-guide]: google-ai-edge/LiteRT-LM，[*Build and Run LiteRT-LM*](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.13.1/docs/getting-started/build-and-run.md)，v0.13.1；访问日期：2026-07-18。
+[^appc-build-guide]: google-ai-edge/LiteRT-LM，[*Build and Run LiteRT-LM*](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.17.0/docs/getting-started/build-and-run.md)，v0.17.0；访问日期：2026-09-13。

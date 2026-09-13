@@ -26,6 +26,7 @@
 | Conversation | 对话层 | 3 | 面向使用者的多轮对话 API，维护历史并应用聊天模板 |
 | Preface | 前置上下文 | 3 | 对话开始前提供的系统指令、few-shot 示例和工具声明；可在创建对话时预先 prefill |
 | tokenizer | 分词器 | 3 | 文本↔token id 的双向转换（SentencePiece / HuggingFace 两种） |
+| 流式反分词器 | streaming detokenizer | 3 | 将连续 token id 解码为文本，暂存不稳定后缀，避免后续解码改变已发送文本 |
 | embedding | 嵌入 | 3 | 主干模型接收的稠密向量表示；token、图像和音频可由不同的查找或编码路径转换成该表示 |
 | 模板增量渲染 | — | 3 | 支持单轮渲染时直接生成本轮文本；否则比较新旧完整渲染串，仅在前缀关系成立时提交新增后缀 |
 | signature | 签名 | 1 | 模型导出的具名调用入口，规定输入输出张量；维度可为静态或动态，prefill_128、decode、verify 是本书基准模型中的入口名 |
@@ -33,16 +34,18 @@
 | logits | — | 5 | 模型每步为词表中各 token 输出的分数 |
 | sampler | 采样器 | 5 | 根据 logits 选择下一个 token 的策略：greedy / temperature / top-k / top-p |
 | 内部/外部采样 | — | 5 | 执行器内部直接返回 token id，或把 logits 交给上层处理后再采样；前者可接设备侧采样实现，后者便于组合重复惩罚与约束解码 |
-| 重复惩罚 | repetition penalty | 5 | 降低近期已出现 token 的 logits 以减少重复输出；该操作需要修改 logits，只能走外部采样路径 |
+| 重复惩罚 | repetition penalty | 5 | 降低近期已出现 token 的 logits 以减少重复输出；该操作需要修改 logits，可与其他约束组合，由外部采样路径或支持约束的执行器内部路径处理 |
 | KV cache | 键值缓存 | 1 | 缓存历史 token 的注意力 Key/Value，以额外内存避免重复计算；理论大小为 2×L×n_kv×d_head×S×b，实际分配另含预留与多缓冲 |
 | 预留宽度 | — | 1 | KV cache 预先分配的 token 槽位数（由 `--max-num-tokens` 等参数决定）；固定形状路径下决定张量静态宽度，与已缓存 token 数 S 是两个量 |
 | GQA | 分组查询注意力 | 1 | grouped-query attention，多个查询头共享较少的 KV 头；相对每个查询头各有一组 K/V，可按头数比例减少 KV cache |
-| 双缓冲 | — | 1 | 维护两套 KV 缓冲，读旧写新后交换指针，适配不允许就地更新的后端 |
+| 双缓冲 | — | 1 | 维护两套 KV 缓冲，在调用间交替选择读写 bank，适配不允许就地更新的后端 |
 | 写时复制 | copy-on-write，COW | 3 | 多个会话先共享已处理上下文；较短分支需要截断或改写共享历史时，才复制执行器上下文并分离所有权 |
+| 环形缓存 | ring buffer | 6 | 循环复用固定数量的槽位；局部注意力可借此限制 KV 容量，被覆盖的旧数据不能仅靠回退步数恢复 |
 | channel | 通道 | 6 | 将思考等内容与最终回复分开；启用相应配置时，可在下一轮输入前回退并重建需保留的 KV 状态 |
 | magic number | 占位维度值 | 6 | LiteRT 模型用大于 10 的素数（如 32003）作为张量维度的占位值；运行时按 `--max-num-tokens` 等设置算出目标值，编译时替换，固定形状路径的预留宽度由此进入张量形状 |
 | .litertlm | — | 2 | 单文件模型容器：FlatBuffer 头描述一组具名分段，分段可承载 TFLite 模型、tokenizer、`LlmMetadataProto` 等数据 |
 | FlatBuffer | — | 7 | 可直接读取缓冲中类型化字段的二进制序列化格式；`.litertlm` 头与 TFLite 模型都使用它 |
+| 混合精度 | mixed precision | 7 | 同一模型采用多种计算精度；运行时选项须结合后端实际解释，不能据单个 FP32 标记推定全部算子精度 |
 | backend constraint | 后端约束 | 7 | `.litertlm` 模型段声明的允许后端集合；Engine 会在编译 executor 前检查请求后端是否包含在集合中 |
 | weight cache | 权重缓存 | 7 | 后端编译阶段使用的派生缓存；当前以模型 mtime 与文件大小参与命名，不等同于模型权重段或内容哈希 |
 | LoRA | — | 7 | 在基座模型之外加载增量权重；其管理器按已使用的 adapter id 保留资源，未提供卸载接口 |

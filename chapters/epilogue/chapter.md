@@ -2,7 +2,7 @@
 
 > 本章给出实践入口、参与项目的注意事项，以及仍需继续验证的问题。
 
-正文从三类物理约束出发组织端侧推理问题：第 1 章量化约束并给出分析基线，第 2 至 5 章分析推理流水线，第 6 至 9 章讨论 KV cache、模型格式、异构后端和投机解码，第 10、11 章讨论多模态、工具调用与多语言绑定。涉及 LiteRT-LM 实现的机制统一核对 v0.13.1 源码，实验数字注明测量条件。来自官方文档或 issue 的结论保留各自的版本与来源边界。
+正文从三类物理约束出发组织端侧推理问题：第 1 章量化约束并给出分析基线，第 2 至 5 章分析推理流水线，第 6 至 9 章讨论 KV cache、模型格式、异构后端和投机解码，第 10、11 章讨论多模态、工具调用与多语言绑定。涉及 LiteRT-LM 实现的机制统一核对 v0.17.0 源码，实验数字注明测量条件。来自官方文档或 issue 的结论保留各自的版本与来源边界。
 
 ## 1. 四种使用入口
 
@@ -91,7 +91,7 @@ decode 阶段应分别记录停止 token 或停止序列、`max_output_tokens`�
 
 ## 5. 版本升级的双基线验证
 
-本书锁定 v0.13.1。应用升级到后续版本时，不应直接用新版覆盖已验证环境。保留旧版基线，建立一个只改变运行时版本的并行环境。第一组对照保持模型文件和输入不变；若新版要求重新导出模型，再增加第二组“新版运行时 + 新模型”对照。
+本书锁定 v0.17.0。应用升级到后续版本时，不应直接用新版覆盖已验证环境。保留旧版基线，建立一个只改变运行时版本的并行环境。第一组对照保持模型文件和输入不变；若新版要求重新导出模型，再增加第二组“新版运行时 + 新模型”对照。
 
 | 组合 | 运行时 | 模型 | 目的 |
 |---|---|---|---|
@@ -132,7 +132,7 @@ NPU 实验先以“完成可重复的 prefill 和 decode”为阶段目标。两
 
 ## 7. 版本与测量边界
 
-本书对模型文件、会话状态、prefill、decode、采样和后端分派的描述统一锚定 LiteRT-LM v0.13.1。切换运行时、版本、模型或设备后，接口与执行路径可能变化。内存预算、数据流和性能结论都需要按新的源码与测量条件重新核对。
+本书对模型文件、会话状态、prefill、decode、采样和后端分派的描述统一锚定 LiteRT-LM v0.17.0。切换运行时、版本、模型或设备后，接口与执行路径可能变化。内存预算、数据流和性能结论都需要按新的源码与测量条件重新核对。
 
 对新的运行时和设备，应先固定模型与输入，验证正确性后再测量性能。每次只改变一个因素，并保存足以复算的原始记录。版本变化后的结论必须重新绑定源码锚点和实验条件。
 
@@ -152,4 +152,4 @@ NPU 实验先以“完成可重复的 prefill 和 decode”为阶段目标。两
 
 [^epilogue-issue-2613]: google-ai-edge/LiteRT-LM，[*[Swift] Engine teardown crashes with `litert_lm_engine_delete` running on an arbitrary thread in `deinit` - adding a public `close()` to solve*](https://github.com/google-ai-edge/LiteRT-LM/issues/2613)，LiteRT-LM issue #2613，2026-06-19；访问日期：2026-07-18。
 
-[^epilogue-contributing]: google-ai-edge/LiteRT-LM，[*CONTRIBUTING.md*](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.13.1/CONTRIBUTING.md)，v0.13.1；访问日期：2026-07-18。
+[^epilogue-contributing]: google-ai-edge/LiteRT-LM，[*CONTRIBUTING.md*](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.17.0/CONTRIBUTING.md)，v0.17.0；访问日期：2026-09-13。

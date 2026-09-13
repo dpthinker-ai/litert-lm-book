@@ -32,13 +32,13 @@
   <path class="edge" d="M192,112 H224" marker-end="url(#arrow93)"/>
   <path class="edge" d="M344,112 H376" marker-end="url(#arrow93)"/>
   <path class="edge" d="M496,112 H528" marker-end="url(#arrow93)"/>
-  <text class="blue" x="34" y="174">② DecodeOneStep 按位置推进停止检测与 BPE 合并</text>
+  <text class="blue" x="34" y="174">② DecodeOneStep 先过滤停止 token，再增量解码</text>
   <rect class="token" x="80" y="194" width="568" height="54" rx="7"/>
-  <text class="soft" x="364" y="216" text-anchor="middle">ProcessTokens(token 0) → MergeTokenIds → 解码并暂存可见文本</text>
-  <text class="soft" x="364" y="238" text-anchor="middle">ProcessTokens(token 1) → BPE 合并与文本解码 → AllDone = true</text>
+  <text class="soft" x="364" y="216" text-anchor="middle">过滤器放行 token 0 → detokenizer 首次暂存文本</text>
+  <text class="soft" x="364" y="238" text-anchor="middle">过滤器丢弃 token 1 → 释放 token 0 文本 → AllDone</text>
   <path class="rollback" d="M592,258 C592,294 288,294 288,258" marker-end="url(#arrow93r)"/>
-  <text x="440" y="286" text-anchor="middle" fill="#cf222e" style="font-size:11px;font-weight:700">diff = 4 - 1 = 3</text>
-  <text class="blue" x="34" y="326">③ 调整逻辑位置；启用 streaming 时产生一次更新</text>
+  <text x="440" y="306" text-anchor="middle" fill="#cf222e" style="font-size:11px;font-weight:700">diff = 4 - 1 = 3</text>
+  <text class="blue" x="34" y="326">③ 调整逻辑位置；本轮有可见文本时发送 streaming 更新</text>
   <rect class="keep" x="80" y="346" width="250" height="52" rx="7"/>
   <text class="label" x="205" y="368" text-anchor="middle">保留 token 0</text>
   <text class="soft" x="205" y="387" text-anchor="middle">回调可携带一个或多个可见 token</text>

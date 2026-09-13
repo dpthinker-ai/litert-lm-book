@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Check LiteRT-LM source anchors used by the manuscript.
 
-The check is intentionally mechanical: every ``path:line`` anchor must name an
-existing file in the frozen source worktree, and every referenced line must be
-inside that file.  It does not decide whether the cited code supports the
-surrounding prose; that remains part of the chapter fact-check pass.
+Check anchor bounds and quoted source lines against the frozen release.
+Quoted lines must occur verbatim, in order, at or after their first anchor.
+This does not decide whether a quotation supports the surrounding prose;
+that remains part of the chapter fact-check pass.
 """
 
 from __future__ import annotations
@@ -17,8 +17,8 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parent.parent
-DEFAULT_SOURCE = REPO.parent / "LiteRT-LM-v0.13.1"
-EXPECTED_SOURCE_COMMIT = "a0afb5a56acd106b23a2b2385b8469834dc268c0"
+DEFAULT_SOURCE = REPO.parent / "LiteRT-LM-v0.17.0"
+EXPECTED_SOURCE_COMMIT = "e9fd8c53ff968071774206163027dd84bedfe925"
 CODE_SPAN = re.compile(r"`([^`\n]+)`")
 SOURCE_REF = re.compile(
     r"(?P<path>[A-Za-z0-9_.+-]+(?:/[A-Za-z0-9_.+-]+)*\."
@@ -30,6 +30,51 @@ SHORTHAND_REF = re.compile(
     r"\d+(?:-\d+)?"
 )
 EXTERNAL_PREFIXES = ("llama.cpp/", "MLC-LLM/", "ExecuTorch/")
+FENCED_BLOCK = re.compile(r"^```[^\n]*\n(.*?)^```", re.MULTILINE | re.DOTALL)
+ANNOTATION = re.compile(r"\s+(?://|#)\s*\(\d+\)\s*$")
+OMISSION = re.compile(r"\s*(?://|#)\s*\.\.\.")
+
+
+def check_source_excerpts(text: str, source: Path) -> tuple[int, list[str]]:
+    """Check local source quotations, preserving indentation and source order."""
+    errors: list[str] = []
+    checked = 0
+    for block in FENCED_BLOCK.finditer(text):
+        body = block.group(1)
+        refs = [
+            ref for ref in SOURCE_REF.finditer(body)
+            if not ref.group("path").startswith(EXTERNAL_PREFIXES)
+        ]
+        if not refs:
+            continue
+        checked += 1
+        first_line = text[:block.start()].count("\n") + 2
+        paths = {ref.group("path") for ref in refs}
+        if len(paths) != 1:
+            errors.append(f"{first_line}: split quotations from different files")
+            continue
+        target = source / refs[0].group("path")
+        if not target.is_file():
+            continue  # The anchor check reports the missing file.
+        source_lines = target.read_text(encoding="utf-8").splitlines()
+        quoted_lines = body.splitlines()
+        if len(quoted_lines) > 30:
+            errors.append(f"{first_line}: source quotation exceeds 30 lines")
+        cursor = max(0, int(refs[0].group("start")) - 1)
+        for offset, line in enumerate(quoted_lines):
+            if not line.strip() or OMISSION.match(line):
+                continue
+            if line.lstrip().startswith(("//", "#")) and SOURCE_REF.search(line):
+                continue
+            original = ANNOTATION.sub("", line)
+            try:
+                cursor = source_lines.index(original, cursor) + 1
+            except ValueError:
+                errors.append(
+                    f"{first_line + offset}: quoted line absent or out of order "
+                    f"in {target.relative_to(source)}: {original!r}"
+                )
+    return checked, errors
 
 
 def manuscript_files() -> list[Path]:
@@ -45,7 +90,7 @@ def main() -> None:
         "--source",
         type=Path,
         default=Path(os.environ.get("LITERT_LM_SOURCE", DEFAULT_SOURCE)),
-        help="LiteRT-LM v0.13.1 source worktree",
+        help="LiteRT-LM v0.17.0 source worktree",
     )
     args = parser.parse_args()
     source = args.source.resolve()
@@ -65,16 +110,22 @@ def main() -> None:
             raise SystemExit(f"cannot resolve source commit: {error}") from error
         if source_commit != EXPECTED_SOURCE_COMMIT:
             raise SystemExit(
-                "source worktree is not LiteRT-LM v0.13.1: "
+                "source worktree is not LiteRT-LM v0.17.0: "
                 f"expected {EXPECTED_SOURCE_COMMIT}, got {source_commit}"
             )
 
     errors: list[str] = []
     checked: set[tuple[str, int, int]] = set()
     line_counts: dict[Path, int] = {}
+    excerpt_count = 0
 
     for manuscript in manuscript_files():
         relative = manuscript.relative_to(REPO)
+        count, excerpt_errors = check_source_excerpts(
+            manuscript.read_text(encoding="utf-8"), source
+        )
+        excerpt_count += count
+        errors.extend(f"{relative}:{error}" for error in excerpt_errors)
         in_fence = False
         for number, line in enumerate(
             manuscript.read_text(encoding="utf-8").splitlines(), 1
@@ -160,7 +211,8 @@ def main() -> None:
         raise SystemExit("\n".join(errors))
     commit_note = f" @ {source_commit[:12]}" if source_commit else ""
     print(
-        f"source anchor check passed: {len(checked)} unique anchors "
+        f"source anchor check passed: {len(checked)} unique anchors, "
+        f"{excerpt_count} verbatim quotations "
         f"against {source}{commit_note}"
     )
 

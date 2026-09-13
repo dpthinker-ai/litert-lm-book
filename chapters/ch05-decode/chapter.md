@@ -7,28 +7,28 @@ prefill 已经把提示词写进 KV cache，第一次前向传播也完成了。
 decode 阶段的单步操作在代码里叫 `DecodeOneStep`。`Decode` 在循环中反复调用它，直到满足停止条件。循环的主体如下：
 
 ```cpp
-// runtime/core/tasks.cc:486
-while (true) {
-  if (cancelled != nullptr && cancelled->load()) {          // (1)
-    // ...
-    return absl::CancelledError("Process cancelled.");
+// runtime/core/tasks.cc:659
+  while (true) {
+    if (cancelled != nullptr && cancelled->load()) { // (1)
+// ...
+      return absl::CancelledError("Process cancelled.");
+    }
+// ...
+    absl::StatusOr<bool> all_done =
+        run_one_step->Run(std::move(decoded_ids_to_use)); // (2)
+// ...
+    ABSL_ASSIGN_OR_RETURN(int current_step, executor.GetCurrentStep());
+    int num_decode_steps = current_step - executor_step_before_decode;
+    if (ShouldStop(*all_done, benchmark_decode_token_count, num_decode_steps, // (3)
+                   current_step, max_num_tokens, max_output_tokens)) {
+      break;
+    }
   }
-  // ...
-  absl::StatusOr<bool> all_done =
-      run_one_step.Run(std::move(decoded_ids_to_use));      // (2)
-  // ...
-  ASSIGN_OR_RETURN(int current_step, executor.GetCurrentStep());
-  int num_decode_steps = current_step - executor_step_before_decode;
-  if (ShouldStop(*all_done, benchmark_decode_token_count, num_decode_steps,
-                 current_step, max_num_tokens, max_output_tokens)) {  // (3)
-    break;
-  }
-}
 ```
 
 代码行 `(1)` 在新一轮开始时读取取消标志；`(2)` 完成前向、采样和文本解码；`(3)` 在本轮末尾检查停止序列与长度上限。`all_done` 表示所有输出候选都已命中停止序列。
 
-取消检查不会中断正在执行的 `Run`：标志若在本轮计算期间置位，本轮结果仍会继续处理，循环最早在下一次调用 `Run` 前才观察到它。取消也不属于 `ShouldStop` 的判断条件。
+任务循环的取消检查不会抢占正在执行的 `Run`。内部采样还会把取消指针传入执行器参数，执行器是否在本轮内响应，取决于其实现。本章分析的 compiled executor 不读取这个指针，本轮仍会继续处理，任务循环在下一轮开始时检查取消。取消不属于 `ShouldStop` 的判断条件。
 
 ## 5.1　单步解码的完整流程
 
@@ -55,29 +55,38 @@ while (true) {
 
 外部采样路径调用 `DecodeLogits`，再把 logits 传递给显式传入的 `Sampler`。这个采样器既可以是 CPU 实现，也可以是 GPU 实现。“外部”描述的是采样器由执行器外部调用，不等于 logits 必然从 GPU 回传 CPU。只有选择 CPU 采样器且 logits 不在宿主可直接访问的内存中时，才需要下载数据。
 
-选择路径的依据只有一个：构造时有没有传入采样器。约束解码在两条路径上都可用，只是接入点不同——外部路径在采样前调用 `MaskLogits`，内部路径把约束解码器打包进参数交给执行器；两条路径的具体能力仍受采样器和执行器实现约束。代码如下：
+选择路径的依据只有一个：构造时有没有传入采样器。约束解码在两条路径上都可用，只是接入点不同——外部路径在采样前调用 `ProcessLogits`，内部路径把约束解码器打包进参数交给执行器；两条路径的具体能力仍受采样器和执行器实现约束。代码如下：
 
 ```cpp
-// runtime/core/tasks.cc:330-378
-absl::StatusOr<std::vector<std::vector<int>>> DecodeAndSample(
-    std::optional<litert::TensorBuffer> decoded_ids) {
-  if (sampler_) {  // External sampling path            // (1)
-    // ...
-    ASSIGN_OR_RETURN(auto output_logits, executor_.DecodeLogits(inputs));  // (2)
-    if (constrained_decoder_) {
-      RETURN_IF_ERROR(constrained_decoder_->MaskLogits(output_logits));    // (3)
+// runtime/core/tasks.cc:441
+  absl::StatusOr<std::vector<std::vector<int>>> DecodeAndSample(
+      std::optional<litert::TensorBuffer> decoded_ids) {
+    if (sampler_) {  // External sampling path // (1)
+// ...
+      ABSL_ASSIGN_OR_RETURN(auto output_logits, executor_.DecodeLogits(inputs)); // (2)
+// ...
+      if (constrained_decoder_ != nullptr) {
+        ABSL_RETURN_IF_ERROR(
+            constrained_decoder_->ProcessLogits(output_logits)); // (3)
+      }
+// ...
+      ABSL_RETURN_IF_ERROR(sampler_.value()->SampleToIdAndScoreBuffer( // (4)
+          output_logits, decoded_ids.value(), &scores_tensor_));
+// ...
+      return token_ids;
+    } else {  // Internal sampling path // (5)
+// ...
+      auto decode_params = ExecutorDecodeParams();
+      // Convey the cancellation token for the decode process.
+      decode_params.SetCancelled(cancelled_);
+      if (constrained_decoder_ != nullptr) {
+        decode_params.SetConstrainedDecoder(constrained_decoder_.get());
+      }
+      ABSL_ASSIGN_OR_RETURN(output_tokens, executor_.Decode(decode_params)); // (6)
+// ...
+      return output_tokens;
     }
-    RETURN_IF_ERROR(sampler_.value()->SampleToIdAndScoreBuffer(
-        output_logits, decoded_ids.value(), &scores_tensor_));             // (4)
-    ASSIGN_OR_RETURN(auto token_ids,
-                     tokenizer_.TensorBufferToTokenIds(decoded_ids.value()));
-    return token_ids;
-  } else {  // Internal sampling path                    // (5)
-    // ...
-    ASSIGN_OR_RETURN(output_tokens, executor_.Decode());                   // (6)
-    return output_tokens;
   }
-}
 ```
 
 构造 `DecodeOneStep` 时是否传入采样器，决定了进入 `(1)` 标记的哪条分支。外部路径由 `(2)` 取得 logits，`(3)` 可按约束修改 logits，`(4)` 再调用采样器并填写可选的得分张量。内部路径由 `(6)` 调用执行器的组合接口。两条路径都返回 token id；代码只保证内部路径不把 logits 暴露给 `Tasks` 层，并未保证 logits 一定驻留在 GPU。
@@ -89,25 +98,25 @@ absl::StatusOr<std::vector<std::vector<int>>> DecodeAndSample(
 外部路径的成本可以分段看，执行器阶段与采样器阶段各自有计时标记：
 
 ```cpp
-// runtime/core/tasks.cc:338-360
-if (benchmark_info_.has_value()) {
-  RETURN_IF_ERROR(benchmark_info_->TimeMarkDelta("executor_decode"));  // (1)
-}
-ASSIGN_OR_RETURN(auto output_logits, executor_.DecodeLogits(inputs));  // (2)
-if (benchmark_info_.has_value()) {
-  RETURN_IF_ERROR(benchmark_info_->TimeMarkDelta("executor_decode"));  // (3)
-}
+// runtime/core/tasks.cc:460
+      if (benchmark_info_.has_value()) {
+        ABSL_RETURN_IF_ERROR(benchmark_info_->TimeMarkDelta("executor_decode")); // (1)
+      }
+      ABSL_ASSIGN_OR_RETURN(auto output_logits, executor_.DecodeLogits(inputs)); // (2)
+      if (benchmark_info_.has_value()) {
+        ABSL_RETURN_IF_ERROR(benchmark_info_->TimeMarkDelta("executor_decode")); // (3)
+      }
 // ...
-if (benchmark_info_.has_value()) {
-  RETURN_IF_ERROR(benchmark_info_->TimeMarkDelta("sampling"));         // (4)
-}
-RETURN_IF_ERROR(sampler_.value()->SampleToIdAndScoreBuffer(
-    output_logits, decoded_ids.value(), &scores_tensor_));            // (5)
+      if (benchmark_info_.has_value()) {
+        ABSL_RETURN_IF_ERROR(benchmark_info_->TimeMarkDelta("sampling")); // (4)
+      }
+      ABSL_RETURN_IF_ERROR(sampler_.value()->SampleToIdAndScoreBuffer( // (5)
+          output_logits, decoded_ids.value(), &scores_tensor_));
 ```
 
 `TimeMarkDelta` 成对出现，用同一个标签标记一段耗时。`(1)``(3)` 标记 `executor_decode`，`(4)` 与后续同名调用标记 `sampling`。基准工具据此分别报告执行器与采样器阶段的耗时（见附录 D）。
 
-`DecodeLogits` 返回的 `output_logits` 形状是 `[batch, seq, vocab]`。decode 阶段的常见单步形状中，`seq` 为 1；若 `batch` 也为 1，元素数就等于词表规模。本书基准模型的 decode signature 为 `[1, 1, 262144]`，输出类型为 float32（见附录 D），因此该模型一次完整 logits 传输的数据量为
+`DecodeLogits` 返回的 `output_logits` 形状是 `[batch, seq, vocab]`。decode 阶段的常见单步形状中，`seq` 为 1；若 `batch` 也为 1，元素数就等于词表规模。附录 D 的历史基准模型 decode signature 为 `[1, 1, 262144]`，输出类型为 float32（见附录 D），因此该模型一次完整 logits 传输的数据量为
 
 $$ 262144 \times 4\ \text{B} = 1048576\ \text{B} = 1\ \text{MiB} $$
 
@@ -120,10 +129,10 @@ $$ 262144 \times 4\ \text{B} = 1048576\ \text{B} = 1\ \text{MiB} $$
 采样策略规定如何从 logits 中选出 token。LiteRT-LM 的采样器实现同一个 `Sampler` 接口，其中的核心方法如下：
 
 ```cpp
-// runtime/components/sampler.h:34
-virtual absl::Status SampleToIdAndScoreBuffer(
-    const TensorBuffer& logits_tensor, TensorBuffer& ids_tensor,   // (1)
-    TensorBuffer* scores_tensor) = 0;                              // (2)
+// runtime/components/sampler.h:45
+  virtual absl::Status SampleToIdAndScoreBuffer(
+      const TensorBuffer& logits_tensor, TensorBuffer& ids_tensor, // (1)
+      TensorBuffer* scores_tensor) = 0; // (2)
 ```
 
 接口规定 `logits_tensor` 的形状为 `[batch_size, sequence_size, vocab_size]`，`ids_tensor` 为 `[batch_size, sequence_size]`。`scores_tensor` 可以为空；非空时，采样器写入所选 token 的对数概率。这些张量均以 `TensorBuffer` 传递，因此 CPU 与设备侧采样实现可以共享同一接口。
@@ -133,16 +142,16 @@ virtual absl::Status SampleToIdAndScoreBuffer(
 具体实现由 `CreateSampler` 按请求的后端分派。GPU 分支先调用 `CreateGpuSampler`；只有它返回 `kUnavailable` 时，工厂才转入 CPU 分支：
 
 ```cpp
-// runtime/components/sampler_factory.cc:707-740
+// runtime/components/sampler_factory.cc:757
     case Backend::GPU: {
-      // ...
-      auto sampler_or =
-          CreateGpuSampler(batch_size, sampler_params, env, sequence_size_value,
-                           vocab_size.value(), activation_data_type);
+// ...
+      auto sampler_or = CreateGpuSampler(
+          batch_size, sampler_params, env.value().get(), sequence_size_value,
+          vocab_size.value(), activation_data_type);
       if (sampler_or.ok() ||
           sampler_or.status().code() != absl::StatusCode::kUnavailable) {
         // For a normal failure or success, return the result.
-        return sampler_or;                                       // (1)
+        return sampler_or; // (1)
       }
       // For a failure due to GPU sampler unavailable, fall back to CPU.
       ABSL_LOG(WARNING)
@@ -150,7 +159,7 @@ virtual absl::Status SampleToIdAndScoreBuffer(
              "GPU sampling, please make sure libLiteRtTopKWebGpuSampler.so or "
              "libLiteRtTopKOpenClSampler.so is available at LD_LIBRARY_PATH "
              "on device. You can find the shared library under prebuilt/";
-      ABSL_FALLTHROUGH_INTENDED;                                 // (2)
+      ABSL_FALLTHROUGH_INTENDED; // (2)
     }
     case Backend::CPU:
       return CreateCpuSampler(batch_size, sequence_size_value, sampler_params);
@@ -158,7 +167,7 @@ virtual absl::Status SampleToIdAndScoreBuffer(
 
 代码行 `(1)` 直接返回成功结果或 `kUnavailable` 以外的错误；只有 `kUnavailable` 才经 `(2)` 转入 `CreateCpuSampler`。转入 CPU 后是否发生设备到宿主复制，仍取决于 logits 的内存可访问性，而不是由这个 `switch` 单独决定。
 
-GPU 采样器能否使用，取决于平台、编译选项与 `LiteRtEnvironment`：`CreateGpuSampler` 按条件依次尝试 WebGPU、OpenCL 或 Metal，动态库按符号名加载，OpenCL 路径在动态加载失败后还会尝试静态链接入口。所以设备侧采样并不一定依赖独立的 `.so`，警告里提到的库名只是其中一种部署形态。
+GPU 采样器能否使用，取决于平台、编译选项与 `LiteRtEnvironment`：`CreateGpuSampler` 按平台与环境选项选择 WebGPU、OpenCL 或 Metal 的尝试顺序，动态库按符号名加载，OpenCL 路径在动态加载失败后还会尝试静态链接入口。所以设备侧采样并不一定依赖独立的 `.so`，警告里提到的库名只是其中一种部署形态。
 
 <div class="aside-compare">
 
@@ -176,19 +185,19 @@ CPU 采样实现是 `TopPSampler`，它把四种常见策略组合在一起：
 创建函数接收的参数正对应这几项：
 
 ```cpp
-// runtime/components/top_p_cpu_sampler.h:30
-static absl::StatusOr<std::unique_ptr<TopPSampler>> Create(int k, float p,  // (1)
-                                                           float temperature,
-                                                           int batch_size,
-                                                           int sequence_size,
-                                                           int seed);        // (2)
+// runtime/components/top_p_cpu_sampler.h:38
+  static absl::StatusOr<std::unique_ptr<TopPSampler>> Create(int k, float p, // (1)
+                                                             float temperature,
+                                                             int batch_size,
+                                                             int sequence_size,
+                                                             int seed); // (2)
 ```
 
 代码行 `(1)` 的 `Create` 接收 `k`、`p` 和 `temperature`。在该实现中，贪心对应 `k == 1`，直接选择全词表最大 logit；不是把 k 设为很大。`k > 1` 时，代码先取 top-k，再在其中应用温度和 top-p。
 
 代码行 `(2)` 的 `seed` 用于构造 `generator_`。在实现、输入和其他参数相同的条件下，固定 seed 可复现同一随机数序列。
 
-附录 D 第八节记录了本书基准环境中的输出：同一提示词在温度 0、相同 seed 和其余默认参数下，两次输出一致。这只证明该配置在同一环境内可复现（换了运行时版本就可能得到另一句，见 2.1 节），也不能单凭温度 0 把它定义为 greedy。
+附录 D 第八节记录了升级前基准环境中的输出，尚未在 v0.17.0 重跑：同一提示词在温度 0、相同 seed 和其余默认参数下，两次输出一致。这只证明该配置在同一环境内可复现（换了运行时版本就可能得到另一句，见 2.1 节），也不能单凭温度 0 把它定义为 greedy。
 
 温度 1.0 时，更换 seed 可以得到不同输出；默认参数下也出现过不同 seed 产生相同序列的情况〔基准 D〕。随机采样允许相同结果，单次重复不能证明采样未生效。
 
@@ -196,56 +205,69 @@ static absl::StatusOr<std::unique_ptr<TopPSampler>> Create(int k, float p,  // (
 
 `TopPSampler` 把工作交给采样工具库里的三个函数：`TopKTokenIds` 取候选集，`Softmax` 归一化，`TopKTopPSampling` 完成 top-p 截断与随机选择。
 
-`TopKTokenIds` 有两条路径：
+`TopKTokenIds` 按 k 分成三条路径：
 
 ```cpp
-// runtime/components/sampling_cpu_util.cc:35-85
-if (k == 1) {  // Greedy sampling. Use std::max_element to be more efficient.
-  for (int b = 0; b < batch_size; ++b) {
-    for (int s = 0; s < sequence_size; ++s) {
-      auto max_iterator = std::max_element(
-          logits.begin() + (b * sequence_size + s) * vocab_size,
-          logits.begin() + (b * sequence_size + s + 1) * vocab_size);   // (1)
-      // ...
+// runtime/components/sampling_cpu_util.cc:107
+  if (k == 1) {  // Greedy sampling. Use MaxElement to be more efficient.
+    for (int b = 0; b < batch_size; ++b) {
+      for (int s = 0; s < sequence_size; ++s) {
+        const float* sub_logits =
+            logits.data() + (b * sequence_size + s) * vocab_size;
+        output_indices[b][s] = MaxElement(sub_logits, vocab_size); // (1)
+      }
     }
-  }
-} else {
-  // ...
-  std::nth_element(indices.begin(), indices.begin() + k, indices.end(),
-                   desc_prob_comp);                                     // (2)
-  std::copy(indices.begin(), indices.begin() + k,
-            output_indices[b].begin() + s * k);
-}
+  } else if (k <= 1024) { // (2)
+// ...
+        absl::c_make_heap(min_heap, min_heap_comp);
+
+        for (int i = actual_k; i < vocab_size; ++i) {
+          float val = logits[offset + i];
+          if (val > min_heap.front().logit) { // (3)
+            absl::c_pop_heap(min_heap, min_heap_comp);
+            min_heap.back() = {val, i};
+            absl::c_push_heap(min_heap, min_heap_comp);
+          }
+        }
+// ...
+  } else {
+// ...
+        std::nth_element(indices.begin(), indices.begin() + k, indices.end(), // (4)
+                         desc_prob_comp);
+        std::copy(indices.begin(), indices.begin() + k,
+                  output_indices[b].begin() + s * k);
 ```
 
-`k == 1` 时，`(1)` 用 `std::max_element` 线性扫描取 argmax，不做排序。`k > 1` 时，`(2)` 用 `std::nth_element` 把最高的 k 个索引移到前 k 个位置。其平均复杂度为 O(vocab)，且不保证候选内部有序。排序留到 top-p 阶段。
+`k == 1` 时，`(1)` 用 `MaxElement` 扫描取 argmax，不做候选排序。该函数按 128 个元素分块求最大值，再处理不足一块的尾部；总工作量仍为 O(vocab)。
+
+`1 < k <= 1024` 时，`(2)` 进入最小堆分支。堆顶保存当前候选中的最低分，`(3)` 只在新 logit 更大时替换它。扫描成本上界为 O(vocab log k)，之后还会对选出的 k 个候选排序。`k > 1024` 时才执行 `(4)` 的 `std::nth_element`，平均选择成本为 O(vocab)，但不保证前 k 个候选内部有序。
 
 选出候选后，`Softmax` 把候选 logits 归一化成概率：
 
 ```cpp
-// runtime/components/sampling_cpu_util.cc:88-168
-float sum_of_exps = 0.0;
-float current_temp =
-    std::max(temperature, std::numeric_limits<float>::epsilon());        // (1)
-for (size_t i = 0; i < k; ++i) {
-  probabilities[b][s * k + i] =
-      std::exp((logits[offset + topk_token_ids[topk_offset + i]] -
-                max_logit_values[b][s]) /                                // (2)
-               current_temp);
-  sum_of_exps += probabilities[b][s * k + i];
-}
+// runtime/components/sampling_cpu_util.cc:231
+      float sum_of_exps = 0.0;
+      float current_temp =
+          std::max(temperature, std::numeric_limits<float>::epsilon()); // (1)
+      for (size_t i = 0; i < k; ++i) {
+        probabilities[b][s * k + i] =
+            std::exp((logits[offset + topk_token_ids[topk_offset + i]] -
+                      max_logit_values[b][s]) / // (2)
+                     current_temp);
+        sum_of_exps += probabilities[b][s * k + i];
+      }
 
-if (sum_of_exps <= std::numeric_limits<float>::epsilon()) {              // (3)
-  float uniform_prob = 1.0 / static_cast<float>(k);
-  std::fill(probabilities[b].begin() + s * k,
-            probabilities[b].begin() + (s + 1) * k, uniform_prob);
-} else if (std::isinf(sum_of_exps)) {                                    // (4)
-  std::fill(probabilities[b].begin() + s * k,
-            probabilities[b].begin() + (s + 1) * k, 0.0f);
-  probabilities[b][s * k + max_logit_idx] = 1.0f;
-} else {
-  // ...
-}
+      if (sum_of_exps <= std::numeric_limits<float>::epsilon()) { // (3)
+// ...
+        float uniform_prob = 1.0 / static_cast<float>(k);
+        std::fill(probabilities[b].begin() + s * k,
+                  probabilities[b].begin() + (s + 1) * k, uniform_prob);
+      } else if (std::isinf(sum_of_exps)) { // (4)
+// ...
+        std::fill(probabilities[b].begin() + s * k,
+                  probabilities[b].begin() + (s + 1) * k, 0.0f);
+        probabilities[b][s * k + max_logit_idx] = 1.0f;
+      } else {
 ```
 
 计算指数前，`(2)` 先减去候选中的最大 logit，这是防止指数溢出的标准数值手法：对有限输入，指数自变量不大于 0，最大项为 \\(\exp(0) = 1\\)。`(1)` 把非负温度限制为不小于 `epsilon`，避免除以 0。温度为 0 时会使用这个最小正数，但接口并未因此把它定义为 greedy。greedy 分支由 `k == 1` 决定。
@@ -255,58 +277,63 @@ if (sum_of_exps <= std::numeric_limits<float>::epsilon()) {              // (3)
 归一化之后是 top-p 截断与采样：
 
 ```cpp
-// runtime/components/sampling_cpu_util.cc:210-284
-if (k == 1) {  // Greedy sampling. Return the topk_token_ids directly.
-  for (int b = 0; b < batch_size; ++b) {
-    for (int s = 0; s < sequence_size; ++s) {
-      sampled_ids[b][s] = (*topk_token_ids)[b][s];
-      sampled_scores[b][s] = 1.0f;                                       // (1)
+// runtime/components/sampling_cpu_util.cc:309
+  if (k == 1) {  // Greedy sampling. Return the topk_token_ids directly.
+    for (int b = 0; b < batch_size; ++b) {
+      for (int s = 0; s < sequence_size; ++s) {
+        sampled_ids[b][s] = (*topk_token_ids)[b][s];
+        sampled_scores[b][s] = 1.0f; // (1)
+      }
     }
+    return sampled_ids;
   }
-  return sampled_ids;
-}
 // ...
-std::sort(index_of_topk.begin(), index_of_topk.end(), desc_prob_comp);   // (2)
+      std::sort(index_of_topk.begin(), index_of_topk.end(), desc_prob_comp); // (2)
 // ...
-double cumulative_prob = 0.0;
-int final_sample_size = 0;
-for (int i = 0; i < k; ++i) {
-  // ...
-  cumulative_prob += (*probabilities)[b][s * k + index_of_topk[i]];       // (3)
-  final_sample_size = i + 1;
-  if (cumulative_prob >= p) {
-    break;                                                               // (4)
-  }
-}
+      double cumulative_prob = 0.0;
+      int final_sample_size = 0;  // Actual number of elements to sample from
+// ...
+      for (int i = 0; i < k; ++i) {
+// ...
+        cumulative_prob += (*probabilities)[b][s * k + index_of_topk[i]]; // (3)
+        final_sample_size = i + 1;  // Include this element
+// ...
+        if (cumulative_prob >= p) {
+          break;  // Found the smallest set within Top-K satisfying Top-P // (4)
+        }
+      }
 ```
 
 `k == 1` 时，`(1)` 直接返回唯一候选，并在工具函数内把概率记为 `1.0f`。`TopPSampler` 随后写入其对数，即 0。该路径仍在前面调用了 `Softmax`，但跳过后续排序、累计和随机数生成。
 
 `k > 1` 时，`(2)` 只对 k 个候选按概率降序排序，复杂度为 O(k log k)。`(3)``(4)` 按顺序累加，累计值达到 p 后停止，得到 top-k 范围内满足阈值的最小前缀。
 
-代码随后在 `[0, cumulative_prob)` 上取均匀随机数，并按累计区间选择 token。整条路径包含 O(vocab) 的部分选择、O(k log k) 的候选排序和 O(k) 的累计过程。
+代码随后在 `[0, cumulative_prob)` 上取均匀随机数，并按累计区间选择 token。候选选择的成本随 k 分支变化；其后还有 O(k log k) 的概率排序和 O(k) 的累计过程。
 
 ## 5.4　停止条件
 
 每个 decode step 结束后都要检查停止条件。判断集中在纯函数 `ShouldStop` 中：
 
 ```cpp
-// runtime/core/tasks.cc:85-107
+// runtime/core/tasks.cc:93
 bool ShouldStop(bool hit_stop_tokens, int benchmark_decode_token_count,
                 int num_decoded_steps, int current_step, int max_num_tokens,
                 int max_output_tokens) {
-  if (hit_stop_tokens && benchmark_decode_token_count == 0) {  // (1)
-    // ...
+  // Stopping conditions.
+  if (hit_stop_tokens && benchmark_decode_token_count == 0) { // (1)
+    // Only early stop if no decode step
+    // is requested by benchmark.
     return true;
   } else if (benchmark_decode_token_count > 0 &&
-             num_decoded_steps >= benchmark_decode_token_count) {  // (2)
-    // ...
+             num_decoded_steps >= benchmark_decode_token_count) { // (2)
+    // Stop when the number of decode steps is equal to the
+    // benchmark_decode_token_count (when specified).
     return true;
-  } else if (current_step >= max_num_tokens) {          // (3)
-    // ...
+  } else if (current_step >= max_num_tokens) { // (3)
+    // Reaching maximum number of kv-cache size.
     return true;
-  } else if (num_decoded_steps >= max_output_tokens) {  // (4)
-    // ...
+  } else if (num_decoded_steps >= max_output_tokens) { // (4)
+    // Reaching maximum number of output tokens.
     return true;
   }
   return false;
@@ -315,93 +342,93 @@ bool ShouldStop(bool hit_stop_tokens, int benchmark_decode_token_count,
 
 四个分支依次检查停止序列、基准步数、执行器的最大 token 数和输出长度。`(1)` 只在 `benchmark_decode_token_count == 0` 时接受停止序列；指定基准步数后，`(2)` 以固定步数结束。`(3)` 比较执行器当前位置与 `max_num_tokens`，其中当前位置包含 prefill 已占用的 token。`(4)` 只比较本次 decode 已执行的步数与 `max_output_tokens`。`num_decoded_steps` 由当前位置减去 decode 开始前的位置得到。
 
-代码行 `(3)` 和 `(4)` 使用不同计数器，因此长提示词可能先触及执行器上限，短输出配置则可能先触发 `max_output_tokens`。取消不在 `ShouldStop` 中；循环只在下一次迭代开始时检查 `cancelled`。它不会抢占已经开始的前向或采样。
+代码行 `(3)` 和 `(4)` 使用不同计数器，因此长提示词可能先触及执行器上限，短输出配置则可能先触发 `max_output_tokens`。取消不在 `ShouldStop` 中。任务循环在下一次迭代开始时检查 `cancelled`；内部路径同时将该指针传给执行器，响应边界由具体执行器决定。
 
 流式回调发生在 `ShouldStop` 之前：代码先收集本轮可发送的文本，至少一个候选产生非空文本时，才以 `TaskState::kProcessing` 调用回调。因此，未完整 BPE（byte-pair encoding）序列或停止序列的部分匹配可能让某个 decode step 不产生回调。
 
-循环结束后，`DecodeStreaming` 再调用一次最终回调。其状态为 `kDone`、`kMaxNumTokensReached` 或错误状态。
+循环正常结束后，`Decode` 先调用 detokenizer 的 `Flush()`。若仍有文本释放，streaming 模式还会发送一次 `kProcessing` 更新。任务返回的终态为 `kDone` 或 `kMaxNumTokensReached`；错误则作为状态返回，由调用层通知客户端。
 
 ## 5.5　未完整文本序列与停止序列暂存
 
-流式输出要处理两类暂存：token id 序列尚不能解码成有效文本，以及若干 token id 可能构成停止序列的前缀。两者都发生在 `DecodeOneStep::Run` 中，但判断顺序不同。
+流式输出要处理两类暂存：若干 token id 可能构成停止序列的前缀，解码后的文本也可能因后续 token 而改变。`DecodeOneStep::Run` 先让停止过滤器筛选 token，再把可以放行的 id 交给流式 detokenizer。
 
-运行时按 token id 序列执行停止匹配，不比较字符子串。若停止序列为 `[A, B, C]`，收到 A 或 `[A, B]` 时还不能发送对应文本。后续 token 仍可能使序列完整命中。
+运行时按 token id 序列执行停止匹配，不比较字符子串。若停止序列为 `[A, B, C]`，收到 A 或 `[A, B]` 时还不能放行这些 id，因为后续 token 仍可能使序列完整命中。
 
-`StopTokenDetector` 为每个候选和每条停止序列记录匹配进度，`ProcessTokens` 每次接收各候选的一个新 token id。查询部分匹配长度的接口很简单：
-
-```cpp
-// runtime/components/stop_token_detector.cc:161
-int StopTokenDetector::MaxPartialStopTokenLength(int index) const {
-  return max_batch_item_match_progress_[index];
-}
-```
-
-当前实现直接返回各停止序列匹配进度的最大值。`Run` 只在候选尚未完整命中时查询它：0 表示没有部分匹配，正数表示仍有相应数量的 token id 可能属于停止前缀。
-
-头文件注释提到完整命中后返回 -1，但当前实现不会返回 -1。完整命中由前面的 `GetStopTokensFound()` 分支处理。
+`StopTokenDetector` 为每个候选和每条停止序列记录匹配进度。`MaxPartialStopTokenLength` 返回当前各停止序列匹配进度的最大值，停止过滤器据此保留末尾仍可能属于停止序列的 id：
 
 ```cpp
-// runtime/core/tasks.cc:183
-} else if (!stop_token_detector_.GetStopTokensFound()[i]) {
-  bpe_partial_token_ids_[i].clear();
-  int max_length = stop_token_detector_.MaxPartialStopTokenLength(i);
-  if (max_length > 0) {
-    pending_stop_tokens_[i].push(decoded_result.value()[i].value()); // (1)
-    pending_stop_token_ids_[i].push(step_tokens[i]);
-    num_buffered_tokens_[i] += step_tokens[i].size();
-  }
-  while (num_buffered_tokens_[i] > max_length) {                      // (2)
-    result_text_[i] += pending_stop_tokens_[i].front();              // (3)
-    pending_stop_tokens_[i].pop();
-    // ...
-  }
-  if (max_length == 0) {
-    result_text_[i] += decoded_result.value()[i].value();            // (4)
-    // ...
-  }
-}
+// runtime/core/tasks.cc:166
+        int max_length = detector_.MaxPartialStopTokenLength(i); // (1)
+        if (max_length > 0) {
+          // Partial match. Keep last `max_length` tokens in buffer.
+          int num_to_feed = stop_token_buffer_[i].size() - max_length; // (2)
+          if (num_to_feed > 0) {
+            tokens_to_feed[i].assign(
+                stop_token_buffer_[i].begin(),
+                stop_token_buffer_[i].begin() + num_to_feed);
+            stop_token_buffer_[i].erase( // (3)
+                stop_token_buffer_[i].begin(),
+                stop_token_buffer_[i].begin() + num_to_feed);
+          } else {
+            tokens_to_feed[i] = {};
+          }
+// ...
+          tokens_to_feed[i] = std::move(stop_token_buffer_[i]); // (4)
+          stop_token_buffer_[i].clear();
 ```
 
-代码行 `(1)` 把已成功解码、但仍可能属于停止前缀的文本块和 token id 向量分别入队。`num_buffered_tokens_` 统计 token id 数，不是队列项数。`(2)``(3)` 在计数超过当前最大部分匹配长度时，从队首释放完整文本块。
+代码行 `(1)` 查询最长的部分匹配。`(2)` 计算可放行的 token 数，将这一段交给 detokenizer 后，`(3)` 从缓冲删除它们，只保留可能命中的后缀。没有部分匹配时，`(4)` 放行整个缓冲。这里保存的是 token id，还没有生成待发送的文本块。
 
-一个文本块可能由多个此前暂存的 BPE token id 合并而成。因此，队列不能简单等同于“恰好保存最后 `max_length` 个独立 token”。`max_length == 0` 时，代码先释放已有队列，再由 `(4)` 加入当前文本。
-
-完整命中时，`GetStopTokensFound()[i]` 为真，上述 `else if` 被跳过。触发命中的当前 token 不会进入 `pending_stop_tokens_`，此前暂存的前缀也不会加入 `result_text_`。
-
-`AllDone()` 只有在所有输出候选都命中后才返回真。图 5-2 采用单候选且每个 token 都能独立解码的情形。
+完整命中时，过滤器从缓冲中扣除整条停止序列，只放行它之前的 id，再清空缓冲并标记该候选已停止。后续步骤不再向 detokenizer 增加该候选的 token。`AllDone()` 只有在所有输出候选都命中后才返回真。图 5-2 展示过滤器的 id 放行时序。
 
 <figure>
 {{#include figs/fig-5-2.svg}}
-<figcaption>图 5-2　单候选下停止序列的暂存时序：失配时释放前缀并发送当前文本，完整命中时不发送已暂存前缀和触发命中的 token。</figcaption>
+<figcaption>图 5-2　停止过滤器在失配时放行已暂存 id，完整命中时丢弃停止序列；放行时刻不等于文本回调时刻。</figcaption>
 </figure>
 
-另一类暂存针对尚不能解码的 token id 序列。HuggingFace 和 SentencePiece 实现会检查解码结果是否以 Unicode 替换字符 U+FFFD 结尾。若是，则返回 `DataLossError`，表示还需要后续 token。`Run` 用 `bpe_partial_token_ids_` 保存这些 id：
+第二类暂存由 `BufferedStreamingDetokenizer` 负责。它把已放行的 id 追加到缓冲并解码，再比较前后两次解码结果。第一次有效解码先不释放文本；后续只释放两次结果的最长公共前缀中尚未发送的部分：
 
 ```cpp
-// runtime/core/tasks.cc:175-184
-ASSIGN_OR_RETURN(step_tokens, tokenizer_.MergeTokenIds(              // (1)
-                                  bpe_partial_token_ids_, step_tokens));
-auto decoded_result =
-    tokenizer_.TokenIdsToTexts(num_output_candidates_, step_tokens);
-for (int i = 0; i < num_output_candidates_; ++i) {
-  if (Tokenizer::IsIncompleteBpeSequence(decoded_result.value()[i])) {  // (2)
-    bpe_partial_token_ids_[i] = step_tokens[i];                         // (3)
-  } else if (!stop_token_detector_.GetStopTokensFound()[i]) {
-    bpe_partial_token_ids_[i].clear();                                  // (4)
-    // ...
+// support/tokenizer/buffered_streaming_detokenizer.cc:73
+    accumulated_token_ids_[i].insert(accumulated_token_ids_[i].end(), // (1)
+                                     token_ids[i].begin(), token_ids[i].end());
+// ...
+      ABSL_ASSIGN_OR_RETURN(
+          decoded, tokenizer_->TokenIdsToText(accumulated_token_ids_[i])); // (2)
+// ...
+    std::string released_text;
+    if (last_decoded_texts_[i].empty()) {
+      // First valid decode. We don't release anything yet to lag by 1 step.
+      released_text = ""; // (3)
+    } else {
+      std::string_view decoded_trimmed = TrimTrailingReplacement(decoded);
+      size_t stable_length =
+          GetLongestCommonPrefixLength(last_decoded_texts_[i], decoded_trimmed); // (4)
+      size_t released_len = released_lengths_[i];
+      if (stable_length < released_len) {
+// ...
+        return absl::InternalError("Stable text shrunk compared to released.");
+      }
+      released_text =
+          decoded_trimmed.substr(released_len, stable_length - released_len); // (5)
+      released_lengths_[i] = stable_length;
+    }
+    last_decoded_texts_[i] = decoded;
 ```
 
-代码行 `(1)` 先把此前暂存的 id 与本轮 id 合并，再整体解码。`IsIncompleteBpeSequence` 只检查返回状态是否为 `kDataLoss`。若仍不完整，`(3)` 保存合并后的 id，本轮不产生文本；解码成功后，`(4)` 清空 BPE 暂存，再进入停止序列的暂存逻辑。
+代码行 `(1)` 累积 id，`(2)` 解码整个活动缓冲。`(3)` 将首次文本暂存，`(4)` 求稳定前缀，`(5)` 只取尚未发送的增量。比较前还会去掉新解码结果末尾的 Unicode 替换字符 U+FFFD，避免把不完整字节序列过早发出。已发送的旧 token 会逐步裁剪，只保留默认 8 个已发送 token 作为回看上下文，以及尚未释放的 token。
 
-停止检测先于 BPE 合并执行，按本轮原始 token id 推进：`ProcessTokens` 先读取原始 id，随后 tokenizer 才尝试合并和解码。只有成功解码且尚未完整命中停止序列的文本，才可能进入 `pending_stop_tokens_`。
+这种策略会延后文本输出，即使每个 token 本身都能独立解码，也不保证同一步立即发出。若前两次解码分别得到 `A` 和 `AB`，第一次不发送，第二次只发送 `A`。没有新的放行 id 时，detokenizer 仍会比较保留的文本，所以停止过滤器暂存新 token 不等于整步一定没有文本可发。
 
-模型元数据中的停止字符串会先尝试映射成单个 token id。失败时再调用 `TextToTokenIds` 得到一段 id。会话配置以 `std::vector<std::vector<int>>` 保存停止序列。某个停止字符串最终对应一个还是多个 id，取决于模型 tokenizer，不能从聊天模板文本直接推断。
+生成正常结束后，`Flush()` 释放最后一次解码结果中尚未发送的后缀及相应 token id，再重置内部状态。它不重新检查替换字符，因此末尾仍存在的不完整文本不能一概认定为会被丢弃。任务层仅 Flush detokenizer；若停止过滤器还保留一个未完成的停止前缀，这些 id 尚未交给 detokenizer，也不会通过这次 Flush 放行。
 
-BPE 暂存等待 tokenizer 成功解码；停止序列暂存避免提前发送仍可能属于停止前缀的文本。回调只发送经过这两层处理后留下的非空结果。
+模型元数据中的停止字符串会先尝试映射成单个 token id，失败时再调用 `TextToTokenIds` 得到一段 id。会话配置以 `std::vector<std::vector<int>>` 保存停止序列。某个停止字符串最终对应一个还是多个 id，取决于模型 tokenizer，不能从聊天模板文本直接推断。
+
+停止过滤器决定哪些 id 可以进入文本解码，detokenizer 决定哪些文本已经稳定、可以发送。两者串联后的非空文本才进入回调；同一个 token 的生成、放行与文本发送可能发生在不同步骤。
 
 ### 5.5.1　文本片段间隔不等于逐 token 时延
 
-附录 D 第十四节的手机验证组使用 HONOR MEP-AN00、Gemma 4 E4B 和 GPU OpenCL，固定输入为 77 token，上下文上限为 4096，关闭 MTP。3 次请求中，每次 decode 计数都是 201 token，非空文本回调却只有 200 次，这已经足以说明统计回调次数不能替代运行时的 token 计数。
+附录 D 第十四节的历史手机验证组使用 HONOR MEP-AN00、Gemma 4 E4B 和 GPU OpenCL，固定输入为 77 token，上下文上限为 4096，关闭 MTP。这些结果未在 v0.17.0 上重测。3 次请求中，每次 decode 计数都是 201 token，非空文本回调却只有 200 次，这已经足以说明统计回调次数不能替代运行时的 token 计数。
 
 客户端记录的是相邻两次文本回调之间的间隔。一次回调可能对应一个 token，也可能是暂存后合成的一段文本，停止序列还可能不作为正文发送；仅凭这个英文样例的数量差，不能断定发生了 BPE 暂存。要测逐 token 时延（ITL），必须另外取得 token 生成事件及其与回调的对应关系。
 
@@ -409,7 +436,7 @@ BPE 暂存等待 tokenizer 成功解码；停止序列暂存避免提前发送�
 
 ## 小结
 
-一个 decode step 依次完成前向、可选的 logits 处理、采样、文本解码和停止判断。内部与外部采样描述控制边界，设备侧与 CPU 采样描述执行位置，两组概念不能混用。`ShouldStop` 处理停止序列和长度上限，取消由下一轮循环开头单独检查。流式文本还要经过 BPE 与停止序列两层暂存；没有可发送文本的步骤不会触发 `kProcessing` 回调。
+一个 decode step 依次完成前向、可选的 logits 处理、采样、文本解码和停止判断。内部与外部采样描述控制边界，设备侧与 CPU 采样描述执行位置，两组概念不能混用。`ShouldStop` 处理停止序列和长度上限，取消由下一轮循环开头单独检查。流式文本先经过停止 token 过滤，再由 detokenizer 释放稳定文本。没有可发送文本的步骤不会触发 `kProcessing` 回调，正常结束时的 Flush 还可能产生一次文本更新。
 
 第 6 章将分析 KV cache 的容量与带宽开销。
 
@@ -419,8 +446,8 @@ BPE 暂存等待 tokenizer 成功解码；停止序列暂存避免提前发送�
 
 1. 传输量变体。若 logits 以 FP16 传输（词表仍为 262144），单步数据量是多少？它占 1.86 GiB 权重数据的比例是多少？为什么这个比例不能直接换算为时延比例？
 2. 停止条件推理。benchmark 模式指定 decode 128 步，第 20 步命中停止序列，循环会停吗？依据 `ShouldStop` 的哪个分支？
-3. 暂存时序。停止序列最长 3 个 token。模型依次产出 A、B、C，其中 A、B 是某停止序列的前缀而 C 使匹配失败。写出每一步用户实际收到的文本。
-4. BPE 暂存。为什么流式解码要把此前暂存的 token id 与新 id 合并后整体转换？
+3. 暂存时序。停止序列为 `[A, B, C]`，模型依次产出 A、B、X，随后因输出长度上限结束。假设 id 可独立解码成同名字符，写出每一步过滤器放行的 id、用户收到的文本，以及 Flush 释放的文本。
+4. 文本暂存。为什么流式 detokenizer 不在第一次有效解码时立即发送文本？相邻两次解码结果的最长公共前缀与末尾 U+FFFD 各起什么作用？
 5. 动手实验。用 5 个不同 seed 跑温度 1.0（命令见附录 D 第八节），统计得到几种不同输出，并解释为什么启用随机采样仍可能得到相同输出。
 
 [^ch05-llamacpp-sampler]: ggml-org，[*llama.cpp 源码 common/sampling.cpp:334-358*](https://github.com/ggml-org/llama.cpp/blob/b9873/common/sampling.cpp#L334-L358)，版本 b9873；访问日期：2026-08-31。

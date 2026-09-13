@@ -15,17 +15,16 @@ LiteRT-LM 的底层生成接口把职责一分为二：`Engine` 持有模型、t
 
 一个 Engine 可以创建多个 Session：`CreateSession` 接收 `SessionConfig`，返回由调用方持有的 Session 对象。接口不约定这两类对象的内存占用或创建时延，这些数值随具体模型、后端与设备变化，需要实测。
 
-`SessionInterface` 同时提供高层生成接口与拆分后的 prefill、decode 接口。高层的两个入口如下：
+`SessionInterface` 同时提供高层生成接口与拆分后的 prefill、decode 接口。其中高层的两个生成入口仍保留，但已标为弃用；新集成宜使用 Conversation 管理聊天，或使用拆开的 prefill、decode 接口控制执行。保留接口的签名如下：
 
 ```cpp
-// runtime/engine/engine.h:112
-// runtime/engine/engine.h:128
-virtual absl::StatusOr<Responses> GenerateContent(
-    const std::vector<InputData>& contents) = 0;         // (1)
-
-virtual absl::Status GenerateContentStream(
-    const std::vector<InputData>& contents,
-    absl::AnyInvocable<void(absl::StatusOr<Responses>)> callback) = 0;  // (2)
+// runtime/engine/engine.h:122
+  virtual absl::StatusOr<Responses> GenerateContent(
+      const std::vector<InputData>& contents) = 0;  // (1)
+// ...
+  virtual absl::Status GenerateContentStream(
+      const std::vector<InputData>& contents,
+      absl::AnyInvocable<void(absl::StatusOr<Responses>)> callback) = 0;  // (2)
 ```
 
 代码行 `(1)` `GenerateContent` 同步返回生成结果。`(2)` `GenerateContentStream` 调度异步工作，结果经 `callback` 返回。正常结束时，回调收到空 `Responses`。出错或取消时，回调收到相应状态。两者都接收 `std::vector<InputData>`，其中 `InputData` 可以包含文本、图像或音频。
@@ -33,14 +32,16 @@ virtual absl::Status GenerateContentStream(
 低层接口把 prefill 与 decode 拆成两个方法：
 
 ```cpp
-// runtime/engine/engine.h:174
-// runtime/engine/engine.h:188
-// Adds the input prompt/query to the model for starting the prefilling
-// process. Note that the user can break down their prompt/query into
-// multiple chunks and call this function multiple times.
-virtual absl::Status RunPrefill(const std::vector<InputData>& contents) = 0;  // (1)
+// runtime/engine/engine.h:194
+  // Adds the input prompt/query to the model for starting the prefilling
+  // process. Note that the user can break down their prompt/query into
+  // multiple chunks and call this function multiple times.
+  //
+  // This is a blocking call and the function will return when the prefill
+  // process is done.
+  virtual absl::Status RunPrefill(const std::vector<InputData>& contents) = 0;  // (1)
 // ...
-virtual absl::StatusOr<Responses> RunDecode() = 0;       // (2)
+  virtual absl::StatusOr<Responses> RunDecode() = 0;  // (2)
 ```
 
 代码行 `(1)` `RunPrefill` 接收 prompt，可以分块调用；`(2)` `RunDecode` 根据 Session 中已有的上下文开始生成。高层入口在实现里就是这两步的组合：先 prefill，成功后再 decode。拆开之后，调用方可以在两步之间执行其他操作，比如建立检查点，或克隆 Session。prefill 的任务组织见第 4 章；decode 见第 5 章。
@@ -58,44 +59,42 @@ Engine 用哪份实现，由注册工厂决定：`EngineFactory` 按 Backend 保
 接口的默认实现只返回 `UnimplementedError`，实际工作的实现在 `SessionAdvanced`（advanced 引擎创建的 Session 类型）。它的同步入口先把克隆排成一个任务，再等待队列完成：
 
 ```cpp
-// runtime/engine/engine.h:245
-// runtime/core/session_advanced.cc:389
+// runtime/core/session_advanced.cc:426
 absl::StatusOr<std::unique_ptr<SessionInterface>> SessionAdvanced::Clone() {
   absl::Status status = absl::OkStatus();
   std::unique_ptr<SessionInterface> session;
   {
     absl::MutexLock lock(mutex_);
-    ASSIGN_OR_RETURN(
+    ABSL_ASSIGN_OR_RETURN(
         session,
         CloneAsyncLocked([&status](absl::StatusOr<Responses> responses) {
           status = responses.status();
         }));
   }
-  RETURN_IF_ERROR(WaitUntilDone());                                  // (1)
-  RETURN_IF_ERROR(status);
+  ABSL_RETURN_IF_ERROR(session->WaitUntilDone());  // (1)
+  ABSL_RETURN_IF_ERROR(status);
   return session;
 }
 ```
 
-代码行 `(1)` `WaitUntilDone` 使同步入口在克隆任务完成后才返回。`CloneAsyncLocked` 注册新 Session，并把克隆任务排在源 Session 现有任务之后，两个 Session 的后续任务都依赖它。注意这段代码只确定任务顺序，没有复制 KV cache。
+代码行 `(1)` 对新 Session 的 `WaitUntilDone` 调用使同步入口在克隆任务完成后才返回。`CloneAsyncLocked` 注册新 Session，并把克隆任务排在源 Session 现有任务之后，两个 Session 的后续任务都依赖它。注意这段代码只确定任务顺序，没有复制 KV cache。
 
 克隆任务真正执行时，调用的是资源管理器的 `CloneContextHandler`，关键部分如下：
 
 ```cpp
-// runtime/framework/resource_management/resource_manager.cc:610
-auto processed_context = llm_context_handler->shared_processed_context();  // (1)
-
+// runtime/framework/resource_management/resource_manager.cc:663
+  auto processed_context = llm_context_handler->shared_processed_context();  // (1)
 // ...
-return ContextHandler::Bundle(
-    processed_context, std::make_unique<RuntimeConfig>(runtime_config),
-    std::make_unique<RuntimeState>(runtime_state), std::move(audio_context)); // (2)
+  return ContextHandler::Bundle(
+      processed_context, std::make_unique<RuntimeConfig>(runtime_config),
+      std::make_unique<RuntimeState>(runtime_state), std::move(audio_context));  // (2)
 ```
 
-代码行 `(1)` 让新旧上下文 handler 指向同一个共享对象，实际的已处理上下文只有一份。这是写时复制（copy-on-write）的共享阶段：先共享，某条分支要改写时再复制。`(2)` 运行配置与运行状态则按值复制。到这里没有复制任何 KV cache buffer；接口注释也写明两个 handler 共享 processed context。
+代码行 `(1)` 让新旧上下文 handler 指向同一个共享对象，实际的已处理上下文只有一份。这是写时复制（copy-on-write）的共享阶段：先共享，某条分支要改写时再复制。`(2)` 运行配置与运行状态则按值复制。到这里没有复制 LLM 的 KV cache buffer；接口注释也写明两个 handler 共享 processed context。若另有音频上下文，资源管理器还会通过音频执行器的独立路径克隆它。
 
 分支需要改写共享历史时才进行写时分离：prefill 时，资源管理器比较本次输入与执行器中已处理的 token，若两者分叉，且当前分支不是共享链中最长的一条，就调用 `CloneContext` 保存执行器侧状态，把原上下文存回旧的共享对象，当前分支则改用新的共享对象。
 
-`CloneContext` 按后端选择要复制的 KV 缓冲：compiled model 执行器遍历活动输入 KV map，逐块调用 `CopyTensorBuffer`；NPU 执行器则按 K、V、C cache 的名称匹配缓冲；GPU 单缓冲路径的输入 KV map 为空，快照不含 KV 字节，具体限制见 6.4.3 节。除写时分离外，资源管理器切换独立上下文时也会调用 `CloneContext` 保存当前状态。
+`CloneContext` 按后端保存执行器状态。compiled model 执行器通过 `CloneState` 取得活动状态的 `DeepCopy`：原地缓存复制一套缓冲，双缓冲复制两套。多个输出候选时，活动状态取自 decode 专用状态；单候选时取自普通状态。NPU 专用执行器按 K、V、C cache 名称选取缓冲并复制。状态抽象与环形缓存的共享边界见 6.3、6.4 节。除写时分离外，资源管理器切换独立上下文时也会调用 `CloneContext` 保存当前状态。
 
 初次 `Clone` 共享 LLM 上下文，不复制 LLM KV 字节。后续复制的时机取决于分支改写与独立上下文切换，复制量则取决于后端实际保存的缓冲集合。
 
@@ -113,21 +112,23 @@ Engine 与 Session 管的是资源和状态，还没有对象负责“对话”�
 `ConversationConfig` 定义这层处理所需的配置。下列只读入口对应 Preface（对话的初始设定：初始消息、工具与额外上下文）、模板、约束解码开关与 Preface 预填充选项：
 
 ```cpp
-// runtime/conversation/conversation.h:56
-const Preface& GetPreface() const { return preface_; }              // (1)
-const PromptTemplate& GetPromptTemplate() const { return prompt_template_; }  // (2)
+// runtime/conversation/conversation.h:72
+  const Preface& GetPreface() const { return preface_; }  // (1)
 // ...
-bool constrained_decoding_enabled() const {                        // (3)
-  return constrained_decoding_enabled_;
-}
-bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4)
+  const PromptTemplate& GetPromptTemplate() const { return prompt_template_; }  // (2)
+// ...
+  bool constrained_decoding_enabled() const {  // (3)
+    return constrained_decoding_enabled_;
+  }
+// ...
+  bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4)
 ```
 
 代码行 `(1)` `Preface` 包含对话开始时的消息、工具与额外上下文。`(2)` 调用方可以覆盖 `PromptTemplate`；未覆盖时，创建逻辑从模型元数据读取 Jinja 模板。`(3)` 该布尔值控制约束解码配置，具体应用见第 10 章。
 
 代码行 `(4)` `prefill_preface_on_init` 为 true 且 Preface 非空时，`Conversation::Create` 生成输入并调用 `RunPrefill`。头文件说明，这会增加初始化时间并缩短首次响应时间。具体差值仍需在目标设备上测量。
 
-`DataProcessorConfig` 是六种配置的 `std::variant`。表 3-1 只列头文件中的默认字段。部分字段会被模型元数据覆盖，因而不能把这些值视为所有模型文件的固定配置。
+`DataProcessorConfig` 用 `std::variant` 注册模型配置，除表中六类外还包括 Lfm2 与 MiniCpm5。表 3-1 摘录常用配置的默认字段。部分字段会被模型元数据覆盖，因而不能把这些值视为所有模型文件的固定配置。
 
 | 配置类型 | 图像相关默认值 | 工具调用标记 | 其他默认字段 |
 |---|---|---|---|
@@ -145,18 +146,16 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 模板引擎用的是 Rust 实现的 MiniJinja（经 FFI 调用）。这里有一个兼容性缺口：模型的聊天模板大多按 Python 版 Jinja2 的习惯书写，常含 `s.startswith("foo")` 一类 Python 方法调用，而 MiniJinja 不支持任意方法调用。LiteRT-LM 的对策是在构造模板对象前先做一遍文本改写，用正则替换把已知的 Python 写法换成 MiniJinja 认识的形式：
 
 ```cpp
-// runtime/components/prompt_template.cc:26
-// runtime/components/prompt_template.cc:73-78
-// runtime/components/prompt_template.cc:40
+// runtime/components/prompt_template.cc:42
   RE2::GlobalReplace(&modified_template, R"regex(\.startswith\((.*?)\))regex",
-                     R"( is startingwith \1)");                        // (1)
+                     R"( is startingwith \1)");  // (1)
   RE2::GlobalReplace(&modified_template, R"regex(\.endswith\((.*?)\))regex",
                      R"( is endingwith \1)");
-  // ...
+// ...
   RE2::GlobalReplace(&modified_template, R"regex(\.split\((.*?)\)\[0\])regex",
-                     R"( | split(\1) | first)");                       // (2)
-  // ...
-  RE2::GlobalReplace(&modified_template, R"regex({% generation %})regex", ""); // (3)
+                     R"( | split(\1) | first)");  // (2)
+// ...
+  RE2::GlobalReplace(&modified_template, R"regex({% generation %})regex", "");  // (3)
 ```
 
 代码行 `(1)` 与 `(2)` 把若干 Python 风格的方法改写为 MiniJinja 测试或过滤器。`(3)` 删除 MiniJinja 不识别的 generation 标记。该函数只处理字符串，不分析 Jinja 语法树，因此只转换列出的模式。未覆盖的模板语法会原样进入 `Apply`，并可能在 MiniJinja 渲染时返回错误。
@@ -168,43 +167,44 @@ bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4
 Session 已经保留先前 prefill 和 decode 形成的上下文。下一轮只应提交新增输入，不应把旧历史再次提交给同一个 Session。`Conversation::GetSingleTurnText` 先检查模板是否支持单轮渲染（single-turn rendering）：
 
 ```cpp
-// runtime/conversation/conversation.cc:251
-if (prompt_template_.GetCapabilities().supports_single_turn) {
-  auto single_turn_text =
-      GetSingleTurnTextFromSingleTurnTemplate(message, optional_args);
-  if (!absl::IsUnimplemented(single_turn_text.status())) {
-    return single_turn_text;                                      // (1)
+// runtime/conversation/conversation.cc:336
+  if (prompt_template_.GetCapabilities().supports_single_turn) {
+    auto single_turn_text =
+        GetSingleTurnTextFromSingleTurnTemplate(message, optional_args);
+    if (!absl::IsUnimplemented(single_turn_text.status())) {
+      return single_turn_text;  // (1)
+    }
   }
-}
-return GetSingleTurnTextFromFullHistory(message, optional_args);  // (2)
+  return GetSingleTurnTextFromFullHistory(message, optional_args);  // (2)
 ```
 
-代码行 `(1)` 模板与处理器支持该能力时，代码只渲染当前这一轮，成本与历史长度无关。`(2)` 能力未声明，或处理器返回 `Unimplemented` 时，退回全历史路径。后文“每轮渲染两遍全历史”的成本只属于回退路径，支持单轮渲染的模板没有这笔开销。
+代码行 `(1)` 模板与处理器支持该能力时，代码调用处理器的单轮渲染入口，避免通用回退路径中的两次全历史模板渲染；处理器仍可访问历史，其整体成本不能一概视为常数。`(2)` 在能力未声明，或处理器返回 `Unimplemented` 时，退回全历史路径；其他错误直接返回，不触发回退。
 
-全历史回退的做法是：先渲染旧消息得到旧串，再渲染“旧消息＋新消息”得到新串，新串去掉旧串前缀就是本轮增量——前提是新串确实以旧串开头。首轮且 Preface 尚未预填充时不必比较，Preface 与新消息一次性渲染即可；其他情况都执行这两次渲染：
+未完成消息还有单独的入口检查。调用方设置 `has_pending_message`、模板却未声明单轮能力时，函数先返回 `InvalidArgumentError`。若模板已经声明支持、处理器仍返回 `Unimplemented`，代码仍会进入全历史回退，并未再次检查这个标志。因此模板的能力声明与处理器实现需要配套。后文“每轮渲染两遍全历史”的成本只属于通用回退路径，不能套用到单轮处理器。
+
+全历史回退的做法是：先渲染旧消息得到旧串，再渲染“旧消息＋新消息”得到新串，新串去掉旧串前缀就是本轮增量——前提是新串确实以旧串开头。首轮且 Preface 尚未预填充时，Preface 与新消息一次性渲染即可。其他情况下，只有 Preface 或历史非空才渲染旧串；两者都为空时，旧串留空，也只需渲染新串：
 
 ```cpp
-// runtime/conversation/conversation.cc:192
-// runtime/conversation/conversation.cc:215
-std::string old_string;
-if (!IsEmptyPreface(preface_) || !history_.empty()) {
-  old_tmpl_input.add_generation_prompt = false;
-  ASSIGN_OR_RETURN(old_string, prompt_template_.Apply(old_tmpl_input));
-}
+// runtime/conversation/conversation.cc:300
+  std::string old_string;
+  if (!IsEmptyPreface(preface_) || !history_.empty()) {
+    old_tmpl_input.add_generation_prompt = false;
+    ABSL_ASSIGN_OR_RETURN(old_string, ApplyTemplate(old_tmpl_input));
+  }
 
-PromptTemplateInput new_tmpl_input = std::move(old_tmpl_input);
+  PromptTemplateInput new_tmpl_input = std::move(old_tmpl_input);
 // ...
-new_tmpl_input.add_generation_prompt = true;
-ASSIGN_OR_RETURN(const std::string& new_string,
-                 prompt_template_.Apply(new_tmpl_input));
-if (new_string.substr(0, old_string.size()) != old_string) {       // (1)
-  return absl::InternalError(absl::StrCat(
-      "The new rendered template string does not start with the previous "
-      "rendered template string. \nold_string: ",
-      old_string, "\nnew_string: ", new_string));
-}
-return {new_string.substr(old_string.size(),                       // (2)
-                          new_string.size() - old_string.size())};
+  new_tmpl_input.add_generation_prompt = true;
+  ABSL_ASSIGN_OR_RETURN(const std::string& new_string,
+                        ApplyTemplate(new_tmpl_input));
+  if (new_string.substr(0, old_string.size()) != old_string) {  // (1)
+    return absl::InternalError(absl::StrCat(
+        "The new rendered template string does not start with the previous "
+        "rendered template string. \nold_string: ",
+        old_string, "\nnew_string: ", new_string));
+  }
+  return {new_string.substr(old_string.size(),  // (2)
+                            new_string.size() - old_string.size())};
 ```
 
 代码行 `(1)` 代码逐字节比较两次渲染结果，不从模板输入的继承关系推定字符串前缀。`(2)` 只有检查通过才返回新增后缀。模板若重排旧消息、修改结尾标记，或根据消息数量改写前部内容，函数会返回 `InternalError`。该路径不会改用最长公共前缀，也不会把未经验证的后缀提交给 Session。
@@ -212,25 +212,26 @@ return {new_string.substr(old_string.size(),                       // (2)
 同样的“渲染两次、检查前缀”还出现在另一条路径上：历史回退后把消息内容重新填充给 Session 时（`GetPrefillTextForMessages`）。这里的两个模板输入变量名为 `old_context` 与 `new_context`：
 
 ```cpp
-// runtime/conversation/conversation.cc:751
-// runtime/conversation/conversation.cc:856
-PromptTemplateInput new_context = old_context;                       // (1)
+// runtime/conversation/conversation.cc:997
+  PromptTemplateInput new_context = old_context;  // (1)
 // ...
-ASSIGN_OR_RETURN(std::string new_string, prompt_template_.Apply(new_context));
+  ABSL_ASSIGN_OR_RETURN(std::string new_string, ApplyTemplate(new_context));
 
-if (old_string.length() > new_string.length()) {                     // (2)
-  return absl::InternalError(
-      absl::StrCat("The new rendered string is shorter than the previous "
-                   "rendered string. \nold_string: ",
-                   old_string, "\nnew_string: ", new_string));
-}
-if (new_string.substr(0, old_string.size()) != old_string) {         // (3)
-  return absl::InternalError(
-      absl::StrCat("The new rendered string does not start with the previous "
-                   "rendered string. \nold_string: ",
-                   old_string, "\nnew_string: ", new_string));
-}
-return new_string.substr(old_string.length());                       // (4)
+  if (old_string.length() > new_string.length()) {  // (2)
+    return absl::InternalError(
+        absl::StrCat("The new rendered string is shorter than the previous "
+                     "rendered string. \nold_string: ",
+                     old_string, "\nnew_string: ", new_string));
+  }
+
+  if (new_string.substr(0, old_string.size()) != old_string) {  // (3)
+    return absl::InternalError(
+        absl::StrCat("The new rendered string does not start with the previous "
+                     "rendered string. \nold_string: ",
+                     old_string, "\nnew_string: ", new_string));
+  }
+
+  return new_string.substr(old_string.length());  // (4)
 ```
 
 代码行 `(1)` 复制模板输入会让 `now`、工具和额外上下文在这一对渲染中保持相同。追加消息仍可能改变模板前部或尾部，这次复制不能保证新渲染保留旧前缀。`(2)` 至 `(4)` 才给出检查条件与返回逻辑。
@@ -246,49 +247,44 @@ return new_string.substr(old_string.length());                       // (4)
 文本处理完成后，tokenizer 将字符串编码为 token id 序列。LiteRT-LM 的实现都遵循 `Tokenizer` 接口：
 
 ```cpp
-// runtime/components/tokenizer.h:41
-class Tokenizer {
- public:
-  // ...
-  virtual TokenizerType GetTokenizerType() const = 0;
-  // Encodes the given input text to token ids. Includes tokenizer pre/post
-  // processing.
+// support/tokenizer/tokenizer.h:49
   virtual absl::StatusOr<TokenIds> TextToTokenIds(absl::string_view text) = 0;  // (1)
-  // ...
-  // Decodes the given sequence of token ids into a string.
-  // Returns absl::DataLossError if any of the tokens are part of an incomplete
-  // BPE sequence.
-  virtual absl::StatusOr<std::string> TokenIdsToText(                 // (2)
-      const TokenIds& token_ids) = 0;
-  // ...
-};
+// ...
+  virtual absl::StatusOr<std::string> TokenIdsToText(  // (2)
+      absl::Span<const int> token_ids, bool skip_special_tokens) = 0;
+
+  // Decodes the given sequence of token ids into a string including special
+  // tokens.
+  absl::StatusOr<std::string> TokenIdsToText(absl::Span<const int> token_ids) {
+    return TokenIdsToText(token_ids, /*skip_special_tokens=*/false);
+  }
 ```
 
-代码行 `(1)` `TextToTokenIds` 完成输入侧编码。`(2)` `TokenIdsToText` 用于输出侧；接口要求不完整的 BPE 序列返回 `DataLossError`。
+代码行 `(1)` `TextToTokenIds` 完成输入侧编码。`(2)` `TokenIdsToText` 用于输出侧，显式接收是否跳过特殊 token；不带该布尔参数的重载默认保留特殊 token。HuggingFace 实现把该选项传给底层库，SentencePiece 实现则拒绝 `skip_special_tokens=true`。
 
-两种实现都只做转发：SentencePiece 把编码交给 `SentencePieceProcessor`，HuggingFace 交给 Rust `tokenizers` 库。上层调用方只依赖 `Tokenizer` 接口，不需要区分二者。
+编码主要由底层库完成：SentencePiece 把编码交给 `SentencePieceProcessor`，HuggingFace 交给 Rust `tokenizers` 库。上层调用方只依赖 `Tokenizer` 接口，不需要区分二者。
 
 使用哪种实现由模型文件与构建配置共同决定。`ModelResourcesLitertLm::GetTokenizer` 先查 `.litertlm` 中的 SentencePiece section，命中即创建对应实现；否则再查 HuggingFace section，从其 JSON 数据创建。这两段数据由 loader 按 section 类型取出，对应 2.7 节 section 类型清单中的 `SP_Tokenizer` 与 `HF_Tokenizer_Zlib`。两个分支各由编译宏门控；section 存在而对应支持未编译进程序时，该函数返回 `UnimplementedError`。
 
-输出侧还需处理 token 边界。SentencePiece 解码会暂存被 `HasBpeSuffix` 判定为不完整的 byte token。后续 token 到来后，代码再解码该缓冲。第 5 章说明这条输出路径。
+输出侧还需处理 token 边界。两种 tokenizer 的转换结果交给流式反分词器（streaming detokenizer）`BufferedStreamingDetokenizer`，由它暂存尚不稳定的解码后缀，并处理以 Unicode 替换字符结尾的结果。首次成功转换也不一定立即产生输出，具体释放规则见第 5 章。
 
 ## 3.5　prefill 输入：token id 与 embedding
 
-token id 变成向量有两种方式：由主模型在内部查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再交给模型。执行器按模型配置 `use_token_as_lookup` 选择方式：为 true 时直接把 id 写入 token 输入缓冲，否则先查 embedding、写入 embedding 输入缓冲。主机侧查表不是所有模型的必经步骤，它主要用于多模态输入：图像与音频的 embedding 来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 10 章展开）。
+token id 变成向量有两种方式：由主模型在内部查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再交给模型。执行器检查模型 signature 是否包含 token 输入，并将结果保存在局部变量 `use_token_as_lookup` 中。有 token 输入时直接写入 id，否则先查 embedding，再写入 embedding 输入缓冲。主机侧查表不是所有模型的必经步骤，它主要用于多模态输入：图像与音频的 embedding 来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 10 章展开）。
 
 `EmbeddingLookup` 的批量 prefill 接口如下：
 
 ```cpp
 // runtime/components/embedding_lookup/embedding_lookup.h:63
-// For a given list of tokens, looks up the embeddings, concatenates them and
-// returns the result through the output tensor.
-//
-// bytes_offset is used to indicate what byte to start writing to in the
-// output_tensor. This is used in cases where the output_tensor has already
-// had some embeddings written to it.
-virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
-                                   litert::TensorBuffer* output_tensor,
-                                   size_t byte_offset) = 0;         // (2)
+  // For a given list of tokens, looks up the embeddings, concatenates them and
+  // returns the result through the output tensor.
+  //
+  // bytes_offset is used to indicate what byte to start writing to in the
+  // output_tensor. This is used in cases where the output_tensor has already
+  // had some embeddings written to it.
+  virtual absl::Status LookupPrefill(absl::Span<const int> tokens,  // (1)
+                                     litert::TensorBuffer* output_tensor,
+                                     size_t byte_offset) = 0;  // (2)
 ```
 
 代码行 `(1)` 接口查找一组 token 的 embedding，并按顺序写入 `output_tensor`。`(2)` `byte_offset` 只是当前输出张量内的起始字节位置。当同一张量的前部已经写入其他 embedding 时，本次调用从该位置继续写。
@@ -302,7 +298,7 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
 查表由一个单独编译的 embedding 模型完成：非负 token 逐个运行一次该模型，负数 id 则直接取默认向量：
 
 ```cpp
-// runtime/components/embedding_lookup/embedding_lookup_text.cc:50
+// runtime/components/embedding_lookup/embedding_lookup_text.cc:63
   if (token < 0) {
     memcpy(buffer.data(), default_embedding_vector_.data(), buffer.size());  // (1)
     return absl::OkStatus();
@@ -311,7 +307,8 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
   // The input tensor size was verified when the model was loaded.
   input_buffers_[0].Write(absl::MakeSpan(const_cast<const int*>(&token), 1));
 
-  compiled_model_->Run(signature_key_.value(), input_buffers_, output_buffers_); // (2)
+  LITERT_RETURN_IF_ERROR(compiled_model_->Run(signature_key_.value(),  // (2)
+                                              input_buffers_, output_buffers_));
 ```
 
 代码行 `(1)` 负数 token 在文本路径中得到 `default_embedding_vector_`。`(2)` 非负 token 先写入输入缓冲，再调用 `compiled_model_->Run`。调用结束后，代码把输出缓冲读到指定位置。若模型配置了完整的多模态 lookup，管理器会在相同偏移调用相应实现。多模态 embedding 的接入见第 10 章。
@@ -319,12 +316,12 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
 批量重载先检查输出张量的 rank、维度与写入范围。写入循环从 `byte_offset` 指定的位置开始：
 
 ```cpp
-// runtime/components/embedding_lookup/embedding_lookup_text.cc:225
-  prefill_output_ptr += byte_offset;                       // (1)
+// runtime/components/embedding_lookup/embedding_lookup_text.cc:236
+  prefill_output_ptr += byte_offset;  // (1)
   for (int token : tokens) {
     absl::Span<uint8_t> output_buffer(
         reinterpret_cast<uint8_t*>(prefill_output_ptr), bytes_per_token);
-    RETURN_IF_ERROR(LookupInternal(token, output_buffer)); // (2)
+    ABSL_RETURN_IF_ERROR(LookupInternal(token, output_buffer));  // (2)
     prefill_output_ptr += bytes_per_token;
   }
 
@@ -332,7 +329,7 @@ virtual absl::Status LookupPrefill(absl::Span<const int> tokens,   // (1)
   // the remaining tokens as if they were 0.
   size_t starting_token = byte_offset / bytes_per_token + tokens.size();
   size_t num_tokens_to_fill = prefill_output_layout.Dimensions()[1];
-  for (int i = starting_token; i < num_tokens_to_fill; ++i) {
+  for (size_t i = starting_token; i < num_tokens_to_fill; ++i) {
     memcpy(prefill_output_ptr, default_embedding_vector_.data(),  // (3)
            bytes_per_token);
     prefill_output_ptr += bytes_per_token;

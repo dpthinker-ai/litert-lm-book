@@ -13,7 +13,7 @@
     </style>
     <marker id="a4" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-text-soft, #57606a)"/></marker>
   </defs>
-  <text class="t" x="350" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">RunPrefill：处理提示词并更新 KV cache</text>
+  <text class="t" x="350" y="24" text-anchor="middle" style="font-size:15px;font-weight:700">Prefill：处理提示词并更新 KV cache</text>
   <!-- 输入 -->
   <rect class="box" x="24" y="130" width="96" height="48" rx="6"/>
   <text class="t" x="72" y="150" text-anchor="middle" style="font-size:11px;font-weight:700">token ids</text>
@@ -25,9 +25,9 @@
   <rect class="box" x="164" y="184" width="180" height="52" rx="6"/>
   <text class="t"  x="254" y="204" text-anchor="middle" style="font-size:12px;font-weight:700">动态：按 chunk 分块</text>
   <text class="ts" x="254" y="222" text-anchor="middle" style="font-size:10px">prefill_chunk_size</text>
-  <!-- 汇合 PrefillInternal -->
+  <!-- 两条路径各自执行内部实现 -->
   <rect class="box" x="388" y="128" width="130" height="52" rx="6"/>
-  <text class="t"  x="453" y="148" text-anchor="middle" style="font-size:12px;font-weight:700">PrefillInternal</text>
+  <text class="t"  x="453" y="148" text-anchor="middle" style="font-size:12px;font-weight:700">各自的内部实现</text>
   <text class="ts" x="453" y="166" text-anchor="middle" style="font-size:10px">LiteRT 执行 signature</text>
   <!-- KV cache -->
   <rect class="kv" x="560" y="128" width="116" height="52" rx="6"/>

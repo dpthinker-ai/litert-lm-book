@@ -40,15 +40,15 @@
   <rect class="box" x="425" y="232" width="320" height="42" rx="6"/>
   <text class="t" x="585" y="258" text-anchor="middle" style="font-size:12px;font-weight:700">得到 token id</text>
   <rect class="box" x="425" y="300" width="320" height="64" rx="6"/>
-  <text class="t" x="585" y="322" text-anchor="middle" style="font-size:11px;font-weight:700">停止检测 → BPE 解码 → 停止前缀暂存</text>
+  <text class="t" x="585" y="322" text-anchor="middle" style="font-size:11px;font-weight:700">停止 token 过滤 → 稳定文本增量解码</text>
   <text class="ts" x="585" y="341" text-anchor="middle" style="font-size:9.5px">至少一个候选有文本时：kProcessing 回调</text>
   <text class="ts" x="585" y="356" text-anchor="middle" style="font-size:9.5px">无可发送文本则本轮不回调</text>
   <rect class="hot" x="250" y="305" width="160" height="54" rx="6"/>
   <text class="accent" x="330" y="327" text-anchor="middle" style="font-size:12px;font-weight:700">ShouldStop?</text>
   <text class="ts" x="330" y="346" text-anchor="middle" style="font-size:9.5px">停止序列 / 基准步数 / token 上限</text>
   <rect class="box" x="40" y="305" width="150" height="54" rx="6"/>
-  <text class="t" x="115" y="327" text-anchor="middle" style="font-size:11px;font-weight:700">返回最终状态</text>
-  <text class="ts" x="115" y="346" text-anchor="middle" style="font-size:9.5px">外层发送最终回调</text>
+  <text class="t" x="115" y="327" text-anchor="middle" style="font-size:11px;font-weight:700">Flush 后返回终态</text>
+  <text class="ts" x="115" y="346" text-anchor="middle" style="font-size:9.5px">有尾部文本时再发一次更新</text>
   <path class="edge" marker-end="url(#a5)" d="M190,92 H248"/>
   <path class="edge" marker-end="url(#a5)" d="M330,119 V138"/>
   <path class="edge" marker-end="url(#a5)" d="M410,92 H502 V128"/>

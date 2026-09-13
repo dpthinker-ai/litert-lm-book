@@ -14,7 +14,7 @@
   <text class="t" x="360" y="27" text-anchor="middle" style="font-size:15px;font-weight:700">一个 .litertlm 文件：头部 + section 数据</text>
   <g>
     <rect class="hdr" x="190" y="52" width="300" height="54" rx="5"/>
-    <text class="accent" x="340" y="73" text-anchor="middle" style="font-size:12px;font-weight:700">FlatBuffer 头部</text>
+    <text class="accent" x="340" y="73" text-anchor="middle" style="font-size:12px;font-weight:700">固定前缀 + FlatBuffer 头部</text>
     <text class="ts" x="340" y="91" text-anchor="middle" style="font-size:10.5px">版本、系统元数据、SectionObject 目录</text>
     <rect class="sec" x="190" y="114" width="300" height="48" rx="5"/>
     <text class="t" x="340" y="135" text-anchor="middle" style="font-size:11.5px;font-weight:700">TFLiteModel / TFLiteWeights</text>
@@ -25,8 +25,9 @@
     <text class="t" x="340" y="241" text-anchor="middle" style="font-size:11.5px;font-weight:700">LlmMetadataProto</text>
     <text class="ts" x="340" y="259" text-anchor="middle" style="font-size:10px">start / stop token、prompt 模板、采样参数</text>
     <text class="ts" x="340" y="275" text-anchor="middle" style="font-size:10px">以及 LlmModelType</text>
-    <rect class="sec" x="190" y="292" width="300" height="34" rx="5"/>
-    <text class="t" x="340" y="314" text-anchor="middle" style="font-size:10.5px">GenericBinaryData 等可选 section</text>
+    <rect class="sec" x="190" y="292" width="300" height="38" rx="5"/>
+    <text class="t" x="340" y="307" text-anchor="middle" style="font-size:10px">EmbeddingMetadataProto / ExecutorMetadataProto</text>
+    <text class="ts" x="340" y="322" text-anchor="middle" style="font-size:10px">以及 GenericBinaryData</text>
   </g>
   <text class="accent" x="50" y="125" style="font-size:11px;font-weight:700">SectionObject</text>
   <text class="ts" x="50" y="145" style="font-size:10px">data_type</text>

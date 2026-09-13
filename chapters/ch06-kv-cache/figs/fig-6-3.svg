@@ -51,7 +51,7 @@
   <rect class="b" x="460" y="294" width="265" height="48" rx="6"/>
   <text class="ts" x="592.5" y="314" text-anchor="middle">当前 handler 改用新共享对象</text>
   <text class="td" x="592.5" y="331" text-anchor="middle">回到分叉步数后继续 prefill / decode</text>
-  <text class="td" x="380" y="361" text-anchor="middle">基准模型仅在 compiled executor 宽度为 4096 且进入快照路径时，单次复制容量约为 112 MiB</text>
+  <text class="td" x="380" y="361" text-anchor="middle">按基准形状、4096 槽位计算：单缓冲快照约 112 MiB，双缓冲快照约 224 MiB</text>
   <line class="rule" x1="28" y1="378" x2="732" y2="378"/>
   <text class="tw" x="28" y="404">channel 过滤（配置开启）：下一条非追加式 user 消息触发处理</text>
   <rect class="bl" x="35" y="423" width="110" height="34" rx="6"/>

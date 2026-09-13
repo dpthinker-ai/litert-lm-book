@@ -42,6 +42,6 @@
   <rect class="ok" x="500" y="268" width="24" height="16" rx="3"/>
   <text class="td" x="263" y="260" text-anchor="middle">&lt;escape&gt;</text>
   <text class="td" x="740" y="282" text-anchor="end">文法允许：字符串 / 数字 / 布尔 / null / { / [</text>
-  <text class="td" x="380" y="318" text-anchor="middle">llguidance 推进文法状态，MaskLogits 对基准模型的 262,144 个词表项查询位图</text>
+  <text class="td" x="380" y="318" text-anchor="middle">llguidance 推进文法状态，ProcessLogits 按打包位图屏蔽不允许的 token</text>
   <text class="td" x="380" y="338" text-anchor="middle">只保证给定文法；不校验函数存在、参数语义或调用可执行性</text>
 </svg>

@@ -15,7 +15,7 @@
     <marker id="awr" orient="auto" markerWidth="8" markerHeight="8" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 z" fill="var(--fig-accent-2, #6639ba)"/></marker>
     <marker id="asw" orient="auto" markerWidth="9" markerHeight="9" refX="6" refY="4"><path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text-soft, #57606a)"/></marker>
   </defs>
-  <text class="t" x="320" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">GPU out-of-place KV：分别读写两套缓冲，再交换指针</text>
+  <text class="t" x="320" y="26" text-anchor="middle" style="font-size:15px;font-weight:700">GPU out-of-place KV：分别读写两套缓冲，交替选择读写 bank</text>
   <text class="ts" x="150" y="60" text-anchor="middle" style="font-size:12px;font-weight:700">第 N 步</text>
   <rect class="buf" x="70" y="80" width="160" height="44" rx="6"/>
   <text class="t" x="150" y="107" text-anchor="middle" style="font-size:12px">buffer 1</text>
@@ -26,7 +26,7 @@
   <text class="wrt" x="18" y="176" style="font-size:11px;font-weight:700">写→</text>
   <path class="edge wr" marker-end="url(#awr)" d="M48,172 H68"/>
   <path class="edge" style="stroke:var(--fig-text-soft,#57606a)" marker-end="url(#asw)" d="M250,137 H390"/>
-  <text class="ts" x="320" y="128" text-anchor="middle" style="font-size:12px;font-weight:700">交换指针</text>
+  <text class="ts" x="320" y="128" text-anchor="middle" style="font-size:12px;font-weight:700">轮换 bank</text>
   <text class="ts" x="320" y="155" text-anchor="middle" style="font-size:10px">不复制张量数据</text>
   <text class="ts" x="490" y="60" text-anchor="middle" style="font-size:12px;font-weight:700">第 N+1 步</text>
   <rect class="buf" x="410" y="80" width="160" height="44" rx="6"/>

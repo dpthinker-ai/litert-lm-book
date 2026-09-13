@@ -2,6 +2,8 @@
 
 > 本章说明 CPU、GPU、NPU 的适用条件与运行时路径。重点分析 buffer 交接、同步成本，以及后端变化为何可能改变输出。
 
+本章吞吐、线程扫描、手机持续运行与 NPU 部署实验沿用附录 C、D 的原始版本记录，尚未在 v0.17.0 重跑。
+
 第 6、7 章分别估算了 KV cache 与模型文件的内存占用；本章转向第 1 章三类约束中的最后一类：异构。手机 SoC 同时有 CPU、GPU 与 NPU，三者支持的算子、数值路径和部署条件都不同，运行时要在保持上层接口不变的前提下选出一条执行路径。本章按这条路径依次说明：后端如何变成执行器与编译选项（8.2 节），CPU 的线程数与核绑定（8.3 节），GPU 的设备侧采样（8.4 节，对应第 2 章表 2-2 的问题 18），跨阶段的缓冲交接何时才算零拷贝（8.5 节），NPU 的多子图路径与本书两台真机到达哪一步（8.6 节），最后回答问题 17：换后端为什么速度和输出都可能变（8.7 节）。
 
 ## 8.1　后端选择改变执行路径
@@ -15,40 +17,47 @@
 LiteRT-LM 用一个枚举表示后端：
 
 ```cpp
-// runtime/executor/executor_settings_base.h:34
+// runtime/executor/executor_settings_base.h:35-56
 enum class Backend {
+// ...
   UNSPECIFIED,
-  CPU_ARTISAN,             // (1)
+// ...
+  CPU_ARTISAN,  // (1)
+// ...
   GPU_ARTISAN,
-  CPU,                     // (2)
+// ...
+  CPU,  // (2)
+// ...
   GPU,
+// ...
   GOOGLE_TENSOR_ARTISAN,
-  NPU,                     // (3)
+// ...
+  NPU,  // (3)
 };
 ```
 
-代码行 `(1)` 的 `CPU_ARTISAN` 与 `GPU_ARTISAN` 对应手写算子路径，`(2)` 不带后缀的 CPU、GPU 使用 LiteRT 编译路径；同一类硬件有两个枚举值，是因为底层算子实现不同。本章只讲 CPU、GPU 与 NPU 这条编译路径，其中 `(3)` NPU 在工厂里进入独立分支。同一枚举里的 `GOOGLE_TENSOR_ARTISAN` 虽带 ARTISAN 后缀，源码注释标的是 Google Tensor 的 Emission Graph，也不属于手写算子路径，此处不展开。
+代码行 `(1)` 的 `CPU_ARTISAN` 与 `GPU_ARTISAN` 对应手写算子路径，`(2)` 不带后缀的 CPU、GPU 使用 LiteRT 编译路径；同一类硬件有两个枚举值，是因为底层算子实现不同。本章讨论 CPU、GPU 与 NPU 的编译路径；其中 `(3)` NPU 在工厂里进入独立分支，再选择通用或专用执行器。同一枚举里的 `GOOGLE_TENSOR_ARTISAN` 虽带 ARTISAN 后缀，源码注释标的是 Google Tensor 的 Emission Graph，也不属于手写算子路径，此处不展开。
 
 工厂函数按枚举值选择实现：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor_factory.cc:168-180
-Backend backend = executor_settings.GetBackend();   // (1)
-switch (backend) {
-  case Backend::CPU:
-  case Backend::GPU:                                 // (2)
-    return CreateCpuOrGpuLlmLiteRtCompiledModelExecutor(executor_settings,
-                                                        lrt_env, resources);
-  case Backend::NPU:                                 // (3)
-    return CreateNpuLlmLiteRtCompiledModelExecutor(executor_settings, lrt_env,
-                                                   resources);
-  default:
-    return absl::InvalidArgumentError(
-        absl::StrCat("Unsupported backend: ", backend));
-}
+// runtime/executor/llm_litert_compiled_model_executor_factory.cc:236-248
+  Backend backend = executor_settings.GetBackend();  // (1)
+  switch (backend) {
+    case Backend::CPU:
+    case Backend::GPU:  // (2)
+      return CreateCpuOrGpuLlmLiteRtCompiledModelExecutor(executor_settings,
+                                                          lrt_env, resources);
+    case Backend::NPU:  // (3)
+      return CreateNpuLlmLiteRtCompiledModelExecutor(executor_settings, lrt_env,
+                                                     resources);
+    default:
+      return absl::InvalidArgumentError(
+          absl::StrCat("Unsupported backend: ", backend));
+  }
 ```
 
-代码行 `(1)` 的后端由 CLI 的 `--backend` 或上层配置写入执行器设置，工厂按配置分派，不探测设备。`(2)` CPU 和 GPU 共用一个创建函数：两者读取同一个 prefill/decode 子图，硬件差异交给 LiteRT 编译选项和 delegate 处理。`(3)` NPU 使用专门的执行器和模型资源。其余枚举值进入 default 分支，返回 `InvalidArgumentError`，错误在工厂边界就被报告。
+代码行 `(1)` 的后端由 CLI 的 `--backend` 或上层配置写入执行器设置，工厂按配置和模型资源分派，这一层不探测实际设备能力。`(2)` CPU 和 GPU 共用一个创建函数：两者读取同一个 prefill/decode 子图，硬件差异交给 LiteRT 编译选项和 delegate 处理。`(3)` NPU 继续检查模型包：含辅助模型段时采用专用执行器；该段读取失败或为空时，转入通用 LiteRT compiler plugin 路径。其余枚举值进入 default 分支，返回 `InvalidArgumentError`，错误在工厂边界就被报告。
 
 <div class="aside-compare">
 
@@ -58,79 +67,114 @@ llama.cpp 维护后端注册表，按编译选项注册 CUDA、Metal、SYCL、Vu
 
 ### 8.2.1　静态与动态形状分派
 
-CPU/GPU 创建函数还要按导出模型的形状类型选择静态或动态执行器（两者的差别见 4.2 节）：
+通用创建函数还要按导出模型的形状类型选择静态或动态执行器（两者的差别见 4.2 节）：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor_factory.cc:138-145
-ASSIGN_OR_RETURN(bool is_dynamic_model, IsDynamicModel(*litert_model));
-if (is_dynamic_model) {
-  ASSIGN_OR_RETURN(executor, LlmLiteRtCompiledModelExecutorDynamic::Create(
-                                 executor_settings, lrt_env, resources));  // (1)
-} else {
-  ASSIGN_OR_RETURN(executor, LlmLiteRtCompiledModelExecutorStatic::Create(
-                                 executor_settings, lrt_env, resources));  // (2)
-}
+// runtime/executor/llm_litert_compiled_model_executor_factory.cc:192-201
+  LITERT_ASSIGN_OR_RETURN(bool is_dynamic_model, IsDynamicModel(resources));
+  if (is_dynamic_model) {
+    LITERT_ASSIGN_OR_RETURN(executor,
+                            LlmLiteRtCompiledModelExecutorDynamic::Create(
+                                executor_settings, lrt_env, resources));
+  } else {
+    LITERT_ASSIGN_OR_RETURN(executor,
+                            LlmLiteRtCompiledModelExecutorStatic::Create(
+                                executor_settings, lrt_env, resources));
+  }
 ```
 
-`is_dynamic_model` 由模型张量形状算出，不是用户配置项。`IsDynamicModel` 检查 prefill 子图里两组张量的形状是否可在运行时变化：
+`is_dynamic_model` 不是用户配置项。存在执行器元数据时，`IsDynamicModel` 按其中的状态名称和序列轴查找张量，只要指定序列轴为 -1 就判为动态。没有元数据时，才回退到 prefill signature 的 K/V 与位置张量检查：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor_factory.cc:100-127
-ASSIGN_OR_RETURN(bool is_k_dynamic, IsDynamicTensor(k_tensor));
+// runtime/executor/llm_litert_compiled_model_executor_factory.cc:155-183
+    ABSL_ASSIGN_OR_RETURN(bool is_k_dynamic, IsDynamicTensor(k_tensor));
 // ...
-ASSIGN_OR_RETURN(bool is_v_dynamic, IsDynamicTensor(v_tensor));
-RET_CHECK(is_k_dynamic == is_v_dynamic)
-    << "KV cache k and v need to be dynamic or static at the same time.";  // (1)
-is_kv_cache_dynamic = is_k_dynamic && is_v_dynamic;
+    ABSL_ASSIGN_OR_RETURN(bool is_v_dynamic, IsDynamicTensor(v_tensor));
+
+    RET_CHECK(is_k_dynamic == is_v_dynamic)
+        << "KV cache k and v need to be dynamic or static at the same time.";  // (1)
+    is_kv_cache_dynamic = is_k_dynamic && is_v_dynamic;
 // ...
-ASSIGN_OR_RETURN(is_seq_len_dynamic, IsDynamicTensor(position_tensor));
-RET_CHECK(is_kv_cache_dynamic == is_seq_len_dynamic)
-    << "KV cache and seq len need to be dynamic or static at the same time.";  // (2)
-return is_kv_cache_dynamic;
+    ABSL_ASSIGN_OR_RETURN(is_seq_len_dynamic, IsDynamicTensor(position_tensor));
+// ...
+  RET_CHECK(is_kv_cache_dynamic == is_seq_len_dynamic)
+      << "KV cache and seq len need to be dynamic or static at the same time.";  // (2)
+
+  return is_kv_cache_dynamic;
 ```
 
-代码行 `(1)` 要求 KV cache 的 K、V 张量同为动态或同为静态，`(2)` 再要求 KV cache 与序列长度张量的动静态一致。混合配置返回失败状态，执行器不会按不一致的形状继续初始化。
+这条回退路径要求 K、V 同为动态或同为静态，再要求 KV cache 与位置张量的动静态一致。混合配置返回失败状态，执行器不会按不一致的形状继续初始化。
 
-两条路径的缓冲管理不同。静态执行器使用导出时确定的 prefill、decode 与 KV cache 形状；动态执行器按配置里的 `kv_increment_size` 扩展 KV cache，默认每次增加 16 个位置。动态形状允许缓冲随当前序列长度增长，但底层 delegate 可能需要重新准备张量，实际峰值内存仍取决于 delegate 的分配策略。`prefill_chunk_size` 的注释注明它只适用于动态导出的模型。两种执行器都实现同一个 `LlmExecutor` 接口，上层不需要按形状类型分支。
+静态与动态两条路径的缓冲管理不同。静态执行器使用导出并经 magic number 替换后的 prefill、decode 与 KV cache 形状；动态执行器按配置里的 `kv_increment_size` 扩展 KV cache，默认每次增加 16 个位置。动态形状允许缓冲随当前序列长度增长，但底层 delegate 可能需要重新准备张量，实际峰值内存仍取决于 delegate 的分配策略。`prefill_chunk_size` 的注释注明它只适用于动态导出的模型。两种执行器都实现同一个 `LlmExecutor` 接口，上层不需要按形状类型分支。
 
 ### 8.2.2　后端枚举如何转换为编译选项
 
-工厂分支只决定创建哪一种执行器，CPU 与 GPU 的硬件请求继续转换为编译选项。GPU 分支设置激活精度、缓冲模式与 GPU 专属选项，最后请求 GPU 加速器；CPU 分支设置线程数与 XNNPACK 缓存，最后请求 CPU：
+工厂分支决定创建哪一种执行器，硬件请求继续转换为编译选项。GPU 分支设置激活精度、缓冲模式与 GPU 专属选项，最后请求 GPU 加速器；CPU 分支设置线程数与 XNNPACK 缓存，最后请求 CPU：
 
 ```cpp
-// runtime/executor/llm_executor_settings_utils.cc:76-261
-switch (executor_settings.GetBackend()) {
-  case Backend::GPU: {
-    // ...
-    if (activation_data_type == ActivationDataType::FLOAT32) {
-      gpu_compilation_options.SetPrecision(GpuOptions::Precision::kFp32);
-    } else {
-      gpu_compilation_options.SetPrecision(GpuOptions::Precision::kFp16);
+// runtime/executor/llm_executor_settings_utils.cc:75-290
+  switch (executor_settings.GetBackend()) {
+    case Backend::GPU: {
+// ...
+      if (activation_data_type == ActivationDataType::FLOAT32) {
+        gpu_compilation_options.SetPrecision(GpuOptions::Precision::kFp32);
+      } else {
+        gpu_compilation_options.SetPrecision(GpuOptions::Precision::kFp16);
+      }
+// ...
+      compilation_options.SetHardwareAccelerators(HwAccelerators::kGpu);
+      break;
     }
-    // ...
-    compilation_options.SetHardwareAccelerators(HwAccelerators::kGpu);
-    break;
-  }
-  case Backend::CPU: {
-    // ...
-    cpu_compilation_options.SetNumThreads(num_threads);
-    // ...
-    compilation_options.SetHardwareAccelerators(HwAccelerators::kCpu);
-    break;
-  }
+// ...
+    case Backend::CPU: {
+// ...
+      ABSL_RETURN_IF_ERROR(
+          SetCpuOptions(cpu_compilation_options, num_threads));
+// ...
+      compilation_options.SetHardwareAccelerators(HwAccelerators::kCpu);
+      break;
+    }
 ```
+
+编译选项随后经过 `SetCommonGpuOptions`：启用 mixed precision 时，该函数把 GPU precision 选项设为 FP32，覆盖前面的激活类型映射。源码用这一选项表达底层 mixed precision 模式，不能把它解释为所有计算都采用 FP32。
 
 GPU 的 `external_tensor_mode` 来自 `GpuConfig`，默认值为 false。false 不表示所有张量都成为 delegate 内部张量：代码仍把名称匹配 `kv_cache_` 的张量标为 external；采用单缓冲 KV cache 时，还把 `param_tensor` 标为 external 和 buffer storage；GPU sampler 启用后，`logits` 也成为 external tensor。这些规则使跨 signature 复用和设备侧采样有可绑定的缓冲，但不能单凭名称证明底层没有格式转换。
 
-CPU 路径没有对应的 external tensor 开关。它把 `CpuConfig::number_of_threads` 传给 CPU 编译选项，并启用 XNNPACK 的动态 fully connected 标志。因此，`--backend=cpu` 不只是工厂选择，还会改变线程池、delegate 与权重缓存路径。比较 CPU 和 GPU 时，初始化时间也必须分开记录；GPU program cache 与 CPU XNNPACK weight cache 并非同一项缓存。
+CPU 路径没有对应的 external tensor 开关。它把 `CpuConfig::number_of_threads` 传给 CPU 编译选项，并启用 XNNPACK 的动态 fully connected 与 latest operators 标志。`enable_ynnpack` 可请求 YNNPACK，默认关闭，线程扫描还应记录这一配置。`--backend=cpu` 不只是工厂选择，还会改变线程池、delegate 与权重缓存路径。比较 CPU 和 GPU 时，初始化时间也必须分开记录；GPU program cache 与 CPU XNNPACK weight cache 并非同一项缓存。
 
-NPU 不经过上述分支。专用执行器为主模型创建的选项同时允许 NPU 与 CPU 两种加速器，Android 上还为 Qualcomm HTP 与 Google Tensor 设置 burst 模式；同一执行器里的 text embedder 则用只含 CPU 的选项单独编译。因此，配置成 `Backend::NPU` 只说明进入 NPU 专用执行器，不能据此声称每个子图和每个算子都驻留在 NPU。
+NPU 的通用路径也经过编译选项函数，请求 NPU 与 CPU，由底层 compiler plugin 分配可支持的子图。专用执行器为主模型创建的选项同时允许 NPU 与 CPU 两种加速器，Android 上还为 Qualcomm HTP 与 Google Tensor 设置 burst 模式；同一执行器里的 text embedder 则用只含 CPU 的选项单独编译。因此，配置成 `Backend::NPU` 不能确定采用的是专用执行器还是通用路径，不能据此声称每个子图和每个算子都驻留在 NPU。
+
+NPU 工厂选择的具体条件如下：
+
+```cpp
+// runtime/executor/llm_litert_compiled_model_executor_factory.cc:210-227
+#if defined(LITERT_DISABLE_NPU)
+  return absl::InvalidArgumentError("Only CPU and GPU backends are supported.");
+#else
+  auto aux_model_buffer = resources.GetTFLiteModelBuffer(ModelType::kTfLiteAux);
+  if (!aux_model_buffer.ok() || aux_model_buffer->empty()) {
+    ABSL_LOG(WARNING)
+        << "NPU backend requested, but TF_LITE_AUX is not packaged in the "
+           "model. Using the generic LiteRT compiler-plugin path.";
+    ABSL_ASSIGN_OR_RETURN(auto npu_settings,
+                     executor_settings.MutableBackendConfig<NpuConfig>());
+    npu_settings.use_generic_litert_compiler_plugin = true;
+    executor_settings.SetBackendConfig(npu_settings);
+    return CreateCpuOrGpuLlmLiteRtCompiledModelExecutor(executor_settings,
+                                                        lrt_env, resources);
+  }
+  return LlmLiteRtNpuCompiledModelExecutor::Create(executor_settings, resources,
+                                                   lrt_env);
+#endif  // defined(LITERT_DISABLE_NPU)
+```
+
+通用路径保留 CPU 执行能力；静态执行器还允许在 NPU 输出缓冲创建失败时改用 host 缓冲。这些是可进入的代码分支，不代表任意模型在任意 NPU 上都能编译成功。
 
 CPU、GPU 与 NPU 分支都返回同一种执行器接口。上层只依赖第 5 章介绍的 `LlmExecutor`，不需要区分硬件后端或形状类型。接入新后端仍需实现执行器、准备相应模型资源并在工厂中增加分支；只要接口契约不变，调用方无需随之修改。
 
 <figure>
 {{#include figs/fig-8-1.svg}}
-<figcaption>图 8-1　工厂按 Backend 选择 CPU/GPU 通用执行器或 NPU 专用执行器，两条路径都返回 LlmExecutor 接口。</figcaption>
+<figcaption>图 8-1　CPU/GPU 进入通用执行器；NPU 再按辅助模型段选择专用或通用路径，最终返回 LlmExecutor 接口。</figcaption>
 </figure>
 
 ## 8.3　CPU：线程配置与 Pixel 亲和性
@@ -144,7 +188,7 @@ CPU 通常有最宽的算子覆盖范围，也是没有可用加速器时的后�
 ```cpp
 // runtime/engine/cpu_affinity_utils.cc:57-62
 const TensorCoreAffinity kTensorAffinities[] = {
-    {PixelSoc::kTensorG3, {4, 5, 6, 7, 8}},   // (1)
+    {PixelSoc::kTensorG3, {4, 5, 6, 7, 8}},  // (1)
     {PixelSoc::kTensorG4, {4, 5, 6, 7}},
     {PixelSoc::kTensorG5, {2, 3, 4, 5, 6, 7}},
     {PixelSoc::kTensorG6, {2, 3, 4, 5, 6, 7}},
@@ -157,20 +201,22 @@ const TensorCoreAffinity kTensorAffinities[] = {
 
 ```cpp
 // runtime/engine/cpu_affinity_utils.cc:67-84
-static const PixelSoc soc = []() {
-  char manufacturer[PROP_VALUE_MAX] = {0};
-  char soc_model[PROP_VALUE_MAX] = {0};
-  __system_property_get("ro.soc.manufacturer", manufacturer);  // (1)
-  __system_property_get("ro.soc.model", soc_model);
-  if (absl::string_view(manufacturer) != "Google") {
-    return PixelSoc::kUnknown;                                 // (2)
-  }
-  absl::string_view soc_str(soc_model);
-  if (soc_str == "Tensor G3") return PixelSoc::kTensorG3;      // (3)
-  // ...
-  return PixelSoc::kUnknown;
-}();
-return soc;
+  static const PixelSoc soc = []() {
+    char manufacturer[PROP_VALUE_MAX] = {0};
+    char soc_model[PROP_VALUE_MAX] = {0};
+    __system_property_get("ro.soc.manufacturer", manufacturer);  // (1)
+    __system_property_get("ro.soc.model", soc_model);
+
+    if (absl::string_view(manufacturer) != "Google") {
+      return PixelSoc::kUnknown;  // (2)
+    }
+
+    absl::string_view soc_str(soc_model);
+    if (soc_str == "Tensor G3") return PixelSoc::kTensorG3;  // (3)
+// ...
+    return PixelSoc::kUnknown;
+  }();
+  return soc;
 ```
 
 代码行 `(1)` 读取制造商与型号两个属性，`(2)` 制造商不是 Google 时返回 `kUnknown`，`(3)` 随后逐一匹配型号字符串。结果保存在函数内的 `static` 局部变量里，初始化后不再重复读取系统属性。未匹配的型号同样返回 `kUnknown`，设备识别函数因而返回 false。
@@ -181,20 +227,20 @@ return soc;
 
 ```cpp
 // runtime/engine/cpu_affinity_utils.cc:110-118
-cpu_set_t mask;
-CPU_ZERO(&mask);
-for (int cpu : cpu_affinity_cores) {
-  CPU_SET(cpu, &mask);                              // (1)
-}
-if (sched_setaffinity(0, sizeof(mask), &mask) != 0) {  // (2)
-  return absl::InternalError(
-      absl::StrCat("Failed to set CPU affinity: ", strerror(errno)));
-}
+  cpu_set_t mask;
+  CPU_ZERO(&mask);
+  for (int cpu : cpu_affinity_cores) {
+    CPU_SET(cpu, &mask);  // (1)
+  }
+  if (sched_setaffinity(0, sizeof(mask), &mask) != 0) {  // (2)
+    return absl::InternalError(
+        absl::StrCat("Failed to set CPU affinity: ", strerror(errno)));
+  }
 ```
 
-代码行 `(1)` 把预设核编号写入位掩码，`(2)` 的第一个参数为 0，表示调用线程。系统调用成功后，这个 mask 限制该线程允许运行的 CPU 集合；调度器仍可在集合内部选择 CPU，但这不是软性建议。系统调用失败时函数返回 `InternalError`，而调用方 `EngineFactory::Create` 只记录 warning 并继续创建引擎，亲和性设置失败不会直接终止引擎创建。
+代码行 `(1)` 把预设核编号写入位掩码，`(2)` 的第一个参数为 0，表示调用线程。系统调用成功后，这个 mask 限制该线程允许运行的 CPU 集合；调度器仍可在集合内部选择 CPU，但这不是软性建议。系统调用失败时函数返回 `InternalError`，而引擎工厂调用方只记录 warning 并继续创建引擎，亲和性设置失败不会直接终止引擎创建。
 
-亲和性设置在引擎创建时执行一次，不在 decode 循环内。`EngineFactory::Create` 先判断是否为 Pixel Tensor 设备，再对调用线程设置 mask；该调用不按 CPU、GPU 或 NPU 后端分支。Linux 新建线程会继承创建线程的 affinity mask，因此随后由该线程创建的工作线程通常继承相同集合。这个结论不覆盖此前已存在的线程，也不排除子线程之后重新设置自己的 mask。
+亲和性设置在引擎创建时执行一次，不在 decode 循环内。引擎工厂先判断是否为 Pixel Tensor 设备，再对调用线程设置 mask；该调用不按 CPU、GPU 或 NPU 后端分支。Linux 新建线程会继承创建线程的 affinity mask，因此随后由该线程创建的工作线程通常继承相同集合。这个结论不覆盖此前已存在的线程，也不排除子线程之后重新设置自己的 mask。
 
 ### 8.3.2　线程数：默认值与设备扫描
 
@@ -203,18 +249,19 @@ CPU 算子通过线程池并行执行，构造参数 `max_num_threads` 给出线
 `CpuConfig::number_of_threads` 的默认值为 4，注释直接写 "The default value is 4"。C++ 命令行入口用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`[^ch08-issue-2505]；本书采集用的 Python CLI 未暴露该 flag）。覆盖路径位于 CPU 后端专属的配置分支：
 
 ```cpp
-// runtime/engine/litert_lm_lib.cc:523-533
-if (backend == Backend::CPU) {
-  auto& executor_settings = engine_settings.GetMutableMainExecutorSettings();
-  ASSIGN_OR_RETURN(
-      auto cpu_settings,
-      executor_settings.MutableBackendConfig<litert::lm::CpuConfig>());
-  if (settings.num_cpu_threads > 0) {                    // (1)
-    cpu_settings.number_of_threads = settings.num_cpu_threads;
+// runtime/engine/litert_lm_lib.cc:571-582
+  if (backend == Backend::CPU) {
+    auto& executor_settings = engine_settings.GetMutableMainExecutorSettings();
+    ABSL_ASSIGN_OR_RETURN(
+        auto cpu_settings,
+        executor_settings.MutableBackendConfig<litert::lm::CpuConfig>());
+    if (settings.num_cpu_threads > 0) {  // (1)
+      cpu_settings.number_of_threads = settings.num_cpu_threads;
+    }
+// ...
+    cpu_settings.prefill_chunk_size = settings.prefill_chunk_size;  // (2)
+    executor_settings.SetBackendConfig(cpu_settings);
   }
-  cpu_settings.prefill_chunk_size = settings.prefill_chunk_size;  // (2)
-  executor_settings.SetBackendConfig(cpu_settings);
-}
 ```
 
 代码行 `(1)` 只有正值才覆盖默认的 4，传 0 或不传时保留默认值。`(2)` 同一分支还设置 `prefill_chunk_size`，而该参数只对动态导出的模型生效。整个分支由 `backend == Backend::CPU` 守卫，`CpuConfig` 不会用于 GPU 或 NPU 路径。
@@ -235,71 +282,84 @@ GPU 适合并行执行矩阵运算。第 5 章介绍过设备侧采样（device-
 采样器的后端和输入接管条件在执行器初始化采样器时确定：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor.cc:1335-1366
-ASSIGN_OR_RETURN(auto sampler_backend, GetSamplerBackend(executor_settings_));  // (1)
+// runtime/executor/llm_litert_compiled_model_executor.cc:1368-1385
+  ABSL_ASSIGN_OR_RETURN(
+      sampler_,
+      CreateSampler(sampler_backend, output_heads, std::move(sampler_params),
+                    env_, /*sequence_size=*/1, vocab_size, data_type));
 // ...
-ASSIGN_OR_RETURN(
-    sampler_,
-    CreateSampler(sampler_backend, output_heads, std::move(sampler_params),
-                  env_.Get(), /*sequence_size=*/1, vocab_size, data_type));
-// ...
-const bool runs_embedding_on_gpu = (embedding_lookup_ == nullptr);  // (2)
-sampler_handles_input_ =
-    (!executor_settings_.GetAdvancedSettings().has_value() ||
-     executor_settings_.GetAdvancedSettings()->sampler_handles_input) &&
-    sampler_->CanHandleInput() && !signatures_.input_tokens.empty() &&
-    !runs_embedding_on_gpu;
+  const bool runs_embedding_on_gpu = (embedding_lookup_ == nullptr);
+
+  // If the sampler can handle input, prepare the input tensors for it.
+  bool sampler_handles_input = true;
+  if (executor_settings_.GetAdvancedSettings().has_value()) {
+    sampler_handles_input =
+        executor_settings_.GetAdvancedSettings()->sampler_handles_input;
+  }
+  sampler_handles_input_ =
+      sampler_handles_input && sampler_->CanHandleInput() &&
+      runs_embedding_on_gpu && !signatures_.input_tokens.empty() &&
+      !signatures_.input_attn_mask_local.has_value();
 ```
 
-代码行 `(1)` 采样器通过独立的 sampler 后端创建，主执行器使用 GPU 时可以同时选择 GPU sampler，使完整 logits 无需返回 host。`(2)` 只有采样器声明能接管输入、模型具有 `input_tokens` 输入，并且 embedding 不在主 GPU 图中执行时，`sampler_handles_input_` 才为 true；源码注释把 `embedding_lookup_ == nullptr` 定义为 embedding 在 GPU 图内执行。因此，“GPU 采样”和“采样器接管下一步输入”是两个不同条件，前者成立不保证后者也成立。
+采样器通过独立的 sampler 后端创建，主执行器与 sampler 都选择 GPU 时，完整 logits 无需返回 host。接管下一步输入则另有条件：采样器支持该能力，模型具有 `input_tokens`，没有独立 embedding lookup，而且没有局部 attention mask 输入。代码用 `embedding_lookup_ == nullptr` 表示 embedding 在主图内执行。
 
-### 8.4.1　避免完整 logits 回传：采样器接管下一步输入
+因此，GPU 采样不等于采样器一定接管输入。带独立 embedder 或局部 mask 的模型可以采用 GPU sampler，同时仍由 host 准备下一步张量。
+
+### 8.4.1　采样器接管下一步输入
 
 `sampler_handles_input_` 为 true 时，采样器除输出 token id 外，还可以填写下一步 decode 的输入张量。这个机制减少输入准备中的往返，但不会取消 token id 返回 host 的步骤。
 
-初始化采样器时，执行器先为 decode 的 position 和 attention mask 保存上一轮缓冲，再设置并立即复位输入接管：
+初始化采样器时，执行器先为 decode 的 position、attention mask 和可选参数张量保存上一轮缓冲，再设置并立即复位输入接管：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor.cc:1383-1384
-RETURN_IF_ERROR(SetSamplerInputHandling(/*reset=*/false));
-RETURN_IF_ERROR(SetSamplerInputHandling(/*reset=*/true));  // (1)
+// runtime/executor/llm_litert_compiled_model_executor.cc:1408-1409
+    ABSL_RETURN_IF_ERROR(SetSamplerInputHandling(/*reset=*/false));
+    ABSL_RETURN_IF_ERROR(SetSamplerInputHandling(/*reset=*/true));  // (1)
 ```
 
 代码行 `(1)` 前后这两个调用，源码注释解释为先让底层模型准备好，再解除输入张量绑定；实际绑定在 decode 阶段通过交换采样器输入张量完成。设置输入接管时，执行器把张量指针和回调交给采样器：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor.cc:1410-1416
-return sampler_->SetInputTensorsAndInferenceFunc(
-    &decode_input_buffers_[signatures_.input_tokens], &decode_prev_input_pos_,
-    &decode_input_buffers_[signatures_.input_positions],
-    has_input_attn_mask ? &decode_prev_mask_ : nullptr,
-    has_input_attn_mask ? &decode_input_buffers_[*signatures_.input_attn_mask]
-                        : nullptr,
-    BindTensorsAndRunDecodeStatic, this);  // (1)
+// runtime/executor/llm_litert_compiled_model_executor.cc:1438-1451
+  bool has_input_attn_mask = signatures_.input_attn_mask.has_value();
+  bool has_input_int32_param = signatures_.input_int32_param.has_value();
+  return sampler_->SetInferenceFuncAndInputTensors(
+      BindTensorsAndRunDecodeStatic, this,
+      &decode_input_buffers_[signatures_.input_tokens], &decode_prev_input_pos_,
+      &decode_input_buffers_[signatures_.input_positions],
+      has_input_attn_mask ? &decode_prev_mask_ : nullptr,
+      has_input_attn_mask ? &decode_input_buffers_[*signatures_.input_attn_mask]
+                          : nullptr,
+      has_input_int32_param ? &decode_prev_param_ : nullptr,
+      has_input_int32_param
+          ? &decode_input_buffers_[*signatures_.input_int32_param]
+          : nullptr);
+}
 ```
 
-第一个参数指向 decode 的 `input_tokens` 缓冲。采样器接口的契约说明，支持该能力的采样器可以用输出 token 填写输入 token，并更新 position、mask 等张量。代码行 `(1)` 传入的回调会绑定这些张量并执行下一步 decode：
+前两个参数传入 decode 回调与执行器对象，随后是 token、position、mask 和可选参数张量的指针。采样器接口的契约说明，支持该能力的采样器可以用输出 token 填写输入 token，并更新 position、mask 等张量。传入的回调会绑定这些张量并执行下一步 decode：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor.cc:952-960
+// runtime/executor/llm_litert_compiled_model_executor.cc:1000-1008
 int LlmLiteRtCompiledModelExecutorBase::BindTensorsAndRunDecodeStatic(
     void* arg) {
   auto self = static_cast<LlmLiteRtCompiledModelExecutorBase*>(arg);
   // Run decode with default output_logits.
   auto status = self->BindTensorsAndRunDecode(/*output_logits=*/nullptr);  // (1)
-  // ...
+// ...
   return status.raw_code();
 ```
 
 代码行 `(1)` 把 `output_logits` 设为 null，用已经绑定的缓冲执行 decode。host 不必先读取 token id，再填写下一步设备输入。不过，`Decode()` 在采样返回后仍会把采样结果复制为 host 侧的 `std::vector`。完整 logits 留在设备侧，选中 token 可直接写入设备输入，同时少量 token id 仍返回 host；decode 的控制流程仍有 CPU 参与。
 
-position 和 mask 张量需要保留当前轮与上一轮两组缓冲。交换采样器输入张量时，执行器用 `std::swap` 交换两组 `TensorBuffer` 句柄，然后重新绑定。这两个交换语句本身不复制张量内容，它们通过轮换缓冲避免在同一轮同时覆盖仍需读取的数据。
+position、mask 与可选参数张量需要保留当前轮与上一轮两组缓冲。交换采样器输入张量时，执行器用 `std::swap` 交换两组 `TensorBuffer` 句柄，然后重新绑定。这些交换语句本身不复制张量内容，它们通过轮换缓冲避免在同一轮同时覆盖仍需读取的数据。
 
 附录 D 的整机基准使用 Apple M5 Pro、Gemma 4 E4B、context 1024，生成 128 个 token。GPU 的 decode 吞吐约为 50.6 tokens/s，CPU 约为 24.7 tokens/s；prefill 分别约为 999 与 259 tokens/s。该结果同时包含算子、内存、delegate 与采样路径差异，不能据此计算设备侧采样的单独收益。
 
 ## 8.5　缓冲驻留：共享条件与退化路径
 
-后端名称回答“由哪条执行路径处理”，buffer 类型则回答“数据目前能被谁直接访问”，两者不能互相替代。图 8-3 把配置、编译与缓冲绑定放在同一条链上：CPU/GPU 共用执行器类型，不表示它们共用缓冲策略；NPU 使用专用执行器，也不表示整条链只经过 NPU。
+后端名称回答“由哪条执行路径处理”，buffer 类型则回答“数据目前能被谁直接访问”，两者不能互相替代。图 8-3 把配置、编译与缓冲绑定放在同一条链上：CPU/GPU 共用执行器类型，不表示它们共用缓冲策略；NPU 可采用专用或通用执行器，两种路径都不表示整条链只经过 NPU。
 
 <figure>
 {{#include figs/fig-8-3.svg}}
@@ -308,50 +368,61 @@ position 和 mask 张量需要保留当前轮与上一轮两组缓冲。交换�
 
 零拷贝（zero-copy）指生产者与消费者复用同一底层存储，不为交接数据再复制一份字节。对异构执行而言，“代码里没有 `memcpy`”只是必要条件，不是充分条件。两个计算阶段还须接受同一种 buffer 类型，张量形状、元素类型、布局与对齐也须相容。生产者的完成事件须能传递给消费者。delegate 或驱动仍可能在绑定、格式转换或同步时创建内部副本。
 
-常规 CPU/GPU 执行器把 compiled model 创建的 `TensorBuffer` 保存下来。每次绑定前，它调用 `Duplicate()` 生成句柄，清除输出句柄上的旧事件，再调用 `RunAsync`；decode 完成提交后，执行器交换 KV cache 的输入、输出 map：
+常规 CPU/GPU 执行器把 compiled model 创建的 `TensorBuffer` 保存下来。每次绑定前，它调用 `Duplicate()` 生成句柄，清除输出句柄上的旧事件，再调用 `RunAsync`；状态输入输出由 `LitertState` 在运行前准备：
 
 ```cpp
-// runtime/executor/llm_litert_compiled_model_executor.cc:915-948
-for (const auto& [input_name, input_buffer] : decode_input_buffers_) {
-  LITERT_ASSIGN_OR_RETURN(auto input_buffer_dup, input_buffer.Duplicate());
-  decode_input_buffers[input_name] = std::move(input_buffer_dup);
-}
+// runtime/executor/llm_litert_compiled_model_executor.cc:940-989
+  for (const auto& [input_name, input_buffer] : decode_input_buffers_) {
+    LITERT_ASSIGN_OR_RETURN(auto input_buffer_dup, input_buffer.Duplicate());
+    decode_input_buffers[input_name] = std::move(input_buffer_dup);
+  }
 // ...
-auto output_buffer_dup =
-    output_logits && output_name == signatures_.output_logits
-        ? output_logits->Duplicate()
-        : output_buffer.Duplicate();
+    auto output_buffer_dup =
+        output_logits && output_name == signatures_.output_logits
+            ? output_logits->Duplicate()
+            : output_buffer.Duplicate();
+    RET_CHECK(output_buffer_dup) << "Failed to duplicate output buffer.";
+    output_buffer_dup->ClearEvent();
 // ...
-output_buffer_dup->ClearEvent();
+  LITERT_ASSIGN_OR_RETURN(
+      auto state_buffers,
+      litert_state->GetStateBuffers(*compiled_model_, kDecodeSignatureRunner));
+  for (auto& [name, buffer] : state_buffers.input_buffers) {
+    decode_input_buffers[name] = std::move(buffer);
+  }
+  for (auto& [name, buffer] : state_buffers.output_buffers) {
+    buffer.ClearEvent();
+    decode_output_buffers[name] = std::move(buffer);
+  }
 // ...
-compiled_model_->RunAsync(kDecodeSignatureRunner, decode_input_buffers,
-                          decode_output_buffers, async));
-if (!gpu_optimized_single_buffer_cache_) {
-  std::swap(input_kv_cache_buffers_, output_kv_cache_buffers_);
-}
+  litert::Options run_options = GetRunOptions();
+  bool async = true;
+  LITERT_RETURN_IF_ERROR(
+      compiled_model_->RunAsync(kDecodeSignatureRunner, decode_input_buffers,
+                                decode_output_buffers, async, &run_options));
 ```
 
 这些语句没有显式复制张量数据。`ClearEvent()` 与 `RunAsync` 又表明，句柄除指向存储外还参与完成事件的管理：后续消费者读取结果时，等待可能发生在 buffer 锁定、采样或下一次绑定处。仅统计 `RunAsync` 调用本身会漏掉这部分等待。
 
-静态执行器对 CPU 和 GPU 的 KV cache 采取不同策略。CPU 为输入 buffer 调用 `Duplicate()`，把句柄同时放入输出 map，源码注释称之为单缓冲，以降低内存和运行开销；GPU 则为输出单独创建缓冲，采用输入、输出两套缓冲并在 step 后交换（6.3 节）。另有一种 GPU 单缓冲模型通过 `param_tensor` 描述 cache 更新位置，是否采用该路径由 signature 中是否存在该输入决定。
+静态执行器把缓存分配交给 `LitertState`。CPU 输入输出共享一套缓冲；GPU 无参数张量时分配两套，并在每次准备运行时交替选择 bank。有参数张量时，GPU 用单套状态缓冲进行原地更新；局部 KV 在 prefill 时仍要作为输入传入。分配和深复制边界见 6.3 至 6.4 节。
 
 下面几条路径说明共享何时退化为显式复制或同步。
 
 | 交接位置 | LiteRT-LM 中的动作 | 直接共享所需条件 | 条件不满足时的路径 |
 |---|---|---|---|
 | CPU KV cache 的输入→输出 | `Duplicate()` 同一输入 buffer | CPU kernel 允许就地更新；布局一致 | 模型或后端不允许时，不能沿用该单缓冲方案 |
-| GPU KV cache 的本轮→下一轮 | 两套 buffer 交换 map | 输出 buffer 可直接作为下一轮输入；事件可传递 | delegate 内部格式转换或等待不在 `std::swap` 中体现 |
+| GPU 双缓冲 KV cache 的本轮→下一轮 | 两套 buffer 交替绑定 | 输出 buffer 可直接作为下一轮输入；事件可传递 | delegate 内部格式转换或等待不在角色轮换中体现 |
 | NPU embedder/辅助图→主模型 | 对主模型输入 buffer 调用 `Duplicate()` | 子图接受同一 storage、类型和布局 | buffer 类型不相容时需重新分配；驱动内部行为尚未实测 |
 | GPU logits→约束解码 | 先读到 host，mask 后写回 | 当前实现只在 logits 已是 host memory 时直接修改 | 非 host buffer 执行完整 logits 回读与回写 |
 | Session 初次 Clone | 共享已处理的 LLM 上下文 | 尚未需要写时分离或切换独立上下文 | 后续保存上下文时，是否复制 KV 取决于后端缓冲集合 |
-| 执行器保存上下文快照 | 复制所选 KV 缓冲 | 不适用：需独立保存快照 | 每块选中的缓冲按 `PackedSize()` 复制；GPU 单缓冲路径的输入 KV map 为空 |
+| 执行器保存上下文快照 | 复制所选 KV 缓冲 | 不适用：需独立保存快照 | `LitertState` 按完整大小复制一套或两套 bank；GPU 单缓冲也保存其数据 |
 | 多候选 KV 变换 | 按 batch 广播或抽取分支 | 不适用：需独立目标布局 | 按各分支跨度执行 `memcpy` |
 
 > 表 8-1　“共享句柄”“无显式复制”和“端到端零拷贝”是三种不同结论；只有最后一项需要把 delegate 与驱动行为也纳入证据。
 
-约束解码给出一条可以直接确认的退化路径。若 logits 已在 host memory，执行器原地调用 `MaskLogits`；若 buffer 不在 host，代码先读出全部 FP32 或 FP16 logits，修改后再写回。本书基准模型的 262144 词表对应 1 MiB FP32 logits，这条路径每个 decode step 都处理一整份 logits，而不是只处理最终 token id。
+约束解码给出一条可以直接确认的退化路径。若 logits 已在 host memory，执行器原地调用 `ProcessLogits`；若 buffer 不在 host，代码先读出全部 FP32 或 FP16 logits，修改后再写回。本书基准模型的 262144 词表对应 1 MiB FP32 logits，这条路径每个 decode step 都处理一整份 logits，而不是只处理最终 token id。
 
-KV cache 的复制要区分会话克隆、上下文快照与多候选变换。Session 初次 Clone 共享已处理的 LLM 上下文，不复制 LLM KV 字节。后续写时分离或切换独立上下文时，资源管理器才调用执行器保存快照。常规 compiled executor 复制活动输入 KV map 中的缓冲，NPU executor 复制所选的 K、V、C cache 缓冲。每块选中的缓冲通过 `CopyTensorBuffer` 分配并按 `PackedSize()` 复制。GPU 单缓冲路径的输入 KV map 为空，快照不含 KV 字节；具体限制见 6.4.3 节。
+KV cache 的复制要区分会话克隆、上下文快照与多候选变换。Session 初次 Clone 共享已处理的 LLM 上下文，不复制 LLM KV 字节。后续写时分离或切换独立上下文时，资源管理器才调用执行器保存快照。常规 compiled executor 通过 `LitertState::DeepCopy` 复制一套或两套状态 bank，NPU executor 复制所选的 K、V、C cache。每块缓冲按 `PackedSize()` 复制，GPU 单缓冲同样保存其 KV 数据。复制粒度见 6.4.3 节，环形缓存的共享限制见 6.4.2 节。
 
 多候选 decode 则在首次 prefill/decode 转换时锁定源、目标缓冲，按 batch 广播或抽取一个分支。两种变换都调用 `memcpy`，复制范围由 batch 布局决定。这些复制与同步操作也计入端到端耗时，不能只测 kernel 执行时间。
 
@@ -380,7 +451,7 @@ $$
 
 给一个只用于说明算法的可复算示例：若 256 步的总差为 128 ms，则 \\(\Delta t=0.5\\) ms/step。1 MiB 除以 0.5 ms，按 1 GB = 10^9 字节换算，等效速率约为 2.10 GB/s。这个数只能称为“按 logits 大小折算的等效速率”，因为分母还包含等待和两种 sampler 的计算差，它不是内存总线或互连带宽的测量值。
 
-另一个实验是保持 GPU sampler 不变，仅切换 `sampler_handles_input`。false 路径由 host 读取 token id 并准备下一步输入；true 路径允许 sampler 填写 token、position 和 mask。该开关真正生效还要求 sampler 支持输入接管、signature 含 `input_tokens`，且 embedding 不在 GPU 主图内。若前置条件不成立，两组配置会进入同一路径，差值不能说明问题。
+另一个实验是保持 GPU sampler 不变，仅切换 `sampler_handles_input`。false 路径由 host 读取 token id 并准备下一步输入；true 路径允许 sampler 填写 token、position、mask 和可选参数张量。该开关真正生效还要求 sampler 支持输入接管、signature 含 `input_tokens`，embedding 位于主图内，且没有局部 mask 输入。若前置条件不成立，两组配置会进入同一路径，差值不能说明问题。
 
 异步测量还要确认等待策略。静态 prefill 检测到任一输入为 Metal memory 时，会改用同步 `Run`，其他路径才可能调用 `RunAsync`。GPU benchmark 模式又把同步等待类型设为 active，并可等待权重转换完成。因此，“打开 benchmark”并非只增加计时器；跨版本或跨工具比较时，必须记录等待模式和 warm-up 处理。
 
@@ -390,7 +461,7 @@ NPU 执行器提供更细的内置分项。`LatencyStats` 分别累计输入准�
 
 ## 8.6　NPU：专用多子图路径与部署约束
 
-LiteRT-LM 的 NPU 专用执行器包含 Qualcomm QNN/HTP 与 Google Tensor 配置，并使用专门的多子图路径。本书的两台探测设备均为 Qualcomm 平台，它们都未完成一次 NPU 推理，也没有采集功耗数据，因此本章不比较 NPU 与 CPU、GPU 的能效。
+LiteRT-LM 的 NPU 专用执行器包含 Qualcomm QNN/HTP 与 Google Tensor 配置，并使用专门的多子图路径。本书的两台历史探测设备均为 Qualcomm 平台，它们都未完成一次 NPU 推理，也没有采集功耗数据，因此本章不比较 NPU 与 CPU、GPU 的能效。
 
 ### 8.6.1　NPU executor 仍是一条异构流水线
 
@@ -400,36 +471,49 @@ logits 路径也不同。主 NPU 模型的 decode 输出可以带 per-tensor 量
 
 以上结论都来自冻结版源码。它们确认了组件边界、配置和调用顺序，却不能确认目标设备上的 delegate 分区、实际 storage 类型或同步时长。后文涉及 NPU buffer 共享和 latency 字段时，也沿用这一证据边界。
 
-工厂通过专门的创建函数得到 NPU 执行器。冻结版源码的类注释把它限定为 Gemma3 的 NPU 变体，不能据此推断任意模型都可进入这条路径。
+本节以下讨论含辅助模型段的专用路径。类注释仍称其面向 Gemma3 的 NPU 变体，实际创建代码还识别 per-layer embedding 和不同 prefill 长度。支持边界必须结合模型包与 signature 核查，不能由类注释或通用回退分支推断任意模型均可运行。
 
 ### 8.6.2　CPU/GPU embedder 与 NPU 多子图
 
 CPU/GPU 执行器并非总把 embedding 包含在主图内。初始化时它查询模型包里有没有独立的 embedder 段：有，就为 embedder 创建独立的 compiled model，由单独的查表组件驱动；没有，`embedding_lookup_` 保持为 null，此时主图必须提供 `input_tokens` 输入，否则输入缓冲初始化返回失败。采样器初始化把 GPU 后端上的后一种情形称为 embedding 在 GPU 图内执行。因此，CPU/GPU 路径同时支持独立 embedder 与主图内 embedding，具体形式由模型包和主图 signature 决定。
 
-NPU 执行器在主 LLM 图之外还定义了多组上下文。以下三个结构展示了其中的 embedder、per-layer embedder 与辅助子图：
+NPU 专用执行器把 embedding、RoPE、mask 和 KV 更新交给四个组件。成员声明直接给出这些边界：
 
 ```cpp
-// runtime/executor/llm_litert_npu_compiled_model_executor.h:266-320
-struct EmbedderContext {
-  ::litert::Model embedder_model;                    // (1)
-  ::litert::CompiledModel embedder_compiled_model;
-  InferenceContext inference_context;
-  // ...
-};
+// runtime/executor/llm_litert_npu_compiled_model_executor.h:402-411
+  NpuEmbedder main_embedder_;
+  NpuRope main_rope_;
+  NpuMask main_mask_;
+  NpuKVCache main_cache_;
 
-struct EmbedderPerLayerContext { /* ... */ };        // (2)
-
-struct NpuAuxiliaryContext {                         // (3)
-  ::litert::CompiledModel npu_auxiliary_compiled_model;
-  // ...
-};
+  LatencyStats latency_stats_;
+  NpuAuxiliaryContext npu_auxiliary_context_;
+  ::litert::CompiledModel text_decoder_compiled_model_;
+  InferenceContext text_decoder_inference_context_;
+  SortedPrefillSignatureMap prefill_signature_map_;
 ```
 
-代码行 `(1)` 的 embedder 上下文持有独立的 compiled model，`(2)` 的 per-layer embedder 也有自己的 compiled model；CPU/GPU 路径同样支持这两类可选 embedder。NPU 路径的额外拆分体现在 `(3)`：辅助上下文的注释明确列出 Mask、RoPE 与 KV cache update 三组 signature，它们与主 LLM compiled model 由 NPU 执行器分别调用。
+`NpuEmbedder` 内部持有独立 embedder 与可选 per-layer embedder 的 compiled model，使用 CPU 选项创建。辅助 compiled model 仍提供 Mask、RoPE 与 KV cache update signature，交给其余组件使用；主 LLM 则由独立 compiled model 执行。组件拆分没有把整条流程变成单一 NPU 图。
 
 延迟统计字段按阶段记录 embedder、mask、RoPE、主 LLM 与 cache update 各自的 prefill 推理时延；prefill 实现也依次调用 embedder、RoPE、mask、主 LLM 与 cache update 路径，确认了分段执行结构。源码没有说明每个子图拆分的完整设计理由，本书据此只陈述调用边界，不把它归因于未经验证的算子限制。
 
 ### 8.6.3　两台真机到达的初始化阶段
+
+新版部署首先要区分编译时禁用与运行时加载失败。定义 `LITERT_DISABLE_NPU` 的构建在工厂处直接返回不支持错误，不会进入专用或通用 NPU 路径。启用 NPU 时，环境把同一目录分别配置为 dispatch 与 compiler plugin 的搜索位置：
+
+```cpp
+// runtime/util/litert_util.cc:99-113
+      // TODO(b/540445921): move the 'library_dir' to its own space.
+      env_options.push_back(::litert::EnvironmentOptions::Option{
+          ::litert::EnvironmentOptions::Tag::kDispatchLibraryDir,
+          library_dir.c_str()});
+// ...
+      env_options.push_back(::litert::EnvironmentOptions::Option{
+          ::litert::EnvironmentOptions::Tag::kCompilerPluginLibraryDir,
+          library_dir.c_str()});
+```
+
+目录优先取执行器设置中的 dispatch 路径，未指定时使用模型文件的父目录。显式配置和默认位置都只是搜索规则，不能代替所需动态库与驱动的实际部署。下面两台设备记录保留原二进制、SDK 与模型条件，尚未用新版通用路径重新测试。
 
 第一台设备是 nubia P0210（canoe，HTP V81）。测试使用 `gemma-4-E2B-it_qualcomm_sm8750.litertlm`，过程记录见附录 C。在这台设备上，dispatch 桥加载、QNN manager 初始化、模型分段读取与 DispatchDelegate 解析均已通过，1.18 GB 的 QNN context 也创建成功，随后没有进入模型推理。独立运行 `qnn-platform-validator` 时，DSP 测试返回 "Please use testsig if using unsigned images"；同时，设备 `/vendor` 中的厂商库对 shell 不可读。两项现象与当前 ROM 和 DSP 镜像签名或访问限制一致。这次实验没有改变 ROM，也没有使用厂商签名产物，因而不能进一步分离各项安全策略的影响。
 
@@ -486,11 +570,11 @@ struct NpuAuxiliaryContext {                         // (3)
 |---|---|---|---|---|
 | CPU | LiteRT CPU / XNNPACK | 算子覆盖较宽，线程数可配置 | Pixel 亲和性依赖硬编码 SoC 表；4 线程只是默认值，需按设备扫描 | decode ≈ 24.7、prefill ≈ 259 tokens/s |
 | GPU | LiteRT GPU delegate | 并行执行；设备侧采样避免完整 logits 回传 | token id 仍返回 host；缓冲与 delegate 行为依平台而异 | decode ≈ 50.6、prefill ≈ 999 tokens/s |
-| NPU | LiteRT NPU；本书真机为 QNN（HTP） | 专用多子图执行路径 | 模型包、加速器代际、运行时组件与签名/访问条件需匹配 | 两台 Qualcomm 设备到达初始化失败阶段；未完成推理，无吞吐与功耗数据 |
+| NPU | LiteRT NPU；本书真机为 QNN（HTP） | 含辅助段时专用多子图；否则通用 compiler plugin | 模型包、加速器代际、运行时组件与签名/访问条件需匹配 | 两台 Qualcomm 设备到达初始化失败阶段；未完成推理，无吞吐与功耗数据 |
 
 > 表 8-2　三类后端的实现边界与证据范围。CPU/GPU 数据来自 Apple M5 Pro、Gemma 4 E4B、context 1024、生成 128 个 token 的基准〔基准 D〕；NPU 一列只记录两台 Qualcomm 设备的加载与失败阶段。
 
-LiteRT-LM 通过 `Backend` 枚举和工厂函数选择 CPU/GPU 通用执行器或 NPU 专用执行器，并统一返回 `LlmExecutor`。CPU 线程数需要按设备扫描，Pixel 亲和性只覆盖硬编码 SoC。GPU 设备侧采样避免完整 logits 回传，但仍返回 token id。`Duplicate()` 只能证明 LiteRT-LM 这一层没有显式复制，端到端零拷贝还取决于 storage、布局与同步事件。NPU 代码采用 CPU embedder、NPU/CPU 主模型选项和额外辅助子图，本书尚无成功推理和能效数据。后端还会改变激活精度、sampler 和数值计算路径，因此性能和输出复现记录都必须注明完整配置。
+LiteRT-LM 通过 `Backend` 枚举和工厂函数选择通用执行器，或按辅助模型段进入 NPU 专用执行器，并统一返回 `LlmExecutor`。CPU 线程数需要按设备扫描，Pixel 亲和性只覆盖硬编码 SoC。GPU 设备侧采样避免完整 logits 回传，但仍返回 token id。`Duplicate()` 只能证明 LiteRT-LM 这一层没有显式复制，端到端零拷贝还取决于 storage、布局与同步事件。NPU 专用路径采用 CPU embedder、NPU/CPU 主模型选项和额外辅助子图，通用路径由 compiler plugin 分配支持的子图，本书尚无成功推理和能效数据。后端还会改变激活精度、sampler 和数值计算路径，因此性能和输出复现记录都必须注明完整配置。
 
 ---
 
