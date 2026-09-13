@@ -4,7 +4,7 @@
 
 ## 一、使用预编译 Python 包
 
-本节运行当前 v0.17.0。第三节起的历史实验仍使用各自记录的 v0.13.1 环境，不应以新版重装结果覆盖归档数据。用 Python CLI（第 2 章）：
+本节运行当前 v0.17.0。第三至第五节的历史实验仍使用各自记录的 v0.13.1 环境，不应以新版重装结果覆盖归档数据。第六节提供新版性能采集入口。用 Python CLI（第 2 章）：
 
 ```bash
 uv tool install 'litert-lm==0.17.0'
@@ -157,6 +157,34 @@ python3 experiments/m4_report.py experiments/data/2026-09-05/M4_RUNS.json
 ```
 
 汇总器核对原始记录哈希并重算两档预算的结果。索引分别列出试采、正式序列、采用的 tokenizer 诊断，以及因遗漏 BOS 而排除的首次诊断。复现实验产生新目录后，应另建相应索引，不替换本书的原始记录。输入生成规则、预定检查条件与采集细节保存在 `experiments/M4_PROTOCOL.md`。
+
+## 六、v0.17.0 的 Mac 性能重测
+
+新版采集使用独立 Python 环境。下列命令在书稿仓库根目录运行，结果目录必须尚不存在：
+
+```bash
+uv venv --python 3.12 tmp/bench-v0.17.0-venv
+uv pip install --python tmp/bench-v0.17.0-venv/bin/python 'litert-lm==0.17.0'
+mkdir -p tmp/bench-v0.17.0-model
+ln ~/.litert-lm/models/gemma-4-e4b/model.litertlm tmp/bench-v0.17.0-model/model.litertlm
+tmp/bench-v0.17.0-venv/bin/python experiments/bench_release.py \
+  --model tmp/bench-v0.17.0-model/model.litertlm \
+  --out experiments/data/<本轮日期>/benchmark-v0.17.0
+```
+
+模型硬链接使编译缓存保存在独立目录；跨文件系统时可改用文件副本。脚本核对包版本，记录模型、动态库与采集脚本的 SHA-256。它直接调用与新版 CLI 相同的 Python `Benchmark` 接口，保留未四舍五入的指标和实际 token 计数，不经过模型注册表的默认配置。
+
+主矩阵固定 CPU 8 线程、KV 容量 8192，关闭 MTP。随后请求切换 GPU 环形缓冲、开启 MTP，并扫描 CPU prefill 长度和 KV 容量。每个条件先预热 1 次，再测 3 次；所有运行串行，各自创建新进程和引擎。脚本还检查退出码、原生错误日志、指标有效性和 token 计数。失败条件保留日志，不生成性能中位数。
+
+`manifest.json` 保存条件、每次调用和原始指标，`summary.csv` 保存各条件的中位数及最小、最大值。Init 是 API 聚合值，TTFT 等于首次 prefill 耗时加 decode 平均每 token 耗时。进程墙钟时间另存，但不等于客户端首段文本时延。本轮不采集峰值内存、功耗或输出质量。正式归档位置与结果见附录 D 第十六节。
+
+采集后复算并检查配置是否生效：
+
+```bash
+python3 experiments/bench_release_report.py experiments/data/<本轮日期>/benchmark-v0.17.0
+```
+
+复算器校验原始日志哈希、token 计数与 CSV 中位数，并列出后端回退及未生效的配置。本次 GPU 日志显示，环形缓冲参数请求被忽略，主干实际使用 WebGPU/Metal。切换该参数的记录因此标为 `unsupported_control`，不能作为环形缓冲开关对照。
 
 [^appc-google-model]: Google，[*gemma-4-E4B-it* 模型卡](https://huggingface.co/google/gemma-4-E4B-it)；访问日期：2026-07-18。
 

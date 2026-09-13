@@ -89,7 +89,7 @@ litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 
 ## 2.2　benchmark 输出的四项指标
 
-上一节验证的是功能，本节起转向性能。第 1 章的推算要靠实测的性能数据来检验，数据来自 `litert-lm benchmark`：它用参数指定 prefill 与 decode 的 token 数，并打印四项指标，即 prefill 吞吐、decode 吞吐、初始化时间与 TTFT。下面仍使用 v0.13.1 的本书主基准矩阵，不表示 v0.17.0 性能。主矩阵（完整数据集与采集方法见附录 D）的一组中位数如下，条件为 Apple M5 Pro、Gemma 4 E4B、cpu 后端、prefill 256 token、decode 128 token。
+上一节验证的是功能，本节起转向性能。第 1 章的推算要靠实测的性能数据来检验，数据来自 `litert-lm benchmark`：它用参数指定 prefill 与 decode 的 token 数，并打印四项指标，即 prefill 吞吐、decode 吞吐、初始化时间与 TTFT。下面仍使用 v0.13.1 的本书主基准矩阵，不表示 v0.17.0 性能。新版独立重测见附录 D 第十六节；两批的配置与预热方法有差别，不能混算。主矩阵（完整数据集与采集方法见附录 D）的一组中位数如下，条件为 Apple M5 Pro、Gemma 4 E4B、cpu 后端、prefill 256 token、decode 128 token。
 
 ```text
 Backend                    : cpu

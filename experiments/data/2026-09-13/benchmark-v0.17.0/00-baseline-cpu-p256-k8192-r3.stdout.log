@@ -1,0 +1,1 @@
+BENCH_RESULT {"init_time_in_second": 0.48363133500000005, "time_to_first_token_in_second": 1.01652871025, "last_prefill_token_count": 256, "last_prefill_tokens_per_second": 262.4182359746148, "last_decode_token_count": 128, "last_decode_tokens_per_second": 24.398127886891924}

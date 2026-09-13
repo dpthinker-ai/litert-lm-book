@@ -31,8 +31,19 @@ METRICS = {
 
 
 def sha256(path):
+    digest = hashlib.sha256()
     with open(path, "rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def write_summary(path, rows):
+    fields = list(dict.fromkeys(key for row in rows for key in row))
+    with path.open("w") as stream:
+        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def utc():
@@ -192,11 +203,7 @@ def main():
                 values = [r["metrics"][field] for r in measured]
                 row.update({label: statistics.median(values), label + "_min": min(values), label + "_max": max(values)})
         rows.append(row)
-    fields = list(rows[0]) + [key for key in rows[-1] if key not in rows[0]]
-    with (out / "summary.csv").open("w") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(rows)
+    write_summary(out / "summary.csv", rows)
     manifest.update(finished_at_utc=utc(), status="completed" if all(r["valid_runs"] == 3 for r in rows) else "completed_with_failures",
                     power_end=command("pmset", "-g", "batt"), thermal_end=command("pmset", "-g", "therm"))
     save()

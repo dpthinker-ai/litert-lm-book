@@ -1,0 +1,771 @@
+{
+  "manifest_sha256": "9fea730120a8a1423acface8ca3d33ce1123ac769afcc60c2c2e9a33313a2682",
+  "summary_sha256": "78f3d4299c402fe729f293eb9f69f81a816accd0120166d3b53103f0ede55f68",
+  "verified_log_count": 152,
+  "cases": [
+    {
+      "case_index": 0,
+      "group": "baseline",
+      "backend": "cpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 259.9250853057123,
+          "min": 257.6720338275067,
+          "max": 262.4182359746148
+        },
+        "decode_tps": {
+          "median": 26.675829769732854,
+          "min": 24.398127886891924,
+          "max": 26.903081932552684
+        },
+        "init_s": {
+          "median": 0.47909199999999996,
+          "min": 0.47891849999999997,
+          "max": 0.48363133500000005
+        },
+        "ttft_s": {
+          "median": 1.0220696295,
+          "min": 1.01652871025,
+          "max": 1.0309981187500001
+        }
+      }
+    },
+    {
+      "case_index": 1,
+      "group": "baseline",
+      "backend": "cpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 286.70299041617585,
+          "min": 282.8435662018149,
+          "max": 286.7947171936969
+        },
+        "decode_tps": {
+          "median": 26.756479477992723,
+          "min": 26.498923194104567,
+          "max": 26.805735616045723
+        },
+        "init_s": {
+          "median": 0.482274375,
+          "min": 0.466330792,
+          "max": 0.49900925000000007
+        },
+        "ttft_s": {
+          "median": 3.6089459067500003,
+          "min": 3.60823550725,
+          "max": 3.6577499165
+        }
+      }
+    },
+    {
+      "case_index": 2,
+      "group": "baseline",
+      "backend": "cpu",
+      "prefill": 4096,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 286.714062510158,
+          "min": 285.5262170280523,
+          "max": 289.050958233742
+        },
+        "decode_tps": {
+          "median": 26.076400631785877,
+          "min": 25.995222482658335,
+          "max": 26.103330069604063
+        },
+        "init_s": {
+          "median": 0.472111417,
+          "min": 0.45986345900000003,
+          "max": 0.717974207
+        },
+        "ttft_s": {
+          "median": 14.32435897575,
+          "min": 14.208821038249999,
+          "max": 14.383911357
+        }
+      }
+    },
+    {
+      "case_index": 3,
+      "group": "baseline",
+      "backend": "gpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [
+        "ringbuffer_request_ignored",
+        "webgpu_metal_adapter_selected",
+        "webgpu_sampler_fell_back_to_static_c_api"
+      ],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 912.6100156275553,
+          "min": 911.778187503352,
+          "max": 913.5876093652694
+        },
+        "decode_tps": {
+          "median": 67.79057497711129,
+          "min": 67.7458097827331,
+          "max": 68.00056233277523
+        },
+        "init_s": {
+          "median": 0.765014625,
+          "min": 0.743983332,
+          "max": 1.786476166
+        },
+        "ttft_s": {
+          "median": 0.2952751855,
+          "min": 0.294965271,
+          "max": 0.2954758025
+        }
+      }
+    },
+    {
+      "case_index": 4,
+      "group": "baseline",
+      "backend": "gpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [
+        "ringbuffer_request_ignored",
+        "webgpu_metal_adapter_selected",
+        "webgpu_sampler_fell_back_to_static_c_api"
+      ],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 1133.8204295286037,
+          "min": 1125.9550929194716,
+          "max": 1134.0869032918833
+        },
+        "decode_tps": {
+          "median": 67.43167522910917,
+          "min": 67.41915247455057,
+          "max": 67.44183802453085
+        },
+        "init_s": {
+          "median": 0.7501843330000002,
+          "min": 0.7481828749999999,
+          "max": 0.759385958
+        },
+        "ttft_s": {
+          "median": 0.917968841,
+          "min": 0.91776162125,
+          "max": 0.92427995075
+        }
+      }
+    },
+    {
+      "case_index": 5,
+      "group": "baseline",
+      "backend": "gpu",
+      "prefill": 4096,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [
+        "ringbuffer_request_ignored",
+        "webgpu_metal_adapter_selected",
+        "webgpu_sampler_fell_back_to_static_c_api"
+      ],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 1094.8924011266351,
+          "min": 1094.8658539709627,
+          "max": 1094.9748071225201
+        },
+        "decode_tps": {
+          "median": 65.41414620190767,
+          "min": 65.39041132306166,
+          "max": 65.44666023639935
+        },
+        "init_s": {
+          "median": 0.756931418,
+          "min": 0.7562830839999999,
+          "max": 0.764438
+        },
+        "ttft_s": {
+          "median": 3.75628649325,
+          "min": 3.756012546,
+          "max": 3.7563903450000002
+        }
+      }
+    },
+    {
+      "case_index": 6,
+      "group": "ringbuffer",
+      "backend": "gpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": true,
+      "valid_runs": 3,
+      "status": "unsupported_control",
+      "observations": [
+        "ringbuffer_request_ignored",
+        "webgpu_metal_adapter_selected",
+        "webgpu_sampler_fell_back_to_static_c_api"
+      ],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 1125.327281768654,
+          "min": 1124.9302926343018,
+          "max": 1132.957619655687
+        },
+        "decode_tps": {
+          "median": 67.20101829367016,
+          "min": 67.18647830132637,
+          "max": 67.36884505086796
+        },
+        "init_s": {
+          "median": 0.75388179,
+          "min": 0.752962208,
+          "max": 0.7588651230000001
+        },
+        "ttft_s": {
+          "median": 0.9248382267499999,
+          "min": 0.9186726985,
+          "max": 0.92516257225
+        }
+      }
+    },
+    {
+      "case_index": 7,
+      "group": "mtp",
+      "backend": "cpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": true,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [
+        "mtp_acceptance_log_present"
+      ],
+      "failures": [],
+      "mtp_logged_success_rates": [
+        {
+          "repeat": 1,
+          "logged_rates": [
+            "0"
+          ]
+        },
+        {
+          "repeat": 2,
+          "logged_rates": [
+            "0"
+          ]
+        },
+        {
+          "repeat": 3,
+          "logged_rates": [
+            "0"
+          ]
+        }
+      ],
+      "metrics": {
+        "prefill_tps": {
+          "median": 267.1765604692665,
+          "min": 265.5738315256561,
+          "max": 268.2078109593987
+        },
+        "decode_tps": {
+          "median": 11.248550472460131,
+          "min": 11.015091134131428,
+          "max": 11.2700115481299
+        },
+        "init_s": {
+          "median": 0.48713396,
+          "min": 0.485288584,
+          "max": 0.498604249
+        },
+        "ttft_s": {
+          "median": 3.92157188525,
+          "min": 3.9087195835,
+          "max": 3.9445326365
+        }
+      }
+    },
+    {
+      "case_index": 8,
+      "group": "mtp",
+      "backend": "gpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": true,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [
+        "mtp_acceptance_log_present",
+        "ringbuffer_request_ignored",
+        "webgpu_metal_adapter_selected",
+        "webgpu_sampler_fell_back_to_static_c_api"
+      ],
+      "failures": [],
+      "mtp_logged_success_rates": [
+        {
+          "repeat": 1,
+          "logged_rates": [
+            "0"
+          ]
+        },
+        {
+          "repeat": 2,
+          "logged_rates": [
+            "0"
+          ]
+        },
+        {
+          "repeat": 3,
+          "logged_rates": [
+            "0"
+          ]
+        }
+      ],
+      "metrics": {
+        "prefill_tps": {
+          "median": 1133.6671837052559,
+          "min": 1132.9747516189354,
+          "max": 1134.8458820056385
+        },
+        "decode_tps": {
+          "median": 47.84761358649749,
+          "min": 47.84548450893049,
+          "max": 47.84808010875695
+        },
+        "init_s": {
+          "median": 0.799335458,
+          "min": 0.7863670420000001,
+          "max": 0.8015036249999999
+        },
+        "ttft_s": {
+          "median": 0.92416301775,
+          "min": 0.923224647,
+          "max": 0.9247159887499999
+        }
+      }
+    },
+    {
+      "case_index": 9,
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 100,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 165.06340798574655,
+          "min": 164.96316981956844,
+          "max": 167.59802284612448
+        },
+        "decode_tps": {
+          "median": 21.368587342697115,
+          "min": 19.671987546063043,
+          "max": 21.664537166782914
+        },
+        "init_s": {
+          "median": 0.446890957,
+          "min": 0.445819874,
+          "max": 0.474730916
+        },
+        "ttft_s": {
+          "median": 0.6523542997499999,
+          "min": 0.64749945425,
+          "max": 0.65262545725
+        }
+      }
+    },
+    {
+      "case_index": 10,
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 250,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 235.39446037911674,
+          "min": 232.20345340387837,
+          "max": 236.02719969141086
+        },
+        "decode_tps": {
+          "median": 22.473090454621687,
+          "min": 22.360179233075634,
+          "max": 22.51338953062309
+        },
+        "init_s": {
+          "median": 0.455381501,
+          "min": 0.450646376,
+          "max": 0.46312029199999993
+        },
+        "ttft_s": {
+          "median": 1.1067694435,
+          "min": 1.10369762075,
+          "max": 1.1210600524999998
+        }
+      }
+    },
+    {
+      "case_index": 11,
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 500,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 251.1795127435848,
+          "min": 248.1828362954989,
+          "max": 251.97236089976053
+        },
+        "decode_tps": {
+          "median": 22.314543470095355,
+          "min": 21.93796748330465,
+          "max": 22.668105028768572
+        },
+        "init_s": {
+          "median": 0.455610001,
+          "min": 0.454227291,
+          "max": 0.46864641800000006
+        },
+        "ttft_s": {
+          "median": 2.03542203175,
+          "min": 2.029927699,
+          "max": 2.0587585975
+        }
+      }
+    },
+    {
+      "case_index": 12,
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 1000,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 260.813461951103,
+          "min": 260.3247931660685,
+          "max": 260.98751173764583
+        },
+        "decode_tps": {
+          "median": 22.0745900923492,
+          "min": 21.623359642984063,
+          "max": 22.113964262305124
+        },
+        "init_s": {
+          "median": 0.44914300100000004,
+          "min": 0.441718458,
+          "max": 0.45259729200000004
+        },
+        "ttft_s": {
+          "median": 3.8804041995,
+          "min": 3.8768212535,
+          "max": 3.88665616225
+        }
+      }
+    },
+    {
+      "case_index": 13,
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 2000,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 260.00341753952085,
+          "min": 258.62228233367864,
+          "max": 260.69587235329436
+        },
+        "decode_tps": {
+          "median": 20.519180143332886,
+          "min": 18.994472682646506,
+          "max": 20.843700903313888
+        },
+        "init_s": {
+          "median": 0.456213917,
+          "min": 0.434073084,
+          "max": 0.459150666
+        },
+        "ttft_s": {
+          "median": 7.7409414734999995,
+          "min": 7.7244216025,
+          "max": 7.7812618339999995
+        }
+      }
+    },
+    {
+      "case_index": 14,
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 3000,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 266.20030148515144,
+          "min": 264.63562547829366,
+          "max": 268.27494916095145
+        },
+        "decode_tps": {
+          "median": 20.457291319943547,
+          "min": 19.290022197197327,
+          "max": 20.595510046612407
+        },
+        "init_s": {
+          "median": 0.448038749,
+          "min": 0.446650123,
+          "max": 0.465296458
+        },
+        "ttft_s": {
+          "median": 11.318263522,
+          "min": 11.234397605,
+          "max": 11.38522449375
+        }
+      }
+    },
+    {
+      "case_index": 15,
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 4000,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 272.60716990762376,
+          "min": 270.1745492347251,
+          "max": 274.35805545628773
+        },
+        "decode_tps": {
+          "median": 20.58760674956375,
+          "min": 18.834743928519057,
+          "max": 20.86910813401878
+        },
+        "init_s": {
+          "median": 0.44579862600000003,
+          "min": 0.439301084,
+          "max": 0.471287166
+        },
+        "ttft_s": {
+          "median": 14.721046091,
+          "min": 14.6325814515,
+          "max": 14.85381645225
+        }
+      }
+    },
+    {
+      "case_index": 16,
+      "group": "capacity_sweep",
+      "backend": "cpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 1024,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 389.61043922089095,
+          "min": 387.75922878324633,
+          "max": 392.4062492994456
+        },
+        "decode_tps": {
+          "median": 34.655261599136836,
+          "min": 34.58140576048547,
+          "max": 34.80967920888027
+        },
+        "init_s": {
+          "median": 0.42874125,
+          "min": 0.426970542,
+          "max": 0.44178912600000003
+        },
+        "ttft_s": {
+          "median": 0.68598385725,
+          "min": 0.68111276675,
+          "max": 0.689059147
+        }
+      }
+    },
+    {
+      "case_index": 17,
+      "group": "capacity_sweep",
+      "backend": "cpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 2048,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 364.26773119888986,
+          "min": 362.6214485274966,
+          "max": 368.1554630552491
+        },
+        "decode_tps": {
+          "median": 32.83872393061727,
+          "min": 32.81447754814629,
+          "max": 32.849487753300345
+        },
+        "init_s": {
+          "median": 0.43662758199999996,
+          "min": 0.429827625,
+          "max": 0.44164608299999997
+        },
+        "ttft_s": {
+          "median": 0.73325414475,
+          "min": 0.725800292,
+          "max": 0.736422228
+        }
+      }
+    },
+    {
+      "case_index": 18,
+      "group": "capacity_sweep",
+      "backend": "cpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 4096,
+      "mtp": false,
+      "ring": false,
+      "valid_runs": 3,
+      "status": "valid",
+      "observations": [],
+      "failures": [],
+      "mtp_logged_success_rates": [],
+      "metrics": {
+        "prefill_tps": {
+          "median": 319.01873505811574,
+          "min": 318.644714410785,
+          "max": 319.6116881789616
+        },
+        "decode_tps": {
+          "median": 30.56081969455104,
+          "min": 30.545544928680663,
+          "max": 30.61028020796858
+        },
+        "init_s": {
+          "median": 0.441485916,
+          "min": 0.43787808400000006,
+          "max": 0.45660475000000006
+        },
+        "ttft_s": {
+          "median": 0.83512947125,
+          "min": 0.83369359425,
+          "max": 0.83614062325
+        }
+      }
+    }
+  ]
+}

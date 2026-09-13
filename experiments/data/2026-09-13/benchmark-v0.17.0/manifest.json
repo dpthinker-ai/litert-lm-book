@@ -1,0 +1,2955 @@
+{
+  "started_at_utc": "2026-09-13T03:04:08.269078+00:00",
+  "status": "completed",
+  "source_tag": "v0.17.0",
+  "source_commit": "e9fd8c53ff968071774206163027dd84bedfe925",
+  "runtime_kind": "PyPI prebuilt packages; not a local source build",
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "packages": {
+    "absl-py": "2.5.0",
+    "click": "8.5.0",
+    "flatbuffers": "25.12.19",
+    "litert-lm": "0.17.0",
+    "litert-lm-api": "0.17.0",
+    "litert-lm-builder": "0.17.0",
+    "prompt_toolkit": "3.0.53",
+    "protobuf": "7.36.1",
+    "questionary": "2.1.1",
+    "tomli": "2.4.1",
+    "typing_extensions": "4.16.0",
+    "wcwidth": "0.8.3"
+  },
+  "libraries": [
+    {
+      "name": "liblitert-lm.dylib",
+      "sha256": "a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc"
+    }
+  ],
+  "model": {
+    "path": "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+    "bytes": 3659530240,
+    "sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"
+  },
+  "runner_sha256": "fb3c4d6aafdd1d43d37b7412f5382d97076e206ae0593255f4143c9ff15950a1",
+  "host": {
+    "argv": [
+      "sysctl",
+      "machdep.cpu.brand_string",
+      "hw.model",
+      "hw.memsize"
+    ],
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M5 Pro\nhw.model: Mac17,9\nhw.memsize: 25769803776\n",
+    "stderr": ""
+  },
+  "power_start": {
+    "argv": [
+      "pmset",
+      "-g",
+      "batt"
+    ],
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7340131)\t100%; charged; 0:00 remaining present: true\n",
+    "stderr": ""
+  },
+  "thermal_start": {
+    "argv": [
+      "pmset",
+      "-g",
+      "therm"
+    ],
+    "returncode": 0,
+    "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "stderr": ""
+  },
+  "protocol": {
+    "repetitions": 3,
+    "warmups_per_case": 1,
+    "order": "listed cases, serial fresh processes",
+    "cpu_threads": 8,
+    "gpu_decode_steps_per_sync": "runtime default",
+    "activation_data_type": "model/runtime default",
+    "ynnpack": false,
+    "prompt": "benchmark",
+    "prompt_padding": "runtime truncates or zero-pads token IDs to requested prefill",
+    "cache": "disk, files alongside model; prior smoke/pilot caches may exist",
+    "ringbuffer": "explicit GPU switch; CPU setter omitted because it only supports GpuArtisanConfig",
+    "sampler": "default Benchmark session; synthetic token-count workload",
+    "validation": "exit code, native error logs, finite positive metrics and exact token counts",
+    "limits": "desktop background load/temperature not controlled; no peak memory, power, quality or Android measurements; historical v0.13.1 settings differ"
+  },
+  "cases": [
+    {
+      "group": "baseline",
+      "backend": "cpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "baseline",
+      "backend": "cpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "baseline",
+      "backend": "cpu",
+      "prefill": 4096,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "baseline",
+      "backend": "gpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "baseline",
+      "backend": "gpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "baseline",
+      "backend": "gpu",
+      "prefill": 4096,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "ringbuffer",
+      "backend": "gpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": true
+    },
+    {
+      "group": "mtp",
+      "backend": "cpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": true,
+      "ring": false
+    },
+    {
+      "group": "mtp",
+      "backend": "gpu",
+      "prefill": 1024,
+      "decode": 128,
+      "capacity": 8192,
+      "mtp": true,
+      "ring": false
+    },
+    {
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 100,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 250,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 500,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 1000,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 2000,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 3000,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "prefill_sweep",
+      "backend": "cpu",
+      "prefill": 4000,
+      "decode": 32,
+      "capacity": 8192,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "capacity_sweep",
+      "backend": "cpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 1024,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "capacity_sweep",
+      "backend": "cpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 2048,
+      "mtp": false,
+      "ring": false
+    },
+    {
+      "group": "capacity_sweep",
+      "backend": "cpu",
+      "prefill": 256,
+      "decode": 128,
+      "capacity": 4096,
+      "mtp": false,
+      "ring": false
+    }
+  ],
+  "runs": [
+    {
+      "case_index": 0,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:04:09.533724+00:00",
+      "wall_s": 6.209245749982074,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.466834917,
+        "time_to_first_token_in_second": 1.03185113625,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 257.50700593326013,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 26.522787682539246
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "00-baseline-cpu-p256-k8192-r0.stdout.log",
+          "sha256": "0e61d271256f8b74d84cad32864c19ecb89f0659eb2b34c21fdc513a527ac6ca"
+        },
+        {
+          "file": "00-baseline-cpu-p256-k8192-r0.stderr.log",
+          "sha256": "c4c7861cd97a15bd17df82ff306cf5cf3d86f477c90729b49cb37fd886dd7b68"
+        }
+      ]
+    },
+    {
+      "case_index": 0,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:04:15.743466+00:00",
+      "wall_s": 6.194308165984694,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.47909199999999996,
+        "time_to_first_token_in_second": 1.0220696295,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 259.9250853057123,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 26.903081932552684
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "00-baseline-cpu-p256-k8192-r1.stdout.log",
+          "sha256": "ff19bcb1b38d4dd2965656d003d6335c33fbf889c0d67bb13ff9a41d48a00911"
+        },
+        {
+          "file": "00-baseline-cpu-p256-k8192-r1.stderr.log",
+          "sha256": "8adac2f7bcc671fa8abca1808abc32ef19eb107ddd55a384ccea6676211d5cf7"
+        }
+      ]
+    },
+    {
+      "case_index": 0,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:04:21.938300+00:00",
+      "wall_s": 6.162526000000071,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.47891849999999997,
+        "time_to_first_token_in_second": 1.0309981187500001,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 257.6720338275067,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 26.675829769732854
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "00-baseline-cpu-p256-k8192-r2.stdout.log",
+          "sha256": "f5a2664a4a3f068129e49ee4eaf8fbd10c476dc31149424f08b19ade475fce9d"
+        },
+        {
+          "file": "00-baseline-cpu-p256-k8192-r2.stderr.log",
+          "sha256": "c6cf51256e46a11ea42a5b9102b0d0756e55374b8aefb6ae38c23812b828cd58"
+        }
+      ]
+    },
+    {
+      "case_index": 0,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:04:28.101270+00:00",
+      "wall_s": 6.6530448329867795,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.48363133500000005,
+        "time_to_first_token_in_second": 1.01652871025,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 262.4182359746148,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 24.398127886891924
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "00-baseline-cpu-p256-k8192-r3.stdout.log",
+          "sha256": "a2f25438f7905330b7f6ffb03a3e9bd2a9106fc0cc3aa489d1777036e3167ec2"
+        },
+        {
+          "file": "00-baseline-cpu-p256-k8192-r3.stderr.log",
+          "sha256": "a9d20b066f3edc21818f52bee9c2e1e2ef458203171d3955b2df1bc4811c4c66"
+        }
+      ]
+    },
+    {
+      "case_index": 1,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:04:34.754884+00:00",
+      "wall_s": 8.7596722090384,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.474578667,
+        "time_to_first_token_in_second": 3.5360895809999997,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 292.708433513557,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 26.505661340064112
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "01-baseline-cpu-p1024-k8192-r0.stdout.log",
+          "sha256": "2993fe30100b616f03e7b38a07bdef22f477d3d6de694f5c00e8bacc4f08d3ad"
+        },
+        {
+          "file": "01-baseline-cpu-p1024-k8192-r0.stderr.log",
+          "sha256": "c42e2ceb001ed3a29619c7c68aef184c104d07de27c11b52e4bac99822e88d0f"
+        }
+      ]
+    },
+    {
+      "case_index": 1,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:04:43.515172+00:00",
+      "wall_s": 8.745216874987818,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.466330792,
+        "time_to_first_token_in_second": 3.6089459067500003,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 286.70299041617585,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 26.805735616045723
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "01-baseline-cpu-p1024-k8192-r1.stdout.log",
+          "sha256": "a2f45f0c2a9a0b4b7b1a6d8815690af54c87d23b5bdd27d656b1aaf3e8f9c259"
+        },
+        {
+          "file": "01-baseline-cpu-p1024-k8192-r1.stderr.log",
+          "sha256": "b49df1d20cc4e4566b66c58e66e016b1e8e5db3bbba8928cd3e86a047b5dc459"
+        }
+      ]
+    },
+    {
+      "case_index": 1,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:04:52.260901+00:00",
+      "wall_s": 8.836743667023256,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.482274375,
+        "time_to_first_token_in_second": 3.60823550725,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 286.7947171936969,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 26.498923194104567
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "01-baseline-cpu-p1024-k8192-r2.stdout.log",
+          "sha256": "20a1952ed75e911492060789d4853d6bd6cca6f66f0a3416303aeb05bd1e0976"
+        },
+        {
+          "file": "01-baseline-cpu-p1024-k8192-r2.stderr.log",
+          "sha256": "f94440e8b347e2cdb30fc602334b67f8d2bdb86831bd515fd6f2ec2af6dd5d19"
+        }
+      ]
+    },
+    {
+      "case_index": 1,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:05:01.098164+00:00",
+      "wall_s": 8.849392291973345,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.49900925000000007,
+        "time_to_first_token_in_second": 3.6577499165,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 282.8435662018149,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 26.756479477992723
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "01-baseline-cpu-p1024-k8192-r3.stdout.log",
+          "sha256": "6722bf39b22017f17968a0bedd71f64de65b37e880407339bbf2138c5c2e4678"
+        },
+        {
+          "file": "01-baseline-cpu-p1024-k8192-r3.stderr.log",
+          "sha256": "3885faf5eb26d0df8f9b7c969b06612977cf130d6e3eff063794a522068f0971"
+        }
+      ]
+    },
+    {
+      "case_index": 2,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:05:09.949262+00:00",
+      "wall_s": 19.973111666971818,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":4096,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.498399749,
+        "time_to_first_token_in_second": 14.081568634,
+        "last_prefill_token_count": 4096,
+        "last_prefill_tokens_per_second": 291.7648879491404,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 23.32757765206047
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "02-baseline-cpu-p4096-k8192-r0.stdout.log",
+          "sha256": "88122705faa7695951251de525447b2dc83cd012fcbe2db11ebc6ff62b0ea212"
+        },
+        {
+          "file": "02-baseline-cpu-p4096-k8192-r0.stderr.log",
+          "sha256": "aa645ee4ade6b234dbdc36479b60fefd3408c4066fedc13e112fd3bba39f67bb"
+        }
+      ]
+    },
+    {
+      "case_index": 2,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:05:29.923115+00:00",
+      "wall_s": 19.59523854200961,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":4096,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.717974207,
+        "time_to_first_token_in_second": 14.208821038249999,
+        "last_prefill_token_count": 4096,
+        "last_prefill_tokens_per_second": 289.050958233742,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 26.103330069604063
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "02-baseline-cpu-p4096-k8192-r1.stdout.log",
+          "sha256": "e00ddbb9ce6477d55515b599a3f9099d6fb66c6bec3d453c8c1e2487a118bef8"
+        },
+        {
+          "file": "02-baseline-cpu-p4096-k8192-r1.stderr.log",
+          "sha256": "e94f0fc13f47f3bdd754f63a12985acb394c29bfa80dbbf273deef5c93f77df0"
+        }
+      ]
+    },
+    {
+      "case_index": 2,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:05:49.518893+00:00",
+      "wall_s": 19.631278291984927,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":4096,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.45986345900000003,
+        "time_to_first_token_in_second": 14.32435897575,
+        "last_prefill_token_count": 4096,
+        "last_prefill_tokens_per_second": 286.714062510158,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 26.076400631785877
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "02-baseline-cpu-p4096-k8192-r2.stdout.log",
+          "sha256": "fa1b5750ba0c366df584e00202b1082bc1c3ba05f9118bcaafdcfaa4176476a0"
+        },
+        {
+          "file": "02-baseline-cpu-p4096-k8192-r2.stderr.log",
+          "sha256": "f666eb34b2f1be47dddc3e4e880ce529e9a8db61ca11e9d5ad0ed57273a68e20"
+        }
+      ]
+    },
+    {
+      "case_index": 2,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:06:09.150778+00:00",
+      "wall_s": 19.72618549998151,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"cpu\",\"prefill\":4096,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.472111417,
+        "time_to_first_token_in_second": 14.383911357,
+        "last_prefill_token_count": 4096,
+        "last_prefill_tokens_per_second": 285.5262170280523,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 25.995222482658335
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "02-baseline-cpu-p4096-k8192-r3.stdout.log",
+          "sha256": "eb90c686435c5c396f098d6cacd3fe49e219cab1f637a84420819fe21ba53a89"
+        },
+        {
+          "file": "02-baseline-cpu-p4096-k8192-r3.stderr.log",
+          "sha256": "2cc50ed5d13ed50eebdde37d6ff39edbc97757debbc005831e10ec2f8dd9c84d"
+        }
+      ]
+    },
+    {
+      "case_index": 3,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:06:28.878143+00:00",
+      "wall_s": 5.396946042019408,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":256,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 6.080530415999999,
+        "time_to_first_token_in_second": 0.29299228075,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 920.175934619372,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.63788386736297
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "03-baseline-gpu-p256-k8192-r0.stdout.log",
+          "sha256": "cef133ff2ad0f011d7809c40355abc009f782029200e92babee164951fba7f2f"
+        },
+        {
+          "file": "03-baseline-gpu-p256-k8192-r0.stderr.log",
+          "sha256": "0062debd04c034cfa98bb40b9cdd82b365f9dad5fc7462dae0b41a598024a0aa"
+        }
+      ]
+    },
+    {
+      "case_index": 3,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:06:34.275778+00:00",
+      "wall_s": 3.195870667055715,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":256,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 1.786476166,
+        "time_to_first_token_in_second": 0.2954758025,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 911.778187503352,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 68.00056233277523
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "03-baseline-gpu-p256-k8192-r1.stdout.log",
+          "sha256": "e592e335408565e373eb6a2576d3667985ca3fab7657729eddf3bb089efa3023"
+        },
+        {
+          "file": "03-baseline-gpu-p256-k8192-r1.stderr.log",
+          "sha256": "313b35e6a3a141ac9ba2471092effd3948cd31b36512ed27c6eafddf108ba430"
+        }
+      ]
+    },
+    {
+      "case_index": 3,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:06:37.472299+00:00",
+      "wall_s": 2.70404870796483,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":256,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.765014625,
+        "time_to_first_token_in_second": 0.2952751855,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 912.6100156275553,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.7458097827331
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "03-baseline-gpu-p256-k8192-r2.stdout.log",
+          "sha256": "d445d44fc49809b429c2bb95b8e041e1bf5d3faacf46e7dc3dc672b237d6f8d0"
+        },
+        {
+          "file": "03-baseline-gpu-p256-k8192-r2.stderr.log",
+          "sha256": "03304c5451da6b2b7dfaa2e9be9c2d4d4b1270150446a99c4b738b39c5aae9a6"
+        }
+      ]
+    },
+    {
+      "case_index": 3,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:06:40.177149+00:00",
+      "wall_s": 2.6695812920224853,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":256,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.743983332,
+        "time_to_first_token_in_second": 0.294965271,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 913.5876093652694,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.79057497711129
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "03-baseline-gpu-p256-k8192-r3.stdout.log",
+          "sha256": "6d0632bda5e0373fab6a2f923be74cdb05e2d3b50c94a5ce112c49c3ff678c26"
+        },
+        {
+          "file": "03-baseline-gpu-p256-k8192-r3.stderr.log",
+          "sha256": "862cbd3f803d7bd6226504850477748049d43c47dc6da8f76d867455320b6f5f"
+        }
+      ]
+    },
+    {
+      "case_index": 4,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:06:42.847318+00:00",
+      "wall_s": 3.2976464590174146,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.762091959,
+        "time_to_first_token_in_second": 0.92392800075,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1126.3820764452087,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.4644291491398
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "04-baseline-gpu-p1024-k8192-r0.stdout.log",
+          "sha256": "dca1abfa49591d6030876a2241aa2cb64b00ba9699d1efe7df8005106401487e"
+        },
+        {
+          "file": "04-baseline-gpu-p1024-k8192-r0.stderr.log",
+          "sha256": "325ca521f1f72cab4968c90e972b3b3d9387d57af62872ce926e2e70f2783c41"
+        }
+      ]
+    },
+    {
+      "case_index": 4,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:06:46.145536+00:00",
+      "wall_s": 3.279096833022777,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.7501843330000002,
+        "time_to_first_token_in_second": 0.91776162125,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1134.0869032918833,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.41915247455057
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "04-baseline-gpu-p1024-k8192-r1.stdout.log",
+          "sha256": "eb784065f52e2bfd7ed24ada7e30acde0bbd92be5e3435885e2ec632758a0154"
+        },
+        {
+          "file": "04-baseline-gpu-p1024-k8192-r1.stderr.log",
+          "sha256": "8430bc6ae6192a41944c5e62a1a388b77e0e8b5b7aa7400b50b88bd3afd81d76"
+        }
+      ]
+    },
+    {
+      "case_index": 4,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:06:49.425227+00:00",
+      "wall_s": 3.284661082958337,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.759385958,
+        "time_to_first_token_in_second": 0.917968841,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1133.8204295286037,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.44183802453085
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "04-baseline-gpu-p1024-k8192-r2.stdout.log",
+          "sha256": "4e811051d182138b31db69503bd8ab163e6bed1717ee5710681d70f83eae60f9"
+        },
+        {
+          "file": "04-baseline-gpu-p1024-k8192-r2.stderr.log",
+          "sha256": "096dbee687a38be5023536ee0f289aee310955f7c7f1eb6152bc0879f670b9c0"
+        }
+      ]
+    },
+    {
+      "case_index": 4,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:06:52.710631+00:00",
+      "wall_s": 3.2876444999710657,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.7481828749999999,
+        "time_to_first_token_in_second": 0.92427995075,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1125.9550929194716,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.43167522910917
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "04-baseline-gpu-p1024-k8192-r3.stdout.log",
+          "sha256": "be8bec55130dce6dd2014ffd669a46ac09a9f72303fc5e320a803b3a745d3bd3"
+        },
+        {
+          "file": "04-baseline-gpu-p1024-k8192-r3.stderr.log",
+          "sha256": "51e5a157f6d200324bb17c7e6582bedde2e86436c474657084b0e344b57e5b21"
+        }
+      ]
+    },
+    {
+      "case_index": 5,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:06:55.998901+00:00",
+      "wall_s": 6.198663708055392,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":4096,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.7413509569999999,
+        "time_to_first_token_in_second": 3.7587953460000003,
+        "last_prefill_token_count": 4096,
+        "last_prefill_tokens_per_second": 1094.1616329441524,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 65.40252720893693
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "05-baseline-gpu-p4096-k8192-r0.stdout.log",
+          "sha256": "0cd0831d032292b6c8f90035daf18da4732bf5fe93d8b764b978ee77c48924b6"
+        },
+        {
+          "file": "05-baseline-gpu-p4096-k8192-r0.stderr.log",
+          "sha256": "66dc48b9a8cda092740965f9609c803f9b696e21650bfbd880251c0bbb16376c"
+        }
+      ]
+    },
+    {
+      "case_index": 5,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:07:02.198221+00:00",
+      "wall_s": 6.21112404204905,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":4096,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.764438,
+        "time_to_first_token_in_second": 3.7563903450000002,
+        "last_prefill_token_count": 4096,
+        "last_prefill_tokens_per_second": 1094.8658539709627,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 65.39041132306166
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "05-baseline-gpu-p4096-k8192-r1.stdout.log",
+          "sha256": "516b963483465b6143a04310a0477061528ae24fd2919c6064063d52dc2f18df"
+        },
+        {
+          "file": "05-baseline-gpu-p4096-k8192-r1.stderr.log",
+          "sha256": "7963e8029c5fa4285479efdb8c6329aea9f6d17126935206b13c2eea4f41fa64"
+        }
+      ]
+    },
+    {
+      "case_index": 5,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:07:08.410087+00:00",
+      "wall_s": 6.212323417013977,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":4096,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.756931418,
+        "time_to_first_token_in_second": 3.75628649325,
+        "last_prefill_token_count": 4096,
+        "last_prefill_tokens_per_second": 1094.8924011266351,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 65.44666023639935
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "05-baseline-gpu-p4096-k8192-r2.stdout.log",
+          "sha256": "2f0b0f22f63142a3e6245a0d598c1a8da6007b6e2c777eae1683e6d5857d84f1"
+        },
+        {
+          "file": "05-baseline-gpu-p4096-k8192-r2.stderr.log",
+          "sha256": "ab150a4f254778d8eb060d116853c719ebf645c6deaf8be924d15b78671afb15"
+        }
+      ]
+    },
+    {
+      "case_index": 5,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:07:14.623098+00:00",
+      "wall_s": 6.185740833985619,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"baseline\",\"backend\":\"gpu\",\"prefill\":4096,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.7562830839999999,
+        "time_to_first_token_in_second": 3.756012546,
+        "last_prefill_token_count": 4096,
+        "last_prefill_tokens_per_second": 1094.9748071225201,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 65.41414620190767
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "05-baseline-gpu-p4096-k8192-r3.stdout.log",
+          "sha256": "faf9174242e4f1497246c80a2ed37f3dfc8b018ba3fedb720d1b88e0363432c9"
+        },
+        {
+          "file": "05-baseline-gpu-p4096-k8192-r3.stderr.log",
+          "sha256": "7bbc491dd6f4ce5627c42abce5c141dc46a4bb01d9c34591d233f599b3b82b30"
+        }
+      ]
+    },
+    {
+      "case_index": 6,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:07:20.809535+00:00",
+      "wall_s": 3.33439004200045,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"ringbuffer\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":true}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.760560833,
+        "time_to_first_token_in_second": 0.9256605605,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1124.433357512018,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 66.75725835241522
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "06-ringbuffer-gpu-p1024-k8192-r0.stdout.log",
+          "sha256": "652758996d2c439e48c7bc8ff3daea1b5d661f6146da13a17827e1b99d9a0a8d"
+        },
+        {
+          "file": "06-ringbuffer-gpu-p1024-k8192-r0.stderr.log",
+          "sha256": "980046e66b14a9b75bd56415948f302c62679a6500aa719f51a4fd98361b6ecf"
+        }
+      ]
+    },
+    {
+      "case_index": 6,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:07:24.144623+00:00",
+      "wall_s": 3.316919541975949,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"ringbuffer\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":true}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.75388179,
+        "time_to_first_token_in_second": 0.9248382267499999,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1125.327281768654,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.20101829367016
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "06-ringbuffer-gpu-p1024-k8192-r1.stdout.log",
+          "sha256": "60eb340f64811c1d48d122f544b42503305e799982048ee0e40e8fd3a2506ce9"
+        },
+        {
+          "file": "06-ringbuffer-gpu-p1024-k8192-r1.stderr.log",
+          "sha256": "753c12e7668d88fe0418ecf68e147b70938fd7c171d4981ab30325606b3ebc40"
+        }
+      ]
+    },
+    {
+      "case_index": 6,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:07:27.462241+00:00",
+      "wall_s": 3.347870791971218,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"ringbuffer\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":true}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.7588651230000001,
+        "time_to_first_token_in_second": 0.92516257225,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1124.9302926343018,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.18647830132637
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "06-ringbuffer-gpu-p1024-k8192-r2.stdout.log",
+          "sha256": "761fd659794dd39bfac71c8d3db331150bae0b3916a486925dcdeae38c37ab08"
+        },
+        {
+          "file": "06-ringbuffer-gpu-p1024-k8192-r2.stderr.log",
+          "sha256": "9e1be1c67a7ffc191e07fac0d4df148e1f77d99e0ff5177ccc96a9739f47cc61"
+        }
+      ]
+    },
+    {
+      "case_index": 6,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:07:30.811381+00:00",
+      "wall_s": 3.338702209002804,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"ringbuffer\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":false,\"ring\":true}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.752962208,
+        "time_to_first_token_in_second": 0.9186726985,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1132.957619655687,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 67.36884505086796
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "06-ringbuffer-gpu-p1024-k8192-r3.stdout.log",
+          "sha256": "8c5e16360124cad77c1db42a0ac686a68613d12548808902522d6502b5844f55"
+        },
+        {
+          "file": "06-ringbuffer-gpu-p1024-k8192-r3.stderr.log",
+          "sha256": "c6ad542f25cfd7a35ca117b194ed7fc76334142cbf84934adada4c2e73318cd4"
+        }
+      ]
+    },
+    {
+      "case_index": 7,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:07:34.151493+00:00",
+      "wall_s": 16.070855250000022,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"mtp\",\"backend\":\"cpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":true,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.6671567079999999,
+        "time_to_first_token_in_second": 3.98433617675,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 263.00929070251084,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 10.996552355321372
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "07-mtp-cpu-p1024-k8192-r0.stdout.log",
+          "sha256": "564a3239c4f11ea6842a32455b65575f8384c9514731ed2829e07348a6a02cdf"
+        },
+        {
+          "file": "07-mtp-cpu-p1024-k8192-r0.stderr.log",
+          "sha256": "c75fba211e477e031ca894c5fac76af12219a2267728492b79b605bce1a9d96c"
+        }
+      ]
+    },
+    {
+      "case_index": 7,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:07:50.223257+00:00",
+      "wall_s": 15.91809008398559,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"mtp\",\"backend\":\"cpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":true,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.48713396,
+        "time_to_first_token_in_second": 3.9087195835,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 268.2078109593987,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 11.015091134131428
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "07-mtp-cpu-p1024-k8192-r1.stdout.log",
+          "sha256": "83d2543efc866bf66ce7faa17e0f7c7d1f188a1c560f2130b369720306364d6c"
+        },
+        {
+          "file": "07-mtp-cpu-p1024-k8192-r1.stderr.log",
+          "sha256": "f7f8f8c159c634b4f0c7efe8ead5308990c9237bffbf83514d1ad6048fe84356"
+        }
+      ]
+    },
+    {
+      "case_index": 7,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:08:06.143510+00:00",
+      "wall_s": 15.65842737496132,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"mtp\",\"backend\":\"cpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":true,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.498604249,
+        "time_to_first_token_in_second": 3.92157188525,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 267.1765604692665,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 11.248550472460131
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "07-mtp-cpu-p1024-k8192-r2.stdout.log",
+          "sha256": "d4843a92ddb2f74f2b1f44503fb7444bcc09bbf66f25157429c1eb2b3e63eef8"
+        },
+        {
+          "file": "07-mtp-cpu-p1024-k8192-r2.stderr.log",
+          "sha256": "7ad44e6a10aafdcc9eb3325ec74a86f5727aac915d1ab05d2e5f20c0a154f5d5"
+        }
+      ]
+    },
+    {
+      "case_index": 7,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:08:21.804092+00:00",
+      "wall_s": 15.689718667010311,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"mtp\",\"backend\":\"cpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":true,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.485288584,
+        "time_to_first_token_in_second": 3.9445326365,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 265.5738315256561,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 11.2700115481299
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "07-mtp-cpu-p1024-k8192-r3.stdout.log",
+          "sha256": "c3db5a0c40168560abc4832351204eb5eb840cbef8c19746be73f60d595eb892"
+        },
+        {
+          "file": "07-mtp-cpu-p1024-k8192-r3.stderr.log",
+          "sha256": "44314c046d99ad5b60549300f65b5bc7393262957e4d6dd95eebd7d1a38888f9"
+        }
+      ]
+    },
+    {
+      "case_index": 8,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:08:37.495061+00:00",
+      "wall_s": 4.642767374985851,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"mtp\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":true,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 1.2058150850000002,
+        "time_to_first_token_in_second": 0.96572476625,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1086.0083141020953,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 43.81693858294293
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "08-mtp-gpu-p1024-k8192-r0.stdout.log",
+          "sha256": "8a95630632738173d368ca15271a8db9ba95e98cace191c3ced0edc172304b23"
+        },
+        {
+          "file": "08-mtp-gpu-p1024-k8192-r0.stderr.log",
+          "sha256": "194cce1bc0ecda57aef57ce759cc9529d1f1335230b523e9b77de8e718cb4e9b"
+        }
+      ]
+    },
+    {
+      "case_index": 8,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:08:42.139066+00:00",
+      "wall_s": 4.113398124987725,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"mtp\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":true,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.7863670420000001,
+        "time_to_first_token_in_second": 0.9247159887499999,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1132.9747516189354,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 47.84548450893049
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "08-mtp-gpu-p1024-k8192-r1.stdout.log",
+          "sha256": "16af3aa07ee0c69bf1531f0ceccc82a129bedf4356d64993f453bf6760f12e81"
+        },
+        {
+          "file": "08-mtp-gpu-p1024-k8192-r1.stderr.log",
+          "sha256": "cd6558f160958b4cd7af6a0bbc31858ce096b0fecd99ed6c7fbd2f5501507590"
+        }
+      ]
+    },
+    {
+      "case_index": 8,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:08:46.253267+00:00",
+      "wall_s": 4.093811207974795,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"mtp\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":true,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.8015036249999999,
+        "time_to_first_token_in_second": 0.923224647,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1134.8458820056385,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 47.84808010875695
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "08-mtp-gpu-p1024-k8192-r2.stdout.log",
+          "sha256": "2caa2e2fb171ef2ff9125d41e0fecdf1a7e6939be06efa622d7fb67f20a3ee83"
+        },
+        {
+          "file": "08-mtp-gpu-p1024-k8192-r2.stderr.log",
+          "sha256": "30d09ffddf918bd1d342aedfd435e2690bbd47ec28cea29520ad541c33b5839c"
+        }
+      ]
+    },
+    {
+      "case_index": 8,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:08:50.348095+00:00",
+      "wall_s": 4.12596954201581,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"mtp\",\"backend\":\"gpu\",\"prefill\":1024,\"decode\":128,\"capacity\":8192,\"mtp\":true,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.799335458,
+        "time_to_first_token_in_second": 0.92416301775,
+        "last_prefill_token_count": 1024,
+        "last_prefill_tokens_per_second": 1133.6671837052559,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 47.84761358649749
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "08-mtp-gpu-p1024-k8192-r3.stdout.log",
+          "sha256": "35f7100b53349328d05f070319855b2947abdf2cf049b4e4588755cdfc34cf1b"
+        },
+        {
+          "file": "08-mtp-gpu-p1024-k8192-r3.stderr.log",
+          "sha256": "3f6e54b05721d96ea5aad5d856584f6bea2ca34b25d80653967dc7916e5bca07"
+        }
+      ]
+    },
+    {
+      "case_index": 9,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:08:54.475271+00:00",
+      "wall_s": 2.5527038750005886,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":100,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.441202874,
+        "time_to_first_token_in_second": 0.6471400577499999,
+        "last_prefill_token_count": 100,
+        "last_prefill_tokens_per_second": 167.2873260665994,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 20.256798716397057
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "09-prefill_sweep-cpu-p100-k8192-r0.stdout.log",
+          "sha256": "24969ef2f120fe990518b5d3f4e7b79e74e88d65b8ff62bcb82f2ffbafe9b63d"
+        },
+        {
+          "file": "09-prefill_sweep-cpu-p100-k8192-r0.stderr.log",
+          "sha256": "0483fd9764b3f17d3cef16eeddd1b22053d335f96a2b33641a7ffae8ed37aee9"
+        }
+      ]
+    },
+    {
+      "case_index": 9,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:08:57.030181+00:00",
+      "wall_s": 2.607239832985215,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":100,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.445819874,
+        "time_to_first_token_in_second": 0.64749945425,
+        "last_prefill_token_count": 100,
+        "last_prefill_tokens_per_second": 167.59802284612448,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 19.671987546063043
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "09-prefill_sweep-cpu-p100-k8192-r1.stdout.log",
+          "sha256": "7b6ff4412e5f270191605ba5729fda44a9c8943797635aefb300d8b2fb9eb9dc"
+        },
+        {
+          "file": "09-prefill_sweep-cpu-p100-k8192-r1.stderr.log",
+          "sha256": "338478fb1e7efc61d38ad3bdb8ce24eea49533e91bc4096601d9461c17ad8e6a"
+        }
+      ]
+    },
+    {
+      "case_index": 9,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:08:59.638352+00:00",
+      "wall_s": 2.518551709013991,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":100,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.446890957,
+        "time_to_first_token_in_second": 0.65262545725,
+        "last_prefill_token_count": 100,
+        "last_prefill_tokens_per_second": 165.06340798574655,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 21.368587342697115
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "09-prefill_sweep-cpu-p100-k8192-r2.stdout.log",
+          "sha256": "948cffbcb83d8ca49c38e170f30a7b48a45790a34c9745b1289aeea8a8890a65"
+        },
+        {
+          "file": "09-prefill_sweep-cpu-p100-k8192-r2.stderr.log",
+          "sha256": "9f79809ec216adfc4bc97b4010ae6e1daecd1e1aaf6cf52e20ef370aede6448e"
+        }
+      ]
+    },
+    {
+      "case_index": 9,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:02.159182+00:00",
+      "wall_s": 2.4731153750326484,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":100,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.474730916,
+        "time_to_first_token_in_second": 0.6523542997499999,
+        "last_prefill_token_count": 100,
+        "last_prefill_tokens_per_second": 164.96316981956844,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 21.664537166782914
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "09-prefill_sweep-cpu-p100-k8192-r3.stdout.log",
+          "sha256": "3b20cd56d8bc2d133353022272f418f51af64873ea9107d690e6ded309869b95"
+        },
+        {
+          "file": "09-prefill_sweep-cpu-p100-k8192-r3.stderr.log",
+          "sha256": "f19d193d84ad942169d23260a7aafadd4c7a852ffcbc7b56e36a0a8c6611b560"
+        }
+      ]
+    },
+    {
+      "case_index": 10,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:09:04.633243+00:00",
+      "wall_s": 2.8995444999891333,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":250,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.449098376,
+        "time_to_first_token_in_second": 1.116624845,
+        "last_prefill_token_count": 250,
+        "last_prefill_tokens_per_second": 233.29954378274212,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.201946880118662
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "10-prefill_sweep-cpu-p250-k8192-r0.stdout.log",
+          "sha256": "ec0864c05e8704019b89bfa141196ee8235bc86f4311c3cbaebf4158d4b3eadd"
+        },
+        {
+          "file": "10-prefill_sweep-cpu-p250-k8192-r0.stderr.log",
+          "sha256": "be87db336cda820b3764a67c5cc699b0986a477cce28782ac03773c0a75bebf6"
+        }
+      ]
+    },
+    {
+      "case_index": 10,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:07.533776+00:00",
+      "wall_s": 2.9235639999969862,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":250,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.46312029199999993,
+        "time_to_first_token_in_second": 1.1210600524999998,
+        "last_prefill_token_count": 250,
+        "last_prefill_tokens_per_second": 232.20345340387837,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.51338953062309
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "10-prefill_sweep-cpu-p250-k8192-r1.stdout.log",
+          "sha256": "cf61e2e790c9c1f5c7a2b6d9253137fb6c3cdaa5ef8598d7f55d22cfd0a1ecac"
+        },
+        {
+          "file": "10-prefill_sweep-cpu-p250-k8192-r1.stderr.log",
+          "sha256": "48ab7adfce4856bd00d5a6caa5834f0218385e4b0df0df0c4f758fe9de90b0ea"
+        }
+      ]
+    },
+    {
+      "case_index": 10,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:10.458447+00:00",
+      "wall_s": 2.8542708329623565,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":250,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.455381501,
+        "time_to_first_token_in_second": 1.1067694435,
+        "last_prefill_token_count": 250,
+        "last_prefill_tokens_per_second": 235.39446037911674,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.360179233075634
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "10-prefill_sweep-cpu-p250-k8192-r2.stdout.log",
+          "sha256": "09597d94b2b36a8e572c3a0adc11b170fde26fe902bfae801529efb35441887e"
+        },
+        {
+          "file": "10-prefill_sweep-cpu-p250-k8192-r2.stderr.log",
+          "sha256": "b661b49a47b934d59920066e2bc98ef33ac413a3ca9fe803f6d4a340f3bcd6f0"
+        }
+      ]
+    },
+    {
+      "case_index": 10,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:13.313668+00:00",
+      "wall_s": 2.8568380419746973,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":250,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.450646376,
+        "time_to_first_token_in_second": 1.10369762075,
+        "last_prefill_token_count": 250,
+        "last_prefill_tokens_per_second": 236.02719969141086,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.473090454621687
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "10-prefill_sweep-cpu-p250-k8192-r3.stdout.log",
+          "sha256": "58cbfa3407f5dd35af72ac3ac078d4b825b23c9b2dc0bad4026c3f631045d23b"
+        },
+        {
+          "file": "10-prefill_sweep-cpu-p250-k8192-r3.stderr.log",
+          "sha256": "45be6f29bfe1648cee8f0478b0edab566a45c0b0243b316830a40682f0abdea5"
+        }
+      ]
+    },
+    {
+      "case_index": 11,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:09:16.171463+00:00",
+      "wall_s": 3.7964038330246694,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":500,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.45991354100000004,
+        "time_to_first_token_in_second": 2.02614187275,
+        "last_prefill_token_count": 500,
+        "last_prefill_tokens_per_second": 252.27443796633176,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.638093687331917
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "11-prefill_sweep-cpu-p500-k8192-r0.stdout.log",
+          "sha256": "4d80efeea21292330d04416fc4c736cd6f6fc99c0ffe6743fb63036bb16b2ee4"
+        },
+        {
+          "file": "11-prefill_sweep-cpu-p500-k8192-r0.stderr.log",
+          "sha256": "e6d8cd02dd0a7a0ce71b39473eb575c28c024af95e64de02bd07af888c21c233"
+        }
+      ]
+    },
+    {
+      "case_index": 11,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:19.969077+00:00",
+      "wall_s": 3.8109182079788297,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":500,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.46864641800000006,
+        "time_to_first_token_in_second": 2.029927699,
+        "last_prefill_token_count": 500,
+        "last_prefill_tokens_per_second": 251.97236089976053,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 21.93796748330465
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "11-prefill_sweep-cpu-p500-k8192-r1.stdout.log",
+          "sha256": "10c2dd41f6ebb898667713aa07bb63d40ed4f6ee706b91ce0c12e9265db077f3"
+        },
+        {
+          "file": "11-prefill_sweep-cpu-p500-k8192-r1.stderr.log",
+          "sha256": "947727af3f358a4161b06434af3cdd57ec9e80ed790deeaae82ab6a14ffc87f4"
+        }
+      ]
+    },
+    {
+      "case_index": 11,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:23.782022+00:00",
+      "wall_s": 3.8018962079659104,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":500,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.455610001,
+        "time_to_first_token_in_second": 2.03542203175,
+        "last_prefill_token_count": 500,
+        "last_prefill_tokens_per_second": 251.1795127435848,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.314543470095355
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "11-prefill_sweep-cpu-p500-k8192-r2.stdout.log",
+          "sha256": "7b3c923d2fe83dfb7583ade7e21a8dcc342693342b285c57aba20cd8cb07c906"
+        },
+        {
+          "file": "11-prefill_sweep-cpu-p500-k8192-r2.stderr.log",
+          "sha256": "c340478055082591a439a4ad5882c58e2aeb60ac250e2ca1f6a20da360e00a87"
+        }
+      ]
+    },
+    {
+      "case_index": 11,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:27.584926+00:00",
+      "wall_s": 3.8357224999926984,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":500,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.454227291,
+        "time_to_first_token_in_second": 2.0587585975,
+        "last_prefill_token_count": 500,
+        "last_prefill_tokens_per_second": 248.1828362954989,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.668105028768572
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "11-prefill_sweep-cpu-p500-k8192-r3.stdout.log",
+          "sha256": "16b1867118aba15cc065bd66f8360e0030c0f85fb855bbe69849cc0f376045a0"
+        },
+        {
+          "file": "11-prefill_sweep-cpu-p500-k8192-r3.stderr.log",
+          "sha256": "930d574632b6cd376cf3360abaa6720a6acb82065259fe64e496f6fcafe97214"
+        }
+      ]
+    },
+    {
+      "case_index": 12,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:09:31.422853+00:00",
+      "wall_s": 5.616040166001767,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":1000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.44690137500000005,
+        "time_to_first_token_in_second": 3.868545331,
+        "last_prefill_token_count": 1000,
+        "last_prefill_tokens_per_second": 261.5249524107163,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.31225760477566
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "12-prefill_sweep-cpu-p1000-k8192-r0.stdout.log",
+          "sha256": "77e4e5bbb75df7a04dd86871e622a976ce660a5983b0df025d6e24c9fab4395e"
+        },
+        {
+          "file": "12-prefill_sweep-cpu-p1000-k8192-r0.stderr.log",
+          "sha256": "65322e86388695aebb8b05c099f6cf0ee5a364966caa93a0d170bd93ebbde601"
+        }
+      ]
+    },
+    {
+      "case_index": 12,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:37.039918+00:00",
+      "wall_s": 5.677260875003412,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":1000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.44914300100000004,
+        "time_to_first_token_in_second": 3.8768212535,
+        "last_prefill_token_count": 1000,
+        "last_prefill_tokens_per_second": 260.98751173764583,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.113964262305124
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "12-prefill_sweep-cpu-p1000-k8192-r1.stdout.log",
+          "sha256": "21c093c0fb83a3aa8a9bdee4a82b36a44fc4d3fa1f86ef41d216eeeeef32dcdb"
+        },
+        {
+          "file": "12-prefill_sweep-cpu-p1000-k8192-r1.stderr.log",
+          "sha256": "fa20ced5d688254792e667199682f7e0fa4fa73f1f04b3fcdee0a2fe555497df"
+        }
+      ]
+    },
+    {
+      "case_index": 12,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:42.718332+00:00",
+      "wall_s": 5.666686833952554,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":1000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.45259729200000004,
+        "time_to_first_token_in_second": 3.88665616225,
+        "last_prefill_token_count": 1000,
+        "last_prefill_tokens_per_second": 260.3247931660685,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 22.0745900923492
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "12-prefill_sweep-cpu-p1000-k8192-r2.stdout.log",
+          "sha256": "a4453a93e40668b11db7b23cfef7fb24be00daa6eb0cb11cdf3c59f19a53224c"
+        },
+        {
+          "file": "12-prefill_sweep-cpu-p1000-k8192-r2.stderr.log",
+          "sha256": "c7faf25e036036d39d30e08d690dce6b7b1d5f2dbb4b401981564b478d349173"
+        }
+      ]
+    },
+    {
+      "case_index": 12,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:09:48.386047+00:00",
+      "wall_s": 5.69781745801447,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":1000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.441718458,
+        "time_to_first_token_in_second": 3.8804041995,
+        "last_prefill_token_count": 1000,
+        "last_prefill_tokens_per_second": 260.813461951103,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 21.623359642984063
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "12-prefill_sweep-cpu-p1000-k8192-r3.stdout.log",
+          "sha256": "b9c0ac1f301096328352e369cb4ad0e4dec7a9216aeaf3314ca8b7e47a1fa4ea"
+        },
+        {
+          "file": "12-prefill_sweep-cpu-p1000-k8192-r3.stderr.log",
+          "sha256": "07a6148be30598e3de886afca3f26d2f1890d728b060d701ad55e2cb13443535"
+        }
+      ]
+    },
+    {
+      "case_index": 13,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:09:54.085950+00:00",
+      "wall_s": 9.673737959004939,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":2000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.44764774999999996,
+        "time_to_first_token_in_second": 7.7867880345,
+        "last_prefill_token_count": 2000,
+        "last_prefill_tokens_per_second": 258.4265662129663,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 20.988288776228185
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "13-prefill_sweep-cpu-p2000-k8192-r0.stdout.log",
+          "sha256": "a8ac5203851d3b61de40f5df25638e108b98720f591396ff57e183b0116d42bf"
+        },
+        {
+          "file": "13-prefill_sweep-cpu-p2000-k8192-r0.stderr.log",
+          "sha256": "dc36f79e0b33e4b083768e8ff49b56d924d6f3c8920905a673fbb8ebabc51165"
+        }
+      ]
+    },
+    {
+      "case_index": 13,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:10:03.762793+00:00",
+      "wall_s": 9.6322882079985,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":2000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.434073084,
+        "time_to_first_token_in_second": 7.7812618339999995,
+        "last_prefill_token_count": 2000,
+        "last_prefill_tokens_per_second": 258.62228233367864,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 20.843700903313888
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "13-prefill_sweep-cpu-p2000-k8192-r1.stdout.log",
+          "sha256": "f395d62362567eecafd1eb0bc1d6af090680d767beb806685c72e4b192c4f1b7"
+        },
+        {
+          "file": "13-prefill_sweep-cpu-p2000-k8192-r1.stderr.log",
+          "sha256": "4b948aaff15a9266d3041ea930e73fb835d717d07473cb1485a8ceb9949230b8"
+        }
+      ]
+    },
+    {
+      "case_index": 13,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:10:13.396106+00:00",
+      "wall_s": 9.662549000000581,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":2000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.456213917,
+        "time_to_first_token_in_second": 7.7409414734999995,
+        "last_prefill_token_count": 2000,
+        "last_prefill_tokens_per_second": 260.00341753952085,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 20.519180143332886
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "13-prefill_sweep-cpu-p2000-k8192-r2.stdout.log",
+          "sha256": "e38c32cc0222023b076c02a7ab40a58799f5680ab452e64e4420c574e9b65f21"
+        },
+        {
+          "file": "13-prefill_sweep-cpu-p2000-k8192-r2.stderr.log",
+          "sha256": "43c3bc36e181ae025b34ee09ccbcf213325d800a64efb6e62014a5e18e8895f0"
+        }
+      ]
+    },
+    {
+      "case_index": 13,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:10:23.060887+00:00",
+      "wall_s": 9.736578959040344,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":2000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.459150666,
+        "time_to_first_token_in_second": 7.7244216025,
+        "last_prefill_token_count": 2000,
+        "last_prefill_tokens_per_second": 260.69587235329436,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 18.994472682646506
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "13-prefill_sweep-cpu-p2000-k8192-r3.stdout.log",
+          "sha256": "4e64bab70ddd5a7d06922e44d43b573400d8f8abfe3615e9ed0abe3b35d8bac8"
+        },
+        {
+          "file": "13-prefill_sweep-cpu-p2000-k8192-r3.stderr.log",
+          "sha256": "32445f840a1ea4c91e4aa052f509ccb27fa2f4168973e09ab9146e5d3a9c643f"
+        }
+      ]
+    },
+    {
+      "case_index": 14,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:10:32.799354+00:00",
+      "wall_s": 13.506669583031908,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":3000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.45105224899999996,
+        "time_to_first_token_in_second": 11.4032351675,
+        "last_prefill_token_count": 3000,
+        "last_prefill_tokens_per_second": 264.32893957490603,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 18.608083834962887
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "14-prefill_sweep-cpu-p3000-k8192-r0.stdout.log",
+          "sha256": "5d71b19d5d8676413f9f3ba58c33882949699763a77014ed440ec665be40af5e"
+        },
+        {
+          "file": "14-prefill_sweep-cpu-p3000-k8192-r0.stderr.log",
+          "sha256": "9a4160ad313db80df0629b20058c784917f8572cf417174930a2196805bb15ce"
+        }
+      ]
+    },
+    {
+      "case_index": 14,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:10:46.307483+00:00",
+      "wall_s": 13.273354250006378,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":3000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.448038749,
+        "time_to_first_token_in_second": 11.318263522,
+        "last_prefill_token_count": 3000,
+        "last_prefill_tokens_per_second": 266.20030148515144,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 20.595510046612407
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "14-prefill_sweep-cpu-p3000-k8192-r1.stdout.log",
+          "sha256": "3028fb3f63f73f328cb952f26adebafcc7a1d2acf8c6b86d2020d5a7081c8671"
+        },
+        {
+          "file": "14-prefill_sweep-cpu-p3000-k8192-r1.stderr.log",
+          "sha256": "87272b007a96a65b2e8a27bd8d52ecf2700267e2aaa483d8a429d1d1cb3991f7"
+        }
+      ]
+    },
+    {
+      "case_index": 14,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:10:59.582224+00:00",
+      "wall_s": 13.305185083008837,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":3000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.465296458,
+        "time_to_first_token_in_second": 11.38522449375,
+        "last_prefill_token_count": 3000,
+        "last_prefill_tokens_per_second": 264.63562547829366,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 20.457291319943547
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "14-prefill_sweep-cpu-p3000-k8192-r2.stdout.log",
+          "sha256": "f0bdfa13a56348b316687c43eeb9294e5b95fc84e56a7efdeee6eee09f230ccb"
+        },
+        {
+          "file": "14-prefill_sweep-cpu-p3000-k8192-r2.stderr.log",
+          "sha256": "5d5c673a7403fa15760db70ee847737fa9f2cee1cf806292fe9f13fb39ad5afe"
+        }
+      ]
+    },
+    {
+      "case_index": 14,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:11:12.889453+00:00",
+      "wall_s": 13.224543999996968,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":3000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.446650123,
+        "time_to_first_token_in_second": 11.234397605,
+        "last_prefill_token_count": 3000,
+        "last_prefill_tokens_per_second": 268.27494916095145,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 19.290022197197327
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "14-prefill_sweep-cpu-p3000-k8192-r3.stdout.log",
+          "sha256": "ab2501061f577e272016a03f81a6a8e8f086e64e90764971eab1449ad6189658"
+        },
+        {
+          "file": "14-prefill_sweep-cpu-p3000-k8192-r3.stderr.log",
+          "sha256": "560dff0a1f15c9b35c5d8a1725a7644178781f6c071eae83034173ece2a66cdb"
+        }
+      ]
+    },
+    {
+      "case_index": 15,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:11:26.116390+00:00",
+      "wall_s": 16.78048612497514,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":4000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.452296751,
+        "time_to_first_token_in_second": 14.78406468025,
+        "last_prefill_token_count": 4000,
+        "last_prefill_tokens_per_second": 271.5104730757356,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 19.35434996551575
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "15-prefill_sweep-cpu-p4000-k8192-r0.stdout.log",
+          "sha256": "24204dd02bb2a95a9e892901e19e7b1224227f4f59b430f4c899d6eafb3ca13d"
+        },
+        {
+          "file": "15-prefill_sweep-cpu-p4000-k8192-r0.stderr.log",
+          "sha256": "020f9cced648e311d5e55d37e078045e43c5aa4c29cedf4fd409b206d9928ed2"
+        }
+      ]
+    },
+    {
+      "case_index": 15,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:11:42.898010+00:00",
+      "wall_s": 16.801614416006487,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":4000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.439301084,
+        "time_to_first_token_in_second": 14.85381645225,
+        "last_prefill_token_count": 4000,
+        "last_prefill_tokens_per_second": 270.1745492347251,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 20.58760674956375
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "15-prefill_sweep-cpu-p4000-k8192-r1.stdout.log",
+          "sha256": "60df5ae19218be770126b36ab0b02dacc32d4b1fd9773e69350d97069b00a80e"
+        },
+        {
+          "file": "15-prefill_sweep-cpu-p4000-k8192-r1.stderr.log",
+          "sha256": "9dda1221858ef002ddc9cd1fd9ce803820678bf6fdc0dcf2d95c1db8cf9697b7"
+        }
+      ]
+    },
+    {
+      "case_index": 15,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:11:59.701403+00:00",
+      "wall_s": 16.62096458300948,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":4000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.471287166,
+        "time_to_first_token_in_second": 14.721046091,
+        "last_prefill_token_count": 4000,
+        "last_prefill_tokens_per_second": 272.60716990762376,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 20.86910813401878
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "15-prefill_sweep-cpu-p4000-k8192-r2.stdout.log",
+          "sha256": "299f94b25c7a08738f9e16eb74e4f1057bf82a4f803ebd1201074563ce346c92"
+        },
+        {
+          "file": "15-prefill_sweep-cpu-p4000-k8192-r2.stderr.log",
+          "sha256": "1868be4a955fb27631176cdfe589438427dcc8fe931154b32e6e95f0fe6f795f"
+        }
+      ]
+    },
+    {
+      "case_index": 15,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:12:16.323461+00:00",
+      "wall_s": 16.70461020898074,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"prefill_sweep\",\"backend\":\"cpu\",\"prefill\":4000,\"decode\":32,\"capacity\":8192,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.44579862600000003,
+        "time_to_first_token_in_second": 14.6325814515,
+        "last_prefill_token_count": 4000,
+        "last_prefill_tokens_per_second": 274.35805545628773,
+        "last_decode_token_count": 32,
+        "last_decode_tokens_per_second": 18.834743928519057
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "15-prefill_sweep-cpu-p4000-k8192-r3.stdout.log",
+          "sha256": "dfe2e97c0fdc7b00beeb352ad450e7a7ee4db417a406341a96fd8c906257280b"
+        },
+        {
+          "file": "15-prefill_sweep-cpu-p4000-k8192-r3.stderr.log",
+          "sha256": "dfbd5a58dfc6be8204493320671bd82a8c796cfbdac0de0ba657a70ff83eed05"
+        }
+      ]
+    },
+    {
+      "case_index": 16,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:12:33.029901+00:00",
+      "wall_s": 4.719540166959632,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":1024,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.441083583,
+        "time_to_first_token_in_second": 0.6865181039999999,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 389.26492962382025,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 34.6400577136486
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "16-capacity_sweep-cpu-p256-k1024-r0.stdout.log",
+          "sha256": "11a492e962cb8363094b274957bc4d3111a8571c8e494ad001ebf8e616aa7254"
+        },
+        {
+          "file": "16-capacity_sweep-cpu-p256-k1024-r0.stderr.log",
+          "sha256": "9ce2cc133a80592190e7fb9d82c583cd5ad8db9ddbb2af7833631451c778019e"
+        }
+      ]
+    },
+    {
+      "case_index": 16,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:12:37.751396+00:00",
+      "wall_s": 4.647916959016584,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":1024,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.44178912600000003,
+        "time_to_first_token_in_second": 0.68111276675,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 392.4062492994456,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 34.80967920888027
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "16-capacity_sweep-cpu-p256-k1024-r1.stdout.log",
+          "sha256": "8dc2ea3602bb4da164802a047005b5b481cf950a5bbb99a61436c27b60fc4d97"
+        },
+        {
+          "file": "16-capacity_sweep-cpu-p256-k1024-r1.stderr.log",
+          "sha256": "3d8b1f60963bb141a2a336cab7322dc5497bd9e37dd08ab9d62e3a72f23af6e5"
+        }
+      ]
+    },
+    {
+      "case_index": 16,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:12:42.401313+00:00",
+      "wall_s": 4.680445667007007,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":1024,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.426970542,
+        "time_to_first_token_in_second": 0.68598385725,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 389.61043922089095,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 34.58140576048547
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "16-capacity_sweep-cpu-p256-k1024-r2.stdout.log",
+          "sha256": "cf451e17d32a0de5516754945d784b013c6bbcc1cb761c8f2a93835ceee1d95c"
+        },
+        {
+          "file": "16-capacity_sweep-cpu-p256-k1024-r2.stderr.log",
+          "sha256": "e096fdde563cd06ceee99258af95b93bef51f1d655d804933e2061f8e442e001"
+        }
+      ]
+    },
+    {
+      "case_index": 16,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:12:47.083714+00:00",
+      "wall_s": 4.688940958993044,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":1024,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.42874125,
+        "time_to_first_token_in_second": 0.689059147,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 387.75922878324633,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 34.655261599136836
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "16-capacity_sweep-cpu-p256-k1024-r3.stdout.log",
+          "sha256": "a5e371b82290186d6fb59889106e50678af53cb2d8041775814a9c4f64647402"
+        },
+        {
+          "file": "16-capacity_sweep-cpu-p256-k1024-r3.stderr.log",
+          "sha256": "dc8c8af0ee6e111ed550de455b655fc8134e9224d3c16c6ee7f398695371e0c7"
+        }
+      ]
+    },
+    {
+      "case_index": 17,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:12:51.774920+00:00",
+      "wall_s": 4.92167608399177,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":2048,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.43158295900000004,
+        "time_to_first_token_in_second": 0.73109137,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 365.3987158992755,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 32.801050863667044
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "17-capacity_sweep-cpu-p256-k2048-r0.stdout.log",
+          "sha256": "da0b54e6554ef752713dcedbf856592afd06e67afacd2b6777f0f23ab94af836"
+        },
+        {
+          "file": "17-capacity_sweep-cpu-p256-k2048-r0.stderr.log",
+          "sha256": "5ae85131077dd6e71510699749af9e44957fbca85687edbe18134cd4d150cdb7"
+        }
+      ]
+    },
+    {
+      "case_index": 17,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:12:56.697899+00:00",
+      "wall_s": 4.923239834024571,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":2048,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.43662758199999996,
+        "time_to_first_token_in_second": 0.736422228,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 362.6214485274966,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 32.83872393061727
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "17-capacity_sweep-cpu-p256-k2048-r1.stdout.log",
+          "sha256": "5552e1f4225bbe0791177bba4897ab74a7487f5c24809fe9346b95715d616501"
+        },
+        {
+          "file": "17-capacity_sweep-cpu-p256-k2048-r1.stderr.log",
+          "sha256": "7f4694e908c9c47f021b198e3e65d97d6c58810278c9587500d89e9eaca69a5a"
+        }
+      ]
+    },
+    {
+      "case_index": 17,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:13:01.623118+00:00",
+      "wall_s": 4.930586957954802,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":2048,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.429827625,
+        "time_to_first_token_in_second": 0.73325414475,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 364.26773119888986,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 32.81447754814629
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "17-capacity_sweep-cpu-p256-k2048-r2.stdout.log",
+          "sha256": "00b93479b15471cde810a45d82b7445176d2f8d0eb6f716917a73996b1c5bca5"
+        },
+        {
+          "file": "17-capacity_sweep-cpu-p256-k2048-r2.stderr.log",
+          "sha256": "fe8cb98d17ae090a94d0aff0129e216be69f59f07120d27e8ade5936aa68bda0"
+        }
+      ]
+    },
+    {
+      "case_index": 17,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:13:06.561348+00:00",
+      "wall_s": 4.94587037502788,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":2048,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.44164608299999997,
+        "time_to_first_token_in_second": 0.725800292,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 368.1554630552491,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 32.849487753300345
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "17-capacity_sweep-cpu-p256-k2048-r3.stdout.log",
+          "sha256": "90fc70b6e50dba87e71b33cb57e15e9ffeec226ff4d2b4b5f13b0bfd266d07b3"
+        },
+        {
+          "file": "17-capacity_sweep-cpu-p256-k2048-r3.stderr.log",
+          "sha256": "07f238294a16a3dfeec6e2582fbd4c7f85c334f66d99fac98e20719d8bb2f968"
+        }
+      ]
+    },
+    {
+      "case_index": 18,
+      "repeat": 0,
+      "warmup": true,
+      "started_at_utc": "2026-09-13T03:13:11.515726+00:00",
+      "wall_s": 5.305666083993856,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":4096,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.44468354,
+        "time_to_first_token_in_second": 0.82624913375,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 322.5990222487372,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 30.586332222647233
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "18-capacity_sweep-cpu-p256-k4096-r0.stdout.log",
+          "sha256": "619b641fee2d58e5eba461d3ce53bb3a2ae0350b7314ce69e22830e7491bd4ae"
+        },
+        {
+          "file": "18-capacity_sweep-cpu-p256-k4096-r0.stderr.log",
+          "sha256": "650e36e89765822c7981375b31072c306158a098d3c073efea4bce9b595a62a5"
+        }
+      ]
+    },
+    {
+      "case_index": 18,
+      "repeat": 1,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:13:16.827781+00:00",
+      "wall_s": 5.342474334000144,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":4096,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.441485916,
+        "time_to_first_token_in_second": 0.83369359425,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 319.6116881789616,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 30.56081969455104
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "18-capacity_sweep-cpu-p256-k4096-r1.stdout.log",
+          "sha256": "50899fb9bc6d33255542049351f457d70b97efe42605c2a594a05c0308c6ecfd"
+        },
+        {
+          "file": "18-capacity_sweep-cpu-p256-k4096-r1.stderr.log",
+          "sha256": "2398a585e10e6488545722cd30d96c17045b963b3a4202468b20d61217b49f46"
+        }
+      ]
+    },
+    {
+      "case_index": 18,
+      "repeat": 2,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:13:22.175467+00:00",
+      "wall_s": 5.327054416004103,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":4096,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.45660475000000006,
+        "time_to_first_token_in_second": 0.83512947125,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 319.01873505811574,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 30.61028020796858
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "18-capacity_sweep-cpu-p256-k4096-r2.stdout.log",
+          "sha256": "d0f56e96ac76301778ee126666f3d46f9a6baa594a82f7a5823465396ce07064"
+        },
+        {
+          "file": "18-capacity_sweep-cpu-p256-k4096-r2.stderr.log",
+          "sha256": "90f08d2a3591787d909af00c09e58d9732031b2815ed933d3ce3975785e15d46"
+        }
+      ]
+    },
+    {
+      "case_index": 18,
+      "repeat": 3,
+      "warmup": false,
+      "started_at_utc": "2026-09-13T03:13:27.507275+00:00",
+      "wall_s": 5.315561166964471,
+      "argv": [
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+        "/Users/dpthinker/workspace/litert-lm-book/experiments/bench_release.py",
+        "--model",
+        "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade/model.litertlm",
+        "--worker",
+        "{\"group\":\"capacity_sweep\",\"backend\":\"cpu\",\"prefill\":256,\"decode\":128,\"capacity\":4096,\"mtp\":false,\"ring\":false}"
+      ],
+      "returncode": 0,
+      "metrics": {
+        "init_time_in_second": 0.43787808400000006,
+        "time_to_first_token_in_second": 0.83614062325,
+        "last_prefill_token_count": 256,
+        "last_prefill_tokens_per_second": 318.644714410785,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 30.545544928680663
+      },
+      "errors": [],
+      "logs": [
+        {
+          "file": "18-capacity_sweep-cpu-p256-k4096-r3.stdout.log",
+          "sha256": "74780c00ff237cff82f335a46f823f0cc27d4c3b8fa933f49a90c14af6fbbbd5"
+        },
+        {
+          "file": "18-capacity_sweep-cpu-p256-k4096-r3.stderr.log",
+          "sha256": "aa08f36e471e1b1b319f167c1659a49ddfeacc2e5251d3dedcbff661d2bd6b6f"
+        }
+      ]
+    }
+  ],
+  "finished_at_utc": "2026-09-13T03:13:32.827299+00:00",
+  "power_end": {
+    "argv": [
+      "pmset",
+      "-g",
+      "batt"
+    ],
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=7340131)\t100%; charged; 0:00 remaining present: true\n",
+    "stderr": ""
+  },
+  "thermal_end": {
+    "argv": [
+      "pmset",
+      "-g",
+      "therm"
+    ],
+    "returncode": 0,
+    "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "stderr": ""
+  },
+  "execution_runner_commit": "7fe405e4909c9bf228d9d795ab1214e276f4c961",
+  "execution_runner_path": "experiments/bench_release.py",
+  "post_collection_notes": [
+    "The execution runner is preserved at execution_runner_commit. Later fixes to CSV failure handling and Python 3.9 hash compatibility were not used during collection.",
+    "GPU ringbuffer requests were ignored by GpuConfig, as recorded in stderr. The ringbuffer case is an unsupported control, not an on/off performance comparison.",
+    "GPU main-model execution selected WebGPU/Metal; the unavailable WebGPU sampler fell back to the statically linked C API.",
+    "No adb devices were attached at collection time; Android historical measurements were not rerun."
+  ],
+  "os_verification_after_collection": {
+    "recorded_at_utc": "2026-09-13T03:19:31.500849+00:00",
+    "argv": [
+      "sw_vers"
+    ],
+    "returncode": 0,
+    "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5\nBuildVersion:\t\t25F71\n",
+    "stderr": ""
+  }
+}
