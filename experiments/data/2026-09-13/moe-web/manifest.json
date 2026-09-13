@@ -1,0 +1,21 @@
+{
+  "files": {
+    "assets.json": "e4f33c9aa077e50b3c30bdd163abf39acc9de26830733485ae35505002ed6873",
+    "collection-notes.json": "4f37d997d741e851a3a970ab4fa13695100e574e6b4fbff0e6f25c1457869f5f",
+    "control-download.json": "f5daa435a4cc00b7ef1dce4ef36f81cb23f53991857e4e3228c6ef1d86e14bf7",
+    "e4b-control/console.jsonl": "3b673e767600ceee6d080b67019ca8b4891d2f239c4b1473ee99c6d1a8a9345c",
+    "e4b-control/report.json": "83b64aa160d5becbdcc5fda32b513404bdacd01bcb7059929c9690259cf68f26",
+    "e4b-control/resource-guard.json": "b71f0ece8315767fe600a64014afcd7d92b8b9391f295238aff32e238c7d8795",
+    "e4b-control/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "e4b-control/stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "e4b-control/worker.json": "b4c61b7d90751ba75edb0b145ba78f7d178baa5b60dde2615dbc0396ce2728b6",
+    "gemma26b/console.jsonl": "0e6daff8718e99094c8834ec688faaa555c5367361a00f0642c33e426f1af744",
+    "gemma26b/report.json": "e7e5963200d3ff939710354dbe5c9fb20e3955a4026ff5639674942999a6afbe",
+    "gemma26b/resource-guard.json": "79f5dd43daa467545cb308447e58fde598a04b7ee1b1fb3bae8eee6347c4e992",
+    "gemma26b/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "gemma26b/stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "gemma26b/worker.json": "e63e0cf31b7c204c6d591b2847065658a94e20ebb9cd610e382edee2e8578153",
+    "worker-at-run.mjs": "0e0f2ed978c47c89514fca2e69f084270bef49970f5fc06cb00b0be02743b9e9"
+  },
+  "scope": "Frozen demo asset metadata and two guarded browser runs; model and runtime binaries are not committed."
+}

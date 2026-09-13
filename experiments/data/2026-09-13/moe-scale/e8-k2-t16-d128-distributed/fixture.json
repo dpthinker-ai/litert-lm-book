@@ -1,0 +1,42 @@
+{
+  "E": 8,
+  "K": 2,
+  "T": 16,
+  "D": 128,
+  "H": 256,
+  "routing": "distributed",
+  "seed": 20260914,
+  "selected_experts": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "routes_per_expert": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+  ],
+  "projection_weight_bytes": 3145728,
+  "selected_projection_weight_bytes": 3145728,
+  "projection_flops": 6291456,
+  "predicted_gpu_branch": "packed_groups",
+  "byte_counts_are_logical_sizes_not_measured_traffic": true,
+  "files": {
+    "cpu.tflite": "7ac7c871e61f6f54399460743b1d2b6e3599ae6f8a9c4b82315ed4fcb84ef909",
+    "expected.npy": "da960275efcc0fbc37596d7cf114cf94c464c4830132f86981c3272dffd488d5",
+    "input-0.bin": "3b61b88d9e75ba6e0eb942944ac220dd9fd5b2112b7dd15d91255be7ab50e5ac",
+    "input-1.bin": "8b638c68d36a45e81d93b060e489b0f2ca8259af3ceff785adcd0137bb18434f",
+    "input-2.bin": "5cf730e2f691643c76aba34b0b70647dbeaac956a7c595e52ae20150a4544d07",
+    "webgpu.tflite": "77156d0d4fc1140c46e7cd5a551180ea2e28cafb23cadeebe6c6fccac7e8f9e7"
+  }
+}

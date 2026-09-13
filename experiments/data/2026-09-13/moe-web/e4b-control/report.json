@@ -1,0 +1,114 @@
+{
+  "started_at_utc": "2026-09-13T10:16:27.928582+00:00",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "machine": {
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "model": {
+    "path": "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-web/e4b-gpu.litertlm",
+    "sha256": "4912bb5a9c30993c51a7711f763212077458529312175df0573a78323a2bb7ff",
+    "bytes": 2969059328
+  },
+  "assets_manifest_sha256": "e4f33c9aa077e50b3c30bdd163abf39acc9de26830733485ae35505002ed6873",
+  "demo_revision": "e735b7f3487c308580e9d374af50108298c450dc",
+  "command": [
+    "/Users/dpthinker/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/moe_web_worker.mjs",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-web/site",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-web/e4b-gpu.litertlm",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/data/2026-09-13/moe-web/e4b-control"
+  ],
+  "script_sha256": "a8bd77648e0030033c6e0978bcb01cb9002b4c57d65b7a5bdad4e5c8c7ea1732",
+  "worker_sha256": "0e0f2ed978c47c89514fca2e69f084270bef49970f5fc06cb00b0be02743b9e9",
+  "helper_sha256": "84f9699325bff7be56f22d6b81cbd9aed61c03287bebd8710e281e903966bdae",
+  "timeout_seconds": 180,
+  "browser_tree_rss_guard_bytes": 21474836480,
+  "limitations": [
+    "Pinned demo binary, not a build or test of LiteRT-LM v0.17.0 C++ sources.",
+    "Uses original demo local-file entry with a 128-token context and a short prompt.",
+    "Only localhost requests are permitted; no remote inference or prompt upload.",
+    "Process-tree RSS and global pressure are protective signals, not model GPU memory measurements.",
+    "Other applications are not isolated; one run is not a performance or quality benchmark."
+  ],
+  "status": "GENERATION_COMPLETED",
+  "stop_reason": null,
+  "returncode": 0,
+  "worker_result": {
+    "phase": "completed",
+    "generation_completed": true,
+    "browser_version": "153.0.8010.36",
+    "adapter": {
+      "info": {
+        "vendor": "apple",
+        "architecture": "metal-3",
+        "device": "",
+        "description": ""
+      },
+      "features": [
+        "depth32float-stencil8",
+        "rg11b10ufloat-renderable",
+        "texture-formats-tier1",
+        "bgra8unorm-storage",
+        "texture-compression-bc",
+        "dual-source-blending",
+        "core-features-and-limits",
+        "float32-filterable",
+        "indirect-first-instance",
+        "texture-compression-astc-sliced-3d",
+        "float32-blendable",
+        "subgroup-size-control",
+        "texture-compression-astc",
+        "texture-compression-etc2",
+        "depth-clip-control",
+        "texture-compression-bc-sliced-3d",
+        "clip-distances",
+        "shader-f16",
+        "texture-formats-tier2",
+        "timestamp-query",
+        "primitive-index",
+        "texture-component-swizzle",
+        "subgroups"
+      ],
+      "limits": {
+        "maxBufferSize": 4294967292,
+        "maxStorageBufferBindingSize": 4294967292,
+        "maxStorageBuffersPerShaderStage": 10
+      }
+    },
+    "options": {
+      "baseOptions": {
+        "localFile": true
+      },
+      "maxTokens": 128,
+      "numResponses": 1,
+      "topK": 1,
+      "temperature": 0,
+      "randomSeed": 42,
+      "forceF32": false
+    },
+    "loading_progress": {
+      "progress": 1,
+      "downloadedBytes": 2969059328,
+      "totalBytes": 2969059328
+    },
+    "engine_created": true,
+    "partial_output": "OK<channel|>",
+    "callback_count": 2,
+    "done_seen": true,
+    "prompt": "<|turn>user\nReply with only the word OK.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>",
+    "input_tokens": 19,
+    "response": "OK<channel|>",
+    "response_cancelled": false,
+    "engine_closed": true
+  },
+  "console_errors": [],
+  "finished_at_utc": "2026-09-13T10:16:48.992019+00:00",
+  "files": {
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "console.jsonl": "3b673e767600ceee6d080b67019ca8b4891d2f239c4b1473ee99c6d1a8a9345c",
+    "worker.json": "b4c61b7d90751ba75edb0b145ba78f7d178baa5b60dde2615dbc0396ce2728b6",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "resource-guard.json": "b71f0ece8315767fe600a64014afcd7d92b8b9391f295238aff32e238c7d8795"
+  }
+}

@@ -1,0 +1,711 @@
+{
+  "aggregation": "Median of three process medians; each process has 3 warmups and 12 measurements",
+  "collector_at_run_sha256": "7d397486de0d9a0328779d73b965ef985357055e75e82fcd19112c582178d5f5",
+  "current_collector_change": "Hardware fields now read using sysctl; numerical and timing code unchanged.",
+  "rows": [
+    {
+      "fixture": "e4-k2-t1-d128-concentrated",
+      "E": 4,
+      "K": 2,
+      "T": 1,
+      "D": 128,
+      "H": 256,
+      "routing": "concentrated",
+      "projection_weight_bytes": 1572864,
+      "selected_projection_weight_bytes": 786432,
+      "predicted_gpu_branch": "batch_ids_fc",
+      "cpu": {
+        "median_of_process_medians_ms": 0.045771,
+        "process_medians_ms": [
+          0.045771,
+          0.041396,
+          0.0574795
+        ],
+        "range_ms": [
+          0.041396,
+          0.0574795
+        ],
+        "max_process_rss_range_bytes": [
+          61325312,
+          61554688
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.24633349999999998,
+        "process_medians_ms": [
+          0.24633349999999998,
+          0.235,
+          0.257646
+        ],
+        "range_ms": [
+          0.235,
+          0.257646
+        ],
+        "max_process_rss_range_bytes": [
+          91029504,
+          92241920
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t1-d128-concentrated",
+      "E": 8,
+      "K": 2,
+      "T": 1,
+      "D": 128,
+      "H": 256,
+      "routing": "concentrated",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 786432,
+      "predicted_gpu_branch": "batch_ids_fc",
+      "cpu": {
+        "median_of_process_medians_ms": 0.040896,
+        "process_medians_ms": [
+          0.0388335,
+          0.050416,
+          0.040896
+        ],
+        "range_ms": [
+          0.0388335,
+          0.050416
+        ],
+        "max_process_rss_range_bytes": [
+          62947328,
+          63324160
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.23722949999999998,
+        "process_medians_ms": [
+          0.24747950000000002,
+          0.23722949999999998,
+          0.2074375
+        ],
+        "range_ms": [
+          0.2074375,
+          0.24747950000000002
+        ],
+        "max_process_rss_range_bytes": [
+          96698368,
+          97157120
+        ]
+      }
+    },
+    {
+      "fixture": "e16-k2-t1-d128-concentrated",
+      "E": 16,
+      "K": 2,
+      "T": 1,
+      "D": 128,
+      "H": 256,
+      "routing": "concentrated",
+      "projection_weight_bytes": 6291456,
+      "selected_projection_weight_bytes": 786432,
+      "predicted_gpu_branch": "batch_ids_fc",
+      "cpu": {
+        "median_of_process_medians_ms": 0.043729,
+        "process_medians_ms": [
+          0.041188,
+          0.069938,
+          0.043729
+        ],
+        "range_ms": [
+          0.041188,
+          0.069938
+        ],
+        "max_process_rss_range_bytes": [
+          66158592,
+          66322432
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.2472295,
+        "process_medians_ms": [
+          0.2472295,
+          0.2426245,
+          0.248771
+        ],
+        "range_ms": [
+          0.2426245,
+          0.248771
+        ],
+        "max_process_rss_range_bytes": [
+          112427008,
+          112574464
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k1-t1-d128-concentrated",
+      "E": 8,
+      "K": 1,
+      "T": 1,
+      "D": 128,
+      "H": 256,
+      "routing": "concentrated",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 393216,
+      "predicted_gpu_branch": "batch_ids_fc",
+      "cpu": {
+        "median_of_process_medians_ms": 0.0238335,
+        "process_medians_ms": [
+          0.0282705,
+          0.0238335,
+          0.0228955
+        ],
+        "range_ms": [
+          0.0228955,
+          0.0282705
+        ],
+        "max_process_rss_range_bytes": [
+          63029248,
+          63094784
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.293354,
+        "process_medians_ms": [
+          0.3194795,
+          0.293354,
+          0.25293750000000004
+        ],
+        "range_ms": [
+          0.25293750000000004,
+          0.3194795
+        ],
+        "max_process_rss_range_bytes": [
+          96862208,
+          98287616
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k4-t1-d128-concentrated",
+      "E": 8,
+      "K": 4,
+      "T": 1,
+      "D": 128,
+      "H": 256,
+      "routing": "concentrated",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 1572864,
+      "predicted_gpu_branch": "batch_ids_fc",
+      "cpu": {
+        "median_of_process_medians_ms": 0.0849995,
+        "process_medians_ms": [
+          0.085333,
+          0.0849995,
+          0.08006250000000001
+        ],
+        "range_ms": [
+          0.08006250000000001,
+          0.085333
+        ],
+        "max_process_rss_range_bytes": [
+          63045632,
+          63094784
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.2443955,
+        "process_medians_ms": [
+          0.260708,
+          0.230604,
+          0.2443955
+        ],
+        "range_ms": [
+          0.230604,
+          0.260708
+        ],
+        "max_process_rss_range_bytes": [
+          96714752,
+          96944128
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t4-d128-concentrated",
+      "E": 8,
+      "K": 2,
+      "T": 4,
+      "D": 128,
+      "H": 256,
+      "routing": "concentrated",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 786432,
+      "predicted_gpu_branch": "batch_ids_fc",
+      "cpu": {
+        "median_of_process_medians_ms": 0.063667,
+        "process_medians_ms": [
+          0.065459,
+          0.0612915,
+          0.063667
+        ],
+        "range_ms": [
+          0.0612915,
+          0.065459
+        ],
+        "max_process_rss_range_bytes": [
+          62947328,
+          63111168
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.25327049999999995,
+        "process_medians_ms": [
+          0.25327049999999995,
+          0.22802050000000001,
+          0.2672505
+        ],
+        "range_ms": [
+          0.22802050000000001,
+          0.2672505
+        ],
+        "max_process_rss_range_bytes": [
+          96845824,
+          97058816
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t4-d128-distributed",
+      "E": 8,
+      "K": 2,
+      "T": 4,
+      "D": 128,
+      "H": 256,
+      "routing": "distributed",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 3145728,
+      "predicted_gpu_branch": "batch_ids_fc",
+      "cpu": {
+        "median_of_process_medians_ms": 0.27339600000000003,
+        "process_medians_ms": [
+          0.30652100000000004,
+          0.27339600000000003,
+          0.172521
+        ],
+        "range_ms": [
+          0.172521,
+          0.30652100000000004
+        ],
+        "max_process_rss_range_bytes": [
+          62914560,
+          63193088
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.26714550000000004,
+        "process_medians_ms": [
+          0.26714550000000004,
+          0.256271,
+          0.2935205
+        ],
+        "range_ms": [
+          0.256271,
+          0.2935205
+        ],
+        "max_process_rss_range_bytes": [
+          96894976,
+          97894400
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t5-d128-concentrated",
+      "E": 8,
+      "K": 2,
+      "T": 5,
+      "D": 128,
+      "H": 256,
+      "routing": "concentrated",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 786432,
+      "predicted_gpu_branch": "packed_groups",
+      "cpu": {
+        "median_of_process_medians_ms": 0.0675,
+        "process_medians_ms": [
+          0.067375,
+          0.0675,
+          0.0677915
+        ],
+        "range_ms": [
+          0.067375,
+          0.0677915
+        ],
+        "max_process_rss_range_bytes": [
+          63029248,
+          63143936
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.33547899999999997,
+        "process_medians_ms": [
+          0.33818800000000004,
+          0.33547899999999997,
+          0.3249375
+        ],
+        "range_ms": [
+          0.3249375,
+          0.33818800000000004
+        ],
+        "max_process_rss_range_bytes": [
+          96960512,
+          97468416
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t5-d128-distributed",
+      "E": 8,
+      "K": 2,
+      "T": 5,
+      "D": 128,
+      "H": 256,
+      "routing": "distributed",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 3145728,
+      "predicted_gpu_branch": "packed_groups",
+      "cpu": {
+        "median_of_process_medians_ms": 0.2104585,
+        "process_medians_ms": [
+          0.1694795,
+          0.3643125,
+          0.2104585
+        ],
+        "range_ms": [
+          0.1694795,
+          0.3643125
+        ],
+        "max_process_rss_range_bytes": [
+          62963712,
+          63209472
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.2717085,
+        "process_medians_ms": [
+          0.33122949999999995,
+          0.2717085,
+          0.25587499999999996
+        ],
+        "range_ms": [
+          0.25587499999999996,
+          0.33122949999999995
+        ],
+        "max_process_rss_range_bytes": [
+          97058816,
+          97452032
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t16-d128-concentrated",
+      "E": 8,
+      "K": 2,
+      "T": 16,
+      "D": 128,
+      "H": 256,
+      "routing": "concentrated",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 786432,
+      "predicted_gpu_branch": "packed_groups",
+      "cpu": {
+        "median_of_process_medians_ms": 0.13625,
+        "process_medians_ms": [
+          0.1413755,
+          0.132521,
+          0.13625
+        ],
+        "range_ms": [
+          0.132521,
+          0.1413755
+        ],
+        "max_process_rss_range_bytes": [
+          63062016,
+          63225856
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.36414599999999997,
+        "process_medians_ms": [
+          0.3757295,
+          0.36414599999999997,
+          0.33291649999999995
+        ],
+        "range_ms": [
+          0.33291649999999995,
+          0.3757295
+        ],
+        "max_process_rss_range_bytes": [
+          97501184,
+          97779712
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t16-d128-distributed",
+      "E": 8,
+      "K": 2,
+      "T": 16,
+      "D": 128,
+      "H": 256,
+      "routing": "distributed",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 3145728,
+      "predicted_gpu_branch": "packed_groups",
+      "cpu": {
+        "median_of_process_medians_ms": 0.29252100000000003,
+        "process_medians_ms": [
+          0.39925,
+          0.265292,
+          0.29252100000000003
+        ],
+        "range_ms": [
+          0.265292,
+          0.39925
+        ],
+        "max_process_rss_range_bytes": [
+          63176704,
+          63193088
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.257854,
+        "process_medians_ms": [
+          0.257854,
+          0.3237705,
+          0.255104
+        ],
+        "range_ms": [
+          0.255104,
+          0.3237705
+        ],
+        "max_process_rss_range_bytes": [
+          97042432,
+          98222080
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t64-d128-concentrated",
+      "E": 8,
+      "K": 2,
+      "T": 64,
+      "D": 128,
+      "H": 256,
+      "routing": "concentrated",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 786432,
+      "predicted_gpu_branch": "packed_groups",
+      "cpu": {
+        "median_of_process_medians_ms": 0.4277495,
+        "process_medians_ms": [
+          0.4277495,
+          0.449979,
+          0.42645849999999996
+        ],
+        "range_ms": [
+          0.42645849999999996,
+          0.449979
+        ],
+        "max_process_rss_range_bytes": [
+          63356928,
+          63422464
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.343646,
+        "process_medians_ms": [
+          0.32077049999999996,
+          0.343646,
+          0.3970625
+        ],
+        "range_ms": [
+          0.32077049999999996,
+          0.3970625
+        ],
+        "max_process_rss_range_bytes": [
+          98140160,
+          98336768
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t64-d128-distributed",
+      "E": 8,
+      "K": 2,
+      "T": 64,
+      "D": 128,
+      "H": 256,
+      "routing": "distributed",
+      "projection_weight_bytes": 3145728,
+      "selected_projection_weight_bytes": 3145728,
+      "predicted_gpu_branch": "packed_groups",
+      "cpu": {
+        "median_of_process_medians_ms": 0.5994999999999999,
+        "process_medians_ms": [
+          0.5994999999999999,
+          0.6707915,
+          0.593958
+        ],
+        "range_ms": [
+          0.593958,
+          0.6707915
+        ],
+        "max_process_rss_range_bytes": [
+          63045632,
+          63275008
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.401521,
+        "process_medians_ms": [
+          0.4919375,
+          0.38533300000000004,
+          0.401521
+        ],
+        "range_ms": [
+          0.38533300000000004,
+          0.4919375
+        ],
+        "max_process_rss_range_bytes": [
+          98418688,
+          101498880
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t1-d512-concentrated",
+      "E": 8,
+      "K": 2,
+      "T": 1,
+      "D": 512,
+      "H": 1024,
+      "routing": "concentrated",
+      "projection_weight_bytes": 50331648,
+      "selected_projection_weight_bytes": 12582912,
+      "predicted_gpu_branch": "batch_ids_fc",
+      "cpu": {
+        "median_of_process_medians_ms": 1.455333,
+        "process_medians_ms": [
+          2.1022914999999998,
+          1.455333,
+          1.3962085000000002
+        ],
+        "range_ms": [
+          1.3962085000000002,
+          2.1022914999999998
+        ],
+        "max_process_rss_range_bytes": [
+          109707264,
+          110034944
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.7064585,
+        "process_medians_ms": [
+          0.6907915,
+          0.7064585,
+          0.762583
+        ],
+        "range_ms": [
+          0.6907915,
+          0.762583
+        ],
+        "max_process_rss_range_bytes": [
+          310919168,
+          320110592
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t16-d512-concentrated",
+      "E": 8,
+      "K": 2,
+      "T": 16,
+      "D": 512,
+      "H": 1024,
+      "routing": "concentrated",
+      "projection_weight_bytes": 50331648,
+      "selected_projection_weight_bytes": 12582912,
+      "predicted_gpu_branch": "packed_groups",
+      "cpu": {
+        "median_of_process_medians_ms": 2.8455624999999998,
+        "process_medians_ms": [
+          2.8455624999999998,
+          2.8508545,
+          2.8406875
+        ],
+        "range_ms": [
+          2.8406875,
+          2.8508545
+        ],
+        "max_process_rss_range_bytes": [
+          110084096,
+          110133248
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 0.8994795,
+        "process_medians_ms": [
+          0.8254999999999999,
+          0.8994795,
+          0.918021
+        ],
+        "range_ms": [
+          0.8254999999999999,
+          0.918021
+        ],
+        "max_process_rss_range_bytes": [
+          310018048,
+          313688064
+        ]
+      }
+    },
+    {
+      "fixture": "e8-k2-t16-d512-distributed",
+      "E": 8,
+      "K": 2,
+      "T": 16,
+      "D": 512,
+      "H": 1024,
+      "routing": "distributed",
+      "projection_weight_bytes": 50331648,
+      "selected_projection_weight_bytes": 50331648,
+      "predicted_gpu_branch": "packed_groups",
+      "cpu": {
+        "median_of_process_medians_ms": 7.7551665,
+        "process_medians_ms": [
+          7.7551665,
+          7.584709,
+          7.819395999999999
+        ],
+        "range_ms": [
+          7.584709,
+          7.819395999999999
+        ],
+        "max_process_rss_range_bytes": [
+          118276096,
+          118849536
+        ]
+      },
+      "webgpu": {
+        "median_of_process_medians_ms": 1.0726464999999998,
+        "process_medians_ms": [
+          1.0726464999999998,
+          1.0307705,
+          1.1098755
+        ],
+        "range_ms": [
+          1.0307705,
+          1.1098755
+        ],
+        "max_process_rss_range_bytes": [
+          309493760,
+          318652416
+        ]
+      }
+    }
+  ]
+}

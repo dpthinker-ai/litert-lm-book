@@ -1,0 +1,108 @@
+{
+  "started_at_utc": "2026-09-13T10:11:24.150216+00:00",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "machine": {
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "model": {
+    "path": "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "sha256": "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1",
+    "bytes": 15786524672
+  },
+  "assets_manifest_sha256": "e4f33c9aa077e50b3c30bdd163abf39acc9de26830733485ae35505002ed6873",
+  "demo_revision": "e735b7f3487c308580e9d374af50108298c450dc",
+  "command": [
+    "/Users/dpthinker/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/moe_web_worker.mjs",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-web/site",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/data/2026-09-13/moe-web/gemma26b"
+  ],
+  "script_sha256": "a8bd77648e0030033c6e0978bcb01cb9002b4c57d65b7a5bdad4e5c8c7ea1732",
+  "worker_sha256": "0e0f2ed978c47c89514fca2e69f084270bef49970f5fc06cb00b0be02743b9e9",
+  "helper_sha256": "84f9699325bff7be56f22d6b81cbd9aed61c03287bebd8710e281e903966bdae",
+  "timeout_seconds": 180,
+  "browser_tree_rss_guard_bytes": 21474836480,
+  "limitations": [
+    "Pinned demo binary, not a build or test of LiteRT-LM v0.17.0 C++ sources.",
+    "Uses original demo local-file entry with a 128-token context and a short prompt.",
+    "Only localhost requests are permitted; no remote inference or prompt upload.",
+    "Process-tree RSS and global pressure are protective signals, not model GPU memory measurements.",
+    "Other applications are not isolated; one run is not a performance or quality benchmark."
+  ],
+  "status": "STOPPED_BY_GUARD",
+  "stop_reason": "persistent_warning_memory_pressure",
+  "returncode": 2,
+  "worker_result": {
+    "phase": "engine_creation",
+    "generation_completed": false,
+    "browser_version": "153.0.8010.36",
+    "adapter": {
+      "info": {
+        "vendor": "apple",
+        "architecture": "metal-3",
+        "device": "",
+        "description": ""
+      },
+      "features": [
+        "depth32float-stencil8",
+        "rg11b10ufloat-renderable",
+        "texture-formats-tier1",
+        "bgra8unorm-storage",
+        "texture-compression-bc",
+        "dual-source-blending",
+        "core-features-and-limits",
+        "float32-filterable",
+        "indirect-first-instance",
+        "texture-compression-astc-sliced-3d",
+        "float32-blendable",
+        "subgroup-size-control",
+        "texture-compression-astc",
+        "texture-compression-etc2",
+        "depth-clip-control",
+        "texture-compression-bc-sliced-3d",
+        "clip-distances",
+        "shader-f16",
+        "texture-formats-tier2",
+        "timestamp-query",
+        "primitive-index",
+        "texture-component-swizzle",
+        "subgroups"
+      ],
+      "limits": {
+        "maxBufferSize": 4294967292,
+        "maxStorageBufferBindingSize": 4294967292,
+        "maxStorageBuffersPerShaderStage": 10
+      }
+    },
+    "options": {
+      "baseOptions": {
+        "localFile": true
+      },
+      "maxTokens": 128,
+      "numResponses": 1,
+      "topK": 1,
+      "temperature": 0,
+      "randomSeed": 42,
+      "forceF32": false
+    },
+    "loading_progress": {
+      "progress": 0.7329318248570625,
+      "downloadedBytes": 11570446336,
+      "totalBytes": 15786524672
+    },
+    "stopped_by_guard": true,
+    "error": "Error: page.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --user-data-dir=/var/folders/x6/txvj6kw105z5y3748x2tjm5c0000gn/T/playwright_chromiumdev_profile-Z0QjWI --remote-debugging-pipe --no-startup-window\n<launched> pid=38819\n[pid=38819][err] Trying to load the allocator multiple times. This is *not* supported.\n[pid=38819][err] [38819:6531579:0913/181130.520529:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT\n[pid=38819] <gracefully close start>\n[pid=38819] <forcefully close>\n[pid=38819] <kill>\n[pid=38819] <will force kill>",
+    "error_stack": "page.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --user-data-dir=/var/folders/x6/txvj6kw105z5y3748x2tjm5c0000gn/T/playwright_chromiumdev_profile-Z0QjWI --remote-debugging-pipe --no-startup-window\n<launched> pid=38819\n[pid=38819][err] Trying to load the allocator multiple times. This is *not* supported.\n[pid=38819][err] [38819:6531579:0913/181130.520529:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT\n[pid=38819] <gracefully close start>\n[pid=38819] <forcefully close>\n[pid=38819] <kill>\n[pid=38819] <will force kill>\n    at /Users/dpthinker/workspace/litert-lm-book/experiments/moe_web_worker.mjs:52:16"
+  },
+  "console_errors": [],
+  "finished_at_utc": "2026-09-13T10:11:42.867386+00:00",
+  "files": {
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "console.jsonl": "0e6daff8718e99094c8834ec688faaa555c5367361a00f0642c33e426f1af744",
+    "worker.json": "e63e0cf31b7c204c6d591b2847065658a94e20ebb9cd610e382edee2e8578153",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "resource-guard.json": "79f5dd43daa467545cb308447e58fde598a04b7ee1b1fb3bae8eee6347c4e992"
+  }
+}

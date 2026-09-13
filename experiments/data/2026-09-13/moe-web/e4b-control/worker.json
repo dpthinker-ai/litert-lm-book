@@ -1,0 +1,68 @@
+{
+  "phase": "completed",
+  "generation_completed": true,
+  "browser_version": "153.0.8010.36",
+  "adapter": {
+    "info": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": ""
+    },
+    "features": [
+      "depth32float-stencil8",
+      "rg11b10ufloat-renderable",
+      "texture-formats-tier1",
+      "bgra8unorm-storage",
+      "texture-compression-bc",
+      "dual-source-blending",
+      "core-features-and-limits",
+      "float32-filterable",
+      "indirect-first-instance",
+      "texture-compression-astc-sliced-3d",
+      "float32-blendable",
+      "subgroup-size-control",
+      "texture-compression-astc",
+      "texture-compression-etc2",
+      "depth-clip-control",
+      "texture-compression-bc-sliced-3d",
+      "clip-distances",
+      "shader-f16",
+      "texture-formats-tier2",
+      "timestamp-query",
+      "primitive-index",
+      "texture-component-swizzle",
+      "subgroups"
+    ],
+    "limits": {
+      "maxBufferSize": 4294967292,
+      "maxStorageBufferBindingSize": 4294967292,
+      "maxStorageBuffersPerShaderStage": 10
+    }
+  },
+  "options": {
+    "baseOptions": {
+      "localFile": true
+    },
+    "maxTokens": 128,
+    "numResponses": 1,
+    "topK": 1,
+    "temperature": 0,
+    "randomSeed": 42,
+    "forceF32": false
+  },
+  "loading_progress": {
+    "progress": 1,
+    "downloadedBytes": 2969059328,
+    "totalBytes": 2969059328
+  },
+  "engine_created": true,
+  "partial_output": "OK<channel|>",
+  "callback_count": 2,
+  "done_seen": true,
+  "prompt": "<|turn>user\nReply with only the word OK.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>",
+  "input_tokens": 19,
+  "response": "OK<channel|>",
+  "response_cancelled": false,
+  "engine_closed": true
+}

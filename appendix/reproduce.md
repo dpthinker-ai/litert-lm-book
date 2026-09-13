@@ -296,3 +296,64 @@ tmp/moe-export-recheck-venv/bin/python experiments/moe_int8_gpu_check.py \
 输出目录必须不存在。16 项覆盖元数据补齐、字段扰动、CPU 对照与量化权重还原为 FP32 的 GPU 对照。CPU 比较精确 GELU，GPU 比较 tanh-GELU；报告另存与原始 PyTorch 输出的差异，不能把改过独立 scale 的诊断输出直接当作原模型正确性测试。
 
 `invoke_completed` 仅记录运行 API 成功返回。采集器另检查 WebGPU 的 `Validation error:` 日志，将其归为 `BACKEND_VALIDATION_ERROR`，优先于数值比较结果。即使覆盖接口为 true，也必须排除后端验证错误后才能计为有效执行证据。脚本退出 0 只表示记录完整；应读取逐例状态，不能解释为 INT8 GPU 兼容性通过。完整结果与边界见附录 D 第二十一节。
+
+## 十二、MoE 单层规模与路由对照
+
+沿用第七节的执行环境，准备相同版本的预编译动态库。采集入口按现有工作区约定，从 `tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm/liblitert-lm.dylib` 加载库；换位置时应先为入口配置正确路径，并记录脚本差异。运行：
+
+```bash
+OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
+  tmp/moe-venv/bin/python experiments/moe_scale_check.py \
+  --output tmp/moe-scale-recheck
+```
+
+输出目录必须不存在。脚本固定随机种子，重建 16 组 FP32 合成模型，再以随机排列的顺序运行 CPU、GPU 各 3 个进程。每个进程预热 3 次、计时 12 次，每次回读都检查数值。`--pilot` 只运行两个形状用于核对环境，不可替代完整矩阵。模型文件没有加入版本库，重建后应与归档 `fixture.json` 中的 SHA-256 对照。当前采集入口实时读取硬件；实际原始采集脚本另存为 `collector-at-run.py`，其硬件字段与本次机器实查一致。
+
+报告中的 `valid` 同时要求调用完成、数值通过、无后端验证错误，GPU 还要求 Metal 日志和加速覆盖接口确认。计时范围、三次进程重复的统计及解释边界见附录 D 第二十二节。进程 RSS 不是 GPU 内存；唯一选中专家权重字节也不是实测访存量。
+
+## 十三、INT8 MoE 隐藏维度诊断
+
+复用第八节的导出环境和第十一节的单位仿射元数据副本，执行进程沿用第七节环境和默认动态库位置。采集脚本对来源产物与动态库做哈希核对，再在新目录生成 H=4、H=8 副本：
+
+```bash
+tmp/moe-export-recheck-venv/bin/python experiments/moe_int8_shape_check.py \
+  --output tmp/moe-int8-shape-recheck
+```
+
+脚本处理 T=1、2 的两份来源，各做 INT8 CPU、INT8 GPU、FP32 GPU 三类检查。H=8 是保留原函数的零填充；H=4 使用截取后的独立参考。采集完成后读取逐例状态，脚本正常退出不等于 INT8 GPU 通过。源码审计只读取冻结 Git 对象，不修改分析基线；候选位置、已排除的解释和无法验证的部分见附录 D 第二十三节。
+
+## 十四、冻结演示运行时的 WebGPU 检查
+
+本节要求 macOS 上的 Google Chrome、Node.js 与 Playwright，以及前面使用的 Python 执行环境。先按 `experiments/data/2026-09-13/moe-web/assets.json` 的固定地址取得原始资源。下面的命令逐项校验，保留原目录结构：
+
+```bash
+python3 - <<'PY'
+import hashlib, json, urllib.request
+from pathlib import Path
+manifest = json.loads(Path('experiments/data/2026-09-13/moe-web/assets.json').read_text())
+root = Path('tmp/moe-web-recheck/site')
+for name, entry in manifest['files'].items():
+    target = root / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    urllib.request.urlretrieve(entry['url'], target)
+    assert target.stat().st_size == entry['bytes']
+    assert hashlib.sha256(target.read_bytes()).hexdigest() == entry['sha256']
+PY
+```
+
+模型文件不进入版本库。26B 使用第十节已验证的 GPU 文件；E4B 从 `experiments/data/2026-09-13/moe-web/control-download.json` 的固定 URL 下载，并核对同记录的完整文件哈希。运行检查时，`--node` 指向本机 Node 可执行文件，`--playwright-module` 指向已安装的 Playwright `index.mjs`。下例以 E4B 为对照：
+
+```bash
+tmp/moe-venv/bin/python experiments/moe_web_check.py \
+  --model /path/to/gemma-4-E4B-it-gpu.litertlm \
+  --sha256 4912bb5a9c30993c51a7711f763212077458529312175df0573a78323a2bb7ff \
+  --site tmp/moe-web-recheck/site \
+  --assets experiments/data/2026-09-13/moe-web/assets.json \
+  --output tmp/moe-web-e4b-recheck \
+  --node /path/to/node \
+  --playwright-module /path/to/node_modules/playwright/index.mjs
+```
+
+每次使用新的输出目录。测试 26B 时替换模型路径、SHA-256 和输出目录，文件哈希取第十节记录。采集器只启动并关闭自己的浏览器配置，调用原始演示的本地文件加载入口，再请求一次短响应。它不调整用户正在运行的其他应用。`GENERATION_COMPLETED` 要求生成完成回调、引擎关闭、进程正常退出，且没有页面或 console error；不是只检查加载完成。
+
+保护条件和实际结果见附录 D 第二十四节。触发压力阈值的运行按 `STOPPED_BY_GUARD` 归档，不能计入吞吐或质量统计，也不应为取得一次成功记录而自动放宽保护条件。浏览器版本、适配器信息、资源哈希和原始响应均随本次运行保存；若更换浏览器或演示资源，应作为新的环境记录。原始执行脚本另存为数据目录中的 `worker-at-run.mjs`；当前 worker 仅将检查点保存改为原子替换，以免强制终止留下半份 JSON，采集后的差异记在 `collection-notes.json`。

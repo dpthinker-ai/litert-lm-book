@@ -1,0 +1,389 @@
+{
+  "started_at_utc": "2026-09-13T10:05:51.043130+00:00",
+  "script_sha256": "dc8618a10426c58105b6ad30f927c07febedee1266d053fe49db1be3b10a8fe9",
+  "library_sha256": "a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc",
+  "source_report_sha256": "d2cf964c534ac5a6a0e70fc48a47265f6ec6ca0392afaed1bc997ad20f4e4b9c",
+  "helpers": {
+    "moe_int8_gpu_check.py": "274999dcf6a996876eb3e27ae85ddf52092d2bcab36dda9ab4c167c52a60a40b",
+    "moe_export_check.py": "6f548593c164276f72fd108bea50f503546e91282b2c1390f61150aadba0a19b",
+    "moe_backend_worker.py": "69c0920f3b3d0dc04b40c191bf9c8edb9ca76f0299651b1779b0890e472e14f6",
+    "moe_layer_check.py": "a3fe1cd07867924ad1bd4ef9919b89292d2f26aaea54d0c2753099c40a2d7010"
+  },
+  "cases": [
+    {
+      "name": "t1-h4/cpu-int8",
+      "T": 1,
+      "H": 4,
+      "backend": "cpu",
+      "mode": "int8",
+      "status": "MATCH",
+      "returncode": 0,
+      "comparison": {
+        "matches": true,
+        "max_abs_error": 9.81469433725124e-07,
+        "max_relative_error": 2.7404844407121987e-07
+      },
+      "missing_buffer_errors": 0,
+      "undefined_scale_errors": 0,
+      "validation_errors": [],
+      "files": {
+        "actual.npy": "ce6058d3da007d43afa77707d2a3a7b6f50234ff6da38cdd0928bdb8804665a3",
+        "stderr.log": "1e6ad7f7fc87c6574076bb128343dc9c392578304fce19c2ab3cae659adf3033",
+        "runtime.json": "b45604c887d695b2eaec019cf1f6cabb6128f72772707b888e253328fc9e2297",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "input-1.bin": "51918f4b207b4059f47927ff8f41479fd8078422f9f1c14794909d3f7307a627",
+        "input-0.bin": "6fe83b76dcdd0c531243fa32d62195f7bac4106321118ab6c30faa08c38c78f4",
+        "stdout.log": "9c1cd5042228727ca74ab438f68cf49c329295fa427a5afd85faa700eb8566bb",
+        "expected.npy": "c2b33af55cdfda813da3ad4ed8ff798c6cc7052333f30e569656a6c112628bca",
+        "model.tflite": "3b31e2692a8c29e2dd87915e8b55939a3775237bb1d362fc34039185a1b1a8dd"
+      }
+    },
+    {
+      "name": "t1-h4/webgpu-int8",
+      "T": 1,
+      "H": 4,
+      "backend": "webgpu",
+      "mode": "int8",
+      "status": "BACKEND_VALIDATION_ERROR",
+      "returncode": 0,
+      "comparison": {
+        "matches": false,
+        "max_abs_error": 4.693232685021198,
+        "max_relative_error": 1.0
+      },
+      "missing_buffer_errors": 3,
+      "undefined_scale_errors": 2,
+      "validation_errors": [
+        "E0000 00:00:1789293951.281956 6521583 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293951.281971 6521583 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293951.281983 6521583 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293951.339170 6521583 environment.cc:105] Validation error: Error while parsing WGSL: :51:48 error: unresolved value 'scale'",
+        "E0000 00:00:1789293951.339185 6521583 environment.cc:105] Validation error: [Invalid ShaderModule (unlabeled)] is invalid due to a previous error.",
+        "E0000 00:00:1789293951.339589 6521583 environment.cc:105] Validation error: Error while parsing WGSL: :51:48 error: unresolved value 'scale'",
+        "E0000 00:00:1789293951.339595 6521583 environment.cc:105] Validation error: [Invalid ShaderModule (unlabeled)] is invalid due to a previous error.",
+        "E0000 00:00:1789293951.353917 6521583 environment.cc:105] Validation error: [Invalid BindGroup (unlabeled)] is invalid due to a previous error.",
+        "E0000 00:00:1789293951.353934 6521583 environment.cc:105] Validation error: [Invalid CommandBuffer] is invalid due to a previous error."
+      ],
+      "files": {
+        "actual.npy": "a32ca8da5075a96b57fb0010dac55c2d5b3067f0ec5e242253c8948760736596",
+        "stderr.log": "7f8102fd5ba98525a4f65390983a7754b0c534448c111a184a14f90b7781047b",
+        "runtime.json": "1a06b2eb96c9a0488ed4abdac2f0adfe836eb9b2ebc86e0bc038cd2995178bd8",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "input-1.bin": "51918f4b207b4059f47927ff8f41479fd8078422f9f1c14794909d3f7307a627",
+        "input-0.bin": "6fe83b76dcdd0c531243fa32d62195f7bac4106321118ab6c30faa08c38c78f4",
+        "stdout.log": "4fdddab84838636d35e0a94a8fbedbe027e173ee9a9b3335f17f1bcc9ebb319f",
+        "expected.npy": "21bc606fc106ed6715ebb955bdd7648d2600c0315e4cea0de97b2ea3b2d372de",
+        "model.tflite": "3b31e2692a8c29e2dd87915e8b55939a3775237bb1d362fc34039185a1b1a8dd"
+      }
+    },
+    {
+      "name": "t1-h4/webgpu-dequant-fp32",
+      "T": 1,
+      "H": 4,
+      "backend": "webgpu",
+      "mode": "dequant-fp32",
+      "status": "MATCH",
+      "returncode": 0,
+      "comparison": {
+        "matches": true,
+        "max_abs_error": 4.0770247267118975e-07,
+        "max_relative_error": 1.0578174010765124e-07
+      },
+      "missing_buffer_errors": 0,
+      "undefined_scale_errors": 0,
+      "validation_errors": [],
+      "files": {
+        "actual.npy": "af71f3e9b3822d0e2eaaa42cee7c97a0648fdf70eebab8385974605c0b9f6333",
+        "stderr.log": "3dc761161e62d5fe3914282f220fbfe42d2f18b947fdc0549b879d0914d14776",
+        "runtime.json": "1a06b2eb96c9a0488ed4abdac2f0adfe836eb9b2ebc86e0bc038cd2995178bd8",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "input-1.bin": "51918f4b207b4059f47927ff8f41479fd8078422f9f1c14794909d3f7307a627",
+        "input-0.bin": "6fe83b76dcdd0c531243fa32d62195f7bac4106321118ab6c30faa08c38c78f4",
+        "stdout.log": "4fdddab84838636d35e0a94a8fbedbe027e173ee9a9b3335f17f1bcc9ebb319f",
+        "expected.npy": "21bc606fc106ed6715ebb955bdd7648d2600c0315e4cea0de97b2ea3b2d372de",
+        "model.tflite": "cbd3712679176bccb0a170ab670e47e4cdb68712c33873c9d291bdb827726130"
+      }
+    },
+    {
+      "name": "t1-h8/cpu-int8",
+      "T": 1,
+      "H": 8,
+      "backend": "cpu",
+      "mode": "int8",
+      "status": "MATCH",
+      "returncode": 0,
+      "comparison": {
+        "matches": true,
+        "max_abs_error": 8.809685680954971e-07,
+        "max_relative_error": 1.3473847418042047e-06
+      },
+      "missing_buffer_errors": 0,
+      "undefined_scale_errors": 0,
+      "validation_errors": [],
+      "files": {
+        "actual.npy": "cfd175c77a2632d2e38488aa9170412945d999b218d6798ffaf3209a2d24f94f",
+        "stderr.log": "ff423ce5c89dc9372f116747191c07608dc418b3f0d97e6e720d93dc82f27427",
+        "runtime.json": "b45604c887d695b2eaec019cf1f6cabb6128f72772707b888e253328fc9e2297",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "input-1.bin": "51918f4b207b4059f47927ff8f41479fd8078422f9f1c14794909d3f7307a627",
+        "input-0.bin": "6fe83b76dcdd0c531243fa32d62195f7bac4106321118ab6c30faa08c38c78f4",
+        "stdout.log": "9c1cd5042228727ca74ab438f68cf49c329295fa427a5afd85faa700eb8566bb",
+        "expected.npy": "f0f479ed796da2ce8c20666e45719d36ac91cbcbd63776f2133c327ac203bf18",
+        "model.tflite": "b8beb27c75ba9182b246d98d9791728e29f70b4e1400f62418174a282498bdc7"
+      }
+    },
+    {
+      "name": "t1-h8/webgpu-int8",
+      "T": 1,
+      "H": 8,
+      "backend": "webgpu",
+      "mode": "int8",
+      "status": "BACKEND_VALIDATION_ERROR",
+      "returncode": 0,
+      "comparison": {
+        "matches": false,
+        "max_abs_error": 6.709937161419905,
+        "max_relative_error": 1.0
+      },
+      "missing_buffer_errors": 3,
+      "undefined_scale_errors": 2,
+      "validation_errors": [
+        "E0000 00:00:1789293951.713521 6521665 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293951.713537 6521665 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293951.713547 6521665 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293951.719113 6521665 environment.cc:105] Validation error: Error while parsing WGSL: :51:48 error: unresolved value 'scale'",
+        "E0000 00:00:1789293951.719131 6521665 environment.cc:105] Validation error: [Invalid ShaderModule (unlabeled)] is invalid due to a previous error.",
+        "E0000 00:00:1789293951.719527 6521665 environment.cc:105] Validation error: Error while parsing WGSL: :51:48 error: unresolved value 'scale'",
+        "E0000 00:00:1789293951.719533 6521665 environment.cc:105] Validation error: [Invalid ShaderModule (unlabeled)] is invalid due to a previous error.",
+        "E0000 00:00:1789293951.724381 6521665 environment.cc:105] Validation error: [Invalid BindGroup (unlabeled)] is invalid due to a previous error.",
+        "E0000 00:00:1789293951.724392 6521665 environment.cc:105] Validation error: [Invalid CommandBuffer] is invalid due to a previous error."
+      ],
+      "files": {
+        "actual.npy": "a6daae432d876c033f7fe181c8841ec4bab52a0b7be0c0e8529e271e793bb027",
+        "stderr.log": "b40a9abfb885532eb82f02202e95292754c0166e5cfa598b0e687033f1d65b27",
+        "runtime.json": "1a06b2eb96c9a0488ed4abdac2f0adfe836eb9b2ebc86e0bc038cd2995178bd8",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "input-1.bin": "51918f4b207b4059f47927ff8f41479fd8078422f9f1c14794909d3f7307a627",
+        "input-0.bin": "6fe83b76dcdd0c531243fa32d62195f7bac4106321118ab6c30faa08c38c78f4",
+        "stdout.log": "4fdddab84838636d35e0a94a8fbedbe027e173ee9a9b3335f17f1bcc9ebb319f",
+        "expected.npy": "37b427a83a08dc2863b775569d312881b5375fc87aff395ffc9e476ffdb1b5da",
+        "model.tflite": "b8beb27c75ba9182b246d98d9791728e29f70b4e1400f62418174a282498bdc7"
+      }
+    },
+    {
+      "name": "t1-h8/webgpu-dequant-fp32",
+      "T": 1,
+      "H": 8,
+      "backend": "webgpu",
+      "mode": "dequant-fp32",
+      "status": "MATCH",
+      "returncode": 0,
+      "comparison": {
+        "matches": true,
+        "max_abs_error": 4.394077040004163e-07,
+        "max_relative_error": 9.562503978468786e-08
+      },
+      "missing_buffer_errors": 0,
+      "undefined_scale_errors": 0,
+      "validation_errors": [],
+      "files": {
+        "actual.npy": "f70e6c95cf5ff815c4b9a49131b9756876de7fb60d2262db262720998e2bea26",
+        "stderr.log": "62361f3751178b8a4714b2b08b446150231efd096b044512f7cb1ccb40417af8",
+        "runtime.json": "1a06b2eb96c9a0488ed4abdac2f0adfe836eb9b2ebc86e0bc038cd2995178bd8",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "input-1.bin": "51918f4b207b4059f47927ff8f41479fd8078422f9f1c14794909d3f7307a627",
+        "input-0.bin": "6fe83b76dcdd0c531243fa32d62195f7bac4106321118ab6c30faa08c38c78f4",
+        "stdout.log": "4fdddab84838636d35e0a94a8fbedbe027e173ee9a9b3335f17f1bcc9ebb319f",
+        "expected.npy": "37b427a83a08dc2863b775569d312881b5375fc87aff395ffc9e476ffdb1b5da",
+        "model.tflite": "b01059d54b4a7b620eccd25a93a29e9400fc5ed54c02568ee0d08dda1833ae73"
+      }
+    },
+    {
+      "name": "t2-h4/cpu-int8",
+      "T": 2,
+      "H": 4,
+      "backend": "cpu",
+      "mode": "int8",
+      "status": "MATCH",
+      "returncode": 0,
+      "comparison": {
+        "matches": true,
+        "max_abs_error": 9.81469433725124e-07,
+        "max_relative_error": 2.7404844407121987e-07
+      },
+      "missing_buffer_errors": 0,
+      "undefined_scale_errors": 0,
+      "validation_errors": [],
+      "files": {
+        "actual.npy": "a5a4f5e8e789605528a28303d9d210c45449db922cbc5f4bd616f6c8e10c70d3",
+        "stderr.log": "1996e63f59740dcf1d526de883e5e2220f5a104203b2e439f1ec60403bf0737e",
+        "runtime.json": "31670f947618ccdfe2fc2e1758923c595629ec1e2d040b29e5eb03af0f5e9f37",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "input-1.bin": "a985bea21b75da082578bb52456f13358f124251c49c26668db30c11e252d3b7",
+        "input-0.bin": "d32e0c31afa2209bbd46e86042a964546d7083ac775ab1d21f3071b8f2cccd15",
+        "stdout.log": "2b57e04cb848a9b3725a1f1753b1856d494291ef21011394b3207dba20b190ab",
+        "expected.npy": "ee90dbead446d10564372366f32a8d1a18eee6b8c4b7d0a7f896439f72239ba0",
+        "model.tflite": "b1178dd0a7c9c3e9cdfa5475f5f9ed0584f42f26333ae403330614d2b25a171a"
+      }
+    },
+    {
+      "name": "t2-h4/webgpu-int8",
+      "T": 2,
+      "H": 4,
+      "backend": "webgpu",
+      "mode": "int8",
+      "status": "BACKEND_VALIDATION_ERROR",
+      "returncode": 0,
+      "comparison": {
+        "matches": false,
+        "max_abs_error": 4.693232685021198,
+        "max_relative_error": 1.0
+      },
+      "missing_buffer_errors": 3,
+      "undefined_scale_errors": 0,
+      "validation_errors": [
+        "E0000 00:00:1789293952.084186 6521706 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293952.084205 6521706 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293952.084215 6521706 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293952.098225 6521706 environment.cc:105] Validation error: [Invalid BindGroup (unlabeled)] is invalid due to a previous error.",
+        "E0000 00:00:1789293952.098238 6521706 environment.cc:105] Validation error: [Invalid CommandBuffer] is invalid due to a previous error."
+      ],
+      "files": {
+        "actual.npy": "1d8162890545e6448c2cb5c317e574cf6d3403f98a74ce782cc689ef2007b64b",
+        "stderr.log": "3fc494a8058413996e26a1602e8c1d522b37b4b8c8b60231fe1bfbfda4be3104",
+        "runtime.json": "516818b8b532380ff88db0cf9bb5d7e7de2d7f31d7fdaa191dd70f2addb84e8b",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "input-1.bin": "a985bea21b75da082578bb52456f13358f124251c49c26668db30c11e252d3b7",
+        "input-0.bin": "d32e0c31afa2209bbd46e86042a964546d7083ac775ab1d21f3071b8f2cccd15",
+        "stdout.log": "d29ff10a014dcb24e01097a543f7c44632ec4e66bcceb48eabd01eb793d9d16d",
+        "expected.npy": "eeb6af56ae9a889b10ca5a72795eb59e5e1a5c03457d01d028395fd496cfc783",
+        "model.tflite": "b1178dd0a7c9c3e9cdfa5475f5f9ed0584f42f26333ae403330614d2b25a171a"
+      }
+    },
+    {
+      "name": "t2-h4/webgpu-dequant-fp32",
+      "T": 2,
+      "H": 4,
+      "backend": "webgpu",
+      "mode": "dequant-fp32",
+      "status": "MATCH",
+      "returncode": 0,
+      "comparison": {
+        "matches": true,
+        "max_abs_error": 4.2962559687609314e-07,
+        "max_relative_error": 1.246565135845847e-07
+      },
+      "missing_buffer_errors": 0,
+      "undefined_scale_errors": 0,
+      "validation_errors": [],
+      "files": {
+        "actual.npy": "041bd1067d221c684ea2c2d50ef7b6e597dcb180d99bb6c518d0a9f5c6309e90",
+        "stderr.log": "98dda93c6f4e5dbd9df6debbfa8c69bdb2aac254f53f2b0cee8ca722ff1bed4b",
+        "runtime.json": "516818b8b532380ff88db0cf9bb5d7e7de2d7f31d7fdaa191dd70f2addb84e8b",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "input-1.bin": "a985bea21b75da082578bb52456f13358f124251c49c26668db30c11e252d3b7",
+        "input-0.bin": "d32e0c31afa2209bbd46e86042a964546d7083ac775ab1d21f3071b8f2cccd15",
+        "stdout.log": "d29ff10a014dcb24e01097a543f7c44632ec4e66bcceb48eabd01eb793d9d16d",
+        "expected.npy": "eeb6af56ae9a889b10ca5a72795eb59e5e1a5c03457d01d028395fd496cfc783",
+        "model.tflite": "1340da16e10145246bce6af7d2a8b3e9e85c5aa52d99d1f8c5f54ab54b65c937"
+      }
+    },
+    {
+      "name": "t2-h8/cpu-int8",
+      "T": 2,
+      "H": 8,
+      "backend": "cpu",
+      "mode": "int8",
+      "status": "MATCH",
+      "returncode": 0,
+      "comparison": {
+        "matches": true,
+        "max_abs_error": 7.662802712360417e-07,
+        "max_relative_error": 1.1650618035757993e-06
+      },
+      "missing_buffer_errors": 0,
+      "undefined_scale_errors": 0,
+      "validation_errors": [],
+      "files": {
+        "actual.npy": "386bffb2f7b556c96aa1ac2532b8adea2fe6a0cc226e35cb329cc412c4ce6534",
+        "stderr.log": "865b737bc1df00ce382e790a6ecbd3ca75ff7f4202d79226095c5991c6056398",
+        "runtime.json": "31670f947618ccdfe2fc2e1758923c595629ec1e2d040b29e5eb03af0f5e9f37",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "input-1.bin": "a985bea21b75da082578bb52456f13358f124251c49c26668db30c11e252d3b7",
+        "input-0.bin": "d32e0c31afa2209bbd46e86042a964546d7083ac775ab1d21f3071b8f2cccd15",
+        "stdout.log": "2b57e04cb848a9b3725a1f1753b1856d494291ef21011394b3207dba20b190ab",
+        "expected.npy": "5eadd6bd173f0135acd5d8faa711bbea51f1de060034c84a29df1bf6975fad52",
+        "model.tflite": "78661ce1618ed214c5912fca37fee6945acd9bdbe515c5153165ed255449cde1"
+      }
+    },
+    {
+      "name": "t2-h8/webgpu-int8",
+      "T": 2,
+      "H": 8,
+      "backend": "webgpu",
+      "mode": "int8",
+      "status": "BACKEND_VALIDATION_ERROR",
+      "returncode": 0,
+      "comparison": {
+        "matches": false,
+        "max_abs_error": 6.709937161419905,
+        "max_relative_error": 1.0
+      },
+      "missing_buffer_errors": 3,
+      "undefined_scale_errors": 0,
+      "validation_errors": [
+        "E0000 00:00:1789293952.456097 6521766 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293952.456111 6521766 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293952.456121 6521766 environment.cc:105] Validation error: Binding entry buffer not set.",
+        "E0000 00:00:1789293952.471240 6521766 environment.cc:105] Validation error: [Invalid BindGroup (unlabeled)] is invalid due to a previous error.",
+        "E0000 00:00:1789293952.471252 6521766 environment.cc:105] Validation error: [Invalid CommandBuffer] is invalid due to a previous error."
+      ],
+      "files": {
+        "actual.npy": "1d8162890545e6448c2cb5c317e574cf6d3403f98a74ce782cc689ef2007b64b",
+        "stderr.log": "bd72f4338763b89286c105b802759d9f9ce6c6b5cb84a1b7fa00f45b3120c7f8",
+        "runtime.json": "516818b8b532380ff88db0cf9bb5d7e7de2d7f31d7fdaa191dd70f2addb84e8b",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "input-1.bin": "a985bea21b75da082578bb52456f13358f124251c49c26668db30c11e252d3b7",
+        "input-0.bin": "d32e0c31afa2209bbd46e86042a964546d7083ac775ab1d21f3071b8f2cccd15",
+        "stdout.log": "d29ff10a014dcb24e01097a543f7c44632ec4e66bcceb48eabd01eb793d9d16d",
+        "expected.npy": "455af31abef130fbaae8ad5add150d1195d21d32891cb8e5e3036d6f8d061c75",
+        "model.tflite": "78661ce1618ed214c5912fca37fee6945acd9bdbe515c5153165ed255449cde1"
+      }
+    },
+    {
+      "name": "t2-h8/webgpu-dequant-fp32",
+      "T": 2,
+      "H": 8,
+      "backend": "webgpu",
+      "mode": "dequant-fp32",
+      "status": "MATCH",
+      "returncode": 0,
+      "comparison": {
+        "matches": true,
+        "max_abs_error": 5.426149733978036e-07,
+        "max_relative_error": 1.418217643369889e-07
+      },
+      "missing_buffer_errors": 0,
+      "undefined_scale_errors": 0,
+      "validation_errors": [],
+      "files": {
+        "actual.npy": "dc78f741eca1e8cfaf2592dca49ef33f4eb00a9363b119d77969301aca3b81ab",
+        "stderr.log": "bc70755c16075b09e25685ce5c210aa03dbc8080ec73ae3cc45634a1f5bea6c7",
+        "runtime.json": "516818b8b532380ff88db0cf9bb5d7e7de2d7f31d7fdaa191dd70f2addb84e8b",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "input-1.bin": "a985bea21b75da082578bb52456f13358f124251c49c26668db30c11e252d3b7",
+        "input-0.bin": "d32e0c31afa2209bbd46e86042a964546d7083ac775ab1d21f3071b8f2cccd15",
+        "stdout.log": "d29ff10a014dcb24e01097a543f7c44632ec4e66bcceb48eabd01eb793d9d16d",
+        "expected.npy": "455af31abef130fbaae8ad5add150d1195d21d32891cb8e5e3036d6f8d061c75",
+        "model.tflite": "42438a15483ab53de9215a87e3d58b38ca4a8e0578e9cde21ec57d66be704fc8"
+      }
+    }
+  ],
+  "limitations": [
+    "Synthetic fixed routes, E=3,K=2,D=4; no full language model.",
+    "CPU reference uses exact GELU; GPU reference uses tanh GELU.",
+    "FP32 control executes dequantized weights, not an INT8 kernel.",
+    "Log correlation with a source branch is not a patched-runtime proof."
+  ],
+  "finished_at_utc": "2026-09-13T10:05:52.628510+00:00"
+}

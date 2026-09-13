@@ -1,0 +1,41 @@
+{
+  "repo": "tylermullen/Gemma4",
+  "revision": "e735b7f3487c308580e9d374af50108298c450dc",
+  "files": {
+    "bundle.js": {
+      "url": "https://huggingface.co/spaces/tylermullen/Gemma4/resolve/e735b7f3487c308580e9d374af50108298c450dc/bundle.js",
+      "bytes": 366018,
+      "sha256": "886efd3dc33a9a3aeee5895d34e0403204b985bafb54ed948b2f6099fc3293ea"
+    },
+    "README.md": {
+      "url": "https://huggingface.co/spaces/tylermullen/Gemma4/resolve/e735b7f3487c308580e9d374af50108298c450dc/README.md",
+      "bytes": 786,
+      "sha256": "c388fd7a69eb12a0eebfca97a3ec1fa0867b446e93003a0827232bab9bc4353b"
+    },
+    "index.html": {
+      "url": "https://huggingface.co/spaces/tylermullen/Gemma4/resolve/e735b7f3487c308580e9d374af50108298c450dc/index.html",
+      "bytes": 92,
+      "sha256": "10b8aca098d4b29c2f464d3195a780d2d7731089d9f12e607c71ec214aad04c8"
+    },
+    "wasm/genai_wasm_internal.js": {
+      "url": "https://huggingface.co/spaces/tylermullen/Gemma4/resolve/e735b7f3487c308580e9d374af50108298c450dc/wasm/genai_wasm_internal.js",
+      "bytes": 334067,
+      "sha256": "dd02fb217a4aed569e504444eda9a1972a80c8017c96e4000687782690eed927"
+    },
+    "wasm/genai_wasm_internal.wasm": {
+      "url": "https://huggingface.co/spaces/tylermullen/Gemma4/resolve/e735b7f3487c308580e9d374af50108298c450dc/wasm/genai_wasm_internal.wasm",
+      "bytes": 27220715,
+      "sha256": "87a7324d0e26e1c1d880ba9a1c9864c8b17192c5d9db996cdf3bfaeb217f5483"
+    },
+    "wasm/genai_wasm_module_internal.js": {
+      "url": "https://huggingface.co/spaces/tylermullen/Gemma4/resolve/e735b7f3487c308580e9d374af50108298c450dc/wasm/genai_wasm_module_internal.js",
+      "bytes": 334104,
+      "sha256": "383b67e29f7a84e5529170c739a31e9a618a3c58fa50571e7880eb70223b1d20"
+    },
+    "wasm/genai_wasm_module_internal.wasm": {
+      "url": "https://huggingface.co/spaces/tylermullen/Gemma4/resolve/e735b7f3487c308580e9d374af50108298c450dc/wasm/genai_wasm_module_internal.wasm",
+      "bytes": 27220735,
+      "sha256": "2c741c991ab15c60485b4841c3ed4dc5e0265123ec905a99eab27148bf2a1c19"
+    }
+  }
+}

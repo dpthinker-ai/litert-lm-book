@@ -1,0 +1,5 @@
+{
+  "original_worker": "worker-at-run.mjs",
+  "original_worker_sha256": "0e0f2ed978c47c89514fca2e69f084270bef49970f5fc06cb00b0be02743b9e9",
+  "post_collection_change": "Current worker writes checkpoints through temporary file plus atomic rename, avoiding truncated JSON on forced termination. No model, execution, guard or result change. Archived reports retain the hash of the actually executed worker."
+}
