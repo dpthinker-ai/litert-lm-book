@@ -4,8 +4,6 @@
 
 前几章分别计算了 KV cache、权重和异构执行的成本。第 9 章讨论一次验证多个 token，以分摊权重读取开销。本章转向另一种结构：每个 token 只使用部分专家。两种方法都会改变权重访问，但改变的是不同的量；把它们组合起来时，需要重新计算专家工作集。
 
-华为的 Mate XT 2 官方资料将 30B MoE 列为端侧模型配置。[^moe-huawei] 这一产品信息说明了端侧稀疏模型的应用背景。下文的容量、计算与访问核算均围绕本书使用的 Gemma 4 展开。
-
 ## 10.1　总参数与激活参数
 
 混合专家模型让不同的输入使用不同的参数子集。MoE 中的专家（expert）通常是一组前馈网络参数；对某个 token，可以只执行选中的几个专家。这里的“专家”是网络结构中的参数分组，不保证对应人能命名的某个知识领域。
@@ -409,6 +407,5 @@ MoE 将总参数量与单 token 的参数选择范围分开，也使资源分析
 
 
 [^moe-gemma-card]: Google，[*Gemma 4 model card*](https://ai.google.dev/gemma/docs/core/model_card_4)，26B A4B MoE 结构表，Gemma 4；访问日期：2026-09-13。
-[^moe-huawei]: 华为，[*HUAWEI Mate XT 2 | ULTIMATE DESIGN 卖点*](https://consumer.huawei.com/cn/support/content/zh-cn16114946/)，适用版本 HarmonyOS 7.0，“大屏 AI 再进化”；访问日期：2026-09-13。
 
 [^moe-gemma-config]: Google，[Gemma 4 26B-A4B-it 模型配置](https://huggingface.co/google/gemma-4-26B-A4B-it/blob/4d7ae4984b7db7de8f8457170b3f1a419ee76d52/config.json)，`text_config`；仓库提交 `4d7ae4984b7db7de8f8457170b3f1a419ee76d52`；访问日期：2026-09-13。

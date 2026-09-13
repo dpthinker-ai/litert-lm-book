@@ -17,7 +17,7 @@
 
 这些部署资料说明，端侧开放模型已能提供多模态输入与长上下文支持。[^preface-gemma4-edge] 上下文长度、输入模态和吞吐分别描述功能范围与运行性能，不能据此判定不同模型的任务能力相当。比较任务能力，还需要在相同评测集上检验输出质量。
 
-稀疏激活让总参数量与每个 token 使用的参数量分开，容量与带宽也需要分别计算。第 10 章讨论 MoE 如何改变专家工作集，以及这些变化对端侧部署的影响。
+华为的 Mate XT 2 官方资料将 30B MoE 列为端侧模型配置。[^preface-huawei-moe] 稀疏激活让总参数量与每个 token 使用的参数量分开，容量与带宽也需要分别计算。第 10 章以本书实测的 Gemma 4 为例，核算专家工作集，并与生成及内存数据对照。
 
 端侧能力的提升不只来自硬件和推理技术，也来自模型本身的变化。Andrej Karpathy 在 2024 年两次公开谈到这个方向。7 月他在 X 上写道，模型规模竞赛的方向反了：模型之所以大，是因为训练需要记住互联网文本、常见数字的散列值和冷门事实，而思考本身并不需要这么多参数；他预计会出现参数量非常小、却能够可靠思考的模型，甚至可能回到 GPT‑2 的参数规模。[^preface-karpathy-x] 到了 9 月的 No Priors 播客，他说得更具体：蒸馏极其有效，可以用大模型的大量计算教出一个小模型，而小模型能保留大模型的能力；思考核心也许 1B 参数就够，其余知识通过工具获取。他还设想未来的模型体系如同一家公司，强大的云侧模型担任 CEO，大量廉价的小模型分工执行；他自己运行在本地设备的个人知识助理（exo‑cortex）参数量不到 1B。[^preface-karpathy-nopriors]
 
@@ -84,3 +84,4 @@
 [^preface-gemma-family]: Google DeepMind，[Gemma](https://deepmind.google/models/gemma/)；访问日期：2026-07-18。
 [^preface-gemma-e4b]: Google AI Edge Community，[Gemma 4 E4B LiteRT-LM 模型卡](https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm)；访问日期：2026-07-18。
 [^preface-litertlm-docs]: Google AI Edge，[LiteRT-LM 官方文档](https://developers.google.com/edge/litert-lm)，更新日期：2026-07-09；访问日期：2026-07-18。
+[^preface-huawei-moe]: 华为，[*HUAWEI Mate XT 2 | ULTIMATE DESIGN 卖点*](https://consumer.huawei.com/cn/support/content/zh-cn16114946/)，适用版本 HarmonyOS 7.0，“大屏 AI 再进化”；访问日期：2026-09-13。
