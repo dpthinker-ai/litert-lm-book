@@ -1,0 +1,24 @@
+{
+  "worker_environment": {
+    "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+    "platform": "macOS-26.5-arm64-arm-64bit",
+    "packages": {
+      "numpy": "2.4.3",
+      "flatbuffers": "25.12.19",
+      "tflite": "2.18.0"
+    }
+  },
+  "worker_inspection_command": [
+    "tmp/moe-venv/bin/python",
+    "-c",
+    "import sys,json,platform,importlib.metadata as m; print(json.dumps(dict(python=sys.version,platform=platform.platform(),packages={p:m.version(p) for p in [\"numpy\",\"flatbuffers\",\"tflite\"]})))"
+  ],
+  "abi_source_commit": "9fe5be45564c868408e6514c8aabb83e211a0911",
+  "abi_sources": [
+    "litert/c/litert_compiled_model.h:254-261",
+    "litert/c/litert_common.h:333-341,369-372",
+    "litert/c/options/litert_gpu_options.h:28-48,65-66,117-119",
+    "litert/c/litert_tensor_buffer_types.h:74-80"
+  ],
+  "report_sha256": "1fbf98adeb7147b8ec2589ac2e5dbfb4bd0c8ea4b6eaa15a044abe79b6f272b8"
+}

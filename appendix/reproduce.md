@@ -243,3 +243,19 @@ tmp/moe-export-recheck-venv/bin/python experiments/moe_model_header.py \
 ```
 
 脚本固定模型仓库提交，只读取两份产物各自的前 32768 字节，并检查 HTTP Range 响应。报告区分本地头部哈希与发布方提供的完整文件哈希。读取元数据不创建推理引擎，也不验证完整权重、输出或运行内存。
+
+## 九、MoE GPU 覆盖与精度对照
+
+本节使用第七、八节准备的两套 Python 环境，复用已归档的四份原始导出产物和一份激活诊断副本。采集器校验来源文件哈希后复制到新目录；每次调用均由第七节的执行环境加载指定的 v0.17.0 动态库。
+
+```bash
+tmp/moe-export-recheck-venv/bin/python experiments/moe_gpu_check.py \
+  --exports experiments/data/2026-09-13/moe-export \
+  --worker-python tmp/moe-venv/bin/python \
+  --library /path/to/litert_lm/liblitert-lm.dylib \
+  --output tmp/moe-gpu-recheck
+```
+
+输出目录必须不存在。13 项包含 CPU 对照、WebGPU 默认与显式精度、自动 GPU、预期不受支持的产物，以及普通 ADD 对照。报告同时保存实际 Invoke、非 CPU 加速覆盖接口和 Metal 设备日志。只完成环境注册或模型解析，不能计为 GPU 执行成功。
+
+`MATCH` 表示按指定容差通过比较；`NUMERICAL_MISMATCH` 表示执行完成但未通过；`API_REJECTED` 表示原生 API 返回非零状态。进程崩溃、超时或缺少调用记录均作为采集失败处理，不混入 API 拒绝。退出 0 仅表示未发现采集失败或未确认的 GPU 覆盖，必须逐项读取结果。实际结果和证明范围见附录 D 第十九节。

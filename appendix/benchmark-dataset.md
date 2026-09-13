@@ -483,7 +483,7 @@ MTP 组固定 prefill 1024、decode 128、KV 容量 8192。关闭组复用主矩
 
 归档目录为 `experiments/data/2026-09-13/moe-layer/`。`report.json` 记录环境、脚本和动态库哈希、逐案例状态与文件哈希。`provenance.json` 保存包元数据及 ABI 参考信息。`fixture-readback.json` 保存序列化模型、属性、常量和输入字节的核对结果。每例保留模型、原始输入及 API 调用日志；23 个数值案例另保留参考和实际输出。`pilot/` 为初次试运行，不计入 26 例。
 
-这些合成模型未经 litert-torch 导出，不含路由器、注意力、KV cache 或生成循环。结果不证明完整模型正确性、跨后端一致性或端侧部署收益。GPU MoE、匹配的完整模型导出、手机运行与性能测量均待完成；Android v0.17.0 数据待重跑的状态保持不变。
+这些合成模型未经 litert-torch 导出，不含路由器、注意力、KV cache 或生成循环。结果不证明完整模型正确性、跨后端一致性或端侧部署收益。导出与 GPU 补测分别见第十八、十九节；匹配的完整模型、手机运行与性能测量仍待完成。Android v0.17.0 数据待重跑的状态保持不变。
 
 ## 十八、MoE 导出兼容性与公开产物核查（2026-09-13）
 
@@ -508,7 +508,7 @@ MTP 组固定 prefill 1024、decode 128、KV 容量 8192。关闭组复用主矩
 
 这组对照支持将本例差异归因于激活语义不一致。它没有测量这种误差对完整模型质量的影响。诊断副本不属于导出器的原始输出，且 `gelu_tanh` 不在本章冻结 GPU parser 接受的属性范围内；不能据此声称已经修复导出链或实现跨后端一致性。
 
-INT8 两份原始产物的三组权重均为 INT8，并带独立 FP32 scale 输入。权重张量的量化 scale 和 zero point 数组长度均为 0，未携带 GPU parser 要求的仿射量化元数据。此结论来自产物检查与 10.6 节源码条件的对照，本轮没有执行 GPU Invoke。CPU 对这些产物的接受行为不能外推到 GPU。
+INT8 两份原始产物的三组权重均为 INT8，并带独立 FP32 scale 输入。权重张量的量化 scale 和 zero point 数组长度均为 0，未携带 GPU parser 要求的仿射量化元数据。此结论来自产物检查与 10.6 节源码条件的对照，本组实验没有执行 GPU Invoke。CPU 对这些产物的接受行为不能外推到 GPU；后续 GPU 补测见第十九节。
 
 归档目录为 `experiments/data/2026-09-13/moe-export/`。`report.json` 保存完整依赖版本、脚本与动态库哈希、容差、8 次执行及比较结果。每份原始产物另保留导出日志、PyTorch 输出及两种独立参考；诊断副本明确以 `diagnostic-tanh` 命名。`model-inspection.json` 保存布局、属性和量化元数据长度。全部输入、模型、实际输出与原生日志均有 SHA-256；复现依赖见同目录的 `requirements-macos.txt`。
 
@@ -522,3 +522,28 @@ INT8 两份原始产物的三组权重均为 INT8，并带独立 FP32 scale 输�
 | `-web.litertlm` | 15786524672 | 1.5.0 | `tf_lite_artisan_text_decoder` | `gpu_artisan` |
 
 归档目录 `experiments/data/2026-09-13/moe-model-header/` 保存容器头及 `report.json`，后者记录固定 URL、读取范围、头部哈希、section 元数据和发布方提供的完整文件哈希。完整文件哈希未经本地校验，不能当作完整模型已下载验证的证明。此核查只确认容器声明；它不提供 GPU 专家 kernel 覆盖、模型质量或性能证据。
+
+## 十九、MoE GPU 覆盖与精度对照（2026-09-13）
+
+本节复用第十八节已归档的产物，不重新导出或改写权重。设备为 Apple M5 Pro、24 GiB 内存，macOS 26.5；动态库仍为同一 LiteRT-LM 0.17.0 预编译包。CPU/GPU 调用进程使用第十七节的 Python 3.12.13、NumPy 2.4.3 环境。采集器使用第十八节的导出环境生成普通 ADD 对照和汇总报告，不用其中的 nightly 运行库执行模型。
+
+GPU 条件只选择 GPU accelerator，通常显式设置 WebGPU；另有一例自动选择 GPU 的对照。精度条件分别保留默认值、显式 FP16 或显式 FP32。每个案例使用新进程；成功编译的 10 个案例各执行一次 Invoke，另 3 个在编译阶段被拒绝。不采集吞吐或时延。比较沿用绝对容差 `2e-6`、相对容差 `2e-5`，参考为第十八节导出前的 PyTorch 输出；ADD 对照直接计算输入加 1.25。
+
+| 产物与执行配置 | 案例数 | 实际结果 | 最大绝对误差 |
+|---|---:|---|---:|
+| FP32，T=1/2，CPU 默认 | 2 | Invoke 完成，未通过比较，与前组 CPU 结果一致 | 9.8729134e-4 |
+| FP32，T=1/2，WebGPU 默认 | 2 | GPU Invoke 完成，未通过比较 | 4.4716597e-3 |
+| FP32，T=1/2，WebGPU 显式 FP16 | 2 | GPU Invoke 完成，未通过比较 | 4.4716597e-3 |
+| FP32，T=1/2，WebGPU 显式 FP32 | 2 | GPU Invoke 完成，通过比较 | 9.5367432e-7 |
+| FP32，T=2，自动选择 GPU，默认精度 | 1 | 选择 WebGPU/Metal，未通过比较 | 4.4716597e-3 |
+| INT8，T=1/2，WebGPU 显式 FP32 | 2 | 编译拒绝：缺少仿射量化元数据 | — |
+| FP32，T=2，gelu_tanh 诊断副本，WebGPU 显式 FP32 | 1 | 编译拒绝：激活属性不受支持 | — |
+| 普通 ADD，WebGPU 显式 FP32 | 1 | GPU Invoke 完成，通过比较 | 0 |
+
+13 项中有 3 项数值通过、7 项数值未通过、3 项 API 拒绝，没有进程崩溃或采集器失败。CPU 两项复现精确 GELU 与 tanh 参考的差异。对于两种 token 数，GPU 默认配置与显式 FP16 的输出数组逐元素相同；T=2 的自动 GPU 配置也得到相同输出。显式 FP32 时，T=1 与 T=2 的误差分别为 `9.5367431640625e-7`、`4.76837158203125e-7`。这只是本设备、产物和配置的观察，不表示默认精度在所有后端都相同，也没有逐条检查 shader 的指令精度。
+
+8 个实际完成 GPU Invoke 的案例均由 `LiteRtCompiledModelIsNonCpuFullyAccelerated` 返回 true。原生日志选择 Apple M5 Pro、Metal adapter，输入输出缓冲类型为 `WebGpuBufferPacked`。这组证据区分了 GPU 执行与 CPU 回退。日志中 GPU 环境初始化时出现 OpenCL context 创建失败，但随后 Metal 初始化与 GPU Invoke 成功，不能单凭这一行判断整次 GPU 执行失败。
+
+三个拒绝案例都在 `LiteRtCreateCompiledModel` 返回 504，尚未到达 Invoke。INT8 日志明确指出 gate 权重缺少仿射量化；激活诊断副本的日志指出只支持 GELU。日志随后打印“所有操作将在 CPU 运行”的通用提示，但这三个仅请求 GPU 的配置并未创建出可执行模型，不能据此记为 CPU 回退成功。它们也不证明其他转换配置或量化 MoE 产物都不受支持。
+
+归档目录为 `experiments/data/2026-09-13/moe-gpu/`。报告保存来源产物哈希、动态库及脚本哈希、配置、覆盖状态、逐例误差与日志哈希；每例另存输入、模型、参考输出、API 调用轨迹，执行成功时保存实际输出。T=1 是 T=2 的前缀，两种形状不等于独立随机样本。单算子通过不证明完整 MoE 模型生成、质量、内存、持续性能或 Android 支持。
