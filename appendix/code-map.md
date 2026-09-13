@@ -74,4 +74,4 @@
 | `LiteRT/ml_drift_delegate/delegate/composite/moe_experts_kernel.cc` | 按形状选择专家计算路径及加权合并 |
 | `LiteRT/ml_drift_delegate/delegate/composite/experts_remap_builder.cc` | 专家重排缓冲及矩阵实现选择 |
 
-公开 Artisan 产物的引擎选择发生在 LiteRT-LM 层。`runtime/engine/engine_settings.cc:181` 检查文本模型类型，`runtime/engine/engine_factory.h:202` 列出 GPU_ARTISAN 的两个 Legacy 候选。工厂在 `runtime/engine/engine_factory.h:88` 按注册情况选择引擎；无可用实现时，错误会列出候选和实际注册类型。候选类型出现在映射表中，不等于当前发行包已经注册该实现。实际完整产物检查见附录 D 第二十节。
+公开 Artisan 产物的引擎选择发生在 LiteRT-LM 层。`runtime/engine/engine_settings.cc:181` 检查文本模型类型，`runtime/engine/engine_factory.h:202` 列出 GPU_ARTISAN 的两个 Legacy 候选。工厂在 `runtime/engine/engine_factory.h:88` 按注册情况选择引擎；无可用实现时，错误会列出候选和实际注册类型。候选类型出现在映射表中，不等于当前发行包已经注册该实现。实际完整产物检查见附录 D 第二十一节。

@@ -1,0 +1,1136 @@
+[
+  {
+    "elapsed_seconds": 0.00551279098726809,
+    "rss_kib": 2416,
+    "pressure": 1,
+    "resident_size": 11943936,
+    "phys_footprint": 5095784,
+    "wired_size": 0,
+    "pageins": 9
+  },
+  {
+    "elapsed_seconds": 0.2671095000114292,
+    "rss_kib": 371504,
+    "pressure": 1,
+    "resident_size": 380420096,
+    "phys_footprint": 251347904,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 0.5276859579607844,
+    "rss_kib": 466784,
+    "pressure": 1,
+    "resident_size": 477986816,
+    "phys_footprint": 345981960,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 0.7884142500115559,
+    "rss_kib": 474272,
+    "pressure": 1,
+    "resident_size": 485654528,
+    "phys_footprint": 348701728,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 1.049265000037849,
+    "rss_kib": 660752,
+    "pressure": 1,
+    "resident_size": 676610048,
+    "phys_footprint": 444236976,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 1.3125045410124585,
+    "rss_kib": 669872,
+    "pressure": 1,
+    "resident_size": 685948928,
+    "phys_footprint": 448939208,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 1.572682415950112,
+    "rss_kib": 673728,
+    "pressure": 1,
+    "resident_size": 690012160,
+    "phys_footprint": 450413768,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 1.8313488330459222,
+    "rss_kib": 813456,
+    "pressure": 1,
+    "resident_size": 832978944,
+    "phys_footprint": 498124072,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 2.08841070800554,
+    "rss_kib": 820464,
+    "pressure": 1,
+    "resident_size": 840908800,
+    "phys_footprint": 500647232,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 2.3469686249736696,
+    "rss_kib": 870784,
+    "pressure": 1,
+    "resident_size": 891682816,
+    "phys_footprint": 517932376,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 2.6050965000176802,
+    "rss_kib": 967280,
+    "pressure": 1,
+    "resident_size": 990494720,
+    "phys_footprint": 550929824,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 2.8653930829605088,
+    "rss_kib": 974240,
+    "pressure": 1,
+    "resident_size": 997621760,
+    "phys_footprint": 553354656,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 3.128858832991682,
+    "rss_kib": 1067664,
+    "pressure": 1,
+    "resident_size": 1093287936,
+    "phys_footprint": 585385448,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 3.388660707976669,
+    "rss_kib": 1118752,
+    "pressure": 1,
+    "resident_size": 1145602048,
+    "phys_footprint": 602867224,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 3.6471390000078827,
+    "rss_kib": 1124624,
+    "pressure": 1,
+    "resident_size": 1151614976,
+    "phys_footprint": 604931608,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 3.9057034580037,
+    "rss_kib": 1248960,
+    "pressure": 1,
+    "resident_size": 1278935040,
+    "phys_footprint": 636913272,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 4.164900708012283,
+    "rss_kib": 1279760,
+    "pressure": 1,
+    "resident_size": 1310474240,
+    "phys_footprint": 661997176,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 4.425276916008443,
+    "rss_kib": 1323552,
+    "pressure": 1,
+    "resident_size": 1362100224,
+    "phys_footprint": 679413416,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 4.683252290938981,
+    "rss_kib": 1425520,
+    "pressure": 1,
+    "resident_size": 1459732480,
+    "phys_footprint": 712001264,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 4.9436362909618765,
+    "rss_kib": 1432480,
+    "pressure": 1,
+    "resident_size": 1466859520,
+    "phys_footprint": 714426096,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 5.206753124948591,
+    "rss_kib": 1527040,
+    "pressure": 1,
+    "resident_size": 1563688960,
+    "phys_footprint": 746850104,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 5.46953812497668,
+    "rss_kib": 1578256,
+    "pressure": 1,
+    "resident_size": 1616216064,
+    "phys_footprint": 764462928,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 5.729848125018179,
+    "rss_kib": 1584336,
+    "pressure": 1,
+    "resident_size": 1622360064,
+    "phys_footprint": 766576488,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 5.989955040975474,
+    "rss_kib": 1724000,
+    "pressure": 1,
+    "resident_size": 1765376000,
+    "phys_footprint": 814352328,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 6.2475725000258535,
+    "rss_kib": 1732112,
+    "pressure": 1,
+    "resident_size": 1773682688,
+    "phys_footprint": 817219528,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 6.507926958031021,
+    "rss_kib": 1781360,
+    "pressure": 1,
+    "resident_size": 1824112640,
+    "phys_footprint": 834193400,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 6.7656047500204295,
+    "rss_kib": 1877904,
+    "pressure": 1,
+    "resident_size": 1922973696,
+    "phys_footprint": 867223592,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 7.021806290955283,
+    "rss_kib": 1883744,
+    "pressure": 1,
+    "resident_size": 1928953856,
+    "phys_footprint": 869320768,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 7.280758250039071,
+    "rss_kib": 1978272,
+    "pressure": 1,
+    "resident_size": 2025750528,
+    "phys_footprint": 901695624,
+    "wired_size": 0,
+    "pageins": 161
+  },
+  {
+    "elapsed_seconds": 7.5436199579853565,
+    "rss_kib": 2028336,
+    "pressure": 1,
+    "resident_size": 2077016064,
+    "phys_footprint": 918849696,
+    "wired_size": 0,
+    "pageins": 399
+  },
+  {
+    "elapsed_seconds": 7.802228125045076,
+    "rss_kib": 2035296,
+    "pressure": 1,
+    "resident_size": 2084143104,
+    "phys_footprint": 921290912,
+    "wired_size": 0,
+    "pageins": 399
+  },
+  {
+    "elapsed_seconds": 8.062783916015178,
+    "rss_kib": 2128656,
+    "pressure": 1,
+    "resident_size": 2179743744,
+    "phys_footprint": 953272552,
+    "wired_size": 0,
+    "pageins": 399
+  },
+  {
+    "elapsed_seconds": 8.323552040965296,
+    "rss_kib": 2184704,
+    "pressure": 1,
+    "resident_size": 2237136896,
+    "phys_footprint": 972540184,
+    "wired_size": 0,
+    "pageins": 399
+  },
+  {
+    "elapsed_seconds": 8.581401041010395,
+    "rss_kib": 2235152,
+    "pressure": 1,
+    "resident_size": 2288795648,
+    "phys_footprint": 989890864,
+    "wired_size": 0,
+    "pageins": 399
+  },
+  {
+    "elapsed_seconds": 8.84153083304409,
+    "rss_kib": 2330576,
+    "pressure": 1,
+    "resident_size": 2386509824,
+    "phys_footprint": 1022544248,
+    "wired_size": 0,
+    "pageins": 399
+  },
+  {
+    "elapsed_seconds": 9.100045208004303,
+    "rss_kib": 2337520,
+    "pressure": 1,
+    "resident_size": 2393653248,
+    "phys_footprint": 1024985464,
+    "wired_size": 0,
+    "pageins": 399
+  },
+  {
+    "elapsed_seconds": 9.360952415969223,
+    "rss_kib": 2432080,
+    "pressure": 1,
+    "resident_size": 2490449920,
+    "phys_footprint": 1057376704,
+    "wired_size": 0,
+    "pageins": 709
+  },
+  {
+    "elapsed_seconds": 9.621192957973108,
+    "rss_kib": 2483232,
+    "pressure": 1,
+    "resident_size": 2542829568,
+    "phys_footprint": 1074907632,
+    "wired_size": 0,
+    "pageins": 709
+  },
+  {
+    "elapsed_seconds": 9.881555999978445,
+    "rss_kib": 2489344,
+    "pressure": 1,
+    "resident_size": 2549088256,
+    "phys_footprint": 1077119472,
+    "wired_size": 0,
+    "pageins": 709
+  },
+  {
+    "elapsed_seconds": 10.13834449998103,
+    "rss_kib": 2629104,
+    "pressure": 1,
+    "resident_size": 2692202496,
+    "phys_footprint": 1124993616,
+    "wired_size": 0,
+    "pageins": 1131
+  },
+  {
+    "elapsed_seconds": 10.398697457974777,
+    "rss_kib": 2637488,
+    "pressure": 1,
+    "resident_size": 2700787712,
+    "phys_footprint": 1128893032,
+    "wired_size": 0,
+    "pageins": 1221
+  },
+  {
+    "elapsed_seconds": 10.659891124931164,
+    "rss_kib": 2687840,
+    "pressure": 1,
+    "resident_size": 2752348160,
+    "phys_footprint": 1146194560,
+    "wired_size": 0,
+    "pageins": 1221
+  },
+  {
+    "elapsed_seconds": 10.918755874969065,
+    "rss_kib": 2784368,
+    "pressure": 1,
+    "resident_size": 2851192832,
+    "phys_footprint": 1179224776,
+    "wired_size": 0,
+    "pageins": 1221
+  },
+  {
+    "elapsed_seconds": 11.179053165949881,
+    "rss_kib": 2791280,
+    "pressure": 1,
+    "resident_size": 2858270720,
+    "phys_footprint": 1181616840,
+    "wired_size": 0,
+    "pageins": 1221
+  },
+  {
+    "elapsed_seconds": 11.43825945793651,
+    "rss_kib": 2884768,
+    "pressure": 1,
+    "resident_size": 2954002432,
+    "phys_footprint": 1213713168,
+    "wired_size": 0,
+    "pageins": 1221
+  },
+  {
+    "elapsed_seconds": 11.69883479096461,
+    "rss_kib": 2935952,
+    "pressure": 1,
+    "resident_size": 3006414848,
+    "phys_footprint": 1231260480,
+    "wired_size": 0,
+    "pageins": 1221
+  },
+  {
+    "elapsed_seconds": 11.955297957989387,
+    "rss_kib": 2941824,
+    "pressure": 1,
+    "resident_size": 3012526080,
+    "phys_footprint": 1233390400,
+    "wired_size": 0,
+    "pageins": 1221
+  },
+  {
+    "elapsed_seconds": 12.213368415948935,
+    "rss_kib": 3066160,
+    "pressure": 1,
+    "resident_size": 3139747840,
+    "phys_footprint": 1265322912,
+    "wired_size": 0,
+    "pageins": 1590
+  },
+  {
+    "elapsed_seconds": 12.470465874997899,
+    "rss_kib": 3092416,
+    "pressure": 1,
+    "resident_size": 3166633984,
+    "phys_footprint": 1284950944,
+    "wired_size": 0,
+    "pageins": 1590
+  },
+  {
+    "elapsed_seconds": 12.73023512493819,
+    "rss_kib": 3141616,
+    "pressure": 1,
+    "resident_size": 3217014784,
+    "phys_footprint": 1301842896,
+    "wired_size": 0,
+    "pageins": 1854
+  },
+  {
+    "elapsed_seconds": 12.991063499939628,
+    "rss_kib": 3237056,
+    "pressure": 1,
+    "resident_size": 3314745344,
+    "phys_footprint": 1334496280,
+    "wired_size": 0,
+    "pageins": 1943
+  },
+  {
+    "elapsed_seconds": 13.247830790933222,
+    "rss_kib": 3245104,
+    "pressure": 1,
+    "resident_size": 3322986496,
+    "phys_footprint": 1337314328,
+    "wired_size": 0,
+    "pageins": 1976
+  },
+  {
+    "elapsed_seconds": 13.508292707963847,
+    "rss_kib": 3369552,
+    "pressure": 1,
+    "resident_size": 3450421248,
+    "phys_footprint": 1369377912,
+    "wired_size": 0,
+    "pageins": 1976
+  },
+  {
+    "elapsed_seconds": 13.769232291029766,
+    "rss_kib": 3392016,
+    "pressure": 1,
+    "resident_size": 3473424384,
+    "phys_footprint": 1387711608,
+    "wired_size": 0,
+    "pageins": 1976
+  },
+  {
+    "elapsed_seconds": 14.029483875026926,
+    "rss_kib": 3408784,
+    "pressure": 1,
+    "resident_size": 3501228032,
+    "phys_footprint": 1389137040,
+    "wired_size": 0,
+    "pageins": 2240
+  },
+  {
+    "elapsed_seconds": 14.290199624956585,
+    "rss_kib": 3537856,
+    "pressure": 1,
+    "resident_size": 3622764544,
+    "phys_footprint": 1437699312,
+    "wired_size": 0,
+    "pageins": 2240
+  },
+  {
+    "elapsed_seconds": 14.550720582948998,
+    "rss_kib": 3544816,
+    "pressure": 1,
+    "resident_size": 3629891584,
+    "phys_footprint": 1440156912,
+    "wired_size": 0,
+    "pageins": 2240
+  },
+  {
+    "elapsed_seconds": 14.808061333023943,
+    "rss_kib": 3639376,
+    "pressure": 1,
+    "resident_size": 3726721024,
+    "phys_footprint": 1472548152,
+    "wired_size": 0,
+    "pageins": 2240
+  },
+  {
+    "elapsed_seconds": 15.06704587501008,
+    "rss_kib": 3690672,
+    "pressure": 1,
+    "resident_size": 3779248128,
+    "phys_footprint": 1490242920,
+    "wired_size": 0,
+    "pageins": 2598
+  },
+  {
+    "elapsed_seconds": 15.328012165962718,
+    "rss_kib": 3696480,
+    "pressure": 1,
+    "resident_size": 3785195520,
+    "phys_footprint": 1492258152,
+    "wired_size": 0,
+    "pageins": 2598
+  },
+  {
+    "elapsed_seconds": 15.588945582974702,
+    "rss_kib": 3820784,
+    "pressure": 1,
+    "resident_size": 3912482816,
+    "phys_footprint": 1524256200,
+    "wired_size": 0,
+    "pageins": 2982
+  },
+  {
+    "elapsed_seconds": 15.851272666011937,
+    "rss_kib": 3843168,
+    "pressure": 1,
+    "resident_size": 3935404032,
+    "phys_footprint": 1542540744,
+    "wired_size": 0,
+    "pageins": 2982
+  },
+  {
+    "elapsed_seconds": 16.107983415946364,
+    "rss_kib": 3847168,
+    "pressure": 1,
+    "resident_size": 3940712448,
+    "phys_footprint": 1544048072,
+    "wired_size": 0,
+    "pageins": 3033
+  },
+  {
+    "elapsed_seconds": 16.368754707975313,
+    "rss_kib": 3986880,
+    "pressure": 1,
+    "resident_size": 4082565120,
+    "phys_footprint": 1591807552,
+    "wired_size": 0,
+    "pageins": 3585
+  },
+  {
+    "elapsed_seconds": 16.62899458303582,
+    "rss_kib": 3998608,
+    "pressure": 1,
+    "resident_size": 4094574592,
+    "phys_footprint": 1595870784,
+    "wired_size": 0,
+    "pageins": 3585
+  },
+  {
+    "elapsed_seconds": 16.888426874997094,
+    "rss_kib": 4124208,
+    "pressure": 1,
+    "resident_size": 4223188992,
+    "phys_footprint": 1628393120,
+    "wired_size": 0,
+    "pageins": 4080
+  },
+  {
+    "elapsed_seconds": 17.147016374976374,
+    "rss_kib": 4146592,
+    "pressure": 1,
+    "resident_size": 4246110208,
+    "phys_footprint": 1646677664,
+    "wired_size": 0,
+    "pageins": 4080
+  },
+  {
+    "elapsed_seconds": 17.40554729104042,
+    "rss_kib": 4181552,
+    "pressure": 1,
+    "resident_size": 4281909248,
+    "phys_footprint": 1648152272,
+    "wired_size": 0,
+    "pageins": 4080
+  },
+  {
+    "elapsed_seconds": 17.6638327910332,
+    "rss_kib": 4292448,
+    "pressure": 1,
+    "resident_size": 4395466752,
+    "phys_footprint": 1696648984,
+    "wired_size": 0,
+    "pageins": 4080
+  },
+  {
+    "elapsed_seconds": 17.924208874930628,
+    "rss_kib": 4299472,
+    "pressure": 1,
+    "resident_size": 4402659328,
+    "phys_footprint": 1699139352,
+    "wired_size": 0,
+    "pageins": 4080
+  },
+  {
+    "elapsed_seconds": 18.186839291010983,
+    "rss_kib": 4424960,
+    "pressure": 1,
+    "resident_size": 4531159040,
+    "phys_footprint": 1731514232,
+    "wired_size": 0,
+    "pageins": 4080
+  },
+  {
+    "elapsed_seconds": 18.446717791026458,
+    "rss_kib": 4447360,
+    "pressure": 1,
+    "resident_size": 4554096640,
+    "phys_footprint": 1749798800,
+    "wired_size": 0,
+    "pageins": 4080
+  },
+  {
+    "elapsed_seconds": 18.704219207982533,
+    "rss_kib": 4482304,
+    "pressure": 1,
+    "resident_size": 4589879296,
+    "phys_footprint": 1751273384,
+    "wired_size": 0,
+    "pageins": 4080
+  },
+  {
+    "elapsed_seconds": 18.96239533298649,
+    "rss_kib": 4593216,
+    "pressure": 1,
+    "resident_size": 4703453184,
+    "phys_footprint": 1799786480,
+    "wired_size": 0,
+    "pageins": 4080
+  },
+  {
+    "elapsed_seconds": 19.22184908296913,
+    "rss_kib": 4600208,
+    "pressure": 1,
+    "resident_size": 4710612992,
+    "phys_footprint": 1802276848,
+    "wired_size": 0,
+    "pageins": 4127
+  },
+  {
+    "elapsed_seconds": 19.479523207992315,
+    "rss_kib": 4694736,
+    "pressure": 1,
+    "resident_size": 4807409664,
+    "phys_footprint": 1834668088,
+    "wired_size": 0,
+    "pageins": 4140
+  },
+  {
+    "elapsed_seconds": 19.738082833006047,
+    "rss_kib": 4745888,
+    "pressure": 1,
+    "resident_size": 4859789312,
+    "phys_footprint": 1852182632,
+    "wired_size": 0,
+    "pageins": 4140
+  },
+  {
+    "elapsed_seconds": 19.998720332980156,
+    "rss_kib": 4751760,
+    "pressure": 1,
+    "resident_size": 4865802240,
+    "phys_footprint": 1854230632,
+    "wired_size": 0,
+    "pageins": 4142
+  },
+  {
+    "elapsed_seconds": 20.255190541036427,
+    "rss_kib": 4876176,
+    "pressure": 1,
+    "resident_size": 4993204224,
+    "phys_footprint": 1886343368,
+    "wired_size": 0,
+    "pageins": 5078
+  },
+  {
+    "elapsed_seconds": 20.515532791032456,
+    "rss_kib": 4901264,
+    "pressure": 1,
+    "resident_size": 5018894336,
+    "phys_footprint": 1905529032,
+    "wired_size": 0,
+    "pageins": 5128
+  },
+  {
+    "elapsed_seconds": 20.77159991604276,
+    "rss_kib": 4951584,
+    "pressure": 1,
+    "resident_size": 5070422016,
+    "phys_footprint": 1922814200,
+    "wired_size": 0,
+    "pageins": 5163
+  },
+  {
+    "elapsed_seconds": 21.03433529101312,
+    "rss_kib": 5055584,
+    "pressure": 1,
+    "resident_size": 5178097664,
+    "phys_footprint": 1965740376,
+    "wired_size": 0,
+    "pageins": 5649
+  },
+  {
+    "elapsed_seconds": 21.294463541009463,
+    "rss_kib": 5130992,
+    "pressure": 1,
+    "resident_size": 5254987776,
+    "phys_footprint": 2042040784,
+    "wired_size": 0,
+    "pageins": 5649
+  },
+  {
+    "elapsed_seconds": 21.55432200001087,
+    "rss_kib": 5204208,
+    "pressure": 1,
+    "resident_size": 5329829888,
+    "phys_footprint": 2118865456,
+    "wired_size": 0,
+    "pageins": 5649
+  },
+  {
+    "elapsed_seconds": 21.813916457933374,
+    "rss_kib": 5048912,
+    "pressure": 1,
+    "resident_size": 5170085888,
+    "phys_footprint": 3152646752,
+    "wired_size": 0,
+    "pageins": 5663
+  },
+  {
+    "elapsed_seconds": 22.07117695803754,
+    "rss_kib": 5048912,
+    "pressure": 1,
+    "resident_size": 5165318144,
+    "phys_footprint": 3152646752,
+    "wired_size": 0,
+    "pageins": 5663
+  },
+  {
+    "elapsed_seconds": 22.329759415937588,
+    "rss_kib": 5035840,
+    "pressure": 1,
+    "resident_size": 5156700160,
+    "phys_footprint": 3152646752,
+    "wired_size": 0,
+    "pageins": 5663
+  },
+  {
+    "elapsed_seconds": 22.587803415954113,
+    "rss_kib": 5036368,
+    "pressure": 1,
+    "resident_size": 5157240832,
+    "phys_footprint": 3153154656,
+    "wired_size": 0,
+    "pageins": 5663
+  },
+  {
+    "elapsed_seconds": 22.84802999999374,
+    "rss_kib": 4768992,
+    "pressure": 1,
+    "resident_size": 4881858560,
+    "phys_footprint": 3176125048,
+    "wired_size": 0,
+    "pageins": 63392
+  },
+  {
+    "elapsed_seconds": 23.104726415942423,
+    "rss_kib": 4228800,
+    "pressure": 1,
+    "resident_size": 4330291200,
+    "phys_footprint": 3176272504,
+    "wired_size": 0,
+    "pageins": 138824
+  },
+  {
+    "elapsed_seconds": 23.36555937502999,
+    "rss_kib": 3862016,
+    "pressure": 1,
+    "resident_size": 3949920256,
+    "phys_footprint": 3176272504,
+    "wired_size": 0,
+    "pageins": 190159
+  },
+  {
+    "elapsed_seconds": 23.626777166035026,
+    "rss_kib": 3300384,
+    "pressure": 1,
+    "resident_size": 3360735232,
+    "phys_footprint": 3176305272,
+    "wired_size": 0,
+    "pageins": 270614
+  },
+  {
+    "elapsed_seconds": 23.887103333021514,
+    "rss_kib": 2723248,
+    "pressure": 1,
+    "resident_size": 2788605952,
+    "phys_footprint": 3175289464,
+    "wired_size": 0,
+    "pageins": 351779
+  },
+  {
+    "elapsed_seconds": 24.147237665951252,
+    "rss_kib": 2158336,
+    "pressure": 1,
+    "resident_size": 2210136064,
+    "phys_footprint": 3175322232,
+    "wired_size": 0,
+    "pageins": 427265
+  },
+  {
+    "elapsed_seconds": 24.40782325004693,
+    "rss_kib": 2158272,
+    "pressure": 1,
+    "resident_size": 2210070528,
+    "phys_footprint": 3175355000,
+    "wired_size": 0,
+    "pageins": 504037
+  },
+  {
+    "elapsed_seconds": 24.663784625008702,
+    "rss_kib": 2158272,
+    "pressure": 1,
+    "resident_size": 2210070528,
+    "phys_footprint": 3175387768,
+    "wired_size": 0,
+    "pageins": 576987
+  },
+  {
+    "elapsed_seconds": 24.923042624955997,
+    "rss_kib": 2158272,
+    "pressure": 1,
+    "resident_size": 2210070528,
+    "phys_footprint": 3175387768,
+    "wired_size": 0,
+    "pageins": 653032
+  },
+  {
+    "elapsed_seconds": 25.183702416019514,
+    "rss_kib": 2158272,
+    "pressure": 1,
+    "resident_size": 2210070528,
+    "phys_footprint": 3175420536,
+    "wired_size": 0,
+    "pageins": 729435
+  },
+  {
+    "elapsed_seconds": 25.512793457950465,
+    "rss_kib": 1742496,
+    "pressure": 1,
+    "resident_size": 1761034240,
+    "phys_footprint": 3175420536,
+    "wired_size": 0,
+    "pageins": 744907
+  },
+  {
+    "elapsed_seconds": 25.857626165961847,
+    "rss_kib": 1269792,
+    "pressure": 2,
+    "resident_size": 1300267008,
+    "phys_footprint": 3175420536,
+    "wired_size": 0,
+    "pageins": 750828
+  },
+  {
+    "elapsed_seconds": 26.11842712503858,
+    "rss_kib": 1086560,
+    "pressure": 2,
+    "resident_size": 1112637440,
+    "phys_footprint": 3175682680,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 26.471764707937837,
+    "rss_kib": 1005600,
+    "pressure": 2,
+    "resident_size": 920207360,
+    "phys_footprint": 3175830136,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 26.732008457998745,
+    "rss_kib": 449440,
+    "pressure": 2,
+    "resident_size": 460226560,
+    "phys_footprint": 3175846520,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 26.991755499970168,
+    "rss_kib": 430064,
+    "pressure": 1,
+    "resident_size": 440385536,
+    "phys_footprint": 3175879288,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 27.253505207947455,
+    "rss_kib": 347600,
+    "pressure": 1,
+    "resident_size": 355942400,
+    "phys_footprint": 3174535800,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 27.51521879096981,
+    "rss_kib": 293520,
+    "pressure": 1,
+    "resident_size": 321273856,
+    "phys_footprint": 3195540112,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 27.775619540945627,
+    "rss_kib": 341424,
+    "pressure": 1,
+    "resident_size": 349618176,
+    "phys_footprint": 3197375120,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 28.034422333003022,
+    "rss_kib": 344528,
+    "pressure": 1,
+    "resident_size": 352796672,
+    "phys_footprint": 3197391504,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 28.29140049999114,
+    "rss_kib": 344528,
+    "pressure": 1,
+    "resident_size": 352796672,
+    "phys_footprint": 3197391504,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 28.551565457950346,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3422851728,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 28.812761540990323,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3422851728,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 29.073463374981657,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3422851728,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 29.333294166019186,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3422851728,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 29.591997375013307,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3422851728,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 29.852238624938764,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3422720656,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 30.11272958293557,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3422720656,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 30.37012454099022,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3422720656,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 30.629435208044015,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3420983952,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 30.887751832953654,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3420983952,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 31.14772616594564,
+    "rss_kib": 371328,
+    "pressure": 1,
+    "resident_size": 380239872,
+    "phys_footprint": 3420983952,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 31.408354833023623,
+    "rss_kib": 371552,
+    "pressure": 1,
+    "resident_size": 380469248,
+    "phys_footprint": 3420983952,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 31.666328832972795,
+    "rss_kib": 371584,
+    "pressure": 1,
+    "resident_size": 380502016,
+    "phys_footprint": 3419263632,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 31.92535162495915,
+    "rss_kib": 371584,
+    "pressure": 1,
+    "resident_size": 380502016,
+    "phys_footprint": 3417526928,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 32.185302666039206,
+    "rss_kib": 371584,
+    "pressure": 1,
+    "resident_size": 380502016,
+    "phys_footprint": 3417526928,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 32.445281583000906,
+    "rss_kib": 271296,
+    "pressure": 1,
+    "resident_size": 277807104,
+    "phys_footprint": 897303752,
+    "wired_size": 0,
+    "pageins": 775993
+  },
+  {
+    "elapsed_seconds": 32.7055451660417,
+    "rss_kib": 270528,
+    "pressure": 1,
+    "resident_size": 277020672,
+    "phys_footprint": 897287344,
+    "wired_size": 0,
+    "pageins": 775993
+  }
+]

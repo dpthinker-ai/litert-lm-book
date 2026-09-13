@@ -260,44 +260,7 @@ tmp/moe-export-recheck-venv/bin/python experiments/moe_gpu_check.py \
 
 `MATCH` 表示按指定容差通过比较；`NUMERICAL_MISMATCH` 表示执行完成但未通过；`API_REJECTED` 表示原生 API 返回非零状态。进程崩溃、超时或缺少调用记录均作为采集失败处理，不混入 API 拒绝。退出 0 仅表示未发现采集失败或未确认的 GPU 覆盖，必须逐项读取结果。实际结果和证明范围见附录 D 第十九节。
 
-## 十、完整 MoE 产物的生成检查
-
-完整模型验证使用独立进程创建引擎、创建会话，再请求一次短文本生成。采集脚本先流式计算整个模型的 SHA-256，与指定值比较；不一致则不启动引擎。附录 D 第二十节记录本次产物与结果，模型卡来源见 10.6.3 节。
-
-先从该节固定的模型仓库提交取得 GPU 文件，确认本地文件大小为 15786524672 字节。模型与编译缓存不加入书稿仓库。在独立 Python 3.12.13 环境安装归档依赖后运行：
-
-```bash
-uv venv --python 3.12.13 tmp/moe-full-recheck-venv
-uv pip install --python tmp/moe-full-recheck-venv/bin/python \
-  -r experiments/data/2026-09-13/moe-full-model/requirements-macos.txt
-tmp/moe-full-recheck-venv/bin/python experiments/moe_full_model_check.py \
-  --model /path/to/gemma-4-26B-A4B-it-gpu.litertlm \
-  --sha256 94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1 \
-  --output tmp/moe-full-recheck --cache tmp/moe-full-recheck-cache \
-  --context 1024 --output-tokens 32 --timeout 180 --max-rss-gib 18
-```
-
-输出与缓存目录必须不存在。脚本请求 GPU，关闭思考与投机解码，固定贪心采样，并记录引擎创建、会话创建和生成阶段。模型声明可能改变实际选择的后端，须结合原生日志判断；请求 GPU 不等于已经执行 GPU。
-
-脚本适用于 macOS，每隔约 0.25 秒采样进程 RSS 和系统内存压力。在超过设定时间、RSS 上限、系统进入 critical 内存压力或监控失败时停止子进程。停止检查有采样延迟，终止后另有 3 秒退出宽限；这些设置不是严格的资源隔离，也不是峰值内存测量。`GENERATION_COMPLETED` 仅表示一次生成和清理完成，`RUNTIME_ERROR` 表示运行时异常，`STOPPED_BY_GUARD` 表示采集器主动终止，其他未完整结束的调用记为 `INCOMPLETE`。只有第一种状态返回退出码 0；质量和性能需要另测。
-
-## 十一、INT8 MoE 元数据诊断
-
-复用第七、八节的环境和附录 D 第十八节的两份原始 INT8 导出产物。采集器先核对来源与动态库哈希，再生成诊断副本；各例使用新进程执行，不覆盖既有模型或报告。
-
-```bash
-tmp/moe-export-recheck-venv/bin/python experiments/moe_int8_gpu_check.py \
-  --exports experiments/data/2026-09-13/moe-export \
-  --worker-python tmp/moe-venv/bin/python \
-  --library /path/to/litert_lm/liblitert-lm.dylib \
-  --output tmp/moe-int8-gpu-recheck
-```
-
-输出目录必须不存在。16 项覆盖元数据补齐、字段扰动、CPU 对照与量化权重还原为 FP32 的 GPU 对照。CPU 比较精确 GELU，GPU 比较 tanh-GELU；报告另存与原始 PyTorch 输出的差异，不能把改过独立 scale 的诊断输出直接当作原模型正确性测试。
-
-`invoke_completed` 仅记录运行 API 成功返回。采集器另检查 WebGPU 的 `Validation error:` 日志，将其归为 `BACKEND_VALIDATION_ERROR`，优先于数值比较结果。即使覆盖接口为 true，也必须排除后端验证错误后才能计为有效执行证据。脚本退出 0 只表示记录完整；应读取逐例状态，不能解释为 INT8 GPU 兼容性通过。完整结果与边界见附录 D 第二十一节。
-
-## 十二、MoE 单层规模与路由对照
+## 十、MoE 单层规模与路由对照
 
 沿用第七节的执行环境，准备相同版本的预编译动态库。采集入口按现有工作区约定，从 `tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm/liblitert-lm.dylib` 加载库；换位置时应先为入口配置正确路径，并记录脚本差异。运行：
 
@@ -309,74 +272,19 @@ OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
 
 输出目录必须不存在。脚本固定随机种子，重建 16 组 FP32 合成模型，再以随机排列的顺序运行 CPU、GPU 各 3 个进程。每个进程预热 3 次、计时 12 次，每次回读都检查数值。`--pilot` 只运行两个形状用于核对环境，不可替代完整矩阵。模型文件没有加入版本库，重建后应与归档 `fixture.json` 中的 SHA-256 对照。当前采集入口实时读取硬件；实际原始采集脚本另存为 `collector-at-run.py`，其硬件字段与本次机器实查一致。
 
-报告中的 `valid` 同时要求调用完成、数值通过、无后端验证错误，GPU 还要求 Metal 日志和加速覆盖接口确认。计时范围、三次进程重复的统计及解释边界见附录 D 第二十二节。进程 RSS 不是 GPU 内存；唯一选中专家权重字节也不是实测访存量。
+报告中的 `valid` 同时要求调用完成、数值通过、无后端验证错误，GPU 还要求 Metal 日志和加速覆盖接口确认。计时范围、三次进程重复的统计及解释边界见附录 D 第二十节。进程 RSS 不是 GPU 内存；唯一选中专家权重字节也不是实测访存量。
 
-## 十三、INT8 MoE 隐藏维度诊断
+## 十一、完整 MoE 的重复生成与流式计数
 
-复用第八节的导出环境和第十一节的单位仿射元数据副本，执行进程沿用第七节环境和默认动态库位置。采集脚本对来源产物与动态库做哈希核对，再在新目录生成 H=4、H=8 副本：
-
-```bash
-tmp/moe-export-recheck-venv/bin/python experiments/moe_int8_shape_check.py \
-  --output tmp/moe-int8-shape-recheck
-```
-
-脚本处理 T=1、2 的两份来源，各做 INT8 CPU、INT8 GPU、FP32 GPU 三类检查。H=8 是保留原函数的零填充；H=4 使用截取后的独立参考。采集完成后读取逐例状态，脚本正常退出不等于 INT8 GPU 通过。源码审计只读取冻结 Git 对象，不修改分析基线；候选位置、已排除的解释和无法验证的部分见附录 D 第二十三节。
-
-## 十四、冻结演示运行时的 WebGPU 检查
-
-本节要求 macOS 上的 Google Chrome、Node.js 与 Playwright，以及前面使用的 Python 执行环境。先按 `experiments/data/2026-09-13/moe-web/assets.json` 的固定地址取得原始资源。下面的命令逐项校验，保留原目录结构：
+从 10.6.4 节所引固定模型仓库取得完整 GPU 文件，核对大小 15786524672 字节和下列 SHA-256。在独立 Python 3.12.13 环境安装依赖，使用 `moe_generation_check.py`：
 
 ```bash
-python3 - <<'PY'
-import hashlib, json, urllib.request
-from pathlib import Path
-manifest = json.loads(Path('experiments/data/2026-09-13/moe-web/assets.json').read_text())
-root = Path('tmp/moe-web-recheck/site')
-for name, entry in manifest['files'].items():
-    target = root / name
-    target.parent.mkdir(parents=True, exist_ok=True)
-    urllib.request.urlretrieve(entry['url'], target)
-    assert target.stat().st_size == entry['bytes']
-    assert hashlib.sha256(target.read_bytes()).hexdigest() == entry['sha256']
-PY
+uv venv --python 3.12.13 tmp/moe-full-recheck-venv
+uv pip install --python tmp/moe-full-recheck-venv/bin/python \
+  -r experiments/data/2026-09-13/moe-full-model/requirements-macos.txt
 ```
 
-模型文件不进入版本库。26B 使用第十节已验证的 GPU 文件；E4B 从 `experiments/data/2026-09-13/moe-web/control-download.json` 的固定 URL 下载，并核对同记录的完整文件哈希。运行检查时，`--node` 指向本机 Node 可执行文件，`--playwright-module` 指向已安装的 Playwright `index.mjs`。下例以 E4B 为对照：
-
-```bash
-tmp/moe-venv/bin/python experiments/moe_web_check.py \
-  --model /path/to/gemma-4-E4B-it-gpu.litertlm \
-  --sha256 4912bb5a9c30993c51a7711f763212077458529312175df0573a78323a2bb7ff \
-  --site tmp/moe-web-recheck/site \
-  --assets experiments/data/2026-09-13/moe-web/assets.json \
-  --output tmp/moe-web-e4b-recheck \
-  --node /path/to/node \
-  --playwright-module /path/to/node_modules/playwright/index.mjs
-```
-
-每次使用新的输出目录。测试 26B 时替换模型路径、SHA-256 和输出目录，文件哈希取第十节记录。采集器只启动并关闭自己的浏览器配置，调用原始演示的本地文件加载入口，再请求一次短响应。它不调整用户正在运行的其他应用。`GENERATION_COMPLETED` 要求生成完成回调、引擎关闭、进程正常退出，且没有页面或 console error；不是只检查加载完成。
-
-保护条件和实际结果见附录 D 第二十四节。触发压力阈值的运行按 `STOPPED_BY_GUARD` 归档，不能计入吞吐或质量统计，也不应为取得一次成功记录而自动放宽保护条件。浏览器版本、适配器信息、资源哈希和原始响应均随本次运行保存；若更换浏览器或演示资源，应作为新的环境记录。原始执行脚本另存为数据目录中的 `worker-at-run.mjs`；当前 worker 仅将检查点保存改为原子替换，以免强制终止留下半份 JSON，采集后的差异记在 `collection-notes.json`。
-
-## 十五、完整 MoE 的低上下文补测
-
-复用第十节的环境、采集器与完整 GPU 文件。沿用 RSS 与内存压力保护，将时限设为 120 秒，先验证一次短生成：
-
-```bash
-tmp/moe-full-recheck-venv/bin/python experiments/moe_full_model_check.py \
-  --model /path/to/gemma-4-26B-A4B-it-gpu.litertlm \
-  --sha256 94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1 \
-  --output tmp/moe-low-context-recheck --cache tmp/moe-low-context-cache \
-  --context 128 --output-tokens 1 --timeout 120
-```
-
-输出目录与缓存目录须为新目录。默认提示词要求仅返回 OK。第二项把提示词改为 `In one short sentence, explain what RAM stores.`，并将 `--output-tokens` 改为 32，另用新的输出和缓存目录。本次两项分别成功和被压力保护停止，详见附录 D 第二十五节；它们不是只改变一个变量的性能对照。
-
-只有 `GENERATION_COMPLETED`、返回文本、正常清理与退出码共同满足，才计为短生成完成。读取日志核对实际 Artisan／Metal 路径和上下文设置；不要把创建成功或无 Python 异常当作完整输出证据。持续性能测量还需另行记录首 token 和逐 step 事件。
-
-## 十六、完整 MoE 的重复生成与流式计数
-
-复用第十节的 v0.17.0 环境和完整 GPU 文件，使用新的 `moe_generation_check.py`。该脚本显式开启 benchmark，直接记录冻结 C API 的流事件，再读取会话的运行时计数。英文配置为：
+该脚本显式开启 benchmark，直接记录冻结 C API 的流事件，再读取会话的运行时计数。英文配置为：
 
 ```bash
 tmp/moe-full-recheck-venv/bin/python experiments/moe_generation_check.py \
@@ -389,13 +297,13 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_generation_check.py \
 
 同一命令使用不同输出和缓存目录运行三次，得到三个独立进程、每进程三个新会话。中文组只运行一个进程，把容量改为 256、输出上限改为 96，提示词改为“请用两句话解释 RAM 和 SSD 的区别。”。每次都使用新目录；不并行启动完整模型，以免模型之间争用内存。
 
-保护条件与第十五节相同，时限改为 180 秒。采集器保存初始化前的内存状态，以及生成期间的逐次流事件；事件时间戳位于消费队列之前。只有无错误的 final 事件、非空文本、至少两个 runtime decode 计数、会话及引擎关闭、进程正常退出共同满足，才计为完整多 token 生成。后端验证错误另行归类，不能只看运行 API 返回值。
+保护条件为 critical 内存压力立即停止、进程 RSS 上限 18 GiB、总时限 180 秒。采集器保存初始化前的内存状态，以及生成期间的逐次流事件；事件时间戳位于消费队列之前。只有无错误的 final 事件、非空文本、至少两个 runtime decode 计数、会话及引擎关闭、进程正常退出共同满足，才计为完整多 token 生成。后端验证错误另行归类，不能只看运行 API 返回值。
 
-读 `summary.json` 时，将每个引擎的首次请求与后两个会话分别统计。`first_text_callback_seconds` 是客户端可见文本到达时间，benchmark 中的 TTFT 与初始化字段有不同定义，详见附录 D 第二十六节。每次回调不保证对应一个 token，也不能从完整模型文件大小或进程 RSS 推算 GPU 独占内存。
+读 `summary.json` 时，将每个引擎的首次请求与后两个会话分别统计。`first_text_callback_seconds` 是客户端可见文本到达时间，benchmark 中的 TTFT 与初始化字段有不同定义，详见附录 D 第二十一节。每次回调不保证对应一个 token，也不能从完整模型文件大小或进程 RSS 推算 GPU 独占内存。
 
-## 十七、完整 MoE 的上下文容量与实际输入
+## 十二、完整 MoE 的上下文容量与实际输入
 
-沿用第十六节的环境与完整 GPU 文件。先用 `moe_generation_check.py` 保持英文短提示词和输出上限 32，将容量分别设为 512、1024、2048、4096。每项仍运行三个新会话，并分别指定新的输出和缓存目录；这一步只改变容量，实际输入长度须读取运行时 prefill 计数。
+沿用第十一节的环境与完整 GPU 文件。先用 `moe_generation_check.py` 保持英文短提示词和输出上限 32，将容量分别设为 512、1024、2048、4096。每项仍运行三个新会话，并分别指定新的输出和缓存目录；这一步只改变容量，实际输入长度须读取运行时 prefill 计数。
 
 材料生成器把识别码放在开头，用带编号的说明逐条填充原始 token 预算，最后添加问题。原文和分词 ID 分别保存为 `prompt.txt`、`prompt-tokenization.json`，构造与分词均不进入生成计时。预算不含对话格式；脚本要求原始预算、输出上限与预留的 32 token 之和不超过容量。这个预留值不是固定格式开销的定义，运行后还要核对实际 prefill 与容量。本次四组原始计数为 384、896、1920、3968，运行时分别为 397、909、1933、3981。
 
@@ -409,13 +317,15 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_context_check.py \
   --context 512 --input-tokens 384 --output-tokens 64 --repeats 3 --timeout 180
 ```
 
-其余材料测试按 `--context / --input-tokens` 配置为 1024/896、2048/1920、4096/3968。每项均使用新目录，输出上限保持 64。按容量 512、1024、2048、4096 的顺序，每档先测短输入、再测材料，八项串行执行。保护阈值与第十六节相同。
+其余材料测试按 `--context / --input-tokens` 配置为 1024/896、2048/1920、4096/3968。每项均使用新目录，输出上限保持 64。按容量 512、1024、2048、4096 的顺序，每档先测短输入、再测材料，八项串行执行。保护阈值与第十一节相同。
 
-生成完成条件沿用第十六节；识别码检查是独立字段，不决定 `GENERATION_COMPLETED`。查看 `answer_contains_marker` 后，还要核对完整回答是否与材料相符。这个固定材料任务不代替系统性质量测试。逐轮计时、首次与复用请求以及压力边界见附录 D 第二十七节。
+生成完成条件沿用第十一节；识别码检查是独立字段，不决定 `GENERATION_COMPLETED`。查看 `answer_contains_marker` 后，还要核对完整回答是否与材料相符。这个固定材料任务不代替系统性质量测试。逐轮计时、首次与复用请求以及压力边界见附录 D 第二十二节。
 
-## 十八、完整 MoE 的较长输出
+## 十三、完整 MoE 的较长输出
 
-复用第十六节的环境、完整 GPU 文件与 `moe_generation_check.py`。固定容量 4096，提示词明确要求较长教程：
+复用第十一节的环境、完整 GPU 文件与 `moe_generation_check.py`。固定容量 4096，提示词明确要求较长教程：
+
+第二组只将输出上限改为 256，另用新的输出和缓存目录，两组串行执行。先核对每次实际 decode 计数是否达到目标，再检查完整原文是否自然结束。本次均达到上限并截在句中；无错误的 final 不能作为文章完整性的判据。首次请求和后两个新会话分别统计，完整条件与结果见附录 D 第二十三节。
 
 ```bash
 tmp/moe-full-recheck-venv/bin/python experiments/moe_generation_check.py \
@@ -426,15 +336,13 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_generation_check.py \
   --prompt 'Write a technical tutorial of at least 600 words explaining how RAM and SSD differ. Discuss volatility, capacity, access latency, bandwidth, virtual memory, and why both are needed. Use complete paragraphs and concrete examples.'
 ```
 
-第二组只将输出上限改为 256，另用新的输出和缓存目录，两组串行执行。先核对每次实际 decode 计数是否达到目标，再检查完整原文是否自然结束。本次均达到上限并截在句中；无错误的 final 不能作为文章完整性的判据。首次请求和后两个新会话分别统计，完整条件与结果见附录 D 第二十八节。
-
-## 十九、完整 MoE 的多轮状态更新
+## 十四、完整 MoE 的多轮状态更新
 
 沿用相同环境与模型，使用 `moe_multiturn_check.py`。脚本固定三个独立会话、每个会话六轮，同一会话的六轮之间保留会话对象。
 
-每轮发送前检查当前会话计数、该轮原始 token 数、输出预算及 32-token 格式预留之和。运行后核对前后计数与增量指标，不能把预留值当作实际格式开销。各轮的状态字段要求见附录 D 第二十九节；`state_matches` 是完整 JSON 字典比较，与生成及清理完成状态分开记录。
+每轮发送前检查当前会话计数、该轮原始 token 数、输出预算及 32-token 格式预留之和。运行后核对前后计数与增量指标，不能把预留值当作实际格式开销。各轮的状态字段要求见附录 D 第二十四节；`state_matches` 是完整 JSON 字典比较，与生成及清理完成状态分开记录。
 
-保护条件沿用第十六节，输出和缓存目录必须为新目录。逐轮首文本时间读取 `first_text_callback_seconds`；运行时 TTFT 字段对应会话首轮，后续轮次不能直接使用它。核对下一轮是否接续上一轮的会话计数，并在三个会话之间确认计数重新从 0 开始。
+保护条件沿用第十一节，输出和缓存目录必须为新目录。逐轮首文本时间读取 `first_text_callback_seconds`；运行时 TTFT 字段对应会话首轮，后续轮次不能直接使用它。核对下一轮是否接续上一轮的会话计数，并在三个会话之间确认计数重新从 0 开始。
 
 采集命令如下：
 
@@ -445,3 +353,18 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_multiturn_check.py \
   --output tmp/moe-multiturn --cache tmp/moe-multiturn-cache \
   --context 4096 --output-tokens 64 --repeats 3 --timeout 180
 ```
+
+## 十五、完整 MoE 的分阶段进程内存
+
+沿用第十一节的 Python 环境、完整 GPU 文件和保护条件，使用 macOS 自带的 libproc 与 vmmap。脚本固定容量 4096、材料原始预算 3968、输出上限 64，以及两个新会话：先短输入，再材料输入。阶段表通过 `proc_pid_rusage` 读取字节数，结构定义对应本机 macOS SDK 的 `sys/resource.h` 中 `rusage_info_v0`，调用声明在 `libproc.h`。
+
+```bash
+tmp/moe-full-recheck-venv/bin/python experiments/moe_memory_check.py \
+  --model /path/to/gemma-4-26B-A4B-it-gpu.litertlm \
+  --sha256 94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1 \
+  --output tmp/moe-memory-r1 --cache tmp/moe-memory-cache-r1
+```
+
+使用新目录串行执行三次，容量与输入不变。核对 `memory_stages` 的九个阶段、实际计数、完整响应和清理状态；四份 vmmap 记录各须返回 0。采集错误单独归类。
+
+RSS 与 footprint 分别取三个进程同阶段的中位数。libproc 先于 vmmap，二者异时且口径重叠。采集会扰动执行，生成阶段包含 prefill 与 decode，时延不纳入性能对照。结果及版本见附录 D 第二十五节。

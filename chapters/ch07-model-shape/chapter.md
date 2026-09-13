@@ -242,7 +242,7 @@ absl::Status SetExternalWeightOptions(ModelResources& resources,
 
 mmap 先增加虚拟地址映射，物理驻留随后受页面访问、`madvise` 和内核回收策略影响。它可以避免把整个模型再复制到一块普通堆缓冲，但不会自动缩小推理阶段需要访问的权重工作集。对稠密模型而言，每个 decode step 通常会访问大部分权重；实际驻留规模还取决于后端预打包、缓存和系统内存压力。
 
-LiteRT-LM 的内存日志本身就提供多种口径：peak system RAM、physical footprint、非 mmap 堆、in-use heap 和 private footprint。判断模型能否运行时，应同时看私有内存、KV cache、激活、后端工作区和文件映射的驻留工作集。虚拟映射大小不是峰值物理内存，二者之差也不能全部视为节省量。
+LiteRT-LM 的内存日志本身就提供多种口径：peak system RAM、physical footprint（macOS 的进程内存记账指标）、非 mmap 堆、in-use heap 和 private footprint。判断模型能否运行时，应同时看私有内存、KV cache、激活、后端工作区和文件映射的驻留工作集。虚拟映射大小不是峰值物理内存，二者之差也不能全部视为节省量。
 
 附录 D 第十四节保留了历史 v0.13.1 运行环境在一台带壳的 HONOR MEP-AN00 上记录的进程内存：相同的 E4B 文件以 GPU OpenCL 路径运行，客户端在加载与请求阶段采集 RSS，并在阶段边界另记录按共享比例分摊的驻留内存（PSS，proportional set size）。引擎释放后进程还继续存活 3 s，因而可以在同一进程内比较释放前后的读数；释放后的读数描述的是引擎销毁后的剩余占用，不包含进程退出后的系统内存变化。
 

@@ -1,0 +1,479 @@
+{
+  "runs": [
+    {
+      "run": 1,
+      "script_sha256": "a2010bb21d5a37aea35cc47c76a204b26116f7ae68418f4f66aa2a1596bbeb55",
+      "memory_stages": [
+        {
+          "stage": "before_engine",
+          "elapsed_seconds": 2.1669548004865646e-06,
+          "resident_size": 44728320,
+          "phys_footprint": 20464216,
+          "wired_size": 0,
+          "pageins": 32
+        },
+        {
+          "stage": "engine_created",
+          "elapsed_seconds": 23.00015112501569,
+          "resident_size": 5157355520,
+          "phys_footprint": 2314539568,
+          "wired_size": 0,
+          "pageins": 53378,
+          "vmmap_returncode": 0
+        },
+        {
+          "stage": "short_conversation_created",
+          "elapsed_seconds": 23.98785345896613,
+          "resident_size": 4537974784,
+          "phys_footprint": 3151106608,
+          "wired_size": 0,
+          "pageins": 53491
+        },
+        {
+          "stage": "short_generation_finished",
+          "elapsed_seconds": 29.92692670901306,
+          "resident_size": 108511232,
+          "phys_footprint": 3194917448,
+          "wired_size": 0,
+          "pageins": 823754,
+          "vmmap_returncode": 0
+        },
+        {
+          "stage": "short_conversation_closed",
+          "elapsed_seconds": 30.68455212493427,
+          "resident_size": 111345664,
+          "phys_footprint": 3194081864,
+          "wired_size": 0,
+          "pageins": 823755
+        },
+        {
+          "stage": "long_conversation_created",
+          "elapsed_seconds": 30.686578584020026,
+          "resident_size": 112148480,
+          "phys_footprint": 3194081864,
+          "wired_size": 0,
+          "pageins": 823755
+        },
+        {
+          "stage": "long_generation_finished",
+          "elapsed_seconds": 33.71818558394443,
+          "resident_size": 139051008,
+          "phys_footprint": 3416756808,
+          "wired_size": 0,
+          "pageins": 823761,
+          "vmmap_returncode": 0
+        },
+        {
+          "stage": "long_conversation_closed",
+          "elapsed_seconds": 34.3445935419295,
+          "resident_size": 139067392,
+          "phys_footprint": 3416756808,
+          "wired_size": 0,
+          "pageins": 823761
+        },
+        {
+          "stage": "engine_closed",
+          "elapsed_seconds": 34.47191987500992,
+          "resident_size": 281411584,
+          "phys_footprint": 1808829632,
+          "wired_size": 0,
+          "pageins": 823772,
+          "vmmap_returncode": 0
+        }
+      ],
+      "pressure_counts": {
+        "1": 127,
+        "2": 8
+      },
+      "sampled_peak_rss_bytes": 5275566080,
+      "sampled_peak_footprint_bytes": 3420312136,
+      "generation_counts": [
+        {
+          "prefill": 23,
+          "decode": 20
+        },
+        {
+          "prefill": 3981,
+          "decode": 20
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "script_sha256": "b118058fbf168273f9b19bbdb533ec551d328bd6f426661b328dabf45dc6fe9e",
+      "memory_stages": [
+        {
+          "stage": "before_engine",
+          "elapsed_seconds": 1.7079291865229607e-06,
+          "resident_size": 44875776,
+          "phys_footprint": 20595264,
+          "wired_size": 0,
+          "pageins": 154
+        },
+        {
+          "stage": "engine_created",
+          "elapsed_seconds": 21.667833915911615,
+          "resident_size": 5382455296,
+          "phys_footprint": 2216268384,
+          "wired_size": 0,
+          "pageins": 5663,
+          "vmmap_started_seconds": 21.668259750003926,
+          "vmmap_returncode": 0,
+          "vmmap_finished_seconds": 22.339479874935932
+        },
+        {
+          "stage": "short_conversation_created",
+          "elapsed_seconds": 22.5932198750088,
+          "resident_size": 5159387136,
+          "phys_footprint": 3153465952,
+          "wired_size": 0,
+          "pageins": 5663
+        },
+        {
+          "stage": "short_generation_finished",
+          "elapsed_seconds": 27.797260541003197,
+          "resident_size": 350601216,
+          "phys_footprint": 3197391504,
+          "wired_size": 0,
+          "pageins": 775993,
+          "vmmap_started_seconds": 27.79758116591256,
+          "vmmap_returncode": 0,
+          "vmmap_finished_seconds": 28.451331250020303
+        },
+        {
+          "stage": "short_conversation_closed",
+          "elapsed_seconds": 28.452554791001603,
+          "resident_size": 353370112,
+          "phys_footprint": 3197391504,
+          "wired_size": 0,
+          "pageins": 775993
+        },
+        {
+          "stage": "long_conversation_created",
+          "elapsed_seconds": 28.454334957990795,
+          "resident_size": 354123776,
+          "phys_footprint": 3197391504,
+          "wired_size": 0,
+          "pageins": 775993
+        },
+        {
+          "stage": "long_generation_finished",
+          "elapsed_seconds": 31.526720999972895,
+          "resident_size": 380502016,
+          "phys_footprint": 3419263632,
+          "wired_size": 0,
+          "pageins": 775993,
+          "vmmap_started_seconds": 31.527055707992986,
+          "vmmap_returncode": 0,
+          "vmmap_finished_seconds": 32.14205729099922
+        },
+        {
+          "stage": "long_conversation_closed",
+          "elapsed_seconds": 32.14505341602489,
+          "resident_size": 380502016,
+          "phys_footprint": 3417526928,
+          "wired_size": 0,
+          "pageins": 775993
+        },
+        {
+          "stage": "engine_closed",
+          "elapsed_seconds": 32.267054624971934,
+          "resident_size": 277987328,
+          "phys_footprint": 1833520416,
+          "wired_size": 0,
+          "pageins": 775993,
+          "vmmap_started_seconds": 32.27016620791983,
+          "vmmap_returncode": 0,
+          "vmmap_finished_seconds": 32.78251849999651
+        }
+      ],
+      "pressure_counts": {
+        "1": 122,
+        "2": 4
+      },
+      "sampled_peak_rss_bytes": 5329829888,
+      "sampled_peak_footprint_bytes": 3422851728,
+      "generation_counts": [
+        {
+          "prefill": 23,
+          "decode": 20
+        },
+        {
+          "prefill": 3981,
+          "decode": 20
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "script_sha256": "b118058fbf168273f9b19bbdb533ec551d328bd6f426661b328dabf45dc6fe9e",
+      "memory_stages": [
+        {
+          "stage": "before_engine",
+          "elapsed_seconds": 1.541106030344963e-06,
+          "resident_size": 44990464,
+          "phys_footprint": 20726360,
+          "wired_size": 0,
+          "pageins": 591
+        },
+        {
+          "stage": "engine_created",
+          "elapsed_seconds": 20.086386000039056,
+          "resident_size": 5381619712,
+          "phys_footprint": 2332840496,
+          "wired_size": 0,
+          "pageins": 16480,
+          "vmmap_started_seconds": 20.08679983310867,
+          "vmmap_returncode": 0,
+          "vmmap_finished_seconds": 20.827448208001442
+        },
+        {
+          "stage": "short_conversation_created",
+          "elapsed_seconds": 21.092099333065562,
+          "resident_size": 5076484096,
+          "phys_footprint": 3152368176,
+          "wired_size": 0,
+          "pageins": 16593
+        },
+        {
+          "stage": "short_generation_finished",
+          "elapsed_seconds": 26.251060166046955,
+          "resident_size": 215252992,
+          "phys_footprint": 3196211784,
+          "wired_size": 0,
+          "pageins": 786949,
+          "vmmap_started_seconds": 26.251369708101265,
+          "vmmap_returncode": 0,
+          "vmmap_finished_seconds": 26.912311125081033
+        },
+        {
+          "stage": "short_conversation_closed",
+          "elapsed_seconds": 26.91314025002066,
+          "resident_size": 218038272,
+          "phys_footprint": 3196211784,
+          "wired_size": 0,
+          "pageins": 786949
+        },
+        {
+          "stage": "long_conversation_created",
+          "elapsed_seconds": 26.914589958032593,
+          "resident_size": 218742784,
+          "phys_footprint": 3196228168,
+          "wired_size": 0,
+          "pageins": 786949
+        },
+        {
+          "stage": "long_generation_finished",
+          "elapsed_seconds": 29.706389000057243,
+          "resident_size": 246333440,
+          "phys_footprint": 3419837000,
+          "wired_size": 0,
+          "pageins": 786949,
+          "vmmap_started_seconds": 29.70766287506558,
+          "vmmap_returncode": 0,
+          "vmmap_finished_seconds": 30.329226625035517
+        },
+        {
+          "stage": "long_conversation_closed",
+          "elapsed_seconds": 30.332285416079685,
+          "resident_size": 246382592,
+          "phys_footprint": 3416363592,
+          "wired_size": 0,
+          "pageins": 786949
+        },
+        {
+          "stage": "engine_closed",
+          "elapsed_seconds": 30.44894304103218,
+          "resident_size": 283885568,
+          "phys_footprint": 1824984328,
+          "wired_size": 0,
+          "pageins": 786953,
+          "vmmap_started_seconds": 30.449833875056356,
+          "vmmap_returncode": 0,
+          "vmmap_finished_seconds": 30.94731404108461
+        }
+      ],
+      "pressure_counts": {
+        "1": 115,
+        "2": 4
+      },
+      "sampled_peak_rss_bytes": 5316591616,
+      "sampled_peak_footprint_bytes": 3421672008,
+      "generation_counts": [
+        {
+          "prefill": 23,
+          "decode": 20
+        },
+        {
+          "prefill": 3981,
+          "decode": 20
+        }
+      ]
+    }
+  ],
+  "stage_summary_bytes": {
+    "before_engine": {
+      "resident_size": {
+        "median": 44875776,
+        "min": 44728320,
+        "max": 44990464
+      },
+      "phys_footprint": {
+        "median": 20595264,
+        "min": 20464216,
+        "max": 20726360
+      },
+      "pageins": {
+        "median": 154,
+        "min": 32,
+        "max": 591
+      }
+    },
+    "engine_created": {
+      "resident_size": {
+        "median": 5381619712,
+        "min": 5157355520,
+        "max": 5382455296
+      },
+      "phys_footprint": {
+        "median": 2314539568,
+        "min": 2216268384,
+        "max": 2332840496
+      },
+      "pageins": {
+        "median": 16480,
+        "min": 5663,
+        "max": 53378
+      }
+    },
+    "short_conversation_created": {
+      "resident_size": {
+        "median": 5076484096,
+        "min": 4537974784,
+        "max": 5159387136
+      },
+      "phys_footprint": {
+        "median": 3152368176,
+        "min": 3151106608,
+        "max": 3153465952
+      },
+      "pageins": {
+        "median": 16593,
+        "min": 5663,
+        "max": 53491
+      }
+    },
+    "short_generation_finished": {
+      "resident_size": {
+        "median": 215252992,
+        "min": 108511232,
+        "max": 350601216
+      },
+      "phys_footprint": {
+        "median": 3196211784,
+        "min": 3194917448,
+        "max": 3197391504
+      },
+      "pageins": {
+        "median": 786949,
+        "min": 775993,
+        "max": 823754
+      }
+    },
+    "short_conversation_closed": {
+      "resident_size": {
+        "median": 218038272,
+        "min": 111345664,
+        "max": 353370112
+      },
+      "phys_footprint": {
+        "median": 3196211784,
+        "min": 3194081864,
+        "max": 3197391504
+      },
+      "pageins": {
+        "median": 786949,
+        "min": 775993,
+        "max": 823755
+      }
+    },
+    "long_conversation_created": {
+      "resident_size": {
+        "median": 218742784,
+        "min": 112148480,
+        "max": 354123776
+      },
+      "phys_footprint": {
+        "median": 3196228168,
+        "min": 3194081864,
+        "max": 3197391504
+      },
+      "pageins": {
+        "median": 786949,
+        "min": 775993,
+        "max": 823755
+      }
+    },
+    "long_generation_finished": {
+      "resident_size": {
+        "median": 246333440,
+        "min": 139051008,
+        "max": 380502016
+      },
+      "phys_footprint": {
+        "median": 3419263632,
+        "min": 3416756808,
+        "max": 3419837000
+      },
+      "pageins": {
+        "median": 786949,
+        "min": 775993,
+        "max": 823761
+      }
+    },
+    "long_conversation_closed": {
+      "resident_size": {
+        "median": 246382592,
+        "min": 139067392,
+        "max": 380502016
+      },
+      "phys_footprint": {
+        "median": 3416756808,
+        "min": 3416363592,
+        "max": 3417526928
+      },
+      "pageins": {
+        "median": 786949,
+        "min": 775993,
+        "max": 823761
+      }
+    },
+    "engine_closed": {
+      "resident_size": {
+        "median": 281411584,
+        "min": 277987328,
+        "max": 283885568
+      },
+      "phys_footprint": {
+        "median": 1824984328,
+        "min": 1808829632,
+        "max": 1833520416
+      },
+      "pageins": {
+        "median": 786953,
+        "min": 775993,
+        "max": 823772
+      }
+    }
+  },
+  "collection_notes": [
+    "run1 used collector-at-run.py; run2/run3 used collector-revised.py. Revisions fix error reporting and isolate engine-creation timing; rusage and vmmap stages are unchanged.",
+    "run1 engine_create_seconds includes initial rusage collection and checkpoint; initialization timing is not aggregated in this dataset.",
+    "Stage rusage is sampled before vmmap. vmmap can perturb execution and its report is not simultaneous with rusage.",
+    "Raw client and runtime timing is diagnostic only; not pooled with the prior uninstrumented generation datasets.",
+    "RSS, footprint and vmmap categories overlap and cannot be summed as model-exclusive memory or complete GPU allocation.",
+    "Generation-finished snapshots contain both prefill and decode; no isolated prefill completion measurement.",
+    "No independent GPU allocation, KV cache byte count, expert-residency attribution, thermal steady state or energy measurement.",
+    "The current entrypoint additionally classifies stage libproc errors as collection failures; successful-stage measurements and both frozen collector snapshots are unchanged."
+  ]
+}

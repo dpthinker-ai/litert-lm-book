@@ -1,0 +1,72 @@
+Process:         python3.12 [58525]
+Path:            /Users/USER/*/python3.12
+Load Address:    0x1028f0000
+Identifier:      python3.12
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  python3.12 [58508]
+Target Type:     corpse
+
+Date/Time:       2026-09-13 19:54:22.300 +0800
+Launch Time:     2026-09-13 19:53:47.729 +0800
+OS Version:      macOS 26.5 (25F71)
+Report Version:  7
+Analysis Tool:   /usr/bin/vmmap
+
+Physical footprint:         1.1G
+Physical footprint (peak):  3.2G
+Idle exit:                  untracked
+----
+
+ReadOnly portion of Libraries: Total=1.2G resident=166.3M(13%) swapped_out_or_unallocated=1.0G(87%)
+Writable regions: Total=531.0M written=70.7M(13%) resident=280.8M(53%) swapped_out=18.2M(3%) unallocated=232.0M(44%)
+
+                                VIRTUAL RESIDENT    DIRTY  SWAPPED VOLATILE   NONVOL    EMPTY   REGION 
+REGION TYPE                        SIZE     SIZE     SIZE     SIZE     SIZE     SIZE     SIZE    COUNT (non-coalesced) 
+===========                     ======= ========    =====  ======= ========   ======    =====  ======= 
+Activity Tracing                   256K      32K       0K      32K       0K      32K       0K        1 
+Dispatch continuations           120.0M      80K      80K      80K       0K       0K       0K        1 
+IOAccelerator                      688K     688K     688K       0K       0K       0K       0K       15 
+IOAccelerator (graphics)         985.5M   985.5M   985.1M     384K       0K   985.5M       0K      239 
+IOKit                               48K      48K      48K       0K       0K      16K       0K        3 
+Kernel Alloc Once                   32K      16K      16K       0K       0K       0K       0K        1 
+MALLOC guard page                   32K       0K       0K       0K       0K       0K       0K        2 
+MALLOC metadata                   1904K    1440K    1440K      16K       0K       0K       0K        6 
+MALLOC_LARGE (empty)              4096K    2064K    2064K       0K       0K       0K       0K        1         see MALLOC ZONE table below
+MALLOC_SMALL                     144.0M   106.7M    26.2M    13.8M       0K       0K       0K       36         see MALLOC ZONE table below
+MALLOC_SMALL (empty)             100.0M    91.3M    12.9M    1536K       0K       0K       0K       25         see MALLOC ZONE table below
+MALLOC_SMALL (graphics)           4096K    3520K    15.1M       0K       0K       0K       0K        1         see MALLOC ZONE table below
+MALLOC_TINY                       4096K     192K     192K      48K       0K       0K       0K        1         see MALLOC ZONE table below
+Memory Tag 22                     64.0M      96K      96K       0K       0K       0K       0K        1 
+STACK GUARD                       56.1M       0K       0K       0K       0K       0K       0K        4 
+Stack                             9808K     128K     128K      48K       0K       0K       0K        4 
+Stack (reserved)                   544K       0K       0K       0K       0K       0K       0K        1         reserved VM address space (unallocated)
+Stack Guard                         16K       0K       0K       0K       0K       0K       0K        1 
+VM_ALLOCATE                       8480K    4864K    4864K    2768K       0K       0K       0K       11 
+__AUTH                            2437K    1066K      16K      16K       0K       0K       0K      259 
+__AUTH_CONST                      45.2M    11.7M      80K      32K       0K       0K       0K      504 
+__CTF                               824      824       0K       0K       0K       0K       0K        1 
+__DATA                            13.4M    3722K    1338K     544K       0K       0K       0K      457 
+__DATA_CONST                      27.5M    11.1M     448K    1696K       0K       0K       0K      508 
+__DATA_DIRTY                      3000K    1488K     215K     362K       0K       0K       0K      431 
+__FONT_DATA                        2352     2352       0K       0K       0K       0K       0K        1 
+__LINKEDIT                       598.8M    12.3M       0K       0K       0K       0K       0K        5 
+__OBJC_RO                         79.1M    28.6M       0K       0K       0K       0K       0K        1 
+__OBJC_RW                         2599K    1895K      39K       0K       0K       0K       0K        1 
+__TEXT                           635.1M   154.0M       0K       0K       0K       0K       0K      523 
+__TPRO_CONST                       128K      32K      32K      48K       0K       0K       0K        2 
+mapped file                       77.0M    3392K       0K       0K       0K       0K       0K        8 
+owned unmapped (graphics)         69.2M    69.2M    69.2M       0K       0K       0K       0K       18 
+page table in kernel              1570K    1570K    1570K       0K       0K       0K       0K        1 
+shared memory                      736K     112K     112K      96K       0K       0K       0K       12 
+unused but dirty shlib __DATA      158K      55K      55K     102K       0K       0K       0K       94 
+===========                     ======= ========    =====  ======= ========   ======    =====  ======= 
+TOTAL                              3.0G     1.5G     1.1G    21.5M       0K   985.5M       0K     3180 
+TOTAL, minus reserved VM space     3.0G     1.5G     1.1G    21.5M       0K   985.5M       0K     3180 
+
+                                 VIRTUAL   RESIDENT      DIRTY    SWAPPED ALLOCATION      BYTES DIRTY+SWAP          REGION
+MALLOC ZONE                         SIZE       SIZE       SIZE       SIZE      COUNT  ALLOCATED  FRAG SIZE  % FRAG   COUNT
+===========                      =======  =========  =========  =========  =========  =========  =========  ======  ======
+DefaultMallocZone_0x102fcc000     253.8M     203.0M      40.9M      15.4M      19839      7286K      49.2M     88%      67
+

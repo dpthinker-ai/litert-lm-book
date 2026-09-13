@@ -157,6 +157,14 @@ def choose_pages(
     start = 0.0
     cands = snap_candidates(line_bottoms, ranges)
     while start < total_height - EPSILON:
+        # A unit's trailing margin can be slightly taller than the previous
+        # page's remaining space. Skip only DOM-confirmed empty space instead
+        # of emitting a page for it; figures and other non-text blocks remain.
+        for unit in metadata['unitStarts']:
+            previous_bottom = unit.get('previousBottom')
+            if (previous_bottom is not None and
+                    float(previous_bottom) - EPSILON <= start < float(unit['y'])):
+                start = float(unit['y'])
         nominal = min(total_height, start + usable)
         # 页尾对齐到行边界或不可拆块的顶/底，避免切在行中间或图前残页
         # Snapping may retreat but must not advance: two tolerance-based
@@ -304,7 +312,8 @@ def validate_pages(pages: list[dict], metadata: dict) -> None:
     if int(metadata.get("mathContainers", 0)) <= 0:
         raise RuntimeError("expected rendered MathJax containers")
 
-    boundaries = [pages[0]["start"]] + [page["end"] for page in pages]
+    boundaries = sorted({float(page[edge]) for page in pages
+                         for edge in ('start', 'end')})
     for page in pages:
         body_height = float(page["end"]) - float(page["start"])
         total_height = body_height + float(page["footnoteHeight"])
@@ -321,7 +330,9 @@ def validate_pages(pages: list[dict], metadata: dict) -> None:
             if top + SPLIT_SLIVER < cut < bottom - SPLIT_SLIVER:
                 if item["type"] in {"p", "pre"}:
                     continue  # 段落与代码块允许在行边界跨页拆分
-                page = next(item for item in pages if abs(item["end"] - cut) <= EPSILON)
+                page = next(item for item in pages
+                            if abs(item["end"] - cut) <= EPSILON or
+                            abs(item["start"] - cut) <= EPSILON)
                 nearby_units = [
                     unit["text"] for unit in metadata["unitStarts"]
                     if abs(float(unit["y"]) - cut) <= EPSILON

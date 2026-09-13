@@ -1,0 +1,373 @@
+{
+  "phase": "completed",
+  "engine_created": true,
+  "generation_completed": true,
+  "prompt": "Reference notes. The access code is AMBER-42.\nRecord 000: RAM stores temporary data needed by active programs.\nRecord 001: RAM stores temporary data needed by active programs.\nRecord 002: RAM stores temporary data needed by active programs.\nRecord 003: RAM stores temporary data needed by active programs.\nRecord 004: RAM stores temporary data needed by active programs.\nRecord 005: RAM stores temporary data needed by active programs.\nRecord 006: RAM stores temporary data needed by active programs.\nRecord 007: RAM stores temporary data needed by active programs.\nRecord 008: RAM stores temporary data needed by active programs.\nRecord 009: RAM stores temporary data needed by active programs.\nRecord 010: RAM stores temporary data needed by active programs.\nRecord 011: RAM stores temporary data needed by active programs.\nRecord 012: RAM stores temporary data needed by active programs.\nRecord 013: RAM stores temporary data needed by active programs.\nRecord 014: RAM stores temporary data needed by active programs.\nRecord 015: RAM stores temporary data needed by active programs.\nRecord 016: RAM stores temporary data needed by active programs.\nRecord 017: RAM stores temporary data needed by active programs.\nRecord 018: RAM stores temporary data needed by active programs.\nRecord 019: RAM stores temporary data needed by active programs.\nRecord 020: RAM stores temporary data needed by active programs.\nRecord 021: RAM stores temporary data needed by active programs.\nRecord 022: RAM stores temporary data needed by active programs.\nRecord 023: RAM stores temporary data needed by active programs.\nRecord 024: RAM stores temporary data needed by active programs.\nRecord 025: RAM stores temporary data needed by active programs.\nRecord 026: RAM stores temporary data needed by active programs.\nRecord 027: RAM stores temporary data needed by active programs.\nRecord 028: RAM stores temporary data needed by active programs.\nRecord 029: RAM stores temporary data needed by active programs.\nRecord 030: RAM stores temporary data needed by active programs.\nRecord 031: RAM stores temporary data needed by active programs.\nRecord 032: RAM stores temporary data needed by active programs.\nRecord 033: RAM stores temporary data needed by active programs.\nRecord 034: RAM stores temporary data needed by active programs.\nRecord 035: RAM stores temporary data needed by active programs.\nRecord 036: RAM stores temporary data needed by active programs.\nRecord 037: RAM stores temporary data needed by active programs.\nRecord 038: RAM stores temporary data needed by active programs.\nRecord 039: RAM stores temporary data needed by active programs.\nRecord 040: RAM stores temporary data needed by active programs.\nRecord 041: RAM stores temporary data needed by active programs.\nRecord 042: RAM stores temporary data needed by active programs.\nRecord 043: RAM stores temporary data needed by active programs.\nRecord 044: RAM stores temporary data needed by active programs.\nRecord 045: RAM stores temporary data needed by active programs.\nRecord 046: RAM stores temporary data needed by active programs.\nRecord 047: RAM stores temporary data needed by active programs.\nRecord 048: RAM stores temporary data needed by active programs.\nRecord 049: RAM stores temporary data needed by active programs.\nRecord 050: RAM stores temporary data needed by active programs.\nRecord 051: RAM stores temporary data needed by active programs.\nRecord 052: RAM stores temporary data needed by active programs.\nRecord 053: RAM stores temporary data needed by active programs.\nRecord 054: RAM stores temporary data needed by active programs.\nRecord 055: RAM stores temporary data needed by active programs.\nRecord 056: RAM stores temporary data needed by active programs.\nRecord 057: RAM stores temporary data needed by active programs.\nRecord 058: RAM stores temporary data needed by active programs.\nRecord 059: RAM stores temporary data needed by active programs.\nRecord 060: RAM stores temporary data needed by active programs.\nRecord 061: RAM stores temporary data needed by active programs.\nRecord 062: RAM stores temporary data needed by active programs.\nRecord 063: RAM stores temporary data needed by active programs.\nRecord 064: RAM stores temporary data needed by active programs.\nRecord 065: RAM stores temporary data needed by active programs.\nRecord 066: RAM stores temporary data needed by active programs.\nRecord 067: RAM stores temporary data needed by active programs.\nRecord 068: RAM stores temporary data needed by active programs.\nRecord 069: RAM stores temporary data needed by active programs.\nRecord 070: RAM stores temporary data needed by active programs.\nRecord 071: RAM stores temporary data needed by active programs.\nRecord 072: RAM stores temporary data needed by active programs.\nRecord 073: RAM stores temporary data needed by active programs.\nRecord 074: RAM stores temporary data needed by active programs.\nRecord 075: RAM stores temporary data needed by active programs.\nRecord 076: RAM stores temporary data needed by active programs.\nRecord 077: RAM stores temporary data needed by active programs.\nRecord 078: RAM stores temporary data needed by active programs.\nRecord 079: RAM stores temporary data needed by active programs.\nRecord 080: RAM stores temporary data needed by active programs.\nRecord 081: RAM stores temporary data needed by active programs.\nRecord 082: RAM stores temporary data needed by active programs.\nRecord 083: RAM stores temporary data needed by active programs.\nRecord 084: RAM stores temporary data needed by active programs.\nRecord 085: RAM stores temporary data needed by active programs.\nRecord 086: RAM stores temporary data needed by active programs.\nRecord 087: RAM stores temporary data needed by active programs.\nRecord 088: RAM stores temporary data needed by active programs.\nRecord 089: RAM stores temporary data needed by active programs.\nRecord 090: RAM stores temporary data needed by active programs.\nRecord 091: RAM stores temporary data needed by active programs.\nRecord 092: RAM stores temporary data needed by active programs.\nRecord 093: RAM stores temporary data needed by active programs.\nRecord 094: RAM stores temporary data needed by active programs.\nRecord 095: RAM stores temporary data needed by active programs.\nRecord 096: RAM stores temporary data needed by active programs.\nRecord 097: RAM stores temporary data needed by active programs.\nRecord 098: RAM stores temporary data needed by active programs.\nRecord 099: RAM stores temporary data needed by active programs.\nRecord 100: RAM stores temporary data needed by active programs.\nRecord 101: RAM stores temporary data needed by active programs.\nRecord 102: RAM stores temporary data needed by active programs.\nRecord 103: RAM stores temporary data needed by active programs.\nRecord 104: RAM stores temporary data needed by active programs.\nRecord 105: RAM stores temporary data needed by active programs.\nRecord 106: RAM stores temporary data needed by active programs.\nRecord 107: RAM stores temporary data needed by active programs.\nRecord 108: RAM stores temporary data needed by active programs.\nRecord 109: RAM stores temporary data needed by active programs.\nRecord 110: RAM stores temporary data needed by active programs.\nRecord 111: RAM stores temporary data needed by active programs.\nRecord 112: RAM stores temporary data needed by active programs.\nRecord 113: RAM stores temporary data needed by active programs.\nRecord 114: RAM stores temporary data needed by active programs.\nRecord 115: RAM stores temporary data needed by active programs.\nRecord 116: RAM stores temporary data needed by active programs.\nRecord 117: RAM stores temporary data needed by active programs.\nRecord 118: RAM stores temporary data needed by active programs.\nRecord 119: RAM stores temporary data needed by active programs.\nRecord 120: RAM stores temporary data needed by active programs.\nRecord 121: RAM stores temporary data needed by active programs.\nRecord 122: RAM stores temporary data needed by active programs.\nRecord 123: RAM stores temporary data needed by active programs.\nRecord 124: RAM stores temporary data needed by active programs.\nRecord 125: RAM stores temporary data needed by active programs.\nRecord 126: RAM stores temporary data needed by active programs.\nRecord 127: RAM stores temporary data needed by active programs.\nRecord 128: RAM stores temporary data needed by active programs.\nRecord 129: RAM stores temporary data needed by active programs.\nRecord 130: RAM stores temporary data needed by active programs.\nRecord 131: RAM stores temporary data needed by active programs.\nRecord 132: RAM stores temporary data needed by active programs.\nRecord 133: RAM stores temporary data needed by active programs.\nRecord 134: RAM stores temporary data needed by active programs.\nRecord 135: RAM stores temporary data needed by active programs.\nRecord 136: RAM stores temporary data needed by active programs.\nRecord 137: RAM stores temporary data needed by active programs.\nRecord 138: RAM stores temporary data needed by active programs.\nRecord 139: RAM stores temporary data needed by active programs.\nRecord 140: RAM stores temporary data needed by active programs.\nRecord 141: RAM stores temporary data needed by active programs.\nRecord 142: RAM stores temporary data needed by active programs.\nRecord 143: RAM stores temporary data needed by active programs.\nRecord 144: RAM stores temporary data needed by active programs.\nRecord 145: RAM stores temporary data needed by active programs.\nRecord 146: RAM stores temporary data needed by active programs.\nRecord 147: RAM stores temporary data needed by active programs.\nRecord 148: RAM stores temporary data needed by active programs.\nRecord 149: RAM stores temporary data needed by active programs.\nRecord 150: RAM stores temporary data needed by active programs.\nRecord 151: RAM stores temporary data needed by active programs.\nRecord 152: RAM stores temporary data needed by active programs.\nRecord 153: RAM stores temporary data needed by active programs.\nRecord 154: RAM stores temporary data needed by active programs.\nRecord 155: RAM stores temporary data needed by active programs.\nRecord 156: RAM stores temporary data needed by active programs.\nRecord 157: RAM stores temporary data needed by active programs.\nRecord 158: RAM stores temporary data needed by active programs.\nRecord 159: RAM stores temporary data needed by active programs.\nRecord 160: RAM stores temporary data needed by active programs.\nRecord 161: RAM stores temporary data needed by active programs.\nRecord 162: RAM stores temporary data needed by active programs.\nRecord 163: RAM stores temporary data needed by active programs.\nRecord 164: RAM stores temporary data needed by active programs.\nRecord 165: RAM stores temporary data needed by active programs.\nRecord 166: RAM stores temporary data needed by active programs.\nRecord 167: RAM stores temporary data needed by active programs.\nRecord 168: RAM stores temporary data needed by active programs.\nRecord 169: RAM stores temporary data needed by active programs.\nRecord 170: RAM stores temporary data needed by active programs.\nRecord 171: RAM stores temporary data needed by active programs.\nRecord 172: RAM stores temporary data needed by active programs.\nRecord 173: RAM stores temporary data needed by active programs.\nRecord 174: RAM stores temporary data needed by active programs.\nRecord 175: RAM stores temporary data needed by active programs.\nRecord 176: RAM stores temporary data needed by active programs.\nRecord 177: RAM stores temporary data needed by active programs.\nRecord 178: RAM stores temporary data needed by active programs.\nRecord 179: RAM stores temporary data needed by active programs.\nRecord 180: RAM stores temporary data needed by active programs.\nRecord 181: RAM stores temporary data needed by active programs.\nRecord 182: RAM stores temporary data needed by active programs.\nRecord 183: RAM stores temporary data needed by active programs.\nRecord 184: RAM stores temporary data needed by active programs.\nRecord 185: RAM stores temporary data needed by active programs.\nRecord 186: RAM stores temporary data needed by active programs.\nRecord 187: RAM stores temporary data needed by active programs.\nRecord 188: RAM stores temporary data needed by active programs.\nRecord 189: RAM stores temporary data needed by active programs.\nRecord 190: RAM stores temporary data needed by active programs.\nRecord 191: RAM stores temporary data needed by active programs.\nRecord 192: RAM stores temporary data needed by active programs.\nRecord 193: RAM stores temporary data needed by active programs.\nRecord 194: RAM stores temporary data needed by active programs.\nRecord 195: RAM stores temporary data needed by active programs.\nRecord 196: RAM stores temporary data needed by active programs.\nRecord 197: RAM stores temporary data needed by active programs.\nRecord 198: RAM stores temporary data needed by active programs.\nRecord 199: RAM stores temporary data needed by active programs.\nRecord 200: RAM stores temporary data needed by active programs.\nRecord 201: RAM stores temporary data needed by active programs.\nRecord 202: RAM stores temporary data needed by active programs.\nRecord 203: RAM stores temporary data needed by active programs.\nRecord 204: RAM stores temporary data needed by active programs.\nRecord 205: RAM stores temporary data needed by active programs.\nRecord 206: RAM stores temporary data needed by active programs.\nRecord 207: RAM stores temporary data needed by active programs.\nRecord 208: RAM stores temporary data needed by active programs.\nRecord 209: RAM stores temporary data needed by active programs.\nRecord 210: RAM stores temporary data needed by active programs.\nRecord 211: RAM stores temporary data needed by active programs.\nRecord 212: RAM stores temporary data needed by active programs.\nRecord 213: RAM stores temporary data needed by active programs.\nRecord 214: RAM stores temporary data needed by active programs.\nRecord 215: RAM stores temporary data needed by active programs.\nRecord 216: RAM stores temporary data needed by active programs.\nRecord 217: RAM stores temporary data needed by active programs.\nRecord 218: RAM stores temporary data needed by active programs.\nRecord 219: RAM stores temporary data needed by active programs.\nRecord 220: RAM stores temporary data needed by active programs.\nRecord 221: RAM stores temporary data needed by active programs.\nRecord 222: RAM stores temporary data needed by active programs.\nRecord 223: RAM stores temporary data needed by active programs.\nRecord 224: RAM stores temporary data needed by active programs.\nRecord 225: RAM stores temporary data needed by active programs.\nRecord 226: RAM stores temporary data needed by active programs.\nRecord 227: RAM stores temporary data needed by active programs.\nRecord 228: RAM stores temporary data needed by active programs.\nRecord 229: RAM stores temporary data needed by active programs.\nRecord 230: RAM stores temporary data needed by active programs.\nRecord 231: RAM stores temporary data needed by active programs.\nRecord 232: RAM stores temporary data needed by active programs.\nRecord 233: RAM stores temporary data needed by active programs.\nRecord 234: RAM stores temporary data needed by active programs.\nRecord 235: RAM stores temporary data needed by active programs.\nRecord 236: RAM stores temporary data needed by active programs.\nRecord 237: RAM stores temporary data needed by active programs.\nRecord 238: RAM stores temporary data needed by active programs.\nRecord 239: RAM stores temporary data needed by active programs.\nRecord 240: RAM stores temporary data needed by active programs.\nRecord 241: RAM stores temporary data needed by active programs.\nRecord 242: RAM stores temporary data needed by active programs.\nRecord 243: RAM stores temporary data needed by active programs.\nRecord 244: RAM stores temporary data needed by active programs.\nRecord 245: RAM stores temporary data needed by active programs.\n\nUse the notes to state the access code and explain in one short sentence what RAM stores.",
+  "generations": [
+    {
+      "index": 0,
+      "prompt": "In one short sentence, explain what RAM stores.",
+      "events": [
+        {
+          "elapsed_seconds": 5.652066709008068,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.666761792032048,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.683586249942891,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.6986346249468625,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.71562862501014,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.730742166982964,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.745704959030263,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" instructions\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.762547333957627,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" that\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.777518416987732,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" your\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.792507541947998,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computer\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.809225874952972,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.824123958940618,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" actively\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.840789749985561,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" using\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.855903125018813,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" to\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.872751874965616,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" run\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.889550624997355,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.9044382920255885,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.919807916972786,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" processes\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.936517291935161,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.936858500004746,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 5.652066709008068,
+      "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes.",
+      "generation_wall_seconds": 5.937135708983988,
+      "benchmark": {
+        "init_time_in_second": 45.967810584000006,
+        "time_to_first_token_in_second": 5.631742393250001,
+        "last_prefill_token_count": 23,
+        "last_prefill_tokens_per_second": 4.09539768951138,
+        "last_decode_token_count": 20,
+        "last_decode_tokens_per_second": 63.76662273103849
+      },
+      "conversation_token_count": 43,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 1,
+      "prompt": "Reference notes. The access code is AMBER-42.\nRecord 000: RAM stores temporary data needed by active programs.\nRecord 001: RAM stores temporary data needed by active programs.\nRecord 002: RAM stores temporary data needed by active programs.\nRecord 003: RAM stores temporary data needed by active programs.\nRecord 004: RAM stores temporary data needed by active programs.\nRecord 005: RAM stores temporary data needed by active programs.\nRecord 006: RAM stores temporary data needed by active programs.\nRecord 007: RAM stores temporary data needed by active programs.\nRecord 008: RAM stores temporary data needed by active programs.\nRecord 009: RAM stores temporary data needed by active programs.\nRecord 010: RAM stores temporary data needed by active programs.\nRecord 011: RAM stores temporary data needed by active programs.\nRecord 012: RAM stores temporary data needed by active programs.\nRecord 013: RAM stores temporary data needed by active programs.\nRecord 014: RAM stores temporary data needed by active programs.\nRecord 015: RAM stores temporary data needed by active programs.\nRecord 016: RAM stores temporary data needed by active programs.\nRecord 017: RAM stores temporary data needed by active programs.\nRecord 018: RAM stores temporary data needed by active programs.\nRecord 019: RAM stores temporary data needed by active programs.\nRecord 020: RAM stores temporary data needed by active programs.\nRecord 021: RAM stores temporary data needed by active programs.\nRecord 022: RAM stores temporary data needed by active programs.\nRecord 023: RAM stores temporary data needed by active programs.\nRecord 024: RAM stores temporary data needed by active programs.\nRecord 025: RAM stores temporary data needed by active programs.\nRecord 026: RAM stores temporary data needed by active programs.\nRecord 027: RAM stores temporary data needed by active programs.\nRecord 028: RAM stores temporary data needed by active programs.\nRecord 029: RAM stores temporary data needed by active programs.\nRecord 030: RAM stores temporary data needed by active programs.\nRecord 031: RAM stores temporary data needed by active programs.\nRecord 032: RAM stores temporary data needed by active programs.\nRecord 033: RAM stores temporary data needed by active programs.\nRecord 034: RAM stores temporary data needed by active programs.\nRecord 035: RAM stores temporary data needed by active programs.\nRecord 036: RAM stores temporary data needed by active programs.\nRecord 037: RAM stores temporary data needed by active programs.\nRecord 038: RAM stores temporary data needed by active programs.\nRecord 039: RAM stores temporary data needed by active programs.\nRecord 040: RAM stores temporary data needed by active programs.\nRecord 041: RAM stores temporary data needed by active programs.\nRecord 042: RAM stores temporary data needed by active programs.\nRecord 043: RAM stores temporary data needed by active programs.\nRecord 044: RAM stores temporary data needed by active programs.\nRecord 045: RAM stores temporary data needed by active programs.\nRecord 046: RAM stores temporary data needed by active programs.\nRecord 047: RAM stores temporary data needed by active programs.\nRecord 048: RAM stores temporary data needed by active programs.\nRecord 049: RAM stores temporary data needed by active programs.\nRecord 050: RAM stores temporary data needed by active programs.\nRecord 051: RAM stores temporary data needed by active programs.\nRecord 052: RAM stores temporary data needed by active programs.\nRecord 053: RAM stores temporary data needed by active programs.\nRecord 054: RAM stores temporary data needed by active programs.\nRecord 055: RAM stores temporary data needed by active programs.\nRecord 056: RAM stores temporary data needed by active programs.\nRecord 057: RAM stores temporary data needed by active programs.\nRecord 058: RAM stores temporary data needed by active programs.\nRecord 059: RAM stores temporary data needed by active programs.\nRecord 060: RAM stores temporary data needed by active programs.\nRecord 061: RAM stores temporary data needed by active programs.\nRecord 062: RAM stores temporary data needed by active programs.\nRecord 063: RAM stores temporary data needed by active programs.\nRecord 064: RAM stores temporary data needed by active programs.\nRecord 065: RAM stores temporary data needed by active programs.\nRecord 066: RAM stores temporary data needed by active programs.\nRecord 067: RAM stores temporary data needed by active programs.\nRecord 068: RAM stores temporary data needed by active programs.\nRecord 069: RAM stores temporary data needed by active programs.\nRecord 070: RAM stores temporary data needed by active programs.\nRecord 071: RAM stores temporary data needed by active programs.\nRecord 072: RAM stores temporary data needed by active programs.\nRecord 073: RAM stores temporary data needed by active programs.\nRecord 074: RAM stores temporary data needed by active programs.\nRecord 075: RAM stores temporary data needed by active programs.\nRecord 076: RAM stores temporary data needed by active programs.\nRecord 077: RAM stores temporary data needed by active programs.\nRecord 078: RAM stores temporary data needed by active programs.\nRecord 079: RAM stores temporary data needed by active programs.\nRecord 080: RAM stores temporary data needed by active programs.\nRecord 081: RAM stores temporary data needed by active programs.\nRecord 082: RAM stores temporary data needed by active programs.\nRecord 083: RAM stores temporary data needed by active programs.\nRecord 084: RAM stores temporary data needed by active programs.\nRecord 085: RAM stores temporary data needed by active programs.\nRecord 086: RAM stores temporary data needed by active programs.\nRecord 087: RAM stores temporary data needed by active programs.\nRecord 088: RAM stores temporary data needed by active programs.\nRecord 089: RAM stores temporary data needed by active programs.\nRecord 090: RAM stores temporary data needed by active programs.\nRecord 091: RAM stores temporary data needed by active programs.\nRecord 092: RAM stores temporary data needed by active programs.\nRecord 093: RAM stores temporary data needed by active programs.\nRecord 094: RAM stores temporary data needed by active programs.\nRecord 095: RAM stores temporary data needed by active programs.\nRecord 096: RAM stores temporary data needed by active programs.\nRecord 097: RAM stores temporary data needed by active programs.\nRecord 098: RAM stores temporary data needed by active programs.\nRecord 099: RAM stores temporary data needed by active programs.\nRecord 100: RAM stores temporary data needed by active programs.\nRecord 101: RAM stores temporary data needed by active programs.\nRecord 102: RAM stores temporary data needed by active programs.\nRecord 103: RAM stores temporary data needed by active programs.\nRecord 104: RAM stores temporary data needed by active programs.\nRecord 105: RAM stores temporary data needed by active programs.\nRecord 106: RAM stores temporary data needed by active programs.\nRecord 107: RAM stores temporary data needed by active programs.\nRecord 108: RAM stores temporary data needed by active programs.\nRecord 109: RAM stores temporary data needed by active programs.\nRecord 110: RAM stores temporary data needed by active programs.\nRecord 111: RAM stores temporary data needed by active programs.\nRecord 112: RAM stores temporary data needed by active programs.\nRecord 113: RAM stores temporary data needed by active programs.\nRecord 114: RAM stores temporary data needed by active programs.\nRecord 115: RAM stores temporary data needed by active programs.\nRecord 116: RAM stores temporary data needed by active programs.\nRecord 117: RAM stores temporary data needed by active programs.\nRecord 118: RAM stores temporary data needed by active programs.\nRecord 119: RAM stores temporary data needed by active programs.\nRecord 120: RAM stores temporary data needed by active programs.\nRecord 121: RAM stores temporary data needed by active programs.\nRecord 122: RAM stores temporary data needed by active programs.\nRecord 123: RAM stores temporary data needed by active programs.\nRecord 124: RAM stores temporary data needed by active programs.\nRecord 125: RAM stores temporary data needed by active programs.\nRecord 126: RAM stores temporary data needed by active programs.\nRecord 127: RAM stores temporary data needed by active programs.\nRecord 128: RAM stores temporary data needed by active programs.\nRecord 129: RAM stores temporary data needed by active programs.\nRecord 130: RAM stores temporary data needed by active programs.\nRecord 131: RAM stores temporary data needed by active programs.\nRecord 132: RAM stores temporary data needed by active programs.\nRecord 133: RAM stores temporary data needed by active programs.\nRecord 134: RAM stores temporary data needed by active programs.\nRecord 135: RAM stores temporary data needed by active programs.\nRecord 136: RAM stores temporary data needed by active programs.\nRecord 137: RAM stores temporary data needed by active programs.\nRecord 138: RAM stores temporary data needed by active programs.\nRecord 139: RAM stores temporary data needed by active programs.\nRecord 140: RAM stores temporary data needed by active programs.\nRecord 141: RAM stores temporary data needed by active programs.\nRecord 142: RAM stores temporary data needed by active programs.\nRecord 143: RAM stores temporary data needed by active programs.\nRecord 144: RAM stores temporary data needed by active programs.\nRecord 145: RAM stores temporary data needed by active programs.\nRecord 146: RAM stores temporary data needed by active programs.\nRecord 147: RAM stores temporary data needed by active programs.\nRecord 148: RAM stores temporary data needed by active programs.\nRecord 149: RAM stores temporary data needed by active programs.\nRecord 150: RAM stores temporary data needed by active programs.\nRecord 151: RAM stores temporary data needed by active programs.\nRecord 152: RAM stores temporary data needed by active programs.\nRecord 153: RAM stores temporary data needed by active programs.\nRecord 154: RAM stores temporary data needed by active programs.\nRecord 155: RAM stores temporary data needed by active programs.\nRecord 156: RAM stores temporary data needed by active programs.\nRecord 157: RAM stores temporary data needed by active programs.\nRecord 158: RAM stores temporary data needed by active programs.\nRecord 159: RAM stores temporary data needed by active programs.\nRecord 160: RAM stores temporary data needed by active programs.\nRecord 161: RAM stores temporary data needed by active programs.\nRecord 162: RAM stores temporary data needed by active programs.\nRecord 163: RAM stores temporary data needed by active programs.\nRecord 164: RAM stores temporary data needed by active programs.\nRecord 165: RAM stores temporary data needed by active programs.\nRecord 166: RAM stores temporary data needed by active programs.\nRecord 167: RAM stores temporary data needed by active programs.\nRecord 168: RAM stores temporary data needed by active programs.\nRecord 169: RAM stores temporary data needed by active programs.\nRecord 170: RAM stores temporary data needed by active programs.\nRecord 171: RAM stores temporary data needed by active programs.\nRecord 172: RAM stores temporary data needed by active programs.\nRecord 173: RAM stores temporary data needed by active programs.\nRecord 174: RAM stores temporary data needed by active programs.\nRecord 175: RAM stores temporary data needed by active programs.\nRecord 176: RAM stores temporary data needed by active programs.\nRecord 177: RAM stores temporary data needed by active programs.\nRecord 178: RAM stores temporary data needed by active programs.\nRecord 179: RAM stores temporary data needed by active programs.\nRecord 180: RAM stores temporary data needed by active programs.\nRecord 181: RAM stores temporary data needed by active programs.\nRecord 182: RAM stores temporary data needed by active programs.\nRecord 183: RAM stores temporary data needed by active programs.\nRecord 184: RAM stores temporary data needed by active programs.\nRecord 185: RAM stores temporary data needed by active programs.\nRecord 186: RAM stores temporary data needed by active programs.\nRecord 187: RAM stores temporary data needed by active programs.\nRecord 188: RAM stores temporary data needed by active programs.\nRecord 189: RAM stores temporary data needed by active programs.\nRecord 190: RAM stores temporary data needed by active programs.\nRecord 191: RAM stores temporary data needed by active programs.\nRecord 192: RAM stores temporary data needed by active programs.\nRecord 193: RAM stores temporary data needed by active programs.\nRecord 194: RAM stores temporary data needed by active programs.\nRecord 195: RAM stores temporary data needed by active programs.\nRecord 196: RAM stores temporary data needed by active programs.\nRecord 197: RAM stores temporary data needed by active programs.\nRecord 198: RAM stores temporary data needed by active programs.\nRecord 199: RAM stores temporary data needed by active programs.\nRecord 200: RAM stores temporary data needed by active programs.\nRecord 201: RAM stores temporary data needed by active programs.\nRecord 202: RAM stores temporary data needed by active programs.\nRecord 203: RAM stores temporary data needed by active programs.\nRecord 204: RAM stores temporary data needed by active programs.\nRecord 205: RAM stores temporary data needed by active programs.\nRecord 206: RAM stores temporary data needed by active programs.\nRecord 207: RAM stores temporary data needed by active programs.\nRecord 208: RAM stores temporary data needed by active programs.\nRecord 209: RAM stores temporary data needed by active programs.\nRecord 210: RAM stores temporary data needed by active programs.\nRecord 211: RAM stores temporary data needed by active programs.\nRecord 212: RAM stores temporary data needed by active programs.\nRecord 213: RAM stores temporary data needed by active programs.\nRecord 214: RAM stores temporary data needed by active programs.\nRecord 215: RAM stores temporary data needed by active programs.\nRecord 216: RAM stores temporary data needed by active programs.\nRecord 217: RAM stores temporary data needed by active programs.\nRecord 218: RAM stores temporary data needed by active programs.\nRecord 219: RAM stores temporary data needed by active programs.\nRecord 220: RAM stores temporary data needed by active programs.\nRecord 221: RAM stores temporary data needed by active programs.\nRecord 222: RAM stores temporary data needed by active programs.\nRecord 223: RAM stores temporary data needed by active programs.\nRecord 224: RAM stores temporary data needed by active programs.\nRecord 225: RAM stores temporary data needed by active programs.\nRecord 226: RAM stores temporary data needed by active programs.\nRecord 227: RAM stores temporary data needed by active programs.\nRecord 228: RAM stores temporary data needed by active programs.\nRecord 229: RAM stores temporary data needed by active programs.\nRecord 230: RAM stores temporary data needed by active programs.\nRecord 231: RAM stores temporary data needed by active programs.\nRecord 232: RAM stores temporary data needed by active programs.\nRecord 233: RAM stores temporary data needed by active programs.\nRecord 234: RAM stores temporary data needed by active programs.\nRecord 235: RAM stores temporary data needed by active programs.\nRecord 236: RAM stores temporary data needed by active programs.\nRecord 237: RAM stores temporary data needed by active programs.\nRecord 238: RAM stores temporary data needed by active programs.\nRecord 239: RAM stores temporary data needed by active programs.\nRecord 240: RAM stores temporary data needed by active programs.\nRecord 241: RAM stores temporary data needed by active programs.\nRecord 242: RAM stores temporary data needed by active programs.\nRecord 243: RAM stores temporary data needed by active programs.\nRecord 244: RAM stores temporary data needed by active programs.\nRecord 245: RAM stores temporary data needed by active programs.\n\nUse the notes to state the access code and explain in one short sentence what RAM stores.",
+      "events": [
+        {
+          "elapsed_seconds": 2.7441755830077454,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.7593312080716714,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" access\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.776182083063759,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.791221791994758,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.8066190420649946,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" AM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.8231880420353264,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BER\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.8382784579880536,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.8553042500279844,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.8720354579854757,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.887289375066757,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.903938417090103,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.919403792009689,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.9361520829843357,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.9512090830830857,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.966184625052847,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" needed\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.9830255830893293,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" by\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.998113458044827,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" active\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 3.0132805419852957,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 3.029897583066486,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 3.030086167040281,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 2.7441755830077454,
+      "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs.",
+      "generation_wall_seconds": 3.030464250012301,
+      "benchmark": {
+        "init_time_in_second": 45.966808584,
+        "time_to_first_token_in_second": 2.7358280325,
+        "last_prefill_token_count": 3981,
+        "last_prefill_tokens_per_second": 1463.2914989480128,
+        "last_decode_token_count": 20,
+        "last_decode_tokens_per_second": 65.5775690456142
+      },
+      "conversation_token_count": 4001,
+      "answer_contains_marker": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    }
+  ],
+  "memory_stages": [
+    {
+      "stage": "before_engine",
+      "elapsed_seconds": 2.1669548004865646e-06,
+      "resident_size": 44728320,
+      "phys_footprint": 20464216,
+      "wired_size": 0,
+      "pageins": 32
+    },
+    {
+      "stage": "engine_created",
+      "elapsed_seconds": 23.00015112501569,
+      "resident_size": 5157355520,
+      "phys_footprint": 2314539568,
+      "wired_size": 0,
+      "pageins": 53378,
+      "vmmap_returncode": 0
+    },
+    {
+      "stage": "short_conversation_created",
+      "elapsed_seconds": 23.98785345896613,
+      "resident_size": 4537974784,
+      "phys_footprint": 3151106608,
+      "wired_size": 0,
+      "pageins": 53491
+    },
+    {
+      "stage": "short_generation_finished",
+      "elapsed_seconds": 29.92692670901306,
+      "resident_size": 108511232,
+      "phys_footprint": 3194917448,
+      "wired_size": 0,
+      "pageins": 823754,
+      "vmmap_returncode": 0
+    },
+    {
+      "stage": "short_conversation_closed",
+      "elapsed_seconds": 30.68455212493427,
+      "resident_size": 111345664,
+      "phys_footprint": 3194081864,
+      "wired_size": 0,
+      "pageins": 823755
+    },
+    {
+      "stage": "long_conversation_created",
+      "elapsed_seconds": 30.686578584020026,
+      "resident_size": 112148480,
+      "phys_footprint": 3194081864,
+      "wired_size": 0,
+      "pageins": 823755
+    },
+    {
+      "stage": "long_generation_finished",
+      "elapsed_seconds": 33.71818558394443,
+      "resident_size": 139051008,
+      "phys_footprint": 3416756808,
+      "wired_size": 0,
+      "pageins": 823761,
+      "vmmap_returncode": 0
+    },
+    {
+      "stage": "long_conversation_closed",
+      "elapsed_seconds": 34.3445935419295,
+      "resident_size": 139067392,
+      "phys_footprint": 3416756808,
+      "wired_size": 0,
+      "pageins": 823761
+    },
+    {
+      "stage": "engine_closed",
+      "elapsed_seconds": 34.47191987500992,
+      "resident_size": 281411584,
+      "phys_footprint": 1808829632,
+      "wired_size": 0,
+      "pageins": 823772,
+      "vmmap_returncode": 0
+    }
+  ],
+  "engine_create_seconds": 23.000146584003232,
+  "engine_closed": true
+}

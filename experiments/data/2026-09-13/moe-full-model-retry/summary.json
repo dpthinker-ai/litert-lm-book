@@ -266,9 +266,5 @@
     "No claim of long-session stability, quality benchmark, Android results, power, or measured GPU memory.",
     "User closed some applications before this run; other workload, file residency and cache state not experimentally isolated."
   ],
-  "excluded_runs": {
-    "ram-32": "Successful blocking generation with benchmark disabled; no timing/count aggregation.",
-    "stream-ram-r1": "Full stream final and output received, then metrics collection failed because benchmark was disabled; original collector snapshot retained."
-  },
-  "collector_note": "collector-at-run.py matches benchmark-enabled run hashes; current script only corrects the metadata description of callback queue residence. collector-without-benchmark.py matches the metrics-error run."
+  "collector_note": "collector-at-run.py matches benchmark-enabled run hashes; current script only corrects the metadata description of callback queue residence."
 }

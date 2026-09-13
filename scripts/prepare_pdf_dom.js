@@ -272,8 +272,14 @@ const unitMarkers = [...main.children].filter(element =>
 const unitStarts = unitMarkers.map(marker => {
   const next = marker.nextElementSibling;
   const measured = rectOf(next);
+  let previous = marker.previousElementSibling;
+  while (previous && (unitMarkers.includes(previous) ||
+         getComputedStyle(previous).display === 'none')) {
+    previous = previous.previousElementSibling;
+  }
   return {
     y: measured.top,
+    previousBottom: previous ? rectOf(previous).bottom : measured.top,
     id: next.id || '',
     text: next.textContent.trim(),
   };
@@ -313,6 +319,18 @@ for (const element of main.children) {
       );
     }
     addRange(element, 'heading', bottom);
+  } else if (element.matches('p') &&
+             /^表\s*[A-Z\d]+[-–]\d+/.test(element.textContent.trim()) &&
+             element.nextElementSibling?.classList.contains('table-wrapper')) {
+    // Keep a caption with the header and first data row. The table's own
+    // range still decides whether its remaining rows can cross a page.
+    const rows = element.nextElementSibling.querySelectorAll('tr');
+    const firstBodyRow = rows[Math.min(1, rows.length - 1)];
+    addRange(element, 'table-caption',
+             firstBodyRow ? rectOf(firstBodyRow).bottom : null);
+  } else if (element.matches('pre') &&
+             rectOf(element).height <= CONTENT_HEIGHT * 0.3) {
+    addRange(element, 'short-code');
   } else if (element.classList.contains('table-wrapper')) {
     const tableRect = rectOf(element);
     const hasFootnotes = element.querySelector('.footnote-reference') !== null;
