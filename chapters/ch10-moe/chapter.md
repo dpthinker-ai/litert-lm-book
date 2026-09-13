@@ -263,7 +263,9 @@ GPU 代码为量化专家权重建立描述与转换步骤，不能由此套用 
 
 上述代码说明了 LiteRT 如何构建 GPU 专家计算图。本书附录 D 第十六节的 Mac E4B 基准走 WebGPU/Metal，不能拿那组结果证明此 MoE 路径的吞吐，更不能推断手机 NPU 的支持情况。完整 MoE 模型的转换、后端覆盖和持续运行，需要单独建立实验记录。
 
-公开模型产物也要核对执行路径。LiteRT Community 发布的 Gemma 4 26B-A4B LiteRT-LM 模型卡说明了 Web 文本部署能力。[^moe-gemma-artifact] 本书读取冻结版本中 GPU、Web 两个文件的容器头。两者均将文本模型标为 `tf_lite_artisan_text_decoder`，后端约束为 `gpu_artisan`。v0.17.0 的 `EngineSettings::CreateDefault` 检测到这种模型时，会把请求的 GPU 改为 `GPU_ARTISAN`。[^moe-artisan-selection] 因此，这两份公开产物不能直接验证本节分析的专家构图路径。容器核查记录见附录 D 第十八节，本书没有运行这两个完整模型。
+公开模型产物也要核对执行路径。LiteRT Community 发布的 Gemma 4 26B-A4B LiteRT-LM 模型卡说明了 Web 文本部署能力。[^moe-gemma-artifact] 本书读取冻结版本中 GPU、Web 两个文件的容器头。两者均将文本模型标为 `tf_lite_artisan_text_decoder`，后端约束为 `gpu_artisan`。v0.17.0 的 `EngineSettings::CreateDefault` 检测到这种模型时，会把请求的 GPU 改为 `GPU_ARTISAN`。[^moe-artisan-selection] 这条路径与本节分析的专家构图路径须分别验证。容器核查记录见附录 D 第十八节。
+
+本书还下载了 GPU 产物，校验完整文件后在 24 GiB 内存的 M5 Pro 上请求生成。v0.17.0 预编译包实际进入 Artisan／Metal 路径，成功创建引擎和会话。生成期间系统内存压力达到 critical，采集器按设定终止了进程，没有取得完整响应。系统压力受同机其他程序影响，不能把这次停止换算成模型的独立内存需求，也不能据此判断引擎不兼容。该结果确认了产物能够进入生成流程，尚未验证输出质量、持续性能，也未确认本节分析的专家构图路径是否覆盖该产物。完整记录见附录 D 第二十节；Web 文件未做完整运行测试。
 
 ## 10.7　如何验证部署收益
 

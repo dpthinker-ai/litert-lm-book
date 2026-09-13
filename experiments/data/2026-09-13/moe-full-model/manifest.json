@@ -1,0 +1,58 @@
+{
+  "recorded_at_utc": "2026-09-13T09:07:03.131838+00:00",
+  "machine": {
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776,
+    "os_build": "25F71"
+  },
+  "model_checks": [
+    "e4b-control/report.json",
+    "gemma-26b-a4b-gpu/report.json"
+  ],
+  "collector_checks": [
+    "collector-timeout-check/report.json"
+  ],
+  "observations": {
+    "full_model_status": "STOPPED_BY_GUARD",
+    "full_model_phase": "generation",
+    "full_model_stop_reason": "critical_system_memory_pressure",
+    "engine_created": true,
+    "conversation_created": true,
+    "generation_completed": false,
+    "actual_executor": "GPU_ARTISAN; llm_metal_runner",
+    "logged_calculation_precision": "F16",
+    "web_variant_full_file_tested": false
+  },
+  "limits": [
+    "The machine was not isolated from other applications; system pressure is global.",
+    "No completed MoE response, quality check, throughput or memory peak measurement.",
+    "One-second native stack sampling took place during generation; this is not a timing benchmark.",
+    "Successful E4B control used context capacity 4096; MoE used 1024. This is not a performance comparison.",
+    "The prebuilt dylib is not a local build of the public release source."
+  ],
+  "source_freezes": {
+    "litert_lm": "e9fd8c53ff968071774206163027dd84bedfe925",
+    "litert": "9fe5be45564c868408e6514c8aabb83e211a0911"
+  },
+  "script_sha256": "84f9699325bff7be56f22d6b81cbd9aed61c03287bebd8710e281e903966bdae",
+  "files": {
+    "collector-timeout-check/report.json": "d5db95b9551b2061e2a7dbb9c426bd738d8df6d8b89635b79d87e04742fd46e8",
+    "collector-timeout-check/resource-guard.json": "19f797682f6d891f0129b91612a9c8dd98a0e9192bada7dc2c66000770b0809a",
+    "collector-timeout-check/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "collector-timeout-check/stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "download.json": "81e3217f8eae44647fb7bb0822d975dbb4e148b5b527e17b166f361577fb9f50",
+    "download.log": "792a9e661de0bc78c6326dca8b6e86a1ddbc68cdb0b8160c3539fb7aa82f2216",
+    "e4b-control/report.json": "f3da0907a38133de7a495862b8c65fa10e499b9f6a1304e02ad3f086cd8656c5",
+    "e4b-control/resource-guard.json": "ce78a02679b19a1b71bb823780227ce81b3b58fe5f10c42b061c7ed565a8ee63",
+    "e4b-control/stderr.log": "3c915f86c8e2e91a045c2cbaa84d099718f47022b6aa9820cc546e36990f28c1",
+    "e4b-control/stdout.log": "8f2ebb7efe9d36e3942032290905b6e08daae2cbee0fbc1b320f5f841e2dfff5",
+    "e4b-control/worker.json": "50c9fb55d8a36353f88f5b4c1f11e7620bc1513a9b9d27f7b6797b05c04ea178",
+    "gemma-26b-a4b-gpu/report.json": "7cf2e9ca16bd328a6a129defb7433a2680d194122ec7591fb648b32cc140e1e1",
+    "gemma-26b-a4b-gpu/resource-guard.json": "2259f5e4faf3dc6d9945118441bc0258fb92eae2ef261b60a4aa2b4acd130054",
+    "gemma-26b-a4b-gpu/stderr.log": "7a8cf74168521eb080c66eec5929fc37944c3d7d79f279257c8a5f7fc9d0e1bf",
+    "gemma-26b-a4b-gpu/stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "gemma-26b-a4b-gpu/worker.json": "339485e61932cb9222fa5437584b8148d3df000c5ab875b10ddb1d5ce17078f4",
+    "generation-stack-sample.txt": "dd17614b5af6269c507310b371c3259cb273394898971c83ed730ec1ae2a65b6",
+    "requirements-macos.txt": "44cc2e6c65ab66c1c52fe69922288c7ddae31e58fb15de031c5c762faef76d06"
+  }
+}

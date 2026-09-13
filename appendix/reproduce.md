@@ -259,3 +259,24 @@ tmp/moe-export-recheck-venv/bin/python experiments/moe_gpu_check.py \
 输出目录必须不存在。13 项包含 CPU 对照、WebGPU 默认与显式精度、自动 GPU、预期不受支持的产物，以及普通 ADD 对照。报告同时保存实际 Invoke、非 CPU 加速覆盖接口和 Metal 设备日志。只完成环境注册或模型解析，不能计为 GPU 执行成功。
 
 `MATCH` 表示按指定容差通过比较；`NUMERICAL_MISMATCH` 表示执行完成但未通过；`API_REJECTED` 表示原生 API 返回非零状态。进程崩溃、超时或缺少调用记录均作为采集失败处理，不混入 API 拒绝。退出 0 仅表示未发现采集失败或未确认的 GPU 覆盖，必须逐项读取结果。实际结果和证明范围见附录 D 第十九节。
+
+## 十、完整 MoE 产物的生成检查
+
+完整模型验证使用独立进程创建引擎、创建会话，再请求一次短文本生成。采集脚本先流式计算整个模型的 SHA-256，与指定值比较；不一致则不启动引擎。附录 D 第二十节记录本次产物与结果，模型卡来源见 10.6.3 节。
+
+先从该节固定的模型仓库提交取得 GPU 文件，确认本地文件大小为 15786524672 字节。模型与编译缓存不加入书稿仓库。在独立 Python 3.12.13 环境安装归档依赖后运行：
+
+```bash
+uv venv --python 3.12.13 tmp/moe-full-recheck-venv
+uv pip install --python tmp/moe-full-recheck-venv/bin/python \
+  -r experiments/data/2026-09-13/moe-full-model/requirements-macos.txt
+tmp/moe-full-recheck-venv/bin/python experiments/moe_full_model_check.py \
+  --model /path/to/gemma-4-26B-A4B-it-gpu.litertlm \
+  --sha256 94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1 \
+  --output tmp/moe-full-recheck --cache tmp/moe-full-recheck-cache \
+  --context 1024 --output-tokens 32 --timeout 180 --max-rss-gib 18
+```
+
+输出与缓存目录必须不存在。脚本请求 GPU，关闭思考与投机解码，固定贪心采样，并记录引擎创建、会话创建和生成阶段。模型声明可能改变实际选择的后端，须结合原生日志判断；请求 GPU 不等于已经执行 GPU。
+
+脚本适用于 macOS，每隔约 0.25 秒采样进程 RSS 和系统内存压力。在超过设定时间、RSS 上限、系统进入 critical 内存压力或监控失败时停止子进程。停止检查有采样延迟，终止后另有 3 秒退出宽限；这些设置不是严格的资源隔离，也不是峰值内存测量。`GENERATION_COMPLETED` 仅表示一次生成和清理完成，`RUNTIME_ERROR` 表示运行时异常，`STOPPED_BY_GUARD` 表示采集器主动终止，其他未完整结束的调用记为 `INCOMPLETE`。只有第一种状态返回退出码 0；质量和性能需要另测。

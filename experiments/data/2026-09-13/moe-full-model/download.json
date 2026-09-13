@@ -1,0 +1,12 @@
+{
+  "repo": "litert-community/gemma-4-26B-A4B-it-litert-lm",
+  "revision": "7228819fa9580751b57b41a93ee54d5c08c4e001",
+  "url": "https://huggingface.co/litert-community/gemma-4-26B-A4B-it-litert-lm/resolve/7228819fa9580751b57b41a93ee54d5c08c4e001/gemma-4-26B-A4B-it-gpu.litertlm",
+  "name": "gemma-4-26B-A4B-it-gpu.litertlm",
+  "bytes": 15786524672,
+  "sha256": "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1",
+  "full_hash_verified": true,
+  "verified_at_utc": "2026-09-13T09:04:29.412142+00:00",
+  "curl_exitcode": 0,
+  "container_metadata_source": "../moe-model-header/report.json"
+}

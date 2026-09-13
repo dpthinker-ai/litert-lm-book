@@ -8,7 +8,7 @@
 | 源码目录 / 关键文件 | 作用 | 主要章节 |
 |---|---|---|
 | `runtime/engine/engine.h` | Engine / Session 对外接口 | 第 3 章 |
-| `runtime/engine/engine_settings.*`、`engine_factory.h` | 引擎配置、后端自注册工厂 | 第 3、8 章 |
+| `runtime/engine/engine_settings.*`、`engine_factory.h` | 引擎配置、后端自注册工厂 | 第 3、8、10 章 |
 | `runtime/engine/litert_lm_main.cc`、`litert_lm_lib.cc` | CLI 演示程序、引擎装配（后端配置分支） | 第 2、8 章 |
 | `runtime/engine/cpu_affinity_utils.*` | CPU 亲和性（线程绑定到性能核） | 第 8 章 |
 | `runtime/conversation/` | 多轮对话、聊天模板、单轮渲染与全历史后缀提取、model_data_processor | 第 3 章 |
@@ -73,3 +73,5 @@
 | `LiteRT/ml_drift_delegate/delegate/composite/moe_experts_parser.cc` | GPU 输入、布局及量化约束 |
 | `LiteRT/ml_drift_delegate/delegate/composite/moe_experts_kernel.cc` | 按形状选择专家计算路径及加权合并 |
 | `LiteRT/ml_drift_delegate/delegate/composite/experts_remap_builder.cc` | 专家重排缓冲及矩阵实现选择 |
+
+公开 Artisan 产物的引擎选择发生在 LiteRT-LM 层。`runtime/engine/engine_settings.cc:181` 检查文本模型类型，`runtime/engine/engine_factory.h:202` 列出 GPU_ARTISAN 的两个 Legacy 候选。工厂在 `runtime/engine/engine_factory.h:88` 按注册情况选择引擎；无可用实现时，错误会列出候选和实际注册类型。候选类型出现在映射表中，不等于当前发行包已经注册该实现。实际完整产物检查见附录 D 第二十节。

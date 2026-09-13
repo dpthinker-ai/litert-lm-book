@@ -1,0 +1,7 @@
+{
+  "phase": "generation",
+  "engine_created": true,
+  "conversation_created": true,
+  "generation_completed": false,
+  "prompt": "Reply with only the word OK."
+}

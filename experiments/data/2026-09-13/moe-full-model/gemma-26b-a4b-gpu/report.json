@@ -1,0 +1,68 @@
+{
+  "started_at_utc": "2026-09-13T09:04:44.454870+00:00",
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "packages": {
+    "litert-lm-api": "0.17.0",
+    "litert-lm": "0.17.0",
+    "litert-lm-builder": "0.17.0"
+  },
+  "model": {
+    "path": "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "bytes": 15786524672,
+    "sha256": "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1"
+  },
+  "library_sha256": "a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc",
+  "script_sha256": "84f9699325bff7be56f22d6b81cbd9aed61c03287bebd8710e281e903966bdae",
+  "worker_command": [
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/moe_full_model_check.py",
+    "--worker",
+    "--model",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "--sha256",
+    "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1",
+    "--output",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/data/2026-09-13/moe-full-model/gemma-26b-a4b-gpu",
+    "--cache",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-26b-a4b-cache",
+    "--context",
+    "1024",
+    "--output-tokens",
+    "32",
+    "--prompt",
+    "Reply with only the word OK."
+  ],
+  "requested_backend": "GPU",
+  "context_capacity": 1024,
+  "max_output_tokens": 32,
+  "thinking": false,
+  "speculative_decoding": false,
+  "top_k": 1,
+  "temperature": 0,
+  "seed": 42,
+  "timeout_seconds": 180,
+  "max_process_rss_gib": 18,
+  "limitations": [
+    "Prebuilt package; not a local build of frozen release source.",
+    "At most one short generation; not a quality, throughput, energy or peak GPU memory benchmark.",
+    "Sampled process RSS and system pressure are stop guards and can miss short-lived peaks."
+  ],
+  "returncode": -15,
+  "status": "STOPPED_BY_GUARD",
+  "stop_reason": "critical_system_memory_pressure",
+  "worker_result": {
+    "phase": "generation",
+    "engine_created": true,
+    "conversation_created": true,
+    "generation_completed": false,
+    "prompt": "Reply with only the word OK."
+  },
+  "finished_at_utc": "2026-09-13T09:05:38.351541+00:00",
+  "files": {
+    "resource-guard.json": "2259f5e4faf3dc6d9945118441bc0258fb92eae2ef261b60a4aa2b4acd130054",
+    "stderr.log": "7a8cf74168521eb080c66eec5929fc37944c3d7d79f279257c8a5f7fc9d0e1bf",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "worker.json": "339485e61932cb9222fa5437584b8148d3df000c5ab875b10ddb1d5ce17078f4"
+  }
+}

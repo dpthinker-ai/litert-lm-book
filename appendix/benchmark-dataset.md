@@ -514,14 +514,14 @@ INT8 两份原始产物的三组权重均为 INT8，并带独立 FP32 scale 输�
 
 ### 公开完整模型的容器头
 
-10.6.3 节所述公开模型冻结到仓库提交 `7228819fa9580751b57b41a93ee54d5c08c4e001`。本书只以 HTTP Range 读取 GPU、Web 两份文件各自的前 32768 字节；没有下载完整权重或运行推理。两次响应均为 HTTP 206，字节范围和总文件大小与发布元数据一致。
+10.6.3 节所述公开模型冻结到仓库提交 `7228819fa9580751b57b41a93ee54d5c08c4e001`。本次容器核查只以 HTTP Range 读取 GPU、Web 两份文件各自的前 32768 字节；没有下载完整权重或运行推理。两次响应均为 HTTP 206，字节范围和总文件大小与发布元数据一致。GPU 完整文件的后续检查单列于第二十节。
 
 | 产物文件后缀 | 发布文件大小（字节） | 容器格式版本 | 文本模型类型 | 后端约束 |
 |---|---:|---|---|---|
 | `-gpu.litertlm` | 15786524672 | 1.6.0 | `tf_lite_artisan_text_decoder` | `gpu_artisan` |
 | `-web.litertlm` | 15786524672 | 1.5.0 | `tf_lite_artisan_text_decoder` | `gpu_artisan` |
 
-归档目录 `experiments/data/2026-09-13/moe-model-header/` 保存容器头及 `report.json`，后者记录固定 URL、读取范围、头部哈希、section 元数据和发布方提供的完整文件哈希。完整文件哈希未经本地校验，不能当作完整模型已下载验证的证明。此核查只确认容器声明；它不提供 GPU 专家 kernel 覆盖、模型质量或性能证据。
+归档目录 `experiments/data/2026-09-13/moe-model-header/` 保存容器头及 `report.json`，后者记录固定 URL、读取范围、头部哈希、section 元数据和发布方提供的完整文件哈希。本组未在本地校验完整文件哈希，不能当作完整模型已下载验证的证明。此核查只确认容器声明；它不提供 GPU 专家 kernel 覆盖、模型质量或性能证据。
 
 ## 十九、MoE GPU 覆盖与精度对照（2026-09-13）
 
@@ -547,3 +547,24 @@ GPU 条件只选择 GPU accelerator，通常显式设置 WebGPU；另有一例�
 三个拒绝案例都在 `LiteRtCreateCompiledModel` 返回 504，尚未到达 Invoke。INT8 日志明确指出 gate 权重缺少仿射量化；激活诊断副本的日志指出只支持 GELU。日志随后打印“所有操作将在 CPU 运行”的通用提示，但这三个仅请求 GPU 的配置并未创建出可执行模型，不能据此记为 CPU 回退成功。它们也不证明其他转换配置或量化 MoE 产物都不受支持。
 
 归档目录为 `experiments/data/2026-09-13/moe-gpu/`。报告保存来源产物哈希、动态库及脚本哈希、配置、覆盖状态、逐例误差与日志哈希；每例另存输入、模型、参考输出、API 调用轨迹，执行成功时保存实际输出。T=1 是 T=2 的前缀，两种形状不等于独立随机样本。单算子通过不证明完整 MoE 模型生成、质量、内存、持续性能或 Android 支持。
+
+## 二十、完整 MoE 产物的加载与生成检查（2026-09-13）
+
+本节完整下载第十八节固定提交的 GPU 产物，大小为 15786524672 字节（约 14.70 GiB）。流式计算完整文件的 SHA-256，结果为 `94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1`，与发布记录一致。Web 产物仍只核查容器头。
+
+设备和预编译动态库沿用第十七节：Apple M5 Pro、24 GiB 内存、macOS 26.5。Python 为 3.12.13，litert-lm、litert-lm-api、litert-lm-builder 均为 0.17.0。
+
+每次模型检查使用新进程和新缓存目录，请求 GPU 后端，关闭思考和投机解码。采样参数为 top-k 1、temperature 0、seed 42，最多输出 32 token。输入为 `Reply with only the word OK.`。E4B 对照的上下文容量为 4096，MoE 为 1024；这是基本调用检查，不用于比较性能。
+
+| 产物 | 引擎与会话创建 | 生成结果 | 最终状态 |
+|---|---|---|---|
+| 已有 Gemma 4 E4B | 均成功 | 返回 OK，完成清理 | GENERATION_COMPLETED |
+| Gemma 4 26B-A4B GPU | 均成功 | 未获得完整响应；系统内存压力触发停止 | STOPPED_BY_GUARD |
+
+MoE 日志明确进入 `LlmGpuArtisanExecutor`，后端为 `GPU_ARTISAN`，本次计算配置为 F16，并记录 Metal token 初始化。引擎和会话创建完成；生成期间的一次原生堆栈采样还观察到 `Conversation::SendMessage`。这项 Artisan 结果不证明 10.6 节分析的 custom `moe` 构图覆盖了该产物。
+
+采集器设置 180 秒时限和 18 GiB 进程 RSS 上限。系统内存压力共采样 204 次，末次达到 critical，触发 SIGTERM，子进程返回码为 −15。报告保留原因 `critical_system_memory_pressure`，没有生成完成记录。这是采集器主动终止，不属于运行时崩溃、OOM 报错或模型拒绝。
+
+本次未隔离其他应用，系统压力包含同机其他程序的影响。采样 RSS 不能替代完整 GPU 分配量、权重驻留量或内存峰值。测试期间还做了 1 秒原生堆栈采样；本组不提供时延、吞吐或质量指标。E4B 对照存在 sampler 回退，不能称为全流程纯 GPU 执行。
+
+归档目录为 `experiments/data/2026-09-13/moe-full-model/`，保存下载哈希、环境、运行阶段、日志、资源采样及采集器自检。自检不计入模型结果，模型和缓存不入库。复现见附录 C 第十节；Android 数据仍待重跑。
