@@ -1,0 +1,4468 @@
+{
+  "phase": "completed",
+  "engine_created": true,
+  "generation_completed": true,
+  "scenario": "six_turn_project_state",
+  "generations": [
+    {
+      "index": 0,
+      "history": 0,
+      "turn": 0,
+      "prompt": "For this conversation, project is ORION, city is NANJING, and code is AMBER-42.\nBackground notes, not project updates:\nNote 000: RAM stores temporary data used by active programs.\nNote 001: RAM stores temporary data used by active programs.\nNote 002: RAM stores temporary data used by active programs.\nNote 003: RAM stores temporary data used by active programs.\nNote 004: RAM stores temporary data used by active programs.\nNote 005: RAM stores temporary data used by active programs.\nNote 006: RAM stores temporary data used by active programs.\nNote 007: RAM stores temporary data used by active programs.\nNote 008: RAM stores temporary data used by active programs.\nNote 009: RAM stores temporary data used by active programs.\nNote 010: RAM stores temporary data used by active programs.\nNote 011: RAM stores temporary data used by active programs.\nNote 012: RAM stores temporary data used by active programs.\nNote 013: RAM stores temporary data used by active programs.\nNote 014: RAM stores temporary data used by active programs.\nNote 015: RAM stores temporary data used by active programs.\nNote 016: RAM stores temporary data used by active programs.\nNote 017: RAM stores temporary data used by active programs.\nNote 018: RAM stores temporary data used by active programs.\nNote 019: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "ORION",
+        "city": "NANJING",
+        "code": "AMBER-42"
+      },
+      "input_raw_token_count": 383,
+      "conversation_token_count_before": 0,
+      "events": [
+        {
+          "elapsed_seconds": 4.206495041027665,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.225555583019741,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.246324499952607,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.265381000004709,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.284526624949649,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.30526816600468,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.324372458038852,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.343682082952,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OR\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.363464249996468,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ION\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.382537791039795,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.401619125041179,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.42171062505804,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.440871541039087,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.459934500046074,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.480196624994278,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.499180749990046,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.518449165974744,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"NAN\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.538142499979585,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"J\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.557388165965676,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ING\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.576876332983375,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.597159208031371,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.616580875008367,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.637697790982202,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.65674087498337,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.675997790996917,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.696991665987298,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.716238916036673,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"AM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.737022540997714,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BER\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.7559368329821154,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.775184290949255,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.795984124997631,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.815238249953836,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.834415249992162,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.855032291030511,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.85545670799911,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 4.206495041027665,
+      "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"NANJING\",\n  \"code\": \"AMBER-42\"\n}",
+      "generation_wall_seconds": 4.8563833750085905,
+      "benchmark": {
+        "init_time_in_second": 52.019904624000006,
+        "time_to_first_token_in_second": 3.28653116525,
+        "last_prefill_token_count": 396,
+        "last_prefill_tokens_per_second": 122.20662579019623,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 21.683664805404486
+      },
+      "conversation_token_count": 431,
+      "parsed_answer": {
+        "project": "ORION",
+        "city": "NANJING",
+        "code": "AMBER-42"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 1,
+      "history": 0,
+      "turn": 1,
+      "prompt": "Keep all project fields unchanged.\nBackground notes, not project updates:\nNote 020: RAM stores temporary data used by active programs.\nNote 021: RAM stores temporary data used by active programs.\nNote 022: RAM stores temporary data used by active programs.\nNote 023: RAM stores temporary data used by active programs.\nNote 024: RAM stores temporary data used by active programs.\nNote 025: RAM stores temporary data used by active programs.\nNote 026: RAM stores temporary data used by active programs.\nNote 027: RAM stores temporary data used by active programs.\nNote 028: RAM stores temporary data used by active programs.\nNote 029: RAM stores temporary data used by active programs.\nNote 030: RAM stores temporary data used by active programs.\nNote 031: RAM stores temporary data used by active programs.\nNote 032: RAM stores temporary data used by active programs.\nNote 033: RAM stores temporary data used by active programs.\nNote 034: RAM stores temporary data used by active programs.\nNote 035: RAM stores temporary data used by active programs.\nNote 036: RAM stores temporary data used by active programs.\nNote 037: RAM stores temporary data used by active programs.\nNote 038: RAM stores temporary data used by active programs.\nNote 039: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "ORION",
+        "city": "NANJING",
+        "code": "AMBER-42"
+      },
+      "input_raw_token_count": 365,
+      "conversation_token_count_before": 431,
+      "events": [
+        {
+          "elapsed_seconds": 0.5752790420083329,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5962351249763742,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.615876791998744,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.636734458967112,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6561564590083435,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6751595420064405,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6960709169507027,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.71518587495666,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OR\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7346912920475006,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ION\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7543926249491051,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.773723958991468,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7930362499319017,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8129245419986546,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8322763339383528,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8530759999994189,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8723089590203017,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8915721250232309,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"NAN\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9124317090027034,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"J\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9316488340264186,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ING\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9509214999852702,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9711001249961555,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9902966249501333,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.009613584028557,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0294473340036348,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.048696708981879,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0680739999515936,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.087987083941698,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"AM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1071691249962896,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BER\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1265575420111418,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1463057090295479,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1654556250432506,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1846768340328708,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2047536669997498,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2239031669450924,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.224251167033799,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.5752790420083329,
+      "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"NANJING\",\n  \"code\": \"AMBER-42\"\n}",
+      "generation_wall_seconds": 1.2249376670224592,
+      "benchmark": {
+        "init_time_in_second": 52.019904624000006,
+        "time_to_first_token_in_second": 3.28653116525,
+        "last_prefill_token_count": 377,
+        "last_prefill_tokens_per_second": 683.6351958087512,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.17482367238832
+      },
+      "conversation_token_count": 843,
+      "parsed_answer": {
+        "project": "ORION",
+        "city": "NANJING",
+        "code": "AMBER-42"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 2,
+      "history": 0,
+      "turn": 2,
+      "prompt": "Update only the code to COBALT-73. Preserve the project and city.\nBackground notes, not project updates:\nNote 040: RAM stores temporary data used by active programs.\nNote 041: RAM stores temporary data used by active programs.\nNote 042: RAM stores temporary data used by active programs.\nNote 043: RAM stores temporary data used by active programs.\nNote 044: RAM stores temporary data used by active programs.\nNote 045: RAM stores temporary data used by active programs.\nNote 046: RAM stores temporary data used by active programs.\nNote 047: RAM stores temporary data used by active programs.\nNote 048: RAM stores temporary data used by active programs.\nNote 049: RAM stores temporary data used by active programs.\nNote 050: RAM stores temporary data used by active programs.\nNote 051: RAM stores temporary data used by active programs.\nNote 052: RAM stores temporary data used by active programs.\nNote 053: RAM stores temporary data used by active programs.\nNote 054: RAM stores temporary data used by active programs.\nNote 055: RAM stores temporary data used by active programs.\nNote 056: RAM stores temporary data used by active programs.\nNote 057: RAM stores temporary data used by active programs.\nNote 058: RAM stores temporary data used by active programs.\nNote 059: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "ORION",
+        "city": "NANJING",
+        "code": "COBALT-73"
+      },
+      "input_raw_token_count": 377,
+      "conversation_token_count_before": 843,
+      "events": [
+        {
+          "elapsed_seconds": 0.6191376249771565,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.639353791018948,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6613572499481961,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6814528750255704,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7034843330038711,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7224105410277843,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7431950409663841,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7621087910374627,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OR\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7811499999370426,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ION\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8017532910453156,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8208904999773949,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8401067079976201,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8605178330326453,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.87964095803909,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8988208329537883,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9189249159535393,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9379651249619201,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"NAN\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9570629160152748,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"J\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9769749159459025,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ING\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9958525829715654,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.014505833038129,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.035064790979959,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.053885250003077,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.072764000040479,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0933896659407765,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1124911250080913,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1313479579985142,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"CO\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1517007909715176,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BAL\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1708500409731641,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"T\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1895432500168681,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.21014079102315,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"7\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2288205409422517,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"3\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2478218330070376,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2681245829444379,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2872007079422474,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.287592125008814,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.6191376249771565,
+      "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"NANJING\",\n  \"code\": \"COBALT-73\"\n}",
+      "generation_wall_seconds": 1.2882160409353673,
+      "benchmark": {
+        "init_time_in_second": 52.019904624000006,
+        "time_to_first_token_in_second": 3.28653116525,
+        "last_prefill_token_count": 389,
+        "last_prefill_tokens_per_second": 653.920173355482,
+        "last_decode_token_count": 36,
+        "last_decode_tokens_per_second": 52.08319521340158
+      },
+      "conversation_token_count": 1268,
+      "parsed_answer": {
+        "project": "ORION",
+        "city": "NANJING",
+        "code": "COBALT-73"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 3,
+      "history": 0,
+      "turn": 3,
+      "prompt": "Keep all project fields unchanged.\nBackground notes, not project updates:\nNote 060: RAM stores temporary data used by active programs.\nNote 061: RAM stores temporary data used by active programs.\nNote 062: RAM stores temporary data used by active programs.\nNote 063: RAM stores temporary data used by active programs.\nNote 064: RAM stores temporary data used by active programs.\nNote 065: RAM stores temporary data used by active programs.\nNote 066: RAM stores temporary data used by active programs.\nNote 067: RAM stores temporary data used by active programs.\nNote 068: RAM stores temporary data used by active programs.\nNote 069: RAM stores temporary data used by active programs.\nNote 070: RAM stores temporary data used by active programs.\nNote 071: RAM stores temporary data used by active programs.\nNote 072: RAM stores temporary data used by active programs.\nNote 073: RAM stores temporary data used by active programs.\nNote 074: RAM stores temporary data used by active programs.\nNote 075: RAM stores temporary data used by active programs.\nNote 076: RAM stores temporary data used by active programs.\nNote 077: RAM stores temporary data used by active programs.\nNote 078: RAM stores temporary data used by active programs.\nNote 079: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "ORION",
+        "city": "NANJING",
+        "code": "COBALT-73"
+      },
+      "input_raw_token_count": 365,
+      "conversation_token_count_before": 1268,
+      "events": [
+        {
+          "elapsed_seconds": 0.5717882909812033,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5912319159833714,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6122630829922855,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6314528749790043,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6505039579933509,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6713662910042331,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6903855409473181,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7093744999729097,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OR\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7297949580242857,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ION\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7488993329461664,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7679790409747511,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7884194159414619,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8075527909677476,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8266307499725372,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8464702910277992,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8654874159255996,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8845458750147372,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"NAN\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.904565165983513,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"J\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.923476165975444,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ING\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9425852500135079,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9627687080064788,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9818150829523802,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.000738958013244,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0213435830082744,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0402943749213591,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0592599579831585,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0793624999932945,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"CO\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0983371660113335,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BAL\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1173377910163254,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"T\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1377588330069557,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.156769249937497,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"7\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1758649159455672,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"3\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.196143832989037,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2151600000215694,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.233920875005424,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2344138749176636,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.5717882909812033,
+      "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"NANJING\",\n  \"code\": \"COBALT-73\"\n}",
+      "generation_wall_seconds": 1.235118665965274,
+      "benchmark": {
+        "init_time_in_second": 52.019904624000006,
+        "time_to_first_token_in_second": 3.28653116525,
+        "last_prefill_token_count": 377,
+        "last_prefill_tokens_per_second": 688.1177174113175,
+        "last_decode_token_count": 36,
+        "last_decode_tokens_per_second": 52.53647180378503
+      },
+      "conversation_token_count": 1681,
+      "parsed_answer": {
+        "project": "ORION",
+        "city": "NANJING",
+        "code": "COBALT-73"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 4,
+      "history": 0,
+      "turn": 4,
+      "prompt": "Update only the city to SUZHOU. Preserve the project and code.\nBackground notes, not project updates:\nNote 080: RAM stores temporary data used by active programs.\nNote 081: RAM stores temporary data used by active programs.\nNote 082: RAM stores temporary data used by active programs.\nNote 083: RAM stores temporary data used by active programs.\nNote 084: RAM stores temporary data used by active programs.\nNote 085: RAM stores temporary data used by active programs.\nNote 086: RAM stores temporary data used by active programs.\nNote 087: RAM stores temporary data used by active programs.\nNote 088: RAM stores temporary data used by active programs.\nNote 089: RAM stores temporary data used by active programs.\nNote 090: RAM stores temporary data used by active programs.\nNote 091: RAM stores temporary data used by active programs.\nNote 092: RAM stores temporary data used by active programs.\nNote 093: RAM stores temporary data used by active programs.\nNote 094: RAM stores temporary data used by active programs.\nNote 095: RAM stores temporary data used by active programs.\nNote 096: RAM stores temporary data used by active programs.\nNote 097: RAM stores temporary data used by active programs.\nNote 098: RAM stores temporary data used by active programs.\nNote 099: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "ORION",
+        "city": "SUZHOU",
+        "code": "COBALT-73"
+      },
+      "input_raw_token_count": 374,
+      "conversation_token_count_before": 1681,
+      "events": [
+        {
+          "elapsed_seconds": 0.6176125830970705,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6364871250698343,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6554743330925703,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6756775830872357,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6945679580094293,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7136783330934122,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.733458667062223,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7524800420505926,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OR\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7714138330193236,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ION\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7918990000616759,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.810713000013493,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8295411670114845,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8499547080136836,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8689109580591321,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8877592080971226,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9083132080268115,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.927391083096154,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"SU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9464198329951614,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ZH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9669882920570672,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9859328330494463,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0049888750072569,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0248388330219314,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0438206670805812,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0628567080711946,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0826848750002682,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1015502919908613,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1202911250293255,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"CO\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.140927750035189,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BAL\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1596735420171171,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"T\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1785963750444353,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1981397080235183,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"7\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2170695830136538,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"3\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2358977920375764,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.254738042014651,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2751591249834746,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2757245000684634,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.6176125830970705,
+      "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"SUZHOU\",\n  \"code\": \"COBALT-73\"\n}",
+      "generation_wall_seconds": 1.2765458750072867,
+      "benchmark": {
+        "init_time_in_second": 52.019904624000006,
+        "time_to_first_token_in_second": 3.28653116525,
+        "last_prefill_token_count": 386,
+        "last_prefill_tokens_per_second": 649.2195003276062,
+        "last_decode_token_count": 36,
+        "last_decode_tokens_per_second": 52.970566722146664
+      },
+      "conversation_token_count": 2103,
+      "parsed_answer": {
+        "project": "ORION",
+        "city": "SUZHOU",
+        "code": "COBALT-73"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 5,
+      "history": 0,
+      "turn": 5,
+      "prompt": "Keep all project fields unchanged.\nBackground notes, not project updates:\nNote 100: RAM stores temporary data used by active programs.\nNote 101: RAM stores temporary data used by active programs.\nNote 102: RAM stores temporary data used by active programs.\nNote 103: RAM stores temporary data used by active programs.\nNote 104: RAM stores temporary data used by active programs.\nNote 105: RAM stores temporary data used by active programs.\nNote 106: RAM stores temporary data used by active programs.\nNote 107: RAM stores temporary data used by active programs.\nNote 108: RAM stores temporary data used by active programs.\nNote 109: RAM stores temporary data used by active programs.\nNote 110: RAM stores temporary data used by active programs.\nNote 111: RAM stores temporary data used by active programs.\nNote 112: RAM stores temporary data used by active programs.\nNote 113: RAM stores temporary data used by active programs.\nNote 114: RAM stores temporary data used by active programs.\nNote 115: RAM stores temporary data used by active programs.\nNote 116: RAM stores temporary data used by active programs.\nNote 117: RAM stores temporary data used by active programs.\nNote 118: RAM stores temporary data used by active programs.\nNote 119: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "ORION",
+        "city": "SUZHOU",
+        "code": "COBALT-73"
+      },
+      "input_raw_token_count": 365,
+      "conversation_token_count_before": 2103,
+      "events": [
+        {
+          "elapsed_seconds": 0.5683752910699695,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5881759580224752,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6075037081027403,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6265347501030192,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6468940410995856,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6662130830809474,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6868990000803024,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7059043750632554,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OR\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7248459160327911,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ION\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7439202080713585,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7634686250239611,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.782461833092384,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8015393750974908,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8217267910949886,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8406809160951525,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8598222910659388,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8796937080333009,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"SU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.898843041039072,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ZH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9182501659961417,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9374263330828398,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.956380041083321,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.975333790993318,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9959291249979287,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.014971166034229,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0337122500641271,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0541890830500051,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0731215830892324,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"CO\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0918886660365388,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BAL\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1124633750878274,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"T\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.131469540996477,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.150491000036709,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"7\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1708399160997942,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"3\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1899592080153525,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.20880029106047,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2293864580569789,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.230017916066572,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.5683752910699695,
+      "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"SUZHOU\",\n  \"code\": \"COBALT-73\"\n}",
+      "generation_wall_seconds": 1.230980291031301,
+      "benchmark": {
+        "init_time_in_second": 52.019904624000006,
+        "time_to_first_token_in_second": 3.28653116525,
+        "last_prefill_token_count": 377,
+        "last_prefill_tokens_per_second": 689.9550911525384,
+        "last_decode_token_count": 36,
+        "last_decode_tokens_per_second": 52.77646995567653
+      },
+      "conversation_token_count": 2516,
+      "parsed_answer": {
+        "project": "ORION",
+        "city": "SUZHOU",
+        "code": "COBALT-73"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 6,
+      "history": 1,
+      "turn": 0,
+      "prompt": "For this conversation, project is LYRA, city is HANGZHOU, and code is JADE-51.\nBackground notes, not project updates:\nNote 000: RAM stores temporary data used by active programs.\nNote 001: RAM stores temporary data used by active programs.\nNote 002: RAM stores temporary data used by active programs.\nNote 003: RAM stores temporary data used by active programs.\nNote 004: RAM stores temporary data used by active programs.\nNote 005: RAM stores temporary data used by active programs.\nNote 006: RAM stores temporary data used by active programs.\nNote 007: RAM stores temporary data used by active programs.\nNote 008: RAM stores temporary data used by active programs.\nNote 009: RAM stores temporary data used by active programs.\nNote 010: RAM stores temporary data used by active programs.\nNote 011: RAM stores temporary data used by active programs.\nNote 012: RAM stores temporary data used by active programs.\nNote 013: RAM stores temporary data used by active programs.\nNote 014: RAM stores temporary data used by active programs.\nNote 015: RAM stores temporary data used by active programs.\nNote 016: RAM stores temporary data used by active programs.\nNote 017: RAM stores temporary data used by active programs.\nNote 018: RAM stores temporary data used by active programs.\nNote 019: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "LYRA",
+        "city": "HANGZHOU",
+        "code": "JADE-51"
+      },
+      "input_raw_token_count": 384,
+      "conversation_token_count_before": 0,
+      "events": [
+        {
+          "elapsed_seconds": 0.46894795808475465,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4881617920473218,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5075040420051664,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5275639169849455,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5466427920619026,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5654380830237642,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5862361249746755,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6053392080357298,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"LY\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6263441670453176,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6450746250338852,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6640882500214502,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6844841670244932,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7035539579810575,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7229010830633342,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7437840420752764,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7628562080208212,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.782145458040759,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"HANG\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8022525000851601,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ZH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8212879999773577,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.840344125055708,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8606895830016583,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8797327920328826,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.898753207991831,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.918933333014138,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9378937500296161,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9567382080713287,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9771969580324367,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"J\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9961402920307592,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ADE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.015006500063464,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0352545420173556,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"5\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0540393330156803,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"1\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0728922500275075,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0934001250425354,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.112357374979183,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1130553330294788,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.46894795808475465,
+      "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"HANGZHOU\",\n  \"code\": \"JADE-51\"\n}",
+      "generation_wall_seconds": 1.1140364580787718,
+      "benchmark": {
+        "init_time_in_second": 52.019911624,
+        "time_to_first_token_in_second": 0.4653584785,
+        "last_prefill_token_count": 397,
+        "last_prefill_tokens_per_second": 889.4470025692024,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.59357712209449
+      },
+      "conversation_token_count": 432,
+      "parsed_answer": {
+        "project": "LYRA",
+        "city": "HANGZHOU",
+        "code": "JADE-51"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 7,
+      "history": 1,
+      "turn": 1,
+      "prompt": "Keep all project fields unchanged.\nBackground notes, not project updates:\nNote 020: RAM stores temporary data used by active programs.\nNote 021: RAM stores temporary data used by active programs.\nNote 022: RAM stores temporary data used by active programs.\nNote 023: RAM stores temporary data used by active programs.\nNote 024: RAM stores temporary data used by active programs.\nNote 025: RAM stores temporary data used by active programs.\nNote 026: RAM stores temporary data used by active programs.\nNote 027: RAM stores temporary data used by active programs.\nNote 028: RAM stores temporary data used by active programs.\nNote 029: RAM stores temporary data used by active programs.\nNote 030: RAM stores temporary data used by active programs.\nNote 031: RAM stores temporary data used by active programs.\nNote 032: RAM stores temporary data used by active programs.\nNote 033: RAM stores temporary data used by active programs.\nNote 034: RAM stores temporary data used by active programs.\nNote 035: RAM stores temporary data used by active programs.\nNote 036: RAM stores temporary data used by active programs.\nNote 037: RAM stores temporary data used by active programs.\nNote 038: RAM stores temporary data used by active programs.\nNote 039: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "LYRA",
+        "city": "HANGZHOU",
+        "code": "JADE-51"
+      },
+      "input_raw_token_count": 365,
+      "conversation_token_count_before": 432,
+      "events": [
+        {
+          "elapsed_seconds": 0.568656750023365,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5877506660763174,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6097099160542712,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6289739580824971,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6479382080724463,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.668529250076972,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6874201660975814,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7064120410941541,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"LY\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7266299580223858,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7456360830692574,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7645215000957251,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7852108330698684,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8042793330969289,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8233755410183221,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8433837910415605,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8622820830205455,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.88115266605746,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"HANG\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9015859580831602,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ZH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9203586661024019,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9390102500328794,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.959435083088465,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9782875831006095,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9971686661010608,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0176267500501126,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.036426916019991,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0552494580624625,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.075799125013873,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"J\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0947177080670372,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ADE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1134566250257194,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1340905830729753,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"5\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.152992791030556,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"1\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.171857500099577,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1924419160932302,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2112281660083681,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.212088541011326,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.568656750023365,
+      "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"HANGZHOU\",\n  \"code\": \"JADE-51\"\n}",
+      "generation_wall_seconds": 1.2131444159895182,
+      "benchmark": {
+        "init_time_in_second": 52.019911624,
+        "time_to_first_token_in_second": 0.4653584785,
+        "last_prefill_token_count": 377,
+        "last_prefill_tokens_per_second": 690.1693432086741,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.70917303250158
+      },
+      "conversation_token_count": 844,
+      "parsed_answer": {
+        "project": "LYRA",
+        "city": "HANGZHOU",
+        "code": "JADE-51"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 8,
+      "history": 1,
+      "turn": 2,
+      "prompt": "Update only the code to RUBY-86. Preserve the project and city.\nBackground notes, not project updates:\nNote 040: RAM stores temporary data used by active programs.\nNote 041: RAM stores temporary data used by active programs.\nNote 042: RAM stores temporary data used by active programs.\nNote 043: RAM stores temporary data used by active programs.\nNote 044: RAM stores temporary data used by active programs.\nNote 045: RAM stores temporary data used by active programs.\nNote 046: RAM stores temporary data used by active programs.\nNote 047: RAM stores temporary data used by active programs.\nNote 048: RAM stores temporary data used by active programs.\nNote 049: RAM stores temporary data used by active programs.\nNote 050: RAM stores temporary data used by active programs.\nNote 051: RAM stores temporary data used by active programs.\nNote 052: RAM stores temporary data used by active programs.\nNote 053: RAM stores temporary data used by active programs.\nNote 054: RAM stores temporary data used by active programs.\nNote 055: RAM stores temporary data used by active programs.\nNote 056: RAM stores temporary data used by active programs.\nNote 057: RAM stores temporary data used by active programs.\nNote 058: RAM stores temporary data used by active programs.\nNote 059: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "LYRA",
+        "city": "HANGZHOU",
+        "code": "RUBY-86"
+      },
+      "input_raw_token_count": 376,
+      "conversation_token_count_before": 844,
+      "events": [
+        {
+          "elapsed_seconds": 0.6109584579244256,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6302423329325393,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6493342500180006,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6693112079519778,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.688262042007409,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7072017919272184,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7273722919635475,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7463099169544876,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"LY\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7651915829628706,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7858515830012038,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8048162079649046,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8238744169939309,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8438062919303775,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8627542079193518,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8816010419977829,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9019344579428434,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9208009169669822,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"HANG\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9397148329298943,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ZH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9601114579709247,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.978981374995783,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9979984579840675,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0185477079357952,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.037412624922581,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0561541250208393,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0769360000267625,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0961197919677943,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1149865000043064,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RUB\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1353064170107245,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Y\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.154130124952644,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1729698749259114,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"8\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1934323749737814,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"6\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2121423749485984,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2309899169486016,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.251531874993816,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2524521249579266,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.6109584579244256,
+      "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"HANGZHOU\",\n  \"code\": \"RUBY-86\"\n}",
+      "generation_wall_seconds": 1.2536125419428572,
+      "benchmark": {
+        "init_time_in_second": 52.019911624,
+        "time_to_first_token_in_second": 0.4653584785,
+        "last_prefill_token_count": 388,
+        "last_prefill_tokens_per_second": 659.4792493494442,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.838829044084015
+      },
+      "conversation_token_count": 1267,
+      "parsed_answer": {
+        "project": "LYRA",
+        "city": "HANGZHOU",
+        "code": "RUBY-86"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 9,
+      "history": 1,
+      "turn": 3,
+      "prompt": "Keep all project fields unchanged.\nBackground notes, not project updates:\nNote 060: RAM stores temporary data used by active programs.\nNote 061: RAM stores temporary data used by active programs.\nNote 062: RAM stores temporary data used by active programs.\nNote 063: RAM stores temporary data used by active programs.\nNote 064: RAM stores temporary data used by active programs.\nNote 065: RAM stores temporary data used by active programs.\nNote 066: RAM stores temporary data used by active programs.\nNote 067: RAM stores temporary data used by active programs.\nNote 068: RAM stores temporary data used by active programs.\nNote 069: RAM stores temporary data used by active programs.\nNote 070: RAM stores temporary data used by active programs.\nNote 071: RAM stores temporary data used by active programs.\nNote 072: RAM stores temporary data used by active programs.\nNote 073: RAM stores temporary data used by active programs.\nNote 074: RAM stores temporary data used by active programs.\nNote 075: RAM stores temporary data used by active programs.\nNote 076: RAM stores temporary data used by active programs.\nNote 077: RAM stores temporary data used by active programs.\nNote 078: RAM stores temporary data used by active programs.\nNote 079: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "LYRA",
+        "city": "HANGZHOU",
+        "code": "RUBY-86"
+      },
+      "input_raw_token_count": 365,
+      "conversation_token_count_before": 1267,
+      "events": [
+        {
+          "elapsed_seconds": 0.56737437506672,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5876277500065044,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6069315000204369,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6262149580288678,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6458610000554472,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6647504169959575,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6834929999895394,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7040172079578042,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"LY\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.723039917065762,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7420850830385461,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.762424667016603,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7814281249884516,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8005330000305548,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8209048750577495,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8401202920358628,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8592814579606056,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8786975420080125,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"HANG\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8976331669837236,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ZH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9164930420229211,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"OU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9369726249715313,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9558529170462862,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9748003330314532,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.995268041966483,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0141091250116006,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0330363750690594,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0534588330192491,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.072493499959819,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RUB\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0912454170174897,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Y\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1118152079870924,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1309580419911072,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"8\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.14997004205361,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"6\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.170488917035982,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1894460830371827,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.208350250031799,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2094084169948474,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.56737437506672,
+      "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"HANGZHOU\",\n  \"code\": \"RUBY-86\"\n}",
+      "generation_wall_seconds": 1.2108173329615965,
+      "benchmark": {
+        "init_time_in_second": 52.019911624,
+        "time_to_first_token_in_second": 0.4653584785,
+        "last_prefill_token_count": 377,
+        "last_prefill_tokens_per_second": 691.3874353171063,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.850916928527106
+      },
+      "conversation_token_count": 1679,
+      "parsed_answer": {
+        "project": "LYRA",
+        "city": "HANGZHOU",
+        "code": "RUBY-86"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 10,
+      "history": 1,
+      "turn": 4,
+      "prompt": "Update only the city to WUXI. Preserve the project and code.\nBackground notes, not project updates:\nNote 080: RAM stores temporary data used by active programs.\nNote 081: RAM stores temporary data used by active programs.\nNote 082: RAM stores temporary data used by active programs.\nNote 083: RAM stores temporary data used by active programs.\nNote 084: RAM stores temporary data used by active programs.\nNote 085: RAM stores temporary data used by active programs.\nNote 086: RAM stores temporary data used by active programs.\nNote 087: RAM stores temporary data used by active programs.\nNote 088: RAM stores temporary data used by active programs.\nNote 089: RAM stores temporary data used by active programs.\nNote 090: RAM stores temporary data used by active programs.\nNote 091: RAM stores temporary data used by active programs.\nNote 092: RAM stores temporary data used by active programs.\nNote 093: RAM stores temporary data used by active programs.\nNote 094: RAM stores temporary data used by active programs.\nNote 095: RAM stores temporary data used by active programs.\nNote 096: RAM stores temporary data used by active programs.\nNote 097: RAM stores temporary data used by active programs.\nNote 098: RAM stores temporary data used by active programs.\nNote 099: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "LYRA",
+        "city": "WUXI",
+        "code": "RUBY-86"
+      },
+      "input_raw_token_count": 374,
+      "conversation_token_count_before": 1679,
+      "events": [
+        {
+          "elapsed_seconds": 0.6155707910656929,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6348581661004573,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6556973330443725,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6748900410020724,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6939084160840139,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7145176250487566,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7334800410317257,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7526672080857679,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"LY\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7734271660447121,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7924764160998166,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8115486660972238,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8318292500916868,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8510159580036998,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8700917080277577,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8898744580801576,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9090117909945548,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9279780830256641,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"W\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.948296333081089,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"UX\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9672147500095889,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"I\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9862345410510898,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0064038330456242,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.025313166086562,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0440729580586776,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0647124160313979,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0835845000110567,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1027358330320567,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.123046791064553,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RUB\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1420380410272628,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Y\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1608323330292478,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1813007080927491,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"8\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2001059160102159,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"6\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2188422080362216,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2395044160075486,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2582854999927804,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.259391958010383,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.6155707910656929,
+      "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"WUXI\",\n  \"code\": \"RUBY-86\"\n}",
+      "generation_wall_seconds": 1.2607371660415083,
+      "benchmark": {
+        "init_time_in_second": 52.019911624,
+        "time_to_first_token_in_second": 0.4653584785,
+        "last_prefill_token_count": 386,
+        "last_prefill_tokens_per_second": 651.3681406456634,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.64778567753122
+      },
+      "conversation_token_count": 2100,
+      "parsed_answer": {
+        "project": "LYRA",
+        "city": "WUXI",
+        "code": "RUBY-86"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 11,
+      "history": 1,
+      "turn": 5,
+      "prompt": "Keep all project fields unchanged.\nBackground notes, not project updates:\nNote 100: RAM stores temporary data used by active programs.\nNote 101: RAM stores temporary data used by active programs.\nNote 102: RAM stores temporary data used by active programs.\nNote 103: RAM stores temporary data used by active programs.\nNote 104: RAM stores temporary data used by active programs.\nNote 105: RAM stores temporary data used by active programs.\nNote 106: RAM stores temporary data used by active programs.\nNote 107: RAM stores temporary data used by active programs.\nNote 108: RAM stores temporary data used by active programs.\nNote 109: RAM stores temporary data used by active programs.\nNote 110: RAM stores temporary data used by active programs.\nNote 111: RAM stores temporary data used by active programs.\nNote 112: RAM stores temporary data used by active programs.\nNote 113: RAM stores temporary data used by active programs.\nNote 114: RAM stores temporary data used by active programs.\nNote 115: RAM stores temporary data used by active programs.\nNote 116: RAM stores temporary data used by active programs.\nNote 117: RAM stores temporary data used by active programs.\nNote 118: RAM stores temporary data used by active programs.\nNote 119: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "LYRA",
+        "city": "WUXI",
+        "code": "RUBY-86"
+      },
+      "input_raw_token_count": 365,
+      "conversation_token_count_before": 2100,
+      "events": [
+        {
+          "elapsed_seconds": 0.5667524579912424,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5858033749973401,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6054536250885576,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6253502500476316,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6444127920549363,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6634127500001341,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6834734580479562,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7025243330281228,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"LY\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7216457499889657,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7418408750090748,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7609687080839649,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.780120583018288,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.800138125079684,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8192162920022383,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8384976250817999,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.858000458101742,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.87705150002148,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"W\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8959863750496879,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"UX\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9162045830162242,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"I\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9351288330508396,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9538435420254245,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9743259580573067,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9931657500565052,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0122100830776617,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0325858329888433,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0517684580991045,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0707394169876352,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RUB\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0913772080093622,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Y\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1101051670266315,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1291505420813337,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"8\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1496307080378756,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"6\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1685213750461116,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1873801670735702,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.207875124993734,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2091111250920221,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.5667524579912424,
+      "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"WUXI\",\n  \"code\": \"RUBY-86\"\n}",
+      "generation_wall_seconds": 1.210801083012484,
+      "benchmark": {
+        "init_time_in_second": 52.019911624,
+        "time_to_first_token_in_second": 0.4653584785,
+        "last_prefill_token_count": 377,
+        "last_prefill_tokens_per_second": 692.1706978718711,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.84498527512231
+      },
+      "conversation_token_count": 2512,
+      "parsed_answer": {
+        "project": "LYRA",
+        "city": "WUXI",
+        "code": "RUBY-86"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 12,
+      "history": 2,
+      "turn": 0,
+      "prompt": "For this conversation, project is VEGA, city is CHENGDU, and code is IVORY-64.\nBackground notes, not project updates:\nNote 000: RAM stores temporary data used by active programs.\nNote 001: RAM stores temporary data used by active programs.\nNote 002: RAM stores temporary data used by active programs.\nNote 003: RAM stores temporary data used by active programs.\nNote 004: RAM stores temporary data used by active programs.\nNote 005: RAM stores temporary data used by active programs.\nNote 006: RAM stores temporary data used by active programs.\nNote 007: RAM stores temporary data used by active programs.\nNote 008: RAM stores temporary data used by active programs.\nNote 009: RAM stores temporary data used by active programs.\nNote 010: RAM stores temporary data used by active programs.\nNote 011: RAM stores temporary data used by active programs.\nNote 012: RAM stores temporary data used by active programs.\nNote 013: RAM stores temporary data used by active programs.\nNote 014: RAM stores temporary data used by active programs.\nNote 015: RAM stores temporary data used by active programs.\nNote 016: RAM stores temporary data used by active programs.\nNote 017: RAM stores temporary data used by active programs.\nNote 018: RAM stores temporary data used by active programs.\nNote 019: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "VEGA",
+        "city": "CHENGDU",
+        "code": "IVORY-64"
+      },
+      "input_raw_token_count": 383,
+      "conversation_token_count_before": 0,
+      "events": [
+        {
+          "elapsed_seconds": 0.4697120420169085,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.48972862504888326,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5088233749847859,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5280870420392603,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5479875419987366,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5669472500449046,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5861149170668796,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6067174170166254,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"VE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6260140830418095,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"GA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6466034579789266,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6654217500472441,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6842491669813171,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7050230420427397,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7238679580623284,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7429585420759395,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7634020000696182,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7825307080056518,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"CH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.801512417034246,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ENG\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8221833750139922,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"DU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8412675000727177,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8603487920481712,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8812095830217004,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9003350420389324,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9193363750819117,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9396535420091823,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9586840830743313,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9776126249926165,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"IV\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9979023330379277,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ORY\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.016969250049442,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0360375830205157,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"6\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0561061670305207,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0750768330181018,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.093991499976255,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1146058330778033,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1158592919819057,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.4697120420169085,
+      "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"CHENGDU\",\n  \"code\": \"IVORY-64\"\n}",
+      "generation_wall_seconds": 1.1179560420569032,
+      "benchmark": {
+        "init_time_in_second": 52.019902624000004,
+        "time_to_first_token_in_second": 0.46670369474999995,
+        "last_prefill_token_count": 396,
+        "last_prefill_tokens_per_second": 884.593580448988,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.51966530591815
+      },
+      "conversation_token_count": 431,
+      "parsed_answer": {
+        "project": "VEGA",
+        "city": "CHENGDU",
+        "code": "IVORY-64"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 13,
+      "history": 2,
+      "turn": 1,
+      "prompt": "Keep all project fields unchanged.\nBackground notes, not project updates:\nNote 020: RAM stores temporary data used by active programs.\nNote 021: RAM stores temporary data used by active programs.\nNote 022: RAM stores temporary data used by active programs.\nNote 023: RAM stores temporary data used by active programs.\nNote 024: RAM stores temporary data used by active programs.\nNote 025: RAM stores temporary data used by active programs.\nNote 026: RAM stores temporary data used by active programs.\nNote 027: RAM stores temporary data used by active programs.\nNote 028: RAM stores temporary data used by active programs.\nNote 029: RAM stores temporary data used by active programs.\nNote 030: RAM stores temporary data used by active programs.\nNote 031: RAM stores temporary data used by active programs.\nNote 032: RAM stores temporary data used by active programs.\nNote 033: RAM stores temporary data used by active programs.\nNote 034: RAM stores temporary data used by active programs.\nNote 035: RAM stores temporary data used by active programs.\nNote 036: RAM stores temporary data used by active programs.\nNote 037: RAM stores temporary data used by active programs.\nNote 038: RAM stores temporary data used by active programs.\nNote 039: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "VEGA",
+        "city": "CHENGDU",
+        "code": "IVORY-64"
+      },
+      "input_raw_token_count": 365,
+      "conversation_token_count_before": 431,
+      "events": [
+        {
+          "elapsed_seconds": 0.5667735419701785,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5858040830353275,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.605385374976322,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6255524170119315,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6446708330186084,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6637684579472989,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6836236669914797,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7025525829521939,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"VE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7216868749819696,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"GA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7420778749510646,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7610199999762699,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7800528750522062,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8000838330481201,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.819083167007193,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8381058749509975,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8584973330143839,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8775332500226796,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"CH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8964341250248253,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ENG\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9168777499580756,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"DU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9357212920440361,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9544615419581532,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9748915419913828,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9939056669827551,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.012736083008349,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0333155420375988,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.052011749939993,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0709212080109864,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"IV\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0913705830462277,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ORY\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.110202332958579,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1291429169941694,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"6\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1497182919410989,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.168902541976422,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1877999580465257,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2082734999712557,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.21021616703365,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.5667735419701785,
+      "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"CHENGDU\",\n  \"code\": \"IVORY-64\"\n}",
+      "generation_wall_seconds": 1.2131576250540093,
+      "benchmark": {
+        "init_time_in_second": 52.019902624000004,
+        "time_to_first_token_in_second": 0.46670369474999995,
+        "last_prefill_token_count": 377,
+        "last_prefill_tokens_per_second": 693.0376907831196,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.75371569854492
+      },
+      "conversation_token_count": 843,
+      "parsed_answer": {
+        "project": "VEGA",
+        "city": "CHENGDU",
+        "code": "IVORY-64"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 14,
+      "history": 2,
+      "turn": 2,
+      "prompt": "Update only the code to TEAL-29. Preserve the project and city.\nBackground notes, not project updates:\nNote 040: RAM stores temporary data used by active programs.\nNote 041: RAM stores temporary data used by active programs.\nNote 042: RAM stores temporary data used by active programs.\nNote 043: RAM stores temporary data used by active programs.\nNote 044: RAM stores temporary data used by active programs.\nNote 045: RAM stores temporary data used by active programs.\nNote 046: RAM stores temporary data used by active programs.\nNote 047: RAM stores temporary data used by active programs.\nNote 048: RAM stores temporary data used by active programs.\nNote 049: RAM stores temporary data used by active programs.\nNote 050: RAM stores temporary data used by active programs.\nNote 051: RAM stores temporary data used by active programs.\nNote 052: RAM stores temporary data used by active programs.\nNote 053: RAM stores temporary data used by active programs.\nNote 054: RAM stores temporary data used by active programs.\nNote 055: RAM stores temporary data used by active programs.\nNote 056: RAM stores temporary data used by active programs.\nNote 057: RAM stores temporary data used by active programs.\nNote 058: RAM stores temporary data used by active programs.\nNote 059: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "VEGA",
+        "city": "CHENGDU",
+        "code": "TEAL-29"
+      },
+      "input_raw_token_count": 376,
+      "conversation_token_count_before": 843,
+      "events": [
+        {
+          "elapsed_seconds": 0.6037385419476777,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.623007541988045,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6429510000161827,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6619192080106586,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6809622079599649,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7000802499242127,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7200940829934552,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7392619169550017,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"VE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7582889170153067,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"GA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7788930829847232,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7980859170202166,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8171384169254452,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8372002079850063,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8561225830344483,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.875073374947533,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8951174169778824,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9139969579409808,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"CH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9329589999979362,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ENG\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9535497080069035,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"DU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.972598374937661,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.991624457994476,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0117541670333594,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0308190420037135,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0496345829451457,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0699714169604704,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0887792919529602,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1076927080284804,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"TE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1283277079928666,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"AL\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1472204169258475,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1662151670316234,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1867669579805806,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"9\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2058662920026109,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.224933166988194,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2447741669602692,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2463436669204384,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.6037385419476777,
+      "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"CHENGDU\",\n  \"code\": \"TEAL-29\"\n}",
+      "generation_wall_seconds": 1.2486807079985738,
+      "benchmark": {
+        "init_time_in_second": 52.019902624000004,
+        "time_to_first_token_in_second": 0.46670369474999995,
+        "last_prefill_token_count": 388,
+        "last_prefill_tokens_per_second": 669.3467367510193,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.70942442626262
+      },
+      "conversation_token_count": 1266,
+      "parsed_answer": {
+        "project": "VEGA",
+        "city": "CHENGDU",
+        "code": "TEAL-29"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 15,
+      "history": 2,
+      "turn": 3,
+      "prompt": "Keep all project fields unchanged.\nBackground notes, not project updates:\nNote 060: RAM stores temporary data used by active programs.\nNote 061: RAM stores temporary data used by active programs.\nNote 062: RAM stores temporary data used by active programs.\nNote 063: RAM stores temporary data used by active programs.\nNote 064: RAM stores temporary data used by active programs.\nNote 065: RAM stores temporary data used by active programs.\nNote 066: RAM stores temporary data used by active programs.\nNote 067: RAM stores temporary data used by active programs.\nNote 068: RAM stores temporary data used by active programs.\nNote 069: RAM stores temporary data used by active programs.\nNote 070: RAM stores temporary data used by active programs.\nNote 071: RAM stores temporary data used by active programs.\nNote 072: RAM stores temporary data used by active programs.\nNote 073: RAM stores temporary data used by active programs.\nNote 074: RAM stores temporary data used by active programs.\nNote 075: RAM stores temporary data used by active programs.\nNote 076: RAM stores temporary data used by active programs.\nNote 077: RAM stores temporary data used by active programs.\nNote 078: RAM stores temporary data used by active programs.\nNote 079: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "VEGA",
+        "city": "CHENGDU",
+        "code": "TEAL-29"
+      },
+      "input_raw_token_count": 365,
+      "conversation_token_count_before": 1266,
+      "events": [
+        {
+          "elapsed_seconds": 0.5662953749997541,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5854528750060126,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6065480000106618,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.625796083942987,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6447279589483514,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6653267920482904,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.684235917055048,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.703186959028244,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"VE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7239296670304611,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"GA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7429487500339746,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.761936292052269,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7824324170360342,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8013282920001075,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8202071250416338,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8409577920101583,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8599071250064299,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8790534590370953,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"CH\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8992464169859886,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"ENG\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9182086669607088,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"DU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9370330000529066,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9573359170462936,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9762719999998808,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9951919170562178,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.016111750039272,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.035160709056072,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0542596670566127,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0738543750485405,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"TE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0927598340203986,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"AL\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1114200840238482,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.131970459013246,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1507717920467257,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"9\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1699119589757174,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.190437208977528,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2093415840063244,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2107822089456022,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.5662953749997541,
+      "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"CHENGDU\",\n  \"code\": \"TEAL-29\"\n}",
+      "generation_wall_seconds": 1.2125955000519753,
+      "benchmark": {
+        "init_time_in_second": 52.019902624000004,
+        "time_to_first_token_in_second": 0.46670369474999995,
+        "last_prefill_token_count": 377,
+        "last_prefill_tokens_per_second": 694.478238342953,
+        "last_decode_token_count": 35,
+        "last_decode_tokens_per_second": 52.57779873785882
+      },
+      "conversation_token_count": 1678,
+      "parsed_answer": {
+        "project": "VEGA",
+        "city": "CHENGDU",
+        "code": "TEAL-29"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 16,
+      "history": 2,
+      "turn": 4,
+      "prompt": "Update only the city to NINGBO. Preserve the project and code.\nBackground notes, not project updates:\nNote 080: RAM stores temporary data used by active programs.\nNote 081: RAM stores temporary data used by active programs.\nNote 082: RAM stores temporary data used by active programs.\nNote 083: RAM stores temporary data used by active programs.\nNote 084: RAM stores temporary data used by active programs.\nNote 085: RAM stores temporary data used by active programs.\nNote 086: RAM stores temporary data used by active programs.\nNote 087: RAM stores temporary data used by active programs.\nNote 088: RAM stores temporary data used by active programs.\nNote 089: RAM stores temporary data used by active programs.\nNote 090: RAM stores temporary data used by active programs.\nNote 091: RAM stores temporary data used by active programs.\nNote 092: RAM stores temporary data used by active programs.\nNote 093: RAM stores temporary data used by active programs.\nNote 094: RAM stores temporary data used by active programs.\nNote 095: RAM stores temporary data used by active programs.\nNote 096: RAM stores temporary data used by active programs.\nNote 097: RAM stores temporary data used by active programs.\nNote 098: RAM stores temporary data used by active programs.\nNote 099: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "VEGA",
+        "city": "NINGBO",
+        "code": "TEAL-29"
+      },
+      "input_raw_token_count": 374,
+      "conversation_token_count_before": 1678,
+      "events": [
+        {
+          "elapsed_seconds": 0.6121712919557467,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6324120829813182,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6513871250208467,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6719683329574764,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6909457079600543,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7100433330051601,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7306292919674888,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7497036249842495,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"VE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7685670419596136,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"GA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7896114579634741,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8088230419671163,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.828054332989268,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.847747000050731,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8668918330222368,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8858473330037668,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.906530375010334,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9254571250639856,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"NING\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9444832080043852,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BO\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9644539579749107,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9832605420378968,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0022554580355063,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0227777919499204,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0418847920373082,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0606804169947281,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0812145830132067,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1001301249489188,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"TE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.119173291954212,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"AL\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.139416457968764,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1583520419662818,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1771506670629606,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"9\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1978607500204816,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.216704958002083,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2355423329863697,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2373547500465065,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.6121712919557467,
+      "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"NINGBO\",\n  \"code\": \"TEAL-29\"\n}",
+      "generation_wall_seconds": 1.2394032080192119,
+      "benchmark": {
+        "init_time_in_second": 52.019902624000004,
+        "time_to_first_token_in_second": 0.46670369474999995,
+        "last_prefill_token_count": 386,
+        "last_prefill_tokens_per_second": 654.5785376785675,
+        "last_decode_token_count": 34,
+        "last_decode_tokens_per_second": 52.71405342958779
+      },
+      "conversation_token_count": 2098,
+      "parsed_answer": {
+        "project": "VEGA",
+        "city": "NINGBO",
+        "code": "TEAL-29"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 17,
+      "history": 2,
+      "turn": 5,
+      "prompt": "Keep all project fields unchanged.\nBackground notes, not project updates:\nNote 100: RAM stores temporary data used by active programs.\nNote 101: RAM stores temporary data used by active programs.\nNote 102: RAM stores temporary data used by active programs.\nNote 103: RAM stores temporary data used by active programs.\nNote 104: RAM stores temporary data used by active programs.\nNote 105: RAM stores temporary data used by active programs.\nNote 106: RAM stores temporary data used by active programs.\nNote 107: RAM stores temporary data used by active programs.\nNote 108: RAM stores temporary data used by active programs.\nNote 109: RAM stores temporary data used by active programs.\nNote 110: RAM stores temporary data used by active programs.\nNote 111: RAM stores temporary data used by active programs.\nNote 112: RAM stores temporary data used by active programs.\nNote 113: RAM stores temporary data used by active programs.\nNote 114: RAM stores temporary data used by active programs.\nNote 115: RAM stores temporary data used by active programs.\nNote 116: RAM stores temporary data used by active programs.\nNote 117: RAM stores temporary data used by active programs.\nNote 118: RAM stores temporary data used by active programs.\nNote 119: RAM stores temporary data used by active programs.\n\nUsing the latest state from this conversation, return only a JSON object with exactly the keys project, city, code. Do not include markdown or commentary.",
+      "expected": {
+        "project": "VEGA",
+        "city": "NINGBO",
+        "code": "TEAL-29"
+      },
+      "input_raw_token_count": 365,
+      "conversation_token_count_before": 2098,
+      "events": [
+        {
+          "elapsed_seconds": 0.5640849169576541,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"{\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5834538330091164,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6037359999027103,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6231205828953534,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6440224999096245,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"project\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6630856669507921,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6819782919483259,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7024999579880387,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"VE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7213603329146281,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"GA\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7404498748946935,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7610627500107512,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7800876249093562,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7991781249875203,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8198094998952001,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"city\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8390550829935819,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8583166250027716,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8783449169714004,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"NING\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8975535829085857,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BO\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9167622500099242,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9368529169587418,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.955909707932733,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"  \"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9750770420068875,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9950812499737367,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0140464999713004,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0331334579968825,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0533921669702977,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"TE\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0725807920098305,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"AL\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0916999169858173,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1117032079491764,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1306730419164523,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"9\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.149861832964234,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1699716669972986,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.189214582904242,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"}\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1909790419740602,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.5640849169576541,
+      "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"NINGBO\",\n  \"code\": \"TEAL-29\"\n}",
+      "generation_wall_seconds": 1.1933110000099987,
+      "benchmark": {
+        "init_time_in_second": 52.019902624000004,
+        "time_to_first_token_in_second": 0.46670369474999995,
+        "last_prefill_token_count": 377,
+        "last_prefill_tokens_per_second": 694.901842128749,
+        "last_decode_token_count": 34,
+        "last_decode_tokens_per_second": 52.644655195175396
+      },
+      "conversation_token_count": 2509,
+      "parsed_answer": {
+        "project": "VEGA",
+        "city": "NINGBO",
+        "code": "TEAL-29"
+      },
+      "state_matches": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    }
+  ],
+  "engine_create_seconds": 26.0357277499279,
+  "engine_closed": true
+}

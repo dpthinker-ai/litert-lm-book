@@ -1,0 +1,539 @@
+{
+  "runs": [
+    {
+      "name": "run1",
+      "context_capacity": 4096,
+      "output_cap": 64,
+      "engine_create_ms": 26035.7277499279,
+      "pressure_sample_counts": {
+        "1": 196,
+        "2": 4
+      },
+      "max_sampled_process_rss_gib": 4.9826812744140625,
+      "status": "GENERATION_COMPLETED",
+      "requests": [
+        {
+          "index": 0,
+          "prefill_tokens": 396,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 4206.495041027665,
+          "runtime_decode_tokens_per_second": 21.683664805404486,
+          "generation_wall_ms": 4856.3833750085905,
+          "conversation_step": 431,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.256916013546288,
+            "p95": 20.9938749903813,
+            "max": 21.116915973834693
+          },
+          "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"NANJING\",\n  \"code\": \"AMBER-42\"\n}",
+          "history": 0,
+          "turn": 0,
+          "conversation_step_before": 0,
+          "state_matches": true,
+          "expected": {
+            "project": "ORION",
+            "city": "NANJING",
+            "code": "AMBER-42"
+          }
+        },
+        {
+          "index": 1,
+          "prefill_tokens": 377,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 575.2790420083329,
+          "runtime_decode_tokens_per_second": 52.17482367238832,
+          "generation_wall_ms": 1224.9376670224592,
+          "conversation_step": 843,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.377290969714522,
+            "p95": 20.911374944262207,
+            "max": 20.9560829680413
+          },
+          "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"NANJING\",\n  \"code\": \"AMBER-42\"\n}",
+          "history": 0,
+          "turn": 1,
+          "conversation_step_before": 431,
+          "state_matches": true,
+          "expected": {
+            "project": "ORION",
+            "city": "NANJING",
+            "code": "AMBER-42"
+          }
+        },
+        {
+          "index": 2,
+          "prefill_tokens": 389,
+          "decode_tokens": 36,
+          "first_text_callback_ms": 619.1376249771565,
+          "runtime_decode_tokens_per_second": 52.08319521340158,
+          "generation_wall_ms": 1288.2160409353673,
+          "conversation_step": 1268,
+          "text_callbacks": 35,
+          "text_callback_gaps_ms": {
+            "median": 19.143229466862977,
+            "p95": 22.003458929248154,
+            "max": 22.03145797830075
+          },
+          "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"NANJING\",\n  \"code\": \"COBALT-73\"\n}",
+          "history": 0,
+          "turn": 2,
+          "conversation_step_before": 843,
+          "state_matches": true,
+          "expected": {
+            "project": "ORION",
+            "city": "NANJING",
+            "code": "COBALT-73"
+          }
+        },
+        {
+          "index": 3,
+          "prefill_tokens": 377,
+          "decode_tokens": 36,
+          "first_text_callback_ms": 571.7882909812033,
+          "runtime_decode_tokens_per_second": 52.53647180378503,
+          "generation_wall_ms": 1235.118665965274,
+          "conversation_step": 1681,
+          "text_callbacks": 35,
+          "text_callback_gaps_ms": {
+            "median": 19.087687018327415,
+            "p95": 20.86233301088214,
+            "max": 21.031167008914053
+          },
+          "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"NANJING\",\n  \"code\": \"COBALT-73\"\n}",
+          "history": 0,
+          "turn": 3,
+          "conversation_step_before": 1268,
+          "state_matches": true,
+          "expected": {
+            "project": "ORION",
+            "city": "NANJING",
+            "code": "COBALT-73"
+          }
+        },
+        {
+          "index": 4,
+          "prefill_tokens": 386,
+          "decode_tokens": 36,
+          "first_text_callback_ms": 617.6125830970705,
+          "runtime_decode_tokens_per_second": 52.970566722146664,
+          "generation_wall_ms": 1276.5458750072867,
+          "conversation_step": 2103,
+          "text_callbacks": 35,
+          "text_callback_gaps_ms": {
+            "median": 19.00429150555283,
+            "p95": 20.56845906190574,
+            "max": 20.636625005863607
+          },
+          "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"SUZHOU\",\n  \"code\": \"COBALT-73\"\n}",
+          "history": 0,
+          "turn": 4,
+          "conversation_step_before": 1681,
+          "state_matches": true,
+          "expected": {
+            "project": "ORION",
+            "city": "SUZHOU",
+            "code": "COBALT-73"
+          }
+        },
+        {
+          "index": 5,
+          "prefill_tokens": 377,
+          "decode_tokens": 36,
+          "first_text_callback_ms": 568.3752910699695,
+          "runtime_decode_tokens_per_second": 52.77646995567653,
+          "generation_wall_ms": 1230.980291031301,
+          "conversation_step": 2516,
+          "text_callbacks": 35,
+          "text_callback_gaps_ms": {
+            "median": 19.130333443172276,
+            "p95": 20.595334004610777,
+            "max": 20.68591699935496
+          },
+          "text": "{\n  \"project\": \"ORION\",\n  \"city\": \"SUZHOU\",\n  \"code\": \"COBALT-73\"\n}",
+          "history": 0,
+          "turn": 5,
+          "conversation_step_before": 2103,
+          "state_matches": true,
+          "expected": {
+            "project": "ORION",
+            "city": "SUZHOU",
+            "code": "COBALT-73"
+          }
+        },
+        {
+          "index": 6,
+          "prefill_tokens": 397,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 468.94795808475465,
+          "runtime_decode_tokens_per_second": 52.59357712209449,
+          "generation_wall_ms": 1114.0364580787718,
+          "conversation_step": 432,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.078875076957047,
+            "p95": 20.882959011942148,
+            "max": 21.004959009587765
+          },
+          "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"HANGZHOU\",\n  \"code\": \"JADE-51\"\n}",
+          "history": 1,
+          "turn": 0,
+          "conversation_step_before": 0,
+          "state_matches": true,
+          "expected": {
+            "project": "LYRA",
+            "city": "HANGZHOU",
+            "code": "JADE-51"
+          }
+        },
+        {
+          "index": 7,
+          "prefill_tokens": 377,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 568.656750023365,
+          "runtime_decode_tokens_per_second": 52.70917303250158,
+          "generation_wall_ms": 1213.1444159895182,
+          "conversation_step": 844,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 18.991874996572733,
+            "p95": 20.689332974143326,
+            "max": 21.959249977953732
+          },
+          "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"HANGZHOU\",\n  \"code\": \"JADE-51\"\n}",
+          "history": 1,
+          "turn": 1,
+          "conversation_step_before": 432,
+          "state_matches": true,
+          "expected": {
+            "project": "LYRA",
+            "city": "HANGZHOU",
+            "code": "JADE-51"
+          }
+        },
+        {
+          "index": 8,
+          "prefill_tokens": 388,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 610.9584579244256,
+          "runtime_decode_tokens_per_second": 52.838829044084015,
+          "generation_wall_ms": 1253.6125419428572,
+          "conversation_step": 1267,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 18.96462496370077,
+            "p95": 20.660000038333237,
+            "max": 20.78187500592321
+          },
+          "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"HANGZHOU\",\n  \"code\": \"RUBY-86\"\n}",
+          "history": 1,
+          "turn": 2,
+          "conversation_step_before": 844,
+          "state_matches": true,
+          "expected": {
+            "project": "LYRA",
+            "city": "HANGZHOU",
+            "code": "RUBY-86"
+          }
+        },
+        {
+          "index": 9,
+          "prefill_tokens": 377,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 567.37437506672,
+          "runtime_decode_tokens_per_second": 52.850916928527106,
+          "generation_wall_ms": 1210.8173329615965,
+          "conversation_step": 1679,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.10487504210323,
+            "p95": 20.524207968264818,
+            "max": 20.569790969602764
+          },
+          "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"HANGZHOU\",\n  \"code\": \"RUBY-86\"\n}",
+          "history": 1,
+          "turn": 3,
+          "conversation_step_before": 1267,
+          "state_matches": true,
+          "expected": {
+            "project": "LYRA",
+            "city": "HANGZHOU",
+            "code": "RUBY-86"
+          }
+        },
+        {
+          "index": 10,
+          "prefill_tokens": 386,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 615.5707910656929,
+          "runtime_decode_tokens_per_second": 52.64778567753122,
+          "generation_wall_ms": 1260.7371660415083,
+          "conversation_step": 2100,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.13733291439712,
+            "p95": 20.759957958944142,
+            "max": 20.83916694391519
+          },
+          "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"WUXI\",\n  \"code\": \"RUBY-86\"\n}",
+          "history": 1,
+          "turn": 4,
+          "conversation_step_before": 1679,
+          "state_matches": true,
+          "expected": {
+            "project": "LYRA",
+            "city": "WUXI",
+            "code": "RUBY-86"
+          }
+        },
+        {
+          "index": 11,
+          "prefill_tokens": 377,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 566.7524579912424,
+          "runtime_decode_tokens_per_second": 52.84498527512231,
+          "generation_wall_ms": 1210.801083012484,
+          "conversation_step": 2512,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.121416960842907,
+            "p95": 20.49495792016387,
+            "max": 20.637791021727026
+          },
+          "text": "{\n  \"project\": \"LYRA\",\n  \"city\": \"WUXI\",\n  \"code\": \"RUBY-86\"\n}",
+          "history": 1,
+          "turn": 5,
+          "conversation_step_before": 2100,
+          "state_matches": true,
+          "expected": {
+            "project": "LYRA",
+            "city": "WUXI",
+            "code": "RUBY-86"
+          }
+        },
+        {
+          "index": 12,
+          "prefill_tokens": 396,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 469.7120420169085,
+          "runtime_decode_tokens_per_second": 52.51966530591815,
+          "generation_wall_ms": 1117.9560420569032,
+          "conversation_step": 431,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.12545901723206,
+            "p95": 20.773875061422586,
+            "max": 20.86079097352922
+          },
+          "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"CHENGDU\",\n  \"code\": \"IVORY-64\"\n}",
+          "history": 2,
+          "turn": 0,
+          "conversation_step_before": 0,
+          "state_matches": true,
+          "expected": {
+            "project": "VEGA",
+            "city": "CHENGDU",
+            "code": "IVORY-64"
+          }
+        },
+        {
+          "index": 13,
+          "prefill_tokens": 377,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 566.7735419701785,
+          "runtime_decode_tokens_per_second": 52.75371569854492,
+          "generation_wall_ms": 1213.1576250540093,
+          "conversation_step": 843,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.035917008295655,
+            "p95": 20.575374946929514,
+            "max": 20.579459029249847
+          },
+          "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"CHENGDU\",\n  \"code\": \"IVORY-64\"\n}",
+          "history": 2,
+          "turn": 1,
+          "conversation_step_before": 431,
+          "state_matches": true,
+          "expected": {
+            "project": "VEGA",
+            "city": "CHENGDU",
+            "code": "IVORY-64"
+          }
+        },
+        {
+          "index": 14,
+          "prefill_tokens": 388,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 603.7385419476777,
+          "runtime_decode_tokens_per_second": 52.70942442626262,
+          "generation_wall_ms": 1248.6807079985738,
+          "conversation_step": 1266,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.066874985583127,
+            "p95": 20.6041659694165,
+            "max": 20.634999964386225
+          },
+          "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"CHENGDU\",\n  \"code\": \"TEAL-29\"\n}",
+          "history": 2,
+          "turn": 2,
+          "conversation_step_before": 843,
+          "state_matches": true,
+          "expected": {
+            "project": "VEGA",
+            "city": "CHENGDU",
+            "code": "TEAL-29"
+          }
+        },
+        {
+          "index": 15,
+          "prefill_tokens": 377,
+          "decode_tokens": 35,
+          "first_text_callback_ms": 566.2953749997541,
+          "runtime_decode_tokens_per_second": 52.57779873785882,
+          "generation_wall_ms": 1212.5955000519753,
+          "conversation_step": 1678,
+          "text_callbacks": 34,
+          "text_callback_gaps_ms": {
+            "median": 19.048959016799927,
+            "p95": 20.91983298305422,
+            "max": 21.095125004649162
+          },
+          "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"CHENGDU\",\n  \"code\": \"TEAL-29\"\n}",
+          "history": 2,
+          "turn": 3,
+          "conversation_step_before": 1266,
+          "state_matches": true,
+          "expected": {
+            "project": "VEGA",
+            "city": "CHENGDU",
+            "code": "TEAL-29"
+          }
+        },
+        {
+          "index": 16,
+          "prefill_tokens": 386,
+          "decode_tokens": 34,
+          "first_text_callback_ms": 612.1712919557467,
+          "runtime_decode_tokens_per_second": 52.71405342958779,
+          "generation_wall_ms": 1239.403208019212,
+          "conversation_step": 2098,
+          "text_callbacks": 33,
+          "text_callback_gaps_ms": {
+            "median": 19.08597903093323,
+            "p95": 20.71008295752108,
+            "max": 21.044416003860533
+          },
+          "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"NINGBO\",\n  \"code\": \"TEAL-29\"\n}",
+          "history": 2,
+          "turn": 4,
+          "conversation_step_before": 1678,
+          "state_matches": true,
+          "expected": {
+            "project": "VEGA",
+            "city": "NINGBO",
+            "code": "TEAL-29"
+          }
+        },
+        {
+          "index": 17,
+          "prefill_tokens": 377,
+          "decode_tokens": 34,
+          "first_text_callback_ms": 564.0849169576541,
+          "runtime_decode_tokens_per_second": 52.644655195175396,
+          "generation_wall_ms": 1193.3110000099987,
+          "conversation_step": 2509,
+          "text_callbacks": 33,
+          "text_callback_gaps_ms": {
+            "median": 19.225791504140943,
+            "p95": 20.631374907679856,
+            "max": 20.90191701427102
+          },
+          "text": "{\n  \"project\": \"VEGA\",\n  \"city\": \"NINGBO\",\n  \"code\": \"TEAL-29\"\n}",
+          "history": 2,
+          "turn": 5,
+          "conversation_step_before": 2098,
+          "state_matches": true,
+          "expected": {
+            "project": "VEGA",
+            "city": "NINGBO",
+            "code": "TEAL-29"
+          }
+        }
+      ],
+      "histories": [
+        {
+          "history": 0,
+          "first_step": 431,
+          "last_step": 2516,
+          "first_callback_ms": 4206.495041027665,
+          "all_states_match": true,
+          "later_turns": {
+            "first_text_callback_ms": {
+              "n": 5,
+              "median": 575.2790420083329,
+              "min": 568.3752910699695,
+              "max": 619.1376249771565
+            },
+            "runtime_decode_tokens_per_second": {
+              "n": 5,
+              "median": 52.53647180378503,
+              "min": 52.08319521340158,
+              "max": 52.970566722146664
+            }
+          }
+        },
+        {
+          "history": 1,
+          "first_step": 432,
+          "last_step": 2512,
+          "first_callback_ms": 468.94795808475465,
+          "all_states_match": true,
+          "later_turns": {
+            "first_text_callback_ms": {
+              "n": 5,
+              "median": 568.656750023365,
+              "min": 566.7524579912424,
+              "max": 615.5707910656929
+            },
+            "runtime_decode_tokens_per_second": {
+              "n": 5,
+              "median": 52.838829044084015,
+              "min": 52.64778567753122,
+              "max": 52.850916928527106
+            }
+          }
+        },
+        {
+          "history": 2,
+          "first_step": 431,
+          "last_step": 2509,
+          "first_callback_ms": 469.7120420169085,
+          "all_states_match": true,
+          "later_turns": {
+            "first_text_callback_ms": {
+              "n": 5,
+              "median": 566.7735419701785,
+              "min": 564.0849169576541,
+              "max": 612.1712919557467
+            },
+            "runtime_decode_tokens_per_second": {
+              "n": 5,
+              "median": 52.70942442626262,
+              "min": 52.57779873785882,
+              "max": 52.75371569854492
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Client text callback timing includes callback scheduling; gaps are not per-token GPU latency.",
+    "Repeated histories/conversations share an engine and are not independent process starts.",
+    "Process RSS is a sampled stop guard, not model-exclusive or GPU allocated memory.",
+    "These brief runs do not establish thermal steady state or long-duration stability."
+  ]
+}

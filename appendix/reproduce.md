@@ -412,3 +412,36 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_context_check.py \
 其余材料测试按 `--context / --input-tokens` 配置为 1024/896、2048/1920、4096/3968。每项均使用新目录，输出上限保持 64。按容量 512、1024、2048、4096 的顺序，每档先测短输入、再测材料，八项串行执行。保护阈值与第十六节相同。
 
 生成完成条件沿用第十六节；识别码检查是独立字段，不决定 `GENERATION_COMPLETED`。查看 `answer_contains_marker` 后，还要核对完整回答是否与材料相符。这个固定材料任务不代替系统性质量测试。逐轮计时、首次与复用请求以及压力边界见附录 D 第二十七节。
+
+## 十八、完整 MoE 的较长输出
+
+复用第十六节的环境、完整 GPU 文件与 `moe_generation_check.py`。固定容量 4096，提示词明确要求较长教程：
+
+```bash
+tmp/moe-full-recheck-venv/bin/python experiments/moe_generation_check.py \
+  --model /path/to/gemma-4-26B-A4B-it-gpu.litertlm \
+  --sha256 94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1 \
+  --output tmp/moe-long-128 --cache tmp/moe-long-cache-128 \
+  --context 4096 --output-tokens 128 --repeats 3 --timeout 180 \
+  --prompt 'Write a technical tutorial of at least 600 words explaining how RAM and SSD differ. Discuss volatility, capacity, access latency, bandwidth, virtual memory, and why both are needed. Use complete paragraphs and concrete examples.'
+```
+
+第二组只将输出上限改为 256，另用新的输出和缓存目录，两组串行执行。先核对每次实际 decode 计数是否达到目标，再检查完整原文是否自然结束。本次均达到上限并截在句中；无错误的 final 不能作为文章完整性的判据。首次请求和后两个新会话分别统计，完整条件与结果见附录 D 第二十八节。
+
+## 十九、完整 MoE 的多轮状态更新
+
+沿用相同环境与模型，使用 `moe_multiturn_check.py`。脚本固定三个独立会话、每个会话六轮，同一会话的六轮之间保留会话对象。
+
+每轮发送前检查当前会话计数、该轮原始 token 数、输出预算及 32-token 格式预留之和。运行后核对前后计数与增量指标，不能把预留值当作实际格式开销。各轮的状态字段要求见附录 D 第二十九节；`state_matches` 是完整 JSON 字典比较，与生成及清理完成状态分开记录。
+
+保护条件沿用第十六节，输出和缓存目录必须为新目录。逐轮首文本时间读取 `first_text_callback_seconds`；运行时 TTFT 字段对应会话首轮，后续轮次不能直接使用它。核对下一轮是否接续上一轮的会话计数，并在三个会话之间确认计数重新从 0 开始。
+
+采集命令如下：
+
+```bash
+tmp/moe-full-recheck-venv/bin/python experiments/moe_multiturn_check.py \
+  --model /path/to/gemma-4-26B-A4B-it-gpu.litertlm \
+  --sha256 94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1 \
+  --output tmp/moe-multiturn --cache tmp/moe-multiturn-cache \
+  --context 4096 --output-tokens 64 --repeats 3 --timeout 180
+```

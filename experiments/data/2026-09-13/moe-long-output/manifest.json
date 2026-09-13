@@ -1,0 +1,52 @@
+{
+  "files": {
+    "collector-at-run.py": {
+      "bytes": 12520,
+      "sha256": "07f9ff897a9d5faefc9e25595d618d5358021d11aab9b7efd6496d3e482f4ca3"
+    },
+    "out128/report.json": {
+      "bytes": 101263,
+      "sha256": "d5948c389a07a76e43d5058000489acf3b3891c330e919aa90e56e2ece580ebd"
+    },
+    "out128/resource-guard.json": {
+      "bytes": 14068,
+      "sha256": "72e396c022705fd800cec58141a300fba122830aef671ca93949e0f8bb2261ff"
+    },
+    "out128/stderr.log": {
+      "bytes": 8170,
+      "sha256": "900983008e74402fc4e7d7da7bb1c7293aff8e50ee510662cb60f545dbe45faa"
+    },
+    "out128/stdout.log": {
+      "bytes": 68400,
+      "sha256": "0d02a98d0559814c00bef718d6cfbc99d06130ec49f7c03933741d02d6b09fdf"
+    },
+    "out128/worker.json": {
+      "bytes": 91286,
+      "sha256": "85142444a9586e43a6f58d965eb03e5799778c29db8eed82af88258e8ba8d7a8"
+    },
+    "out256/report.json": {
+      "bytes": 194072,
+      "sha256": "20d0d6ea30932e36f7795136e9b47a19a20efd8f418153bb884d9353e04a3708"
+    },
+    "out256/resource-guard.json": {
+      "bytes": 15723,
+      "sha256": "3f2244079582f50204098656f0e2dab0e2e53afccca5cafcf5c7461abbf2c8e8"
+    },
+    "out256/stderr.log": {
+      "bytes": 8164,
+      "sha256": "1c6346e2827aa3a81d4895a54e6c08985298fc4780e8d1699f51a42f3b865587"
+    },
+    "out256/stdout.log": {
+      "bytes": 134329,
+      "sha256": "d93b493007d47b8ced16366426260f37d5a4858f1cf50657095d9e07266e6802"
+    },
+    "out256/worker.json": {
+      "bytes": 179487,
+      "sha256": "0922aa28d48171efd863ab1278146b50588a3685ae7826997954861f7a561fcb"
+    },
+    "summary.json": {
+      "bytes": 11712,
+      "sha256": "40cd9f09b7c3ffc33c45b3a530ef5cb1aaf3f853dc73d69112abca4e93f5f65a"
+    }
+  }
+}

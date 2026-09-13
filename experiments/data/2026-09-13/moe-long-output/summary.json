@@ -1,0 +1,180 @@
+{
+  "runs": [
+    {
+      "name": "out128",
+      "context_capacity": 4096,
+      "output_cap": 128,
+      "engine_create_ms": 27088.742124964483,
+      "pressure_sample_counts": {
+        "1": 149,
+        "2": 2
+      },
+      "max_sampled_process_rss_gib": 4.978515625,
+      "status": "GENERATION_COMPLETED",
+      "requests": [
+        {
+          "index": 0,
+          "prefill_tokens": 58,
+          "decode_tokens": 128,
+          "first_text_callback_ms": 4150.044874986634,
+          "runtime_decode_tokens_per_second": 38.716267864829334,
+          "generation_wall_ms": 6573.8986659562215,
+          "conversation_step": 186,
+          "text_callbacks": 128,
+          "text_callback_gaps_ms": {
+            "median": 18.953791935928166,
+            "p95": 20.52883303258568,
+            "max": 20.700959023088217
+          },
+          "text": "# Understanding the Hierarchy of Memory: A Technical Comparison of RAM and SSD\n\nIn the architecture of a modern computing system, the movement of data is just as critical as the processing of it. To understand how a computer functions, one must distinguish between the two primary pillars of data storage: Random Access Memory (RAM) and the Solid State Drive (SSD). While both are electronic components used to hold data, they serve fundamentally different roles in the computational hierarchy. One acts as the \"workspace\" for the CPU, while the other acts as the \"warehouse\" for long-term information.\n\n### Volatility and Data Persistence\nThe most fundamental",
+          "reached_decode_cap": true
+        },
+        {
+          "index": 1,
+          "prefill_tokens": 58,
+          "decode_tokens": 128,
+          "first_text_callback_ms": 170.14254198875278,
+          "runtime_decode_tokens_per_second": 52.241291710832414,
+          "generation_wall_ms": 2601.052541984245,
+          "conversation_step": 186,
+          "text_callbacks": 128,
+          "text_callback_gaps_ms": {
+            "median": 18.997917068190873,
+            "p95": 20.566832972690463,
+            "max": 21.24754199758172
+          },
+          "text": "# Understanding the Hierarchy of Memory: A Technical Comparison of RAM and SSD\n\nIn the architecture of a modern computing system, the movement of data is just as critical as the processing of it. To understand how a computer functions, one must distinguish between the two primary pillars of data storage: Random Access Memory (RAM) and the Solid State Drive (SSD). While both are electronic components used to hold data, they serve fundamentally different roles in the computational hierarchy. One acts as the \"workspace\" for the CPU, while the other acts as the \"warehouse\" for long-term information.\n\n### Volatility and Data Persistence\nThe most fundamental",
+          "reached_decode_cap": true
+        },
+        {
+          "index": 2,
+          "prefill_tokens": 58,
+          "decode_tokens": 128,
+          "first_text_callback_ms": 174.01066701859236,
+          "runtime_decode_tokens_per_second": 52.25553923453581,
+          "generation_wall_ms": 2606.4495829632506,
+          "conversation_step": 186,
+          "text_callbacks": 128,
+          "text_callback_gaps_ms": {
+            "median": 18.958667060360312,
+            "p95": 20.65558300819248,
+            "max": 22.693249979056418
+          },
+          "text": "# Understanding the Hierarchy of Memory: A Technical Comparison of RAM and SSD\n\nIn the architecture of a modern computing system, the movement of data is just as critical as the processing of it. To understand how a computer functions, one must distinguish between the two primary pillars of data storage: Random Access Memory (RAM) and the Solid State Drive (SSD). While both are electronic components used to hold data, they serve fundamentally different roles in the computational hierarchy. One acts as the \"workspace\" for the CPU, while the other acts as the \"warehouse\" for long-term information.\n\n### Volatility and Data Persistence\nThe most fundamental",
+          "reached_decode_cap": true
+        }
+      ],
+      "reused_engine": {
+        "first_text_callback_ms": {
+          "n": 2,
+          "median": 172.07660450367257,
+          "min": 170.14254198875278,
+          "max": 174.01066701859236
+        },
+        "runtime_decode_tokens_per_second": {
+          "n": 2,
+          "median": 52.248415472684115,
+          "min": 52.241291710832414,
+          "max": 52.25553923453581
+        },
+        "generation_wall_ms": {
+          "n": 2,
+          "median": 2603.751062473748,
+          "min": 2601.052541984245,
+          "max": 2606.4495829632506
+        }
+      }
+    },
+    {
+      "name": "out256",
+      "context_capacity": 4096,
+      "output_cap": 256,
+      "engine_create_ms": 24637.751042027958,
+      "pressure_sample_counts": {
+        "1": 167,
+        "2": 2
+      },
+      "max_sampled_process_rss_gib": 4.9983062744140625,
+      "status": "GENERATION_COMPLETED",
+      "requests": [
+        {
+          "index": 0,
+          "prefill_tokens": 58,
+          "decode_tokens": 256,
+          "first_text_callback_ms": 3913.777625071816,
+          "runtime_decode_tokens_per_second": 44.547904570734524,
+          "generation_wall_ms": 8827.595917042345,
+          "conversation_step": 314,
+          "text_callbacks": 256,
+          "text_callback_gaps_ms": {
+            "median": 18.924291944131255,
+            "p95": 20.67237498704344,
+            "max": 21.14604099188
+          },
+          "text": "# Understanding the Hierarchy of Memory: A Technical Comparison of RAM and SSD\n\nIn the architecture of a modern computing system, the movement of data is just as critical as the processing of it. To understand how a computer functions, one must distinguish between the two primary pillars of data storage: Random Access Memory (RAM) and the Solid State Drive (SSD). While both are electronic components used to hold data, they serve fundamentally different roles in the computational hierarchy. One acts as the \"workspace\" for the CPU, while the other acts as the \"warehouse\" for long-term information.\n\n### Volatility and Data Persistence\nThe most fundamental technical distinction between RAM and an SSD is **volatility**. RAM is volatile memory, meaning it requires a constant flow of electricity to maintain the information stored within its capacitors. The moment power is cut—whether through a system shutdown or a sudden power failure—the electrical charges representing the data dissipate, and the information is lost. This makes RAM an ephemeral workspace.\n\nIn contrast, an SSD is non-volatile. It utilizes NAND flash memory, which uses floating-gate transistors to trap electrons even when no power is supplied. This allows the SSD to act as a permanent repository. For example, when you save a Word document, the data",
+          "reached_decode_cap": true
+        },
+        {
+          "index": 1,
+          "prefill_tokens": 58,
+          "decode_tokens": 256,
+          "first_text_callback_ms": 177.30591597501189,
+          "runtime_decode_tokens_per_second": 51.54098960015133,
+          "generation_wall_ms": 5126.733375014737,
+          "conversation_step": 314,
+          "text_callbacks": 256,
+          "text_callback_gaps_ms": {
+            "median": 19.13274999242276,
+            "p95": 20.937000052072108,
+            "max": 21.773958927951753
+          },
+          "text": "# Understanding the Hierarchy of Memory: A Technical Comparison of RAM and SSD\n\nIn the architecture of a modern computing system, the movement of data is just as critical as the processing of it. To understand how a computer functions, one must distinguish between the two primary pillars of data storage: Random Access Memory (RAM) and the Solid State Drive (SSD). While both are electronic components used to hold data, they serve fundamentally different roles in the computational hierarchy. One acts as the \"workspace\" for the CPU, while the other acts as the \"warehouse\" for long-term information.\n\n### Volatility and Data Persistence\nThe most fundamental technical distinction between RAM and an SSD is **volatility**. RAM is volatile memory, meaning it requires a constant flow of electricity to maintain the information stored within its capacitors. The moment power is cut—whether through a system shutdown or a sudden power failure—the electrical charges representing the data dissipate, and the information is lost. This makes RAM an ephemeral workspace.\n\nIn contrast, an SSD is non-volatile. It utilizes NAND flash memory, which uses floating-gate transistors to trap electrons even when no power is supplied. This allows the SSD to act as a permanent repository. For example, when you save a Word document, the data",
+          "reached_decode_cap": true
+        },
+        {
+          "index": 2,
+          "prefill_tokens": 58,
+          "decode_tokens": 256,
+          "first_text_callback_ms": 164.99108297284693,
+          "runtime_decode_tokens_per_second": 51.85874435014629,
+          "generation_wall_ms": 5082.914624945261,
+          "conversation_step": 314,
+          "text_callbacks": 256,
+          "text_callback_gaps_ms": {
+            "median": 19.033499993383884,
+            "p95": 20.676916930824518,
+            "max": 20.86583396885544
+          },
+          "text": "# Understanding the Hierarchy of Memory: A Technical Comparison of RAM and SSD\n\nIn the architecture of a modern computing system, the movement of data is just as critical as the processing of it. To understand how a computer functions, one must distinguish between the two primary pillars of data storage: Random Access Memory (RAM) and the Solid State Drive (SSD). While both are electronic components used to hold data, they serve fundamentally different roles in the computational hierarchy. One acts as the \"workspace\" for the CPU, while the other acts as the \"warehouse\" for long-term information.\n\n### Volatility and Data Persistence\nThe most fundamental technical distinction between RAM and an SSD is **volatility**. RAM is volatile memory, meaning it requires a constant flow of electricity to maintain the information stored within its capacitors. The moment power is cut—whether through a system shutdown or a sudden power failure—the electrical charges representing the data dissipate, and the information is lost. This makes RAM an ephemeral workspace.\n\nIn contrast, an SSD is non-volatile. It utilizes NAND flash memory, which uses floating-gate transistors to trap electrons even when no power is supplied. This allows the SSD to act as a permanent repository. For example, when you save a Word document, the data",
+          "reached_decode_cap": true
+        }
+      ],
+      "reused_engine": {
+        "first_text_callback_ms": {
+          "n": 2,
+          "median": 171.1484994739294,
+          "min": 164.99108297284693,
+          "max": 177.30591597501189
+        },
+        "runtime_decode_tokens_per_second": {
+          "n": 2,
+          "median": 51.69986697514881,
+          "min": 51.54098960015133,
+          "max": 51.85874435014629
+        },
+        "generation_wall_ms": {
+          "n": 2,
+          "median": 5104.823999979999,
+          "min": 5082.914624945261,
+          "max": 5126.733375014737
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Client text callback timing includes callback scheduling; gaps are not per-token GPU latency.",
+    "Repeated histories/conversations share an engine and are not independent process starts.",
+    "Process RSS is a sampled stop guard, not model-exclusive or GPU allocated memory.",
+    "These brief runs do not establish thermal steady state or long-duration stability."
+  ]
+}

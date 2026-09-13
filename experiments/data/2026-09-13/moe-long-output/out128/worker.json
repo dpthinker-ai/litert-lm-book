@@ -1,0 +1,2395 @@
+{
+  "phase": "completed",
+  "engine_created": true,
+  "generation_completed": true,
+  "prompt": "Write a technical tutorial of at least 600 words explaining how RAM and SSD differ. Discuss volatility, capacity, access latency, bandwidth, virtual memory, and why both are needed. Use complete paragraphs and concrete examples.",
+  "generations": [
+    {
+      "index": 0,
+      "events": [
+        {
+          "elapsed_seconds": 4.150044874986634,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"#\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.168871250003576,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Understanding\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.189390833023936,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.208372249966487,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Hierarchy\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.227364416001365,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.247613625018857,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Memory\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.2664805829990655,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.285476999939419,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" A\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.3054612500127405,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Technical\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.324232749990188,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Comparison\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.343153915950097,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.3638490829616785,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.3829400829272345,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.401768582989462,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" SSD\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.422297416022047,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.441164999967441,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"In\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.459979124949314,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.480584249948151,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" architecture\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.499552082968876,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.518419040949084,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" a\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.539119999972172,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" modern\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.558012833003886,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computing\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.576917083002627,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" system\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.597289457917213,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.616090999916196,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.635076040984131,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" movement\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.655737040913664,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.674651499954052,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.6919763329206035,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.711063000024296,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" just\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.730980666005053,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.749968415941112,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" critical\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.769149333005771,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.78841666597873,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.807262875023298,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" processing\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.8260416249977425,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.846508999937214,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" it\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.865321290912107,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.884189666016027,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" To\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.9048021249473095,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" understand\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.923731375019997,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" how\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.942374915932305,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" a\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.961420250008814,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computer\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.980910124955699,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" functions\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.999814999988303,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.018491040915251,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" one\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.038782499963418,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" must\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.057392625021748,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" distinguish\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.076100874925032,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" between\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.096526582958177,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.115199749940075,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" two\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.134123791009188,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" primary\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.152979000005871,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" pillars\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.172935875016265,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.19206149992533,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.211271332926117,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" storage\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.228402499924414,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.247884540935047,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Random\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.266692332923412,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Access\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.285618832916953,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Memory\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.306179957929999,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" (\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.325284915976226,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.344561500009149,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\")\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.364039583015256,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.383123624953441,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.402642707922496,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Solid\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.422071957960725,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" State\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.439866791013628,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Drive\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.459092207951471,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" (\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.479471582919359,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"SSD\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.4982455829158425,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\").\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.5170174579834566,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" While\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.5362526659155264,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" both\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.555842333007604,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" are\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.574796124943532,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" electronic\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.593766790931113,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" components\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.613908833009191,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" used\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.63279933296144,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" to\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.651399957947433,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" hold\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.671808665967546,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.689177791005932,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.70806445798371,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" they\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.726764083025046,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" serve\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.747173666022718,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" fundamentally\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.765833833022043,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" different\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.784536915947683,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" roles\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.804901415947825,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" in\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.823562833014876,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.842341125011444,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computational\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.861144374939613,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" hierarchy\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.880884999991395,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.8993997080251575,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" One\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.918263540952466,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" acts\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.938677124911919,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.957589957979508,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.976276915986091,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 5.9966329579474404,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"workspace\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.015282707987353,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.0340059999143705,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" for\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.054264165926725,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.072790000005625,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" CPU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.091464624973014,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.110194540931843,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" while\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.130542499944568,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.149036832968704,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" other\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.167933665914461,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" acts\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.188267207937315,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.207477957941592,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.226271915948018,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.246581415995024,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"warehouse\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.265350957983173,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.284128790954128,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" for\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.30300429102499,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" long\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.322607540991157,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.341793500003405,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"term\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.360749957966618,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" information\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.38108329102397,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.399840332916938,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.419311624951661,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"###\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.4392546659801155,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Vol\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.458547624992207,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"atility\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.475752832950093,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.494655707967468,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.5140254580182955,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Persistence\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.532814458012581,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.55172629095614,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.571985999937169,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" most\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.572513082996011,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" fundamental\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 6.5732337079243734,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 4.150044874986634,
+      "text": "# Understanding the Hierarchy of Memory: A Technical Comparison of RAM and SSD\n\nIn the architecture of a modern computing system, the movement of data is just as critical as the processing of it. To understand how a computer functions, one must distinguish between the two primary pillars of data storage: Random Access Memory (RAM) and the Solid State Drive (SSD). While both are electronic components used to hold data, they serve fundamentally different roles in the computational hierarchy. One acts as the \"workspace\" for the CPU, while the other acts as the \"warehouse\" for long-term information.\n\n### Volatility and Data Persistence\nThe most fundamental",
+      "generation_wall_seconds": 6.5738986659562215,
+      "benchmark": {
+        "init_time_in_second": 54.127614374,
+        "time_to_first_token_in_second": 3.28501935275,
+        "last_prefill_token_count": 58,
+        "last_prefill_tokens_per_second": 17.795830429996013,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 38.716267864829334
+      },
+      "conversation_token_count": 186,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 1,
+      "events": [
+        {
+          "elapsed_seconds": 0.17014254198875278,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"#\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.18880916701164097,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Understanding\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.20775258308276534,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.22718308307230473,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Hierarchy\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.24605787498876452,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.26467758300714195,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Memory\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.28476700000464916,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3039405830204487,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" A\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.322455917019397,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Technical\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3428776670480147,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Comparison\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3613919580820948,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.38048470800276846,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.39947412500623614,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4190473749767989,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" SSD\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4379782499745488,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4570852080360055,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"In\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4772317500319332,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4961888330290094,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" architecture\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5151296249823645,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5349969579838216,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" a\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.553766708006151,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" modern\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5723086670041084,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computing\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.592716958024539,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" system\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6115595829905942,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6304339580237865,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6510534170083702,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" movement\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6702200000872836,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.688975042081438,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7096084579825401,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7283325419994071,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" just\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7470745000755414,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.767801042064093,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" critical\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7868793749948964,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8058772920630872,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8262688330141827,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" processing\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8453233750769868,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8642274580197409,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" it\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8854750000173226,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9025835830252618,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" To\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9217372920829803,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" understand\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9406105000525713,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" how\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9602403329918161,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" a\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9790107500739396,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computer\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9978732080198824,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" functions\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0184398330748081,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.037160167004913,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" one\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0562071250751615,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" must\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.076618666993454,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" distinguish\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0957439170451835,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" between\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1131196250207722,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1320571670075879,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" two\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1520944170188159,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" primary\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.170961374999024,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" pillars\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1898970829788595,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.21013608307112,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.229035917087458,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" storage\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2478261250071228,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2682152499910444,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Random\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2870464170118794,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Access\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.3059370830887929,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Memory\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.3264130000025034,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" (\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.3451188750332221,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.3642863749992102,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\")\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.38477900007274,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.4035609579877928,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.4223866250831634,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Solid\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.4429534580558538,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" State\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.461962000001222,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Drive\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.480857333051972,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" (\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5012324580457062,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"SSD\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5201350420247763,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\").\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5389925420749933,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" While\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5595758330309764,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" both\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5783135420642793,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" are\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5971404580632225,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" electronic\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.6164313330082223,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" components\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.6355709580238909,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" used\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.6543269579997286,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" to\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.6735039580380544,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" hold\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.693974292022176,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.7130346250487491,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.7319792080670595,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" they\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.7524383750278503,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" serve\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.7715101250214502,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" fundamentally\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.7909111250191927,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" different\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.8108210830250755,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" roles\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.8300994170131162,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" in\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.8492020419798791,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.8690601250855252,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computational\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.8879966670647264,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" hierarchy\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9074116250267252,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.926095417002216,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" One\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9451656669843942,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" acts\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9642759580165148,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9847614580066875,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0038576250663027,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0228137500816956,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"workspace\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.043341708020307,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.062552332994528,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" for\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0815886249765754,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1021962080849335,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" CPU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1195477499859408,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1385350830387324,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" while\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.157574375043623,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1774565420346335,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" other\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.196312583051622,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" acts\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2152429580455646,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.235335792065598,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.254226249991916,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2728902500821277,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"warehouse\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.29324691707734,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.311980542028323,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" for\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3307977080112323,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" long\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.350969457998872,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.369760167086497,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"term\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3886757500004023,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" information\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.4073374579893425,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.426902750041336,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.4452922920463607,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"###\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.46423683303874,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Vol\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.48469341697637,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"atility\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5034508750541136,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.522190042072907,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.542650792049244,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Persistence\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5613964169751853,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5800787080079317,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.598887583008036,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" most\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5995174170238897,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" fundamental\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.59963970805984,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.17014254198875278,
+      "text": "# Understanding the Hierarchy of Memory: A Technical Comparison of RAM and SSD\n\nIn the architecture of a modern computing system, the movement of data is just as critical as the processing of it. To understand how a computer functions, one must distinguish between the two primary pillars of data storage: Random Access Memory (RAM) and the Solid State Drive (SSD). While both are electronic components used to hold data, they serve fundamentally different roles in the computational hierarchy. One acts as the \"workspace\" for the CPU, while the other acts as the \"warehouse\" for long-term information.\n\n### Volatility and Data Persistence\nThe most fundamental",
+      "generation_wall_seconds": 2.601052541984245,
+      "benchmark": {
+        "init_time_in_second": 54.126210374,
+        "time_to_first_token_in_second": 0.16727148725000002,
+        "last_prefill_token_count": 58,
+        "last_prefill_tokens_per_second": 391.5491778915321,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 52.241291710832414
+      },
+      "conversation_token_count": 186,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 2,
+      "events": [
+        {
+          "elapsed_seconds": 0.17401066701859236,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"#\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.19294687500223517,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Understanding\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.21290316700469702,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.23196641693357378,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Hierarchy\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.251080916961655,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.27181845798622817,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Memory\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.29069683293346316,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3095177080249414,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" A\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.33039766701404005,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Technical\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.34950024995487183,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Comparison\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3667111670365557,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.3894044170156121,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4100472499849275,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4300124170258641,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" SSD\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.44870037492364645,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.46769291698001325,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"In\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.48817858297843486,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5053021250059828,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" architecture\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5242087079677731,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5428903329884633,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" a\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5632697079563513,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" modern\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5820655829738826,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computing\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.600946957943961,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" system\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6214203329291195,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6402859999798238,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6594010000117123,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" movement\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6797321669291705,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.698810041998513,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7174707499798387,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7379667499335483,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" just\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7566537919919938,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7755427919328213,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" critical\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7958504579728469,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8147117500193417,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8332482079276815,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" processing\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8521039169281721,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8716193329310045,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" it\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.8901172080077231,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9088846249505877,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" To\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.929022292024456,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" understand\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9480362079339102,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" how\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9666044579353184,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" a\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.9855631249956787,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computer\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0051137920236215,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" functions\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.023938333033584,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0426997499307618,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" one\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.0628363329451531,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" must\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.081607791944407,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" distinguish\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1002790830098093,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" between\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1206399999791756,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1393478750251234,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" two\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1580049169715494,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" primary\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1768387079937384,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" pillars\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.1968830419937149,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" of\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2157147499965504,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2346651250263676,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" storage\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2545869579771534,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\":\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2733262080000713,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Random\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.2920784170273691,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Access\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.312617333023809,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Memory\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.3317827079445124,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" (\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.3508189580170438,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.3715460000094026,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\")\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.3903905829647556,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.4093265000265092,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.4303941669641063,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Solid\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.4495551249710843,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" State\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.468502208008431,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Drive\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.4882447079289705,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" (\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5072940830141306,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"SSD\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5262567920144647,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\").\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.546220749965869,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" While\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5651942919939756,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" both\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.5839581249747425,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" are\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.6044171249959618,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" electronic\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.6232932079583406,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" components\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.6421885000308976,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" used\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.6627408750355244,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" to\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.6815210420172662,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" hold\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.7005204999586567,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.7208797079510987,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.739993416937068,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" they\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.758698582998477,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" serve\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.7790806669509038,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" fundamentally\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.7978314169449732,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" different\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.8167063749860972,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" roles\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.8370471670059487,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" in\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.8558141249231994,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.874398791929707,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computational\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.8933433749480173,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" hierarchy\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9129207499790937,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.931549416971393,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" One\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9504895829595625,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" acts\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.970723917009309,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 1.9896739169489592,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.008260375005193,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0289159580133855,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"workspace\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0458808329422027,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0647499579936266,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" for\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.0834152919705957,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.103865333017893,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" CPU\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1226834169356152,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\",\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1414381249342114,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" while\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.1618536669993773,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.180533832986839,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" other\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.199290083022788,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" acts\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2183992919744924,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" as\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2383657499449328,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2571007079677656,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" \\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.2761775000253692,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"warehouse\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.296417291974649,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\\"\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3153182920068502,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" for\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.334130374947563,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" long\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3549814999569207,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3741242919350043,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"term\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.3931358749978244,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" information\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.41323166701477,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.432089583016932,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.4511889999266714,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"###\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.471671957988292,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Vol\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.489323291927576,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"atility\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5083520419429988,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.527433916926384,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.546888208016753,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" Persistence\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5659339169505984,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"\\n\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.5848233749857172,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.602317332988605,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" most\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.6034754579886794,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" fundamental\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 2.603597749955952,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.17401066701859236,
+      "text": "# Understanding the Hierarchy of Memory: A Technical Comparison of RAM and SSD\n\nIn the architecture of a modern computing system, the movement of data is just as critical as the processing of it. To understand how a computer functions, one must distinguish between the two primary pillars of data storage: Random Access Memory (RAM) and the Solid State Drive (SSD). While both are electronic components used to hold data, they serve fundamentally different roles in the computational hierarchy. One acts as the \"workspace\" for the CPU, while the other acts as the \"warehouse\" for long-term information.\n\n### Volatility and Data Persistence\nThe most fundamental",
+      "generation_wall_seconds": 2.6064495829632506,
+      "benchmark": {
+        "init_time_in_second": 54.126204374000004,
+        "time_to_first_token_in_second": 0.17269331,
+        "last_prefill_token_count": 58,
+        "last_prefill_tokens_per_second": 377.7109314811987,
+        "last_decode_token_count": 128,
+        "last_decode_tokens_per_second": 52.25553923453581
+      },
+      "conversation_token_count": 186,
+      "generation_completed": true,
+      "conversation_closed": true
+    }
+  ],
+  "engine_create_seconds": 27.088742124964483,
+  "engine_closed": true
+}
