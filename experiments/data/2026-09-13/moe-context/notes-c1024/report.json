@@ -1,0 +1,520 @@
+{
+  "started_at_utc": "2026-09-13T11:02:39.162339+00:00",
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "packages": {
+    "litert-lm-api": "0.17.0",
+    "litert-lm": "0.17.0",
+    "litert-lm-builder": "0.17.0"
+  },
+  "model": {
+    "path": "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "bytes": 15786524672,
+    "sha256": "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1"
+  },
+  "library_sha256": "a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc",
+  "script_sha256": "2a7eacf5ab2e8eb2a1db45b09611265d91d6f8cab1e5d3612e01e725d9ea1d50",
+  "worker_command": [
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/moe_context_check.py",
+    "--worker",
+    "--model",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "--sha256",
+    "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1",
+    "--output",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/data/2026-09-13/moe-context/notes-c1024",
+    "--cache",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-context-notes-c1024-cache",
+    "--context",
+    "1024",
+    "--output-tokens",
+    "64",
+    "--prompt",
+    "Reply with only the word OK.",
+    "--repeats",
+    "3",
+    "--input-tokens",
+    "896"
+  ],
+  "requested_backend": "GPU",
+  "context_capacity": 1024,
+  "max_output_tokens": 64,
+  "repetitions_in_engine": 3,
+  "benchmark_enabled": true,
+  "input_raw_token_budget": 896,
+  "machine": {
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "before_run": {
+    "vm_stat": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     6416.\nPages active:                                 194669.\nPages inactive:                              1056923.\nPages speculative:                               852.\nPages throttled:                                   0.\nPages wired down:                             159815.\nPages purgeable:                                4436.\n\"Translation faults\":                     1383035816.\nPages copy-on-write:                        57831575.\nPages zero filled:                        1610980520.\nPages reactivated:                         271292992.\nPages purged:                               19000667.\nFile-backed pages:                           1048197.\nAnonymous pages:                              204247.\nPages stored in compressor:                   396834.\nPages occupied by compressor:                  88202.\nDecompressions:                            232108701.\nCompressions:                              261644446.\nPageins:                                    53139739.\nPageouts:                                    2122842.\nSwapins:                                     7171139.\nSwapouts:                                    8431709.\nPages tagged:                                  95287.\nPages tagged resident:                         73349.\nPages tagged compressed:                       21938.\nPages tag-storage:                             49152.\nPages tag-storage holding tags:                 4373.\nPages tag-storage free:                         6013.\nPages tag-storage non-tag pageable:            38758.\nPages tag-storage non-tag wired:                   8.\nBytes of compressed tags:                    3352256.\nTagged compressions:                         3111730.\nTagged decompressions:                       2818230.\n",
+    "swap": "vm.swapusage: total = 3072.00M  used = 1877.75M  free = 1194.25M  (encrypted)\n"
+  },
+  "thinking": false,
+  "speculative_decoding": false,
+  "top_k": 1,
+  "temperature": 0,
+  "seed": 42,
+  "timeout_seconds": 180.0,
+  "max_process_rss_gib": 18,
+  "limitations": [
+    "Prebuilt package; not a local build of frozen release source.",
+    "Fresh conversations share one engine; later repetitions reuse prepared model state.",
+    "Notes are built and tokenized before generation timing; raw tokenizer count excludes chat formatting.",
+    "Marker retrieval is a single synthetic task check, not a general quality evaluation.",
+    "Raw stream-final and runtime decode counts verify multi-token completion.",
+    "Client timestamps are taken inside the native callback before queue insertion; callback count is not a token count.",
+    "Runtime benchmark fields retained verbatim; not yet a sustained-performance or quality benchmark.",
+    "Sampled process RSS and system pressure are stop guards and can miss short-lived peaks."
+  ],
+  "backend_errors": [],
+  "returncode": 0,
+  "status": "GENERATION_COMPLETED",
+  "stop_reason": null,
+  "worker_result": {
+    "phase": "completed",
+    "engine_created": true,
+    "generation_completed": true,
+    "prompt": "Reference notes. The access code is AMBER-42.\nRecord 000: RAM stores temporary data needed by active programs.\nRecord 001: RAM stores temporary data needed by active programs.\nRecord 002: RAM stores temporary data needed by active programs.\nRecord 003: RAM stores temporary data needed by active programs.\nRecord 004: RAM stores temporary data needed by active programs.\nRecord 005: RAM stores temporary data needed by active programs.\nRecord 006: RAM stores temporary data needed by active programs.\nRecord 007: RAM stores temporary data needed by active programs.\nRecord 008: RAM stores temporary data needed by active programs.\nRecord 009: RAM stores temporary data needed by active programs.\nRecord 010: RAM stores temporary data needed by active programs.\nRecord 011: RAM stores temporary data needed by active programs.\nRecord 012: RAM stores temporary data needed by active programs.\nRecord 013: RAM stores temporary data needed by active programs.\nRecord 014: RAM stores temporary data needed by active programs.\nRecord 015: RAM stores temporary data needed by active programs.\nRecord 016: RAM stores temporary data needed by active programs.\nRecord 017: RAM stores temporary data needed by active programs.\nRecord 018: RAM stores temporary data needed by active programs.\nRecord 019: RAM stores temporary data needed by active programs.\nRecord 020: RAM stores temporary data needed by active programs.\nRecord 021: RAM stores temporary data needed by active programs.\nRecord 022: RAM stores temporary data needed by active programs.\nRecord 023: RAM stores temporary data needed by active programs.\nRecord 024: RAM stores temporary data needed by active programs.\nRecord 025: RAM stores temporary data needed by active programs.\nRecord 026: RAM stores temporary data needed by active programs.\nRecord 027: RAM stores temporary data needed by active programs.\nRecord 028: RAM stores temporary data needed by active programs.\nRecord 029: RAM stores temporary data needed by active programs.\nRecord 030: RAM stores temporary data needed by active programs.\nRecord 031: RAM stores temporary data needed by active programs.\nRecord 032: RAM stores temporary data needed by active programs.\nRecord 033: RAM stores temporary data needed by active programs.\nRecord 034: RAM stores temporary data needed by active programs.\nRecord 035: RAM stores temporary data needed by active programs.\nRecord 036: RAM stores temporary data needed by active programs.\nRecord 037: RAM stores temporary data needed by active programs.\nRecord 038: RAM stores temporary data needed by active programs.\nRecord 039: RAM stores temporary data needed by active programs.\nRecord 040: RAM stores temporary data needed by active programs.\nRecord 041: RAM stores temporary data needed by active programs.\nRecord 042: RAM stores temporary data needed by active programs.\nRecord 043: RAM stores temporary data needed by active programs.\nRecord 044: RAM stores temporary data needed by active programs.\nRecord 045: RAM stores temporary data needed by active programs.\nRecord 046: RAM stores temporary data needed by active programs.\nRecord 047: RAM stores temporary data needed by active programs.\nRecord 048: RAM stores temporary data needed by active programs.\nRecord 049: RAM stores temporary data needed by active programs.\nRecord 050: RAM stores temporary data needed by active programs.\nRecord 051: RAM stores temporary data needed by active programs.\nRecord 052: RAM stores temporary data needed by active programs.\nRecord 053: RAM stores temporary data needed by active programs.\n\nUse the notes to state the access code and explain in one short sentence what RAM stores.",
+    "generations": [
+      {
+        "index": 0,
+        "events": [
+          {
+            "elapsed_seconds": 4.136527875089087,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.153429208090529,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" access\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.170605750055984,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" code\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.1878933750558645,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.205171833047643,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" AM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.2224580000620335,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BER\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.239577750093304,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.257023291080259,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.274316458031535,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.291890208027326,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.3091497080167755,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.32613304106053,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.34441625000909,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.361317833070643,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.378586333012208,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" needed\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.395701125031337,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" by\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.4127198330825195,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" active\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.430080500082113,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.447231333004311,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.447603833046742,
+            "error": null,
+            "message": "",
+            "is_final": true
+          }
+        ],
+        "stream_final": true,
+        "stream_error": null,
+        "first_text_callback_seconds": 4.136527875089087,
+        "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs.",
+        "generation_wall_seconds": 4.448145250091329,
+        "benchmark": {
+          "init_time_in_second": 50.516924125,
+          "time_to_first_token_in_second": 3.41632092325,
+          "last_prefill_token_count": 909,
+          "last_prefill_tokens_per_second": 270.3548708550145,
+          "last_decode_token_count": 20,
+          "last_decode_tokens_per_second": 18.493387631460536
+        },
+        "conversation_token_count": 929,
+        "answer_contains_marker": true,
+        "generation_completed": true,
+        "conversation_closed": true
+      },
+      {
+        "index": 1,
+        "events": [
+          {
+            "elapsed_seconds": 0.7813464999198914,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.7986332919681445,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" access\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.815909041906707,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" code\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.8352404169272631,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.8529973329277709,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" AM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.8704890419030562,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BER\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.8879973329603672,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9052765419473872,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.922747541917488,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9406960000051185,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9585614579264075,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9759861669735983,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9940781249897555,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.011524457950145,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.0290715829469264,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" needed\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.0466906669316813,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" by\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.0642822919180617,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" active\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.081900916993618,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.0996440829476342,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.0999323329888284,
+            "error": null,
+            "message": "",
+            "is_final": true
+          }
+        ],
+        "stream_final": true,
+        "stream_error": null,
+        "first_text_callback_seconds": 0.7813464999198914,
+        "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs.",
+        "generation_wall_seconds": 1.100578457931988,
+        "benchmark": {
+          "init_time_in_second": 50.515946125,
+          "time_to_first_token_in_second": 0.7776362932499999,
+          "last_prefill_token_count": 909,
+          "last_prefill_tokens_per_second": 1194.8851297574859,
+          "last_decode_token_count": 20,
+          "last_decode_tokens_per_second": 59.193627469783074
+        },
+        "conversation_token_count": 929,
+        "answer_contains_marker": true,
+        "generation_completed": true,
+        "conversation_closed": true
+      },
+      {
+        "index": 2,
+        "events": [
+          {
+            "elapsed_seconds": 0.7866726249922067,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.803982499986887,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" access\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.8216168750077486,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" code\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.8405012909788638,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.8584937079576775,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" AM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.8759964159689844,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BER\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.8933897080132738,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9108021249994636,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9286651249276474,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9468051659641787,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9655192079953849,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9825868749758229,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.9998582910047844,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.0172155000036582,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.0347280409187078,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" needed\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.0522148750023916,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" by\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.069732457981445,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" active\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.08716083294712,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.1042912079719827,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 1.1046370830154046,
+            "error": null,
+            "message": "",
+            "is_final": true
+          }
+        ],
+        "stream_final": true,
+        "stream_error": null,
+        "first_text_callback_seconds": 0.7866726249922067,
+        "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs.",
+        "generation_wall_seconds": 1.105441749910824,
+        "benchmark": {
+          "init_time_in_second": 50.515959125,
+          "time_to_first_token_in_second": 0.782453943,
+          "last_prefill_token_count": 909,
+          "last_prefill_tokens_per_second": 1187.3356103478327,
+          "last_decode_token_count": 20,
+          "last_decode_tokens_per_second": 59.261797946888045
+        },
+        "conversation_token_count": 929,
+        "answer_contains_marker": true,
+        "generation_completed": true,
+        "conversation_closed": true
+      }
+    ],
+    "engine_create_seconds": 25.284520542016253,
+    "engine_closed": true
+  },
+  "finished_at_utc": "2026-09-13T11:03:11.490461+00:00",
+  "files": {
+    "prompt-tokenization.json": "a7e38a667fcf7b09a6b21c9adce86b2d851cffab67e30589f0f653be80ce3802",
+    "prompt.txt": "3f4348a99c942cbc3c48f39e50aa8c83f455f1cd8365ebb3541bfcfe933b1593",
+    "resource-guard.json": "fbbf03bfed73cd7c04f06541df33bb94bb10aa7c962ad0ee90a4652b29c5d987",
+    "stderr.log": "80eede0dd9b4b35066ad84793d5ae7d0f5464515baafa1d2c95b2b4ed308b395",
+    "stdout.log": "d13e8b0c71c07c1ee38afc41de6d1f424103c5d18966fdd63efacbdd75adf9f6",
+    "worker.json": "52ed10a0c21fea9810678b4309004f67a34ff596003ee075be435e4f7b67cb62"
+  }
+}

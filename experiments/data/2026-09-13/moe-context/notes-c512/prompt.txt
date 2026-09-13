@@ -1,0 +1,25 @@
+Reference notes. The access code is AMBER-42.
+Record 000: RAM stores temporary data needed by active programs.
+Record 001: RAM stores temporary data needed by active programs.
+Record 002: RAM stores temporary data needed by active programs.
+Record 003: RAM stores temporary data needed by active programs.
+Record 004: RAM stores temporary data needed by active programs.
+Record 005: RAM stores temporary data needed by active programs.
+Record 006: RAM stores temporary data needed by active programs.
+Record 007: RAM stores temporary data needed by active programs.
+Record 008: RAM stores temporary data needed by active programs.
+Record 009: RAM stores temporary data needed by active programs.
+Record 010: RAM stores temporary data needed by active programs.
+Record 011: RAM stores temporary data needed by active programs.
+Record 012: RAM stores temporary data needed by active programs.
+Record 013: RAM stores temporary data needed by active programs.
+Record 014: RAM stores temporary data needed by active programs.
+Record 015: RAM stores temporary data needed by active programs.
+Record 016: RAM stores temporary data needed by active programs.
+Record 017: RAM stores temporary data needed by active programs.
+Record 018: RAM stores temporary data needed by active programs.
+Record 019: RAM stores temporary data needed by active programs.
+Record 020: RAM stores temporary data needed by active programs.
+Record 021: RAM stores temporary data needed by active programs.
+
+Use the notes to state the access code and explain in one short sentence what RAM stores.

@@ -1,0 +1,436 @@
+{
+  "phase": "completed",
+  "engine_created": true,
+  "generation_completed": true,
+  "prompt": "Reference notes. The access code is AMBER-42.\nRecord 000: RAM stores temporary data needed by active programs.\nRecord 001: RAM stores temporary data needed by active programs.\nRecord 002: RAM stores temporary data needed by active programs.\nRecord 003: RAM stores temporary data needed by active programs.\nRecord 004: RAM stores temporary data needed by active programs.\nRecord 005: RAM stores temporary data needed by active programs.\nRecord 006: RAM stores temporary data needed by active programs.\nRecord 007: RAM stores temporary data needed by active programs.\nRecord 008: RAM stores temporary data needed by active programs.\nRecord 009: RAM stores temporary data needed by active programs.\nRecord 010: RAM stores temporary data needed by active programs.\nRecord 011: RAM stores temporary data needed by active programs.\nRecord 012: RAM stores temporary data needed by active programs.\nRecord 013: RAM stores temporary data needed by active programs.\nRecord 014: RAM stores temporary data needed by active programs.\nRecord 015: RAM stores temporary data needed by active programs.\nRecord 016: RAM stores temporary data needed by active programs.\nRecord 017: RAM stores temporary data needed by active programs.\nRecord 018: RAM stores temporary data needed by active programs.\nRecord 019: RAM stores temporary data needed by active programs.\nRecord 020: RAM stores temporary data needed by active programs.\nRecord 021: RAM stores temporary data needed by active programs.\n\nUse the notes to state the access code and explain in one short sentence what RAM stores.",
+  "generations": [
+    {
+      "index": 0,
+      "events": [
+        {
+          "elapsed_seconds": 4.020158999948762,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.036914915894158,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" access\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.053459124988876,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.070400915923528,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.0868978749495,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" AM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.103429582901299,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BER\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.120386957889423,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.1367407909128815,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.153404832934029,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.169922915985808,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.186613457975909,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.203528749989346,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.220055374898948,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.236916749970987,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.253419499960728,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" needed\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.269900624989532,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" by\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.286650915979408,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" active\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.303334332886152,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.320061290985905,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 4.3202106659300625,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 4.020158999948762,
+      "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs.",
+      "generation_wall_seconds": 4.320640582940541,
+      "benchmark": {
+        "init_time_in_second": 53.0104875,
+        "time_to_first_token_in_second": 3.26961878525,
+        "last_prefill_token_count": 397,
+        "last_prefill_tokens_per_second": 123.50759388929846,
+        "last_decode_token_count": 20,
+        "last_decode_tokens_per_second": 18.10232088516497
+      },
+      "conversation_token_count": 417,
+      "answer_contains_marker": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 1,
+      "events": [
+        {
+          "elapsed_seconds": 0.4292855419917032,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4462179580004886,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" access\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4631093330681324,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4799581670667976,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.49691700004041195,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" AM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.513748083030805,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BER\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5307325420435518,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5476762499893084,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5643248750129715,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5812120420159772,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5977240420179442,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6146891249809414,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.631026417016983,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.647496166988276,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6642909999936819,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" needed\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.680959791992791,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" by\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6978167080087587,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" active\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7143573750508949,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7314675829838961,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7316879580030218,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.4292855419917032,
+      "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs.",
+      "generation_wall_seconds": 0.7322140000760555,
+      "benchmark": {
+        "init_time_in_second": 53.0104685,
+        "time_to_first_token_in_second": 0.42354255375,
+        "last_prefill_token_count": 397,
+        "last_prefill_tokens_per_second": 974.5040577023441,
+        "last_decode_token_count": 20,
+        "last_decode_tokens_per_second": 61.89709981015046
+      },
+      "conversation_token_count": 417,
+      "answer_contains_marker": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    },
+    {
+      "index": 2,
+      "events": [
+        {
+          "elapsed_seconds": 0.4293432089034468,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"The\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.445905499975197,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" access\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4628287919331342,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" code\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4794503749581054,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.4964872499695048,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" AM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5130687499186024,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"BER\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5301805839408189,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"-\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5465083749732003,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"4\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5628143749199808,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5795525839785114,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.5961568339262158,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" RAM\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6125902089988813,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.629267834010534,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6462188339792192,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6625961669487879,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" needed\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6793114169267938,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" by\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.6958980419440195,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" active\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7125959589611739,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.729098999989219,
+          "error": null,
+          "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+          "is_final": false
+        },
+        {
+          "elapsed_seconds": 0.7293337499722838,
+          "error": null,
+          "message": "",
+          "is_final": true
+        }
+      ],
+      "stream_final": true,
+      "stream_error": null,
+      "first_text_callback_seconds": 0.4293432089034468,
+      "text": "The access code is AMBER-42. RAM stores temporary data needed by active programs.",
+      "generation_wall_seconds": 0.7298154999734834,
+      "benchmark": {
+        "init_time_in_second": 53.010469500000006,
+        "time_to_first_token_in_second": 0.425136579,
+        "last_prefill_token_count": 397,
+        "last_prefill_tokens_per_second": 970.2494512561155,
+        "last_decode_token_count": 20,
+        "last_decode_tokens_per_second": 62.6430840470701
+      },
+      "conversation_token_count": 417,
+      "answer_contains_marker": true,
+      "generation_completed": true,
+      "conversation_closed": true
+    }
+  ],
+  "engine_create_seconds": 26.532426416990347,
+  "engine_closed": true
+}

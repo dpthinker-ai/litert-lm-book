@@ -1,0 +1,647 @@
+[
+  {
+    "elapsed_seconds": 0.005716916988603771,
+    "rss_kib": 2336,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 0.2662737499922514,
+    "rss_kib": 98224,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 0.5265858329366893,
+    "rss_kib": 464800,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 0.7855358329834417,
+    "rss_kib": 470144,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 1.045928042032756,
+    "rss_kib": 473920,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 1.3017799999797717,
+    "rss_kib": 613856,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 1.5619573750300333,
+    "rss_kib": 662784,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 1.8216447919839993,
+    "rss_kib": 668176,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 2.082508916966617,
+    "rss_kib": 671136,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 2.338012457941659,
+    "rss_kib": 795344,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 2.597029707976617,
+    "rss_kib": 814352,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 2.857558917021379,
+    "rss_kib": 820144,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 3.1184488750295714,
+    "rss_kib": 899168,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 3.3787831669906154,
+    "rss_kib": 963584,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 3.638312416966073,
+    "rss_kib": 968512,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 3.897087207995355,
+    "rss_kib": 971904,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 4.157865582965314,
+    "rss_kib": 1096128,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 4.418525042012334,
+    "rss_kib": 1116240,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 4.678165875026025,
+    "rss_kib": 1122096,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 4.93863791693002,
+    "rss_kib": 1199984,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 5.19747454195749,
+    "rss_kib": 1272128,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 5.4580912499222904,
+    "rss_kib": 1278448,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 5.720003542024642,
+    "rss_kib": 1327568,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 5.980395624996163,
+    "rss_kib": 1420848,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 6.238584541948512,
+    "rss_kib": 1427584,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 6.499274124973454,
+    "rss_kib": 1431392,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 6.75600720802322,
+    "rss_kib": 1555488,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 7.013811207958497,
+    "rss_kib": 1575744,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 7.275005374918692,
+    "rss_kib": 1580576,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 7.5355342499678954,
+    "rss_kib": 1659600,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 7.795859499950893,
+    "rss_kib": 1723968,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 8.055850500008091,
+    "rss_kib": 1729760,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 8.313504582969472,
+    "rss_kib": 1732400,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 8.572018624981865,
+    "rss_kib": 1871936,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 8.830660582985729,
+    "rss_kib": 1876704,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 9.091414458001964,
+    "rss_kib": 1882464,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 9.35158933303319,
+    "rss_kib": 1975840,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 9.61033304198645,
+    "rss_kib": 2024816,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 9.870968958013691,
+    "rss_kib": 2030608,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 10.12728741695173,
+    "rss_kib": 2033264,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 10.390587750007398,
+    "rss_kib": 2172832,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 10.650714291958138,
+    "rss_kib": 2182352,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 10.91062666696962,
+    "rss_kib": 2186112,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 11.171783457975835,
+    "rss_kib": 2325760,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 11.432701083016582,
+    "rss_kib": 2330528,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 11.693555832956918,
+    "rss_kib": 2336256,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 11.952564375009388,
+    "rss_kib": 2414176,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 12.213074041996151,
+    "rss_kib": 2478544,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 12.47223691700492,
+    "rss_kib": 2484352,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 12.730131041957065,
+    "rss_kib": 2518064,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 12.990778582985513,
+    "rss_kib": 2626704,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 13.251515374984592,
+    "rss_kib": 2634896,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 13.510956874932162,
+    "rss_kib": 2638560,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 13.76850150001701,
+    "rss_kib": 2762912,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 14.028885666979477,
+    "rss_kib": 2781920,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 14.285371957928874,
+    "rss_kib": 2787712,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 14.543259124970064,
+    "rss_kib": 2866736,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 14.801697249989957,
+    "rss_kib": 2931104,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 15.062052374938503,
+    "rss_kib": 2935808,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 15.32251520792488,
+    "rss_kib": 2939664,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 15.583796916995198,
+    "rss_kib": 3079200,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 15.84325566701591,
+    "rss_kib": 3088848,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 16.108256625011563,
+    "rss_kib": 3092544,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 16.36877924995497,
+    "rss_kib": 3232192,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 16.626576583017595,
+    "rss_kib": 3236976,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 16.885855249944143,
+    "rss_kib": 3242720,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 17.14386808301788,
+    "rss_kib": 3336096,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 17.402230624924414,
+    "rss_kib": 3386112,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 17.66040754201822,
+    "rss_kib": 3390816,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 17.918000292032957,
+    "rss_kib": 3439936,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 18.178382082958706,
+    "rss_kib": 3533216,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 18.43645049992483,
+    "rss_kib": 3539984,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 18.696896041976288,
+    "rss_kib": 3543904,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 18.95794562494848,
+    "rss_kib": 3683424,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 19.21838008298073,
+    "rss_kib": 3690272,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 19.47666583303362,
+    "rss_kib": 3693840,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 19.736838457989506,
+    "rss_kib": 3787232,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 19.997709541930817,
+    "rss_kib": 3837216,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 20.2587075419724,
+    "rss_kib": 3843056,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 20.51810020802077,
+    "rss_kib": 3891136,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 20.778488166979514,
+    "rss_kib": 3988592,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 21.039172958000563,
+    "rss_kib": 3996032,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 21.29992320796009,
+    "rss_kib": 4044096,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 21.56227662495803,
+    "rss_kib": 4137232,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 21.818304750020616,
+    "rss_kib": 4144032,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 22.0766032920219,
+    "rss_kib": 4147728,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 22.33704245800618,
+    "rss_kib": 4272000,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 22.597970042028464,
+    "rss_kib": 4291072,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 22.85863116697874,
+    "rss_kib": 4296928,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 23.118327041971497,
+    "rss_kib": 4391392,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 23.37892541696783,
+    "rss_kib": 4440336,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 23.639037791988812,
+    "rss_kib": 4446080,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 23.899781916989014,
+    "rss_kib": 4479776,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 24.160184416919947,
+    "rss_kib": 4588480,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 24.41834516695235,
+    "rss_kib": 4595312,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 24.677095041959547,
+    "rss_kib": 4599136,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 24.937623624922708,
+    "rss_kib": 4723232,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 25.198273833026178,
+    "rss_kib": 4743344,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 25.459252332919277,
+    "rss_kib": 4749152,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 25.71819716691971,
+    "rss_kib": 4842592,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 25.9784986670129,
+    "rss_kib": 4894224,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 26.23526533297263,
+    "rss_kib": 4902144,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 26.49536420800723,
+    "rss_kib": 4995616,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 26.753297541989014,
+    "rss_kib": 5076176,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 27.013651666929945,
+    "rss_kib": 5141424,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 27.274045457947068,
+    "rss_kib": 5125552,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 27.533838958013803,
+    "rss_kib": 5045616,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 27.793535374919884,
+    "rss_kib": 4545632,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 28.05369329196401,
+    "rss_kib": 3971200,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 28.314375957939774,
+    "rss_kib": 3421744,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 28.5747196249431,
+    "rss_kib": 2833712,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 28.835167124983855,
+    "rss_kib": 2279136,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 29.094218541984446,
+    "rss_kib": 2153568,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 29.350987582933158,
+    "rss_kib": 2153568,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 29.610933457966894,
+    "rss_kib": 2153568,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 29.956056791939773,
+    "rss_kib": 1949632,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 30.216129624983296,
+    "rss_kib": 1575536,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 30.47407837503124,
+    "rss_kib": 1372848,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 30.735310166957788,
+    "rss_kib": 750112,
+    "pressure": 2
+  },
+  {
+    "elapsed_seconds": 30.99563483300153,
+    "rss_kib": 694320,
+    "pressure": 2
+  },
+  {
+    "elapsed_seconds": 31.257762833032757,
+    "rss_kib": 634576,
+    "pressure": 2
+  },
+  {
+    "elapsed_seconds": 31.517398125026375,
+    "rss_kib": 551536,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 31.77652054198552,
+    "rss_kib": 551520,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 32.03953816695139,
+    "rss_kib": 607616,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 32.299898999975994,
+    "rss_kib": 608256,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 32.559750207932666,
+    "rss_kib": 627728,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 32.817811624961905,
+    "rss_kib": 628000,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 33.076046583009884,
+    "rss_kib": 628032,
+    "pressure": 1
+  },
+  {
+    "elapsed_seconds": 33.33540062501561,
+    "rss_kib": 663248,
+    "pressure": 1
+  }
+]

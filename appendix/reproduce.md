@@ -392,3 +392,23 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_generation_check.py \
 保护条件与第十五节相同，时限改为 180 秒。采集器保存初始化前的内存状态，以及生成期间的逐次流事件；事件时间戳位于消费队列之前。只有无错误的 final 事件、非空文本、至少两个 runtime decode 计数、会话及引擎关闭、进程正常退出共同满足，才计为完整多 token 生成。后端验证错误另行归类，不能只看运行 API 返回值。
 
 读 `summary.json` 时，将每个引擎的首次请求与后两个会话分别统计。`first_text_callback_seconds` 是客户端可见文本到达时间，benchmark 中的 TTFT 与初始化字段有不同定义，详见附录 D 第二十六节。每次回调不保证对应一个 token，也不能从完整模型文件大小或进程 RSS 推算 GPU 独占内存。
+
+## 十七、完整 MoE 的上下文容量与实际输入
+
+沿用第十六节的环境与完整 GPU 文件。先用 `moe_generation_check.py` 保持英文短提示词和输出上限 32，将容量分别设为 512、1024。每项仍运行三个新会话，并分别指定新的输出和缓存目录；这一步只改变容量，实际输入长度须读取运行时 prefill 计数。
+
+材料生成器把识别码放在开头，用带编号的说明逐条填充原始 token 预算，最后添加问题。原文和分词 ID 分别保存为 `prompt.txt`、`prompt-tokenization.json`，构造与分词均不进入生成计时。预算不含对话格式；脚本要求原始预算、输出上限与预留的 32 token 之和不超过容量。这个预留值不是固定格式开销的定义，运行后还要核对实际 prefill 与容量。本次两组原始计数为 384、896，运行时分别为 397、909。
+
+较长输入使用新的 `moe_context_check.py`。下面的配置将原始文本预算设为 384，另预留输出上限 64 与对话格式空间：
+
+```bash
+tmp/moe-full-recheck-venv/bin/python experiments/moe_context_check.py \
+  --model /path/to/gemma-4-26B-A4B-it-gpu.litertlm \
+  --sha256 94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1 \
+  --output tmp/moe-context-notes-512 --cache tmp/moe-context-notes-cache-512 \
+  --context 512 --input-tokens 384 --output-tokens 64 --repeats 3 --timeout 180
+```
+
+1024 容量的材料测试将 `--context` 改为 1024、`--input-tokens` 改为 896，并使用新目录。四项按短输入 512、材料 512、短输入 1024、材料 1024 的顺序串行执行。保护阈值与第十六节相同。
+
+生成完成条件沿用第十六节；识别码检查是独立字段，不决定 `GENERATION_COMPLETED`。查看 `answer_contains_marker` 后，还要核对完整回答是否与材料相符。这个固定材料任务不代替系统性质量测试。逐轮计时、首次与复用请求以及压力边界见附录 D 第二十七节。

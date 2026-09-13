@@ -1,0 +1,510 @@
+{
+  "started_at_utc": "2026-09-13T10:59:28.149923+00:00",
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "packages": {
+    "litert-lm-api": "0.17.0",
+    "litert-lm": "0.17.0",
+    "litert-lm-builder": "0.17.0"
+  },
+  "model": {
+    "path": "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "bytes": 15786524672,
+    "sha256": "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1"
+  },
+  "library_sha256": "a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc",
+  "script_sha256": "07f9ff897a9d5faefc9e25595d618d5358021d11aab9b7efd6496d3e482f4ca3",
+  "worker_command": [
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/bin/python",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/moe_generation_check.py",
+    "--worker",
+    "--model",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-full-model/gemma-4-26B-A4B-it-gpu.litertlm",
+    "--sha256",
+    "94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1",
+    "--output",
+    "/Users/dpthinker/workspace/litert-lm-book/experiments/data/2026-09-13/moe-context/short-c1024",
+    "--cache",
+    "/Users/dpthinker/workspace/litert-lm-book/tmp/moe-context-short-c1024-cache",
+    "--context",
+    "1024",
+    "--output-tokens",
+    "32",
+    "--prompt",
+    "In one short sentence, explain what RAM stores.",
+    "--repeats",
+    "3"
+  ],
+  "requested_backend": "GPU",
+  "context_capacity": 1024,
+  "max_output_tokens": 32,
+  "repetitions_in_engine": 3,
+  "benchmark_enabled": true,
+  "machine": {
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "before_run": {
+    "vm_stat": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     9111.\nPages active:                                 166299.\nPages inactive:                              1053966.\nPages speculative:                              7190.\nPages throttled:                                   0.\nPages wired down:                             188897.\nPages purgeable:                                1738.\n\"Translation faults\":                     1381940468.\nPages copy-on-write:                        56961162.\nPages zero filled:                        1610481408.\nPages reactivated:                         271245347.\nPages purged:                               18995938.\nFile-backed pages:                           1057954.\nAnonymous pages:                              169501.\nPages stored in compressor:                   395865.\nPages occupied by compressor:                  81113.\nDecompressions:                            231547457.\nCompressions:                              261077161.\nPageins:                                    51747914.\nPageouts:                                    2122636.\nSwapins:                                     7170950.\nSwapouts:                                    8431709.\nPages tagged:                                  94069.\nPages tagged resident:                         71586.\nPages tagged compressed:                       22483.\nPages tag-storage:                             49152.\nPages tag-storage holding tags:                 4388.\nPages tag-storage free:                         6462.\nPages tag-storage non-tag pageable:            38294.\nPages tag-storage non-tag wired:                   8.\nBytes of compressed tags:                    3463296.\nTagged compressions:                         3107665.\nTagged decompressions:                       2813630.\n",
+    "swap": "vm.swapusage: total = 3072.00M  used = 1877.75M  free = 1194.25M  (encrypted)\n"
+  },
+  "thinking": false,
+  "speculative_decoding": false,
+  "top_k": 1,
+  "temperature": 0,
+  "seed": 42,
+  "timeout_seconds": 180.0,
+  "max_process_rss_gib": 18,
+  "limitations": [
+    "Prebuilt package; not a local build of frozen release source.",
+    "Fresh conversations share one engine; later repetitions reuse prepared model state.",
+    "Raw stream-final and runtime decode counts verify multi-token completion.",
+    "Client timestamps are taken inside the native callback before queue insertion; callback count is not a token count.",
+    "Runtime benchmark fields retained verbatim; not yet a sustained-performance or quality benchmark.",
+    "Sampled process RSS and system pressure are stop guards and can miss short-lived peaks."
+  ],
+  "backend_errors": [],
+  "returncode": 0,
+  "status": "GENERATION_COMPLETED",
+  "stop_reason": null,
+  "worker_result": {
+    "phase": "completed",
+    "engine_created": true,
+    "generation_completed": true,
+    "prompt": "In one short sentence, explain what RAM stores.",
+    "generations": [
+      {
+        "index": 0,
+        "events": [
+          {
+            "elapsed_seconds": 3.770549042033963,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.7871543330838904,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.803812750033103,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.820630041998811,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.8373829170595855,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.853943375055678,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.8706714999862015,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" instructions\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.8871727919904515,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" that\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.903984458069317,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" your\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.9206421670969576,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computer\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.937038875068538,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.9537431250791997,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" actively\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.97026375005953,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" using\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 3.986765208072029,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" to\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.003412791993469,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" run\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.018339208094403,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.034115458023734,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.050695625017397,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" processes\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.067247250000946,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 4.067356375046074,
+            "error": null,
+            "message": "",
+            "is_final": true
+          }
+        ],
+        "stream_final": true,
+        "stream_error": null,
+        "first_text_callback_seconds": 3.770549042033963,
+        "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes.",
+        "generation_wall_seconds": 4.067849000100978,
+        "benchmark": {
+          "init_time_in_second": 54.108940709,
+          "time_to_first_token_in_second": 3.76056971,
+          "last_prefill_token_count": 23,
+          "last_prefill_tokens_per_second": 6.142388716319976,
+          "last_decode_token_count": 20,
+          "last_decode_tokens_per_second": 62.11902769148539
+        },
+        "conversation_token_count": 43,
+        "generation_completed": true,
+        "conversation_closed": true
+      },
+      {
+        "index": 1,
+        "events": [
+          {
+            "elapsed_seconds": 0.15621845901478082,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.17258462496101856,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.18929729203227907,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.20578220894094557,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.2227987089427188,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.2395445000147447,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.2562522089574486,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" instructions\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.2730479169404134,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" that\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.28989991697017103,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" your\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.3069598339498043,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computer\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.32269891700707376,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.3395888339728117,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" actively\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.3562585839536041,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" using\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.372621166985482,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" to\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.38946462504100055,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" run\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.40597391698975116,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.4226483750389889,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.4395670839585364,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" processes\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.4564177499851212,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.456687374971807,
+            "error": null,
+            "message": "",
+            "is_final": true
+          }
+        ],
+        "stream_final": true,
+        "stream_error": null,
+        "first_text_callback_seconds": 0.15621845901478082,
+        "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes.",
+        "generation_wall_seconds": 0.4574017919367179,
+        "benchmark": {
+          "init_time_in_second": 54.108925709000005,
+          "time_to_first_token_in_second": 0.15432509649999998,
+          "last_prefill_token_count": 23,
+          "last_prefill_tokens_per_second": 166.10685766817576,
+          "last_decode_token_count": 20,
+          "last_decode_tokens_per_second": 63.05165270203916
+        },
+        "conversation_token_count": 43,
+        "generation_completed": true,
+        "conversation_closed": true
+      },
+      {
+        "index": 2,
+        "events": [
+          {
+            "elapsed_seconds": 0.15419954096432775,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"RAM\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.1710558329941705,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" stores\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.18739812495186925,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" the\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.20390341593883932,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" temporary\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.2205060829874128,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" data\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.23695237492211163,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.2536373329348862,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" instructions\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.2713212079834193,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" that\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.2863614580128342,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" your\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.30314758291933686,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" computer\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.31980145792476833,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" is\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.3364364579319954,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" actively\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.3531183749437332,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" using\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.36968349991366267,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" to\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.38662037497852,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" run\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.40358816599473357,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" programs\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.42061912501230836,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" and\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.43740758299827576,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\" processes\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.4536939999088645,
+            "error": null,
+            "message": "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\".\"}]}",
+            "is_final": false
+          },
+          {
+            "elapsed_seconds": 0.453963040956296,
+            "error": null,
+            "message": "",
+            "is_final": true
+          }
+        ],
+        "stream_final": true,
+        "stream_error": null,
+        "first_text_callback_seconds": 0.15419954096432775,
+        "text": "RAM stores the temporary data and instructions that your computer is actively using to run programs and processes.",
+        "generation_wall_seconds": 0.45454008295200765,
+        "benchmark": {
+          "init_time_in_second": 54.108932709,
+          "time_to_first_token_in_second": 0.1521312835,
+          "last_prefill_token_count": 23,
+          "last_prefill_tokens_per_second": 168.76470917434384,
+          "last_decode_token_count": 20,
+          "last_decode_tokens_per_second": 63.1039575258873
+        },
+        "conversation_token_count": 43,
+        "generation_completed": true,
+        "conversation_closed": true
+      }
+    ],
+    "engine_create_seconds": 27.081958333030343,
+    "engine_closed": true
+  },
+  "finished_at_utc": "2026-09-13T11:00:00.528515+00:00",
+  "files": {
+    "resource-guard.json": "3ea65ba19f7e82e1e4250f4648f7137c6a34c657f04e0eb39922ee75d806386c",
+    "stderr.log": "9f97caf1a4e25ceffe985119d86830527dbb0ce519d0fef3528df71215a57fce",
+    "stdout.log": "bc6c9bfd10596a3a426d75c5ac26525bfe39978433967430ab96993d33a03b3b",
+    "worker.json": "3a705a2b9c2a9f15ab8855c74461c24a1c720046cc38415743e6fdf4eefcc936"
+  }
+}
