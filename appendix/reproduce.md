@@ -193,3 +193,22 @@ python3 experiments/bench_release_report.py experiments/data/<本轮日期>/benc
 [^appc-hf-auth]: Hugging Face，[*Command Line Interface (CLI)*](https://huggingface.co/docs/huggingface_hub/en/guides/cli)，`hf auth login`；访问日期：2026-07-18。
 
 [^appc-build-guide]: google-ai-edge/LiteRT-LM，[*Build and Run LiteRT-LM*](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.17.0/docs/getting-started/build-and-run.md)，v0.17.0；访问日期：2026-09-13。
+
+## 七、CPU MoE 单算子验证
+
+第 10 章的最小实验直接构造专家算子，使用公共 C ABI 执行。它绕过完整模型导出，只验证 CPU 小张量的数值与拒绝行为。原始记录和完整边界见附录 D 第十七节。
+
+在独立 Python 3.12 环境安装实验依赖，并使用已取得的 LiteRT-LM 0.17.0 动态库。下面的示例适用于本书的 macOS 环境，`--library` 应指向该版本安装目录里的实际动态库，输出目录必须不存在：
+
+```bash
+uv venv tmp/moe-venv --python 3.12
+uv pip install --python tmp/moe-venv/bin/python \
+  numpy==2.4.3 flatbuffers==25.12.19 tflite==2.18.0
+tmp/moe-venv/bin/python experiments/moe_layer_check.py \
+  --library /path/to/litert_lm/liblitert-lm.dylib \
+  --output tmp/moe-layer-recheck
+```
+
+脚本为每个案例启动新进程，保存序列化模型、输入、期望输出、实际输出和原生日志。预期数值案例必须完成 `LiteRtRunCompiledModel` 并满足容差；预期拒绝案例必须得到可定位的 API 错误，进程崩溃或 harness 失败不能算作通过。`--quick` 只运行第一个案例，不能替代完整 26 例验证。
+
+要检验完整模型导出，应另行固定转换器、原始模型和导出配置，并执行真实产物。将 CPU 单算子的通过结果迁移到 GPU 或完整 `.litertlm` 模型之前，还要核对 10.6 节的布局、量化元数据、激活函数与后端覆盖范围。

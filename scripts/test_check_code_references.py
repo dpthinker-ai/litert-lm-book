@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from check_code_references import check_source_excerpts
+from check_code_references import check_source_excerpts, source_target
 
 
 class SourceQuotationTests(unittest.TestCase):
@@ -54,6 +54,20 @@ class SourceQuotationTests(unittest.TestCase):
     def test_external_and_unanchored_examples_are_excluded(self):
         self.assertEqual(self.check("// llama.cpp/sample.cc:1\nother();"), (0, []))
         self.assertEqual(self.check("illustrative_example();"), (0, []))
+
+    def test_dependency_quotation_uses_dependency_tree(self):
+        dep = self.source / "dependency"
+        dep.mkdir()
+        (dep / "sample.cc").write_text("  Expert();\n")
+        text = "```cpp\n// LiteRT/sample.cc:1\n  Expert();\n```\n"
+        self.assertEqual(check_source_excerpts(text, self.source, dep), (1, []))
+        changed = text.replace("  Expert();", "  Other();")
+        self.assertTrue(check_source_excerpts(changed, self.source, dep)[1])
+
+    def test_dependency_never_falls_back_to_lm_tree(self):
+        with self.assertRaises(ValueError):
+            source_target("LiteRT/sample.cc", self.source)
+        self.assertEqual(source_target("sample.cc", self.source), self.source / "sample.cc")
 
     def test_length_includes_reference_and_omission_lines(self):
         _, errors = self.check("// sample.cc:1\n" + "// ...\n" * 30)

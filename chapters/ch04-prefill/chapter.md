@@ -51,6 +51,8 @@ gpu 主基准也有相同现象。256 与 1024 token 的 prefill 墙钟时间约
 
 > **版本注记**：v0.17.0 在同一 M5 Pro、Gemma 4 E4B 上的独立长度扫描，固定 CPU 8 线程、KV 容量 8192、decode 32 token。250、500、1000 token 的 prefill 耗时中位数约为 1062、1991、3834 ms，已不呈现旧样本约 3.9 s 的共同平台〔基准 D，第十六节〕。每点预热后测 3 次；新旧采集设置未完全对齐，不能把耗时差全部归因于分块策略。
 
+对于 MoE，输入块中的位置可能被分派给不同专家。同一块中每个专家收到多少行、总共触及多少专家，会共同改变矩阵形状与权重复用；见 10.4 节。
+
 ## 4.2　设计权衡：固定形状还是动态形状
 
 executor 需要把长度可变的提示词映射到模型可执行的输入形状：编译后的模型可能只接受固定序列长度，提示词却可能包含 20 或 2000 个 token。LiteRT-LM 提供两条路径，对应 `LlmLiteRtCompiledModelExecutorStatic` 与 `LlmLiteRtCompiledModelExecutorDynamic` 两个 executor 子类。

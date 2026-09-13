@@ -1,0 +1,187 @@
+{
+  "method": "Read serialized TFLite schema and unpack INT4 using numpy low/high bit masks, independently of native kernel row access. Compare to original signed fixture arrays.",
+  "checks": [
+    {
+      "name": "00-fp32-t1-gelu-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "01-fp32-t1-gelu_tanh-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "02-fp32-t2-gelu-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "03-fp32-t2-gelu_tanh-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "04-fp32-t8-gelu-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "05-fp32-t8-gelu_tanh-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "06-int8-t1-gelu-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "07-int8-t1-gelu_tanh-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "08-int8-t2-gelu-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "09-int8-t2-gelu_tanh-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "10-int8-t8-gelu-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "11-int8-t8-gelu_tanh-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "12-int4-t1-gelu-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "13-int4-t1-gelu_tanh-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "14-int4-t2-gelu-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "15-int4-t2-gelu_tanh-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "16-int4-t8-gelu-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "17-int4-t8-gelu_tanh-standard",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "18-fp32-t2-gelu-duplicates",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "19-fp32-t2-gelu-negative_indices",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "20-fp32-t2-gelu-zero_routes",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "21-fp32-t2-gelu-swapped_routes",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "22-fp32-t2-gelu-invalid_high",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "23-fp32-t2-gelu-invalid_low",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "24-fp32-t2-gelu-unsupported_activation",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    },
+    {
+      "name": "25-int4-t2-gelu-int8_storage",
+      "flatbuffer_structure": true,
+      "custom_options": true,
+      "serialized_inputs": true,
+      "constant_weight_and_scale_bytes": true
+    }
+  ]
+}

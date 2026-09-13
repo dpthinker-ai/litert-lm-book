@@ -1,0 +1,58 @@
+{
+  "started_at_utc": "2026-09-13T04:05:31.119808+00:00",
+  "library": "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm/liblitert-lm.dylib",
+  "library_sha256": "a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc",
+  "analysis_source_commit": "9fe5be45564c868408e6514c8aabb83e211a0911",
+  "execution_kind": "prebuilt LiteRT-LM 0.17.0 C ABI; not a local build of the pinned source",
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "machine": "arm64",
+  "packages": {
+    "numpy": "2.4.3",
+    "flatbuffers": "25.12.19",
+    "tflite": "2.18.0"
+  },
+  "script_sha256": "a3fe1cd07867924ad1bd4ef9919b89292d2f26aaea54d0c2753099c40a2d7010",
+  "argv": [
+    "experiments/moe_layer_check.py",
+    "--output",
+    "experiments/data/2026-09-13/moe-layer-pilot",
+    "--quick"
+  ],
+  "cases": [
+    {
+      "name": "00-fp32-t1-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.3753182048076296e-09,
+      "max_relative_error": 1.5045638065622137e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "c8dcc919c4f62a0f8d3ab66eaef7fe4be0bfa10c162697f3b58d043dadd87671",
+        "expected.npy": "eb0df552b3edbbcaf3643a2f1204b858a1ff94a64b1a603ca5800646f3aca215",
+        "fixture.json": "bfd15bbd213483bd95d30fbf37c1c0a5d07d1624b18d9977c69ef7d3b71c0c2c",
+        "input-0.bin": "1ec8f62ec8fc8c9f91ebd1e1447f005103400331ba154e2f4328cc6121e67629",
+        "input-1.bin": "f633e9518f5b32b89ac3a512c3ecd22f9e164d02d2c3120ac859886cf658d598",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "inputs-and-weights.npz": "a7d6dab1b1c0f27b6ba0a67d4618c74ca25e6450bcaad5b9d18b132ebade2c4f",
+        "model.tflite": "5226ef21e9ff75a04205b87e46d9b4f59aad9c962576cb79478475437efea8a7",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "9d0c6ac00f1e97185f4ea7b309e04c1371a7b752ec5a340de296278620a79438",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    }
+  ],
+  "limitations": [
+    "No full language model, router, quality, performance, peak memory, GPU or NPU test.",
+    "Default CPU compilation options; no custom MoE opt-in flag or custom kernel was registered.",
+    "INT4 tests use even input dimensions and two equally sized groups per row.",
+    "The prebuilt binary is not proven to be built from the pinned analysis commit."
+  ],
+  "finished_at_utc": "2026-09-13T04:05:36.094231+00:00",
+  "counts": {
+    "PASS": 1,
+    "EXPECTED_REJECTION": 0,
+    "FAIL": 0
+  }
+}

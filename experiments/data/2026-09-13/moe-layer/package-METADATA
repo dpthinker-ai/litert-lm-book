@@ -1,0 +1,27 @@
+Metadata-Version: 2.1
+Name: litert-lm
+Home-page: https://github.com/google-ai-edge/LiteRT-LM
+License: Apache-2.0
+Description-Content-Type: text/markdown
+Summary: LiteRT-LM command line tool
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.10
+Requires-Dist: litert-lm-api==0.17.0
+Requires-Dist: litert-lm-builder==0.17.0
+Requires-Dist: click
+Requires-Dist: prompt_toolkit
+Requires-Dist: typing-extensions
+Requires-Dist: questionary
+Version: 0.17.0
+
+# LiteRT-LM CLI
+
+Command-line tool for LiteRT-LM, the **production-ready** orchestration layer to
+run LLMs with LiteRT, engineered for **high-performance**, **cross-platform**
+execution.
+
+- **Documentation**: [https://ai.google.dev/edge/litert-lm/cli](https://ai.google.dev/edge/litert-lm/cli)
+- **GitHub**: [https://github.com/google-ai-edge/LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM)
+

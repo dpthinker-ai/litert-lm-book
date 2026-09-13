@@ -13,3 +13,6 @@ tmp/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Chapter 10 synthetic single-op fixtures (a few KiB each, no pretrained weights).
+!experiments/data/2026-09-13/moe-layer/**/model.tflite

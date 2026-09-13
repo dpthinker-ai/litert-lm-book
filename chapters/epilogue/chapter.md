@@ -2,15 +2,15 @@
 
 > 本章给出实践入口、参与项目的注意事项，以及仍需继续验证的问题。
 
-正文从三类物理约束出发组织端侧推理问题：第 1 章量化约束并给出分析基线，第 2 至 5 章分析推理流水线，第 6 至 9 章讨论 KV cache、模型格式、异构后端和投机解码，第 10、11 章讨论多模态、工具调用与多语言绑定。涉及 LiteRT-LM 实现的机制统一核对 v0.17.0 源码，实验数字注明测量条件。来自官方文档或 issue 的结论保留各自的版本与来源边界。
+正文从三类物理约束出发组织端侧推理问题：第 1 章量化约束并给出分析基线，第 2 至 5 章分析推理流水线，第 6 至 10 章讨论 KV cache、模型格式、异构后端、投机解码和 MoE，第 11、12 章讨论多模态、工具调用与多语言绑定。涉及 LiteRT-LM 实现的机制统一核对 v0.17.0 源码，实验数字注明测量条件。来自官方文档或 issue 的结论保留各自的版本与来源边界。
 
 ## 1. 四种使用入口
 
 源码编译不是使用 LiteRT-LM 的前置条件，按目标选择入口即可：
 
 - 运行模型并做实验：使用第 2 章介绍的 Python CLI `litert-lm`。安装并运行模型后，可以改变参数并记录结果；需要从 Python 程序调用时，再使用 Python SDK。[^epilogue-cli]
-- Android / JVM：使用 Kotlin SDK（第 11 章）与预编译 Maven 产物。[^epilogue-android] 依赖版本应显式固定，并与应用验证过的 LiteRT-LM 版本对应；不要使用 `latest.release`。`Engine`、`Session` 与 `Conversation` 的接口关系见第 3、11 章。
-- iOS / macOS：使用 Swift package。[^epilogue-swift] 生命周期限制以冻结版头文件为准。第 11 章分别讨论 Conversation 与 Engine 的显式释放问题，不能把两个 issue 合并为同一接口结论。
+- Android / JVM：使用 Kotlin SDK（第 12 章）与预编译 Maven 产物。[^epilogue-android] 依赖版本应显式固定，并与应用验证过的 LiteRT-LM 版本对应；不要使用 `latest.release`。`Engine`、`Session` 与 `Conversation` 的接口关系见第 3、12 章。
+- iOS / macOS：使用 Swift package。[^epilogue-swift] 生命周期限制以冻结版头文件为准。第 12 章分别讨论 Conversation 与 Engine 的显式释放问题，不能把两个 issue 合并为同一接口结论。
 - Web：使用 Web SDK，通过 npm 安装 `@litert-lm/core`，或从 CDN 以 `+esm` 导入。[^epilogue-web] 核心编译为 WASM 并在浏览器执行。数 GiB 的模型文件需随应用分发或在首次启动时下载，部署时要规划网络流量与缓存空间。
 
 四种入口均可先从语言层 API 开始。出现部署失败、吞吐下降或模型加载错误时，可按模型文件、编排层、执行器和后端四个位置依次定位。
@@ -53,7 +53,7 @@ prefill 失败时，先记录 tokenizer 产生的 token 数、所选 signature�
 
 decode 阶段应分别记录停止 token 或停止序列、`max_output_tokens`、`max_num_tokens` 对应的 KV cache 末端，以及 benchmark 模式的固定步数。应用主动取消属于独立控制路径，也要单独记录。开启 MTP 后，一次 executor 调用还可能返回多个 token；第 9 章说明任务层如何逐 token 检查停止条件。约束解码或工具调用失败时，则要继续区分语法约束、参数语义与宿主执行。
 
-最后检查语言边界。若 C++ 示例稳定，而 Kotlin、Swift 或 Web 路径失败，应把输入与 Engine 设置序列化为可比较记录。对象销毁线程、字符串所有权和回调生命周期属于绑定契约，不应归入模型数值问题。第 11 章列出了三类边界的所有权规则。
+最后检查语言边界。若 C++ 示例稳定，而 Kotlin、Swift 或 Web 路径失败，应把输入与 Engine 设置序列化为可比较记录。对象销毁线程、字符串所有权和回调生命周期属于绑定契约，不应归入模型数值问题。第 12 章列出了三类边界的所有权规则。
 
 | 现象 | 首先保留的证据 | 下一组对照 |
 |---|---|---|

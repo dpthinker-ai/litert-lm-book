@@ -83,7 +83,7 @@
 - KV cache 输入 48 个张量 = 24 层 × (K+V)，dtype 全部为 INT8；20 层 `[1,2,32003,256]`、4 层 `[1,2,32003,512]`（V 侧维度转置存放）。
 - KV 每 token = 2 × 2 × (20×256 + 4×512) × 1 B = 28,672 B = 28 KiB；4096 上下文 = 112 MiB；文件中的宽度 32003 是 magic number 占位值（见 6.2.2 节），实际静态宽度由 `--max-num-tokens` 决定，默认上限 32000 对应 875 MiB。
 - `embeddings[1,1,2560]` → model_dimension = 2560；`per_layer_embeddings[1,1,42,256]`；logits `[1,1,262144]` → 词表 262,144 = 2^18；`param_tensor[1,1,1,7]`（单缓冲 KV 路径的位置参数，见第 6 章）。
-- prefill 入口集为 {1024, 128}（第 4 章分块示例所用的实际入口）；`verify` 与 `mtp_drafter` 段互相配套（第 9 章）；vision 三档签名与三档 adapter 配套（第 10 章）。
+- prefill 入口集为 {1024, 128}（第 4 章分块示例所用的实际入口）；`verify` 与 `mtp_drafter` 段互相配套（第 9 章）；vision 三档签名与三档 adapter 配套（第 11 章）。
 - 元数据中的聊天模板以 `<turn|>` 作为轮次结束标记。模型文件中不存在 `end_of_turn` 字样；这是第 5 章讨论停止符的依据。
 
 ## 七、prefill 长度扫描（cpu，-d 32，disk 缓存热，单次）
@@ -461,3 +461,26 @@ MTP 组固定 prefill 1024、decode 128、KV 容量 8192。关闭组复用主矩
 原始目录为 `experiments/data/2026-09-13/benchmark-v0.17.0/`。`manifest.json` 保存包版本、动态库及模型哈希、机器与供电信息、参数、每次调用、未舍入指标和日志哈希；`summary.csv` 保存请求条件及统计值；`report.json` 保存独立复算和配置生效检查结果。采集时脚本保存在提交 `7fe405e`，其 SHA-256 与 manifest 一致；采集后只修正了失败条件的 CSV 字段收集与旧 Python 的哈希兼容性。复现及只读复算命令见附录 C 第六节。
 
 本轮没有连接 Android 设备，手机历史数据保留原版本。峰值内存、持续运行功耗、客户端文本时延、自然文本任务的输出质量和 MoE 模型性能均不在本轮测量范围内。
+
+## 十七、CPU MoE 单算子正确性验证（2026-09-13）
+
+本节验证小型专家算子的数值和错误行为，不提供 MoE 模型吞吐、内存或能耗数据。设备为 Apple M5 Pro、24 GiB 内存，macOS 26.5（25F71）。执行环境是 Python 3.12.13，使用 LiteRT-LM 0.17.0 预编译动态库的公共 C ABI，选择 CPU accelerator，采用默认 CPU 编译选项。日志确认 XNNPACK CPU delegate；环境创建时注册其他 accelerator，不代表使用了 GPU 或 NPU。
+
+动态库 SHA-256 为 `a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc`。源码分析冻结到 LiteRT-LM v0.17.0 的 LiteRT 依赖；预编译包执行不等于本地锁定源码构建验证。量化格式与源码边界见 10.6 节。
+
+实验直接构造只有一个 custom `moe` 的模型，固定 `E=3,K=2,D=4,H=6`。激活和路由权重为 FP32，专家索引为 INT32。gate/up 使用 `[H,E,D]` 布局，down 使用 `[D,E,H]`。每专家输出 scale 分别为 0.7、1.1、1.3；输入和权重为固定种子生成的小张量。INT8 每行一个 scale，INT4 每行两个等长组，覆盖有符号负值；未验证奇数维度或任意分组配置。
+
+| 检查条件 | 案例数 | 实际结果 |
+|---|---:|---|
+| FP32、INT8、INT4 × token 数 1、2、8 × GELU、GELU-tanh | 18 | Invoke 成功，数值通过 |
+| 重复专家、合法负索引、零路由权重、route 顺序交换 | 4 | Invoke 成功，数值通过 |
+| INT4 packed bytes 使用 INT8 容器保存 | 1 | Invoke 成功，数值通过 |
+| 索引为 E、索引为 −E−1、不支持的 silu 激活 | 3 | Invoke 返回非零状态，符合预期 |
+
+23 个数值案例以 NumPy float64 逐 token、逐 route 公式为参考，最大绝对误差为 `6.877335978483501e-09`。比较条件是 `abs(actual−expected) <= 2e-6 + 2e-5*abs(expected)`；相对误差诊断值以 `max(abs(expected),1e-12)` 为分母，避免零附近除零。量化参考从原始有符号整数与 scale 计算，没有复用原生 kernel 的 packed-row 寻址。
+
+三个预期拒绝案例均实际到达 Invoke 后返回错误。不支持 silu 的日志先报告激活不受支持，随后报告占位算子被调用。这说明创建模型成功不能证明专家节点已被可执行的 kernel 接管。实验没有注册替代 MoE kernel，也没有设置专用 MoE 开关。
+
+归档目录为 `experiments/data/2026-09-13/moe-layer/`。`report.json` 记录环境、脚本和动态库哈希、逐案例状态与文件哈希。`provenance.json` 保存包元数据及 ABI 参考信息。`fixture-readback.json` 保存序列化模型、属性、常量和输入字节的核对结果。每例保留模型、原始输入及 API 调用日志；23 个数值案例另保留参考和实际输出。`pilot/` 为初次试运行，不计入 26 例。
+
+这些合成模型未经 litert-torch 导出，不含路由器、注意力、KV cache 或生成循环。结果不证明完整模型正确性、跨后端一致性或端侧部署收益。GPU MoE、匹配的完整模型导出、手机运行与性能测量均待完成；Android v0.17.0 数据待重跑的状态保持不变。

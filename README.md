@@ -9,7 +9,7 @@
 ## 先读这两份
 
 - **`CLAUDE.md`** — 写作规范：每个写作会话逐字加载，含断言四级制、禁词表、除 AI 味清单、图表规范与修订工作流。`AGENTS.md` 只是指向它的指针，供其他代理工具读取。
-- **`BOOK_PLAN.md`** — 全书档案：定位、目录（11 章 + 尾声 + 附录 A-E）、当前实测与开放项。
+- **`BOOK_PLAN.md`** — 全书档案：定位、目录（12 章 + 尾声 + 附录 A-E）、当前实测与开放项。
 
 修订记录以 git 提交历史为准，不另写审校文档；初稿期的工作文件冻结在 `archive/`。
 
@@ -67,3 +67,14 @@ HTML 保留可点击的语义脚注。PDF 构建会把同一来源排在引用�
 附录 D 与历史实验脚本保留原采集版本，升级后的基础生成检查不构成性能复测。
 
 该 release 的 `WORKSPACE` 固定 LiteRT 提交为 `9fe5be45564c868408e6514c8aabb83e211a0911`；下层算子核对沿用这份依赖，不改用 LiteRT main。
+
+MoE 章节的代码检查另需固定的 LiteRT checkout，可用 `LITERT_SOURCE` 指定：
+
+```bash
+git clone --filter=blob:none --no-checkout https://github.com/google-ai-edge/LiteRT.git ../LiteRT-moe-9fe5be4
+git -C ../LiteRT-moe-9fe5be4 sparse-checkout set litert/c litert/runtime tflite/delegates/xnnpack ml_drift_delegate/delegate/composite
+git -C ../LiteRT-moe-9fe5be4 checkout --detach 9fe5be45564c868408e6514c8aabb83e211a0911
+bash scripts/build_book.sh
+```
+
+新章引用 `LiteRT/` 前缀的代码片段会校验提交、源文件原文及引文顺序。litert-torch 的独立分析提交为 `d592a2f09da4839ea34daaef92e53e638b57090a`，不代表与运行时完成配套验证；本章不直接摘录该仓库代码。

@@ -1,0 +1,593 @@
+{
+  "started_at_utc": "2026-09-13T04:05:47.978334+00:00",
+  "library": "/Users/dpthinker/workspace/litert-lm-book/tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm/liblitert-lm.dylib",
+  "library_sha256": "a07182a7a6e5b7a7a1c10b5f59e03cb82fdfc8e43d6f58fa97eeb17439f883fc",
+  "analysis_source_commit": "9fe5be45564c868408e6514c8aabb83e211a0911",
+  "execution_kind": "prebuilt LiteRT-LM 0.17.0 C ABI; not a local build of the pinned source",
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "machine": "arm64",
+  "packages": {
+    "numpy": "2.4.3",
+    "flatbuffers": "25.12.19",
+    "tflite": "2.18.0"
+  },
+  "script_sha256": "a3fe1cd07867924ad1bd4ef9919b89292d2f26aaea54d0c2753099c40a2d7010",
+  "argv": [
+    "experiments/moe_layer_check.py"
+  ],
+  "cases": [
+    {
+      "name": "00-fp32-t1-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.3753182048076296e-09,
+      "max_relative_error": 1.5045638065622137e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "c8dcc919c4f62a0f8d3ab66eaef7fe4be0bfa10c162697f3b58d043dadd87671",
+        "expected.npy": "eb0df552b3edbbcaf3643a2f1204b858a1ff94a64b1a603ca5800646f3aca215",
+        "fixture.json": "bfd15bbd213483bd95d30fbf37c1c0a5d07d1624b18d9977c69ef7d3b71c0c2c",
+        "input-0.bin": "1ec8f62ec8fc8c9f91ebd1e1447f005103400331ba154e2f4328cc6121e67629",
+        "input-1.bin": "f633e9518f5b32b89ac3a512c3ecd22f9e164d02d2c3120ac859886cf658d598",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "inputs-and-weights.npz": "a7d6dab1b1c0f27b6ba0a67d4618c74ca25e6450bcaad5b9d18b132ebade2c4f",
+        "model.tflite": "5226ef21e9ff75a04205b87e46d9b4f59aad9c962576cb79478475437efea8a7",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "5e4f77c5aecd018fbbd08a3e68a41bbb6db6c6f6b6cb21a5ce59c6b2ca9a1a66",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "01-fp32-t1-gelu_tanh-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.843492362235688e-09,
+      "max_relative_error": 6.616948051370428e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "12f521d29afb34d1c18b087a3eb349b1289e7dea0e89ae32fc161c6fc9b0c7a3",
+        "expected.npy": "01a409dd2ad7330a732e511ae4aa55ec45526d934c8b9330ff8752e60107cb0c",
+        "fixture.json": "0c3bd8f68ca158f7948940d06bc964d166abae60d5e8cc3f692f538a7fb1e432",
+        "input-0.bin": "1ec8f62ec8fc8c9f91ebd1e1447f005103400331ba154e2f4328cc6121e67629",
+        "input-1.bin": "f633e9518f5b32b89ac3a512c3ecd22f9e164d02d2c3120ac859886cf658d598",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "inputs-and-weights.npz": "a7d6dab1b1c0f27b6ba0a67d4618c74ca25e6450bcaad5b9d18b132ebade2c4f",
+        "model.tflite": "94fbc8bd2ca0d35018f565aca478f097a4c7ffe4b342496f9848bf07f1c87bca",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "a5a73117dde9b813ed47b8fba778fffb06f6cba740eb16eb7ae96330bd7d4539",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "02-fp32-t2-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 2.0615361845995744e-09,
+      "max_relative_error": 1.1478147460489508e-06,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "8de41a654c45e13a406be48ac5bb1abdb13c553d971f2a0db44da83eab2f45b5",
+        "expected.npy": "37324a9104f9967021f924da028e353122d601a0a206e4d7d73b7ed99835f6e4",
+        "fixture.json": "a26f23312b6a072e5eec2d858316af551370178ca9ad7080afe4e553196d9afc",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "inputs-and-weights.npz": "3e3a50be1c946f227d6a1bceb0a08796d64c59e84672d022edb2d328ed2a4f02",
+        "model.tflite": "ee96647ced725eaf90d298d8b5442a97878e5cc93cd0e06aa72c5686b0a1b308",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "7c66bca180e400713253116ab52cfd4c1e0ecb581a565128acd955cd225402ad",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "03-fp32-t2-gelu_tanh-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 3.642579474161245e-09,
+      "max_relative_error": 9.903222245426404e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "f9265ecdbbf084d0f1df37849d7e406e00032a4a0eb0894e0cf925c97d2fdc68",
+        "expected.npy": "2c57a9a256ac29bb02daf3c2e1256ed9a1b4c958dee7d50a4024965b403aa426",
+        "fixture.json": "9314609f937938d99723e81e718183793eba96cd336c14c684b0e2f8840bef0f",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "inputs-and-weights.npz": "3e3a50be1c946f227d6a1bceb0a08796d64c59e84672d022edb2d328ed2a4f02",
+        "model.tflite": "1b388600e72d87b7ee1377b1f2a7cd13ec3d7a4b48c8985c910f5348667c0573",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "e63b205ed1fa15f99cfc419cc4ad2ff99e503233f21c8cc9ae6c396aa38d75d9",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "04-fp32-t8-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 6.877335978483501e-09,
+      "max_relative_error": 9.946456469569372e-06,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "81e563ed7816ed2bd78e43f32c2c7ad55df983eee51957177a80fae4ef4667bf",
+        "expected.npy": "a22647cc907f3252e8d4bcd96346746243f3f38137a3a23c725f8ffbbd98b76e",
+        "fixture.json": "000664cd54b9b9a928a4c4db06a8326866ddb0f4b8102eab4d329407146c117f",
+        "input-0.bin": "874d6062811d8f76b2353cf1e2a7998966fcae049bb99f7ae496cb167d670702",
+        "input-1.bin": "7e1eb5beb13b6e9eb7d7e99ae8777366e7459ba12d434c5555598f1e83bfa932",
+        "input-2.bin": "65d0120f5589cf938374bd529e1930e876833e7328e10a486346f6a284daad9a",
+        "inputs-and-weights.npz": "7186be7e0d8ef13333bd84cf3fcacc6e4fd309b6544e70ae033afec2d2797dd2",
+        "model.tflite": "5798c81f16efaa5ed629e08d4ff9744188ba400d310baf243224fe7f3e9c98dc",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "49a340c587e80d2c336e04cbbf60f18a52db1f9d5c80e05f2283e5650f47f572",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "05-fp32-t8-gelu_tanh-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 6.254659956628217e-09,
+      "max_relative_error": 7.27430020912781e-06,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "5371aa7a9d08e54ab24bd73338de08b7edacce7d8eb51d3524795ea12d9833f8",
+        "expected.npy": "f6b2ba899e1cc89f67c49448363170fb344dcab4e11caed980497651b7e50a98",
+        "fixture.json": "04f396dc2531f26b3b22024c1ab06034a15c98307051d5265a451104b387be73",
+        "input-0.bin": "874d6062811d8f76b2353cf1e2a7998966fcae049bb99f7ae496cb167d670702",
+        "input-1.bin": "7e1eb5beb13b6e9eb7d7e99ae8777366e7459ba12d434c5555598f1e83bfa932",
+        "input-2.bin": "65d0120f5589cf938374bd529e1930e876833e7328e10a486346f6a284daad9a",
+        "inputs-and-weights.npz": "7186be7e0d8ef13333bd84cf3fcacc6e4fd309b6544e70ae033afec2d2797dd2",
+        "model.tflite": "88e1a3bd9b7eff5b25b415737d9d0e901e7f4213dcec9a3204f2e97b7c1c671d",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "66973f974969e987843cb6e8fee203e0db45b882585e4ce38b16026edeefaf90",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "06-int8-t1-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 4.859556628628026e-10,
+      "max_relative_error": 9.504410248342422e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "5be8cb5f8dca3a7e2264f91cb4200058de704b36ba366ea9edf81bdfcac94526",
+        "expected.npy": "2e6f89b5614be0d61d7576b3fd672dfceff39161cb8767da27c58564a825e364",
+        "fixture.json": "c283679e2f7c034deafdbd8919ebe107ae2e0417a2d2cbd25b004cb582aacc6d",
+        "input-0.bin": "1ec8f62ec8fc8c9f91ebd1e1447f005103400331ba154e2f4328cc6121e67629",
+        "input-1.bin": "f633e9518f5b32b89ac3a512c3ecd22f9e164d02d2c3120ac859886cf658d598",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "inputs-and-weights.npz": "0df3640ec17f7c0ac00d2a125310b1c28746099d5d7fcadfd600ff9e0939df6c",
+        "model.tflite": "ca1df5c37772512e791060e7b6a23c9aa66e671526a8d230bc8017636ab6446e",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "20b3bc49b01b8428a9a5722a71f99bd965cc9e682eb93e29621dece683dc8cd8",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "07-int8-t1-gelu_tanh-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.023143831810347e-09,
+      "max_relative_error": 2.7081530075094523e-06,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "9d13727273f1323bb434b9213d6f3e7769a1a1cfb347d10db1c006b1df4dd2d0",
+        "expected.npy": "4875f3b1308162aca3d1903643e9a3c7e6dcec301301b133ed79f59a302f6d03",
+        "fixture.json": "dffc2e9a4b7223ab3125a693306784e0c6c3cbbbb2097ff8a48e483a7bc673fc",
+        "input-0.bin": "1ec8f62ec8fc8c9f91ebd1e1447f005103400331ba154e2f4328cc6121e67629",
+        "input-1.bin": "f633e9518f5b32b89ac3a512c3ecd22f9e164d02d2c3120ac859886cf658d598",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "inputs-and-weights.npz": "0df3640ec17f7c0ac00d2a125310b1c28746099d5d7fcadfd600ff9e0939df6c",
+        "model.tflite": "1c2bfc1126b6886e56a1cf2047fdeda988e36a1a26f502f2585039922e28db00",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "5cae8aa901e39f6eba761f32da56a039a5275f0b205971933471505b93d6e4ba",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "08-int8-t2-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.019277138386565e-09,
+      "max_relative_error": 1.6116692502283262e-06,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "cdacfb4e3d0be0250105eb0ab99def1fc78d6888913ed17ab9b5ea68e1324efd",
+        "expected.npy": "93987758dd1e335ce5894f07c7dccce7caf84a24bbc3d7405adf98bdda21c26b",
+        "fixture.json": "60c4cc7450165d4eba1429d53d51ed59008ca81dfd4e6612ad8059d9e77c8319",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "inputs-and-weights.npz": "86c221dcff4aca203c26f68fbd3c34765b27f027fa25e874419b08dc81aa3915",
+        "model.tflite": "83e5a0a1f57913145de1a0611077aa506323241fcdc537b6fa6c0e44ecbae0fa",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "f35cbda9b5172a6280f8163a89a848ef8b963b0c6db673de6f1c448544d09583",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "09-int8-t2-gelu_tanh-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 8.316314182438278e-10,
+      "max_relative_error": 4.825456976116355e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "ba24a0402a31ada9e0070da4efe057d3ba9909ac71113cecf3877cd325b39f08",
+        "expected.npy": "ff30c632f53e3be4a9090cb60472e2b1487fa9bd0c2a61c5019fd2de8c9f32b2",
+        "fixture.json": "912939a8d8777524098d27541b85aad72dd6eeff2f070baa23af42838163be4c",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "inputs-and-weights.npz": "86c221dcff4aca203c26f68fbd3c34765b27f027fa25e874419b08dc81aa3915",
+        "model.tflite": "14b57b5392177943a3d7cf9ac9d19e704781a8daa9845d203a464efde5bd5315",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "4c5a890ae6c30b3dc22e8dd9755961837a5777f5f1ae75e4fb683bde03a86a73",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "10-int8-t8-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 2.27096300965679e-09,
+      "max_relative_error": 5.827464306398875e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "e1b2ad5472d4bbe491227e651afc8266a0d11bb2326fb18ceb8839828f17d08e",
+        "expected.npy": "a6cc01ee44b487ab49a50a39be45b268e99e051e3e5b325db34e6507d4200887",
+        "fixture.json": "d20be7fe14266b61014cc3b67b1bd1f63000dcc6876b863a33d5713b1f2641fa",
+        "input-0.bin": "874d6062811d8f76b2353cf1e2a7998966fcae049bb99f7ae496cb167d670702",
+        "input-1.bin": "7e1eb5beb13b6e9eb7d7e99ae8777366e7459ba12d434c5555598f1e83bfa932",
+        "input-2.bin": "65d0120f5589cf938374bd529e1930e876833e7328e10a486346f6a284daad9a",
+        "inputs-and-weights.npz": "d5b95fc95083658bc571c4faf4d740c826a52364724faca1a74ccdb5595f56e1",
+        "model.tflite": "167b8aade3654a3621ffa378abb95c77bdffaefd10f4a8d331e6f9db126de109",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "889d07d29e97ed459d00ca104e187353083fc059e729c2af91342eeb2dfe4fbe",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "11-int8-t8-gelu_tanh-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 2.695308036655686e-09,
+      "max_relative_error": 7.843325865100288e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "704ea2bc3e7588e0b5b073257dc7fa5429f762b38a34662ea5bab9548cc16b26",
+        "expected.npy": "13862df036b55a3f426c71b6e8576bc47be8d6fb4d2f71c3025d2c91fd20c1ca",
+        "fixture.json": "ae66df453cdde7cf75c008462e4eb32bcc7bb54e36dcaba5ba2aee6e9f1b6334",
+        "input-0.bin": "874d6062811d8f76b2353cf1e2a7998966fcae049bb99f7ae496cb167d670702",
+        "input-1.bin": "7e1eb5beb13b6e9eb7d7e99ae8777366e7459ba12d434c5555598f1e83bfa932",
+        "input-2.bin": "65d0120f5589cf938374bd529e1930e876833e7328e10a486346f6a284daad9a",
+        "inputs-and-weights.npz": "d5b95fc95083658bc571c4faf4d740c826a52364724faca1a74ccdb5595f56e1",
+        "model.tflite": "3c6e2146b7f829478736f4c4ef909137424d54d4dcad2f175b59435ed1c8cacd",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "67a2da23054e9111a13714f34a20cce19de9b5581b7694964ae265dd73639b68",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "12-int4-t1-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 4.147371465354488e-10,
+      "max_relative_error": 1.8567318530853697e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "acd37bfae81eccaa9b23eb80631854c27c246ed413a6f88cc227a6b841930aef",
+        "expected.npy": "27892375cc9f7a1f169d93a151052a0d986b76a663f0fc627d4cef1ab6837323",
+        "fixture.json": "125b880e2aeea839ea12df8e28e1fe3e4dd3a0ef88390c8893c46eedd1cef76d",
+        "input-0.bin": "1ec8f62ec8fc8c9f91ebd1e1447f005103400331ba154e2f4328cc6121e67629",
+        "input-1.bin": "f633e9518f5b32b89ac3a512c3ecd22f9e164d02d2c3120ac859886cf658d598",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "inputs-and-weights.npz": "cdd6f1f75be437b3efe56e9badf83101f5fdbd8ddec2ead54bdd70da6f8026c7",
+        "model.tflite": "2c6d974bfde8b1c2c1e155124ecfa92b50dcfaadb2c37f75347b55b27ac7a6c4",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "2dc8139cdf245ad2ae0922b514f67d95fac464d8343e174e981eefd41d49acfb",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "13-int4-t1-gelu_tanh-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 5.533474910918157e-10,
+      "max_relative_error": 1.2695988298422215e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "1375c2fc179baec4ed26dc36721227cefd2cffc2d14165f08fb124c36f2bcc7d",
+        "expected.npy": "f6fd48fc259e85f4f2c395cd19ba2698de7e8d39c60f7db73f9bc09cbef16285",
+        "fixture.json": "8be130742ff697e31506fc40286ac59b28655779317375234ae577ee795c6fa1",
+        "input-0.bin": "1ec8f62ec8fc8c9f91ebd1e1447f005103400331ba154e2f4328cc6121e67629",
+        "input-1.bin": "f633e9518f5b32b89ac3a512c3ecd22f9e164d02d2c3120ac859886cf658d598",
+        "input-2.bin": "d86e8112f3c4c4442126f8e9f44f16867da487f29052bf91b810457db34209a4",
+        "inputs-and-weights.npz": "cdd6f1f75be437b3efe56e9badf83101f5fdbd8ddec2ead54bdd70da6f8026c7",
+        "model.tflite": "3f27477e0bc4c566b6a79051f985d78fc1208ee878211afb88c91245d5599374",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "28c1d5df8c2570c8e2c22ffe6a11be5f04bd2063b24d52578f3093c998942d3e",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "14-int4-t2-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.6087435411593631e-09,
+      "max_relative_error": 0.00013011880137802525,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "7845d1ed507a907b08a403b08f8c3442122b75a4db56ebbd2cd7fc0f001ac34b",
+        "expected.npy": "4ea7d88d11bce247cb301189315aa22598fc3f56d5d0c211e9f1fa1ffca8c80c",
+        "fixture.json": "1b24bc27df332da1b4cb4ef459385badd7806e530e49067dca9fb32dff8618fd",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "inputs-and-weights.npz": "67c6ac5b129728bd6b669527e62752493ec3491b93b233f3212dabca1e62297c",
+        "model.tflite": "0ec08149c004a897199aa808cb132f0d7055cf1c18bffe701e7464a99afae8c9",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "79b472756cf5440f168b5bd5ddfdc2b995924256cdb7ed7a9460534cee405295",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "15-int4-t2-gelu_tanh-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 7.592274716902714e-10,
+      "max_relative_error": 3.321680710311952e-05,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "3af580c47d74082633645a77486a4ec910777854882f0bc23e186dc387268ab3",
+        "expected.npy": "8eeb58ae090c95bc5d80d6588a2bbc7e84c4ec027178414f3f1f2822dd88844d",
+        "fixture.json": "969a7dff6ee92fcd495ac65fcceeb2b726a465b5a8c446caa3ccaf2612848cbb",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "inputs-and-weights.npz": "67c6ac5b129728bd6b669527e62752493ec3491b93b233f3212dabca1e62297c",
+        "model.tflite": "37b2a62290dda5155a76673c5269bcf2ea7eb87a8612385b6df8597e971ce32d",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "9e47218f04c1d0ec2006bc81e7895060afdc3639d60fd16fa1f83d3b3efd1685",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "16-int4-t8-gelu-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.7299736122800002e-09,
+      "max_relative_error": 7.499668623467759e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "64ba59f0f3fe986549f6b3580edd54dcf28bf21d812dd279185b50493ec4f97c",
+        "expected.npy": "c21c32b72ca620a70c3af45b69899ed8be7fd04cb313a8936205c58b7afd6f28",
+        "fixture.json": "2892c915d116fecbb8743552e0c274e7be01400db23b9288aac3ac5451d9f71b",
+        "input-0.bin": "874d6062811d8f76b2353cf1e2a7998966fcae049bb99f7ae496cb167d670702",
+        "input-1.bin": "7e1eb5beb13b6e9eb7d7e99ae8777366e7459ba12d434c5555598f1e83bfa932",
+        "input-2.bin": "65d0120f5589cf938374bd529e1930e876833e7328e10a486346f6a284daad9a",
+        "inputs-and-weights.npz": "bae52fd0eff3f5c1b0a2c4667dc6f2382aefdc234a8fc7fc4716fd3b3e033580",
+        "model.tflite": "c023f8167632b794acb57cee84087f268592e6a900bec98e2111db6a6139e7be",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "e1c8a344cb9c179da5cf3ca628a82c6f04746cf1bb20e45b4a8a4ad36a1dffef",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "17-int4-t8-gelu_tanh-standard",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.6558118660914278e-09,
+      "max_relative_error": 9.428784550356679e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "5aa0ddb61af52e2c1961949965e8f7b412adb84e2583394bf73eec8e4fe7bfcf",
+        "expected.npy": "ebe66f841be47818e9b866dceb7e73c31f77f815c3a3e33e822ba1193c7090fb",
+        "fixture.json": "ff7193ada246f3cc0fe49f36ecd40ee49d84b681a0cc7a24a082ed4919ece742",
+        "input-0.bin": "874d6062811d8f76b2353cf1e2a7998966fcae049bb99f7ae496cb167d670702",
+        "input-1.bin": "7e1eb5beb13b6e9eb7d7e99ae8777366e7459ba12d434c5555598f1e83bfa932",
+        "input-2.bin": "65d0120f5589cf938374bd529e1930e876833e7328e10a486346f6a284daad9a",
+        "inputs-and-weights.npz": "bae52fd0eff3f5c1b0a2c4667dc6f2382aefdc234a8fc7fc4716fd3b3e033580",
+        "model.tflite": "2d8832a40b2d0d1c3d9874bcdd4c9ffc028b08c6b8264a08ce56b161199a71c3",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "ad651ef4f93f3795282b1ff726b086fdde2529c9b539ebe78437caa9a34d7587",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "18-fp32-t2-gelu-duplicates",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.2618437648936887e-09,
+      "max_relative_error": 3.141180742829339e-07,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "d1c89cd3e6d840af8813d44bd15a1ee3d7b2b0c661ac80dd06d8154933326525",
+        "expected.npy": "bc56a440ffc2eda26bd1cd876e045f46367327c1b34188422efb644c061029ed",
+        "fixture.json": "4f6e27798a27e513b9c547ed64a3c83588c24614f89283acea5e877d4392ea23",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "1b897dddd4c151e2a2e6e3e91b7ea0f7fc4fd5ed00ef1c9669e8566393a02586",
+        "inputs-and-weights.npz": "2ae0ba093c3094dd2ac63218e533ada2bfd2483c626eaeeb6c4fff8b54e78473",
+        "model.tflite": "ee96647ced725eaf90d298d8b5442a97878e5cc93cd0e06aa72c5686b0a1b308",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "c67526a5dae382440dba0d84676e6566cbbdfd35bdb53fb0dc6cbd89369ebd2f",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "19-fp32-t2-gelu-negative_indices",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 2.0615361845995744e-09,
+      "max_relative_error": 1.1478147460489508e-06,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "8de41a654c45e13a406be48ac5bb1abdb13c553d971f2a0db44da83eab2f45b5",
+        "expected.npy": "37324a9104f9967021f924da028e353122d601a0a206e4d7d73b7ed99835f6e4",
+        "fixture.json": "ebd19d58ec5e325345c0dbbabc462ba8ca4e840ef68e85b7a94c87a7d4f036ba",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "c24eb866fdbc46a78c0552a697b14f25c0fa2f124a56b58db75139a26236b027",
+        "inputs-and-weights.npz": "ae3f7f1d3f0dad3596455b4b2b620f330402019f2d148897664a8a70533dfdb5",
+        "model.tflite": "ee96647ced725eaf90d298d8b5442a97878e5cc93cd0e06aa72c5686b0a1b308",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "131af1047fee49354468fcce903774966892659809f7c6676ba6e0c2fa18b4fe",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "20-fp32-t2-gelu-zero_routes",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.8418858352582668e-09,
+      "max_relative_error": 5.738027291758146e-06,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "2bc347e68759a52b9adc82c1f1bdeb3ab42673603d0e1d4fa829ca6e44b098d9",
+        "expected.npy": "e59b783e55c54b6dda531749221a9a563325fb796c9c6b157668bfcf71c3ac3e",
+        "fixture.json": "7af248273046794887ecdc0064f679c5d624a981c045937609f190cba1b4e6e2",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "8e7360158f2593a422e72b3a7c392b88e55a42ba94e0a1e6c055159f9f61fb22",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "inputs-and-weights.npz": "c877b436c75b7cbffea9fc2db05db8dfe74e9e2cdb68235ef57b55a825def8fb",
+        "model.tflite": "ee96647ced725eaf90d298d8b5442a97878e5cc93cd0e06aa72c5686b0a1b308",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "8aaeb8317a4a94dd3afa795026c63f433eba3f9cec10f8661037d2aa57b7c8bc",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "21-fp32-t2-gelu-swapped_routes",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 2.0615361845995744e-09,
+      "max_relative_error": 1.1478147460489508e-06,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "8de41a654c45e13a406be48ac5bb1abdb13c553d971f2a0db44da83eab2f45b5",
+        "expected.npy": "37324a9104f9967021f924da028e353122d601a0a206e4d7d73b7ed99835f6e4",
+        "fixture.json": "5c0f67a49856888fee6da1ad57db234eeefb902bec03fa212ed66a6f27b744eb",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "6e053308fb7c1d1a4babce29d885ea09e4c7c81e03c47f9921e97a5891a24bb4",
+        "input-2.bin": "eb022bfd3951a8c640be717afc98806f3673be3454b4fe2f9bdac0e9b1f29416",
+        "inputs-and-weights.npz": "5a4d2acf6c3cb51243852460378524b1a7aa4031ed23b12ab2e0b1596348c787",
+        "model.tflite": "ee96647ced725eaf90d298d8b5442a97878e5cc93cd0e06aa72c5686b0a1b308",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "484ccb8e42e2346331fe5c7f94938f445acf1ae7965b6507161c3519da1afa2b",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    },
+    {
+      "name": "22-fp32-t2-gelu-invalid_high",
+      "returncode": 2,
+      "expected_behavior": "runtime_error",
+      "invoke_completed": false,
+      "status": "EXPECTED_REJECTION",
+      "files": {
+        "fixture.json": "66546916bddea82031bb48a474d532fc71f25ff38160d93a3c5505413d805bcb",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "6256a4b0be4127b6ff9fa076fe7595961bc296521bd01220f64c6f95768c1fdd",
+        "inputs-and-weights.npz": "566a420e5dede3c1bf7450a0322daed04e04426b4acdc7e1615c28d594436e55",
+        "model.tflite": "ee96647ced725eaf90d298d8b5442a97878e5cc93cd0e06aa72c5686b0a1b308",
+        "runtime.json": "5baee30c68b82267d806b4cad61bdfa85cdd1258cd658a3965617f418787976b",
+        "stderr.log": "a01b60a01d62bd49b53ffa525f086eb60f80b6be1c4c51d73efcf06822356e64",
+        "stdout.log": "2d620199b55973c68ba2204e30bc1c15fb2f50550194e306954c0a49376afe7e"
+      }
+    },
+    {
+      "name": "23-fp32-t2-gelu-invalid_low",
+      "returncode": 2,
+      "expected_behavior": "runtime_error",
+      "invoke_completed": false,
+      "status": "EXPECTED_REJECTION",
+      "files": {
+        "fixture.json": "624dae35d18c34cf38b8c5f74ae0dc072d219b073d45718205cfaabd687a25f9",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "f3cfcec151bee55465a5b69580aac223ceeb45badef75b37273a3c7a0d14d277",
+        "inputs-and-weights.npz": "1ad4a51913f87ada06004a697ad1d54aaf4f977b76e729416624fdaad5a2af55",
+        "model.tflite": "ee96647ced725eaf90d298d8b5442a97878e5cc93cd0e06aa72c5686b0a1b308",
+        "runtime.json": "5baee30c68b82267d806b4cad61bdfa85cdd1258cd658a3965617f418787976b",
+        "stderr.log": "04c4ae3f883588b59cd8a88c17a079467a14f8a1ac62e6e124383fe55041c265",
+        "stdout.log": "2d620199b55973c68ba2204e30bc1c15fb2f50550194e306954c0a49376afe7e"
+      }
+    },
+    {
+      "name": "24-fp32-t2-gelu-unsupported_activation",
+      "returncode": 2,
+      "expected_behavior": "runtime_error",
+      "invoke_completed": false,
+      "status": "EXPECTED_REJECTION",
+      "files": {
+        "fixture.json": "b7e006fdb55002e5bb9c946f3d0970fa690975473a6e9284f2f92d5fa2674bf1",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "inputs-and-weights.npz": "3e3a50be1c946f227d6a1bceb0a08796d64c59e84672d022edb2d328ed2a4f02",
+        "model.tflite": "06fa70141158b414e0427347f45b4081932df7893f6338b7f9e55abb5c1e5410",
+        "runtime.json": "5baee30c68b82267d806b4cad61bdfa85cdd1258cd658a3965617f418787976b",
+        "stderr.log": "98ceb62096107e031060812b7abde1c50cbd1f17d1f3164a3aee39d98d61c569",
+        "stdout.log": "2d620199b55973c68ba2204e30bc1c15fb2f50550194e306954c0a49376afe7e"
+      }
+    },
+    {
+      "name": "25-int4-t2-gelu-int8_storage",
+      "returncode": 0,
+      "expected_behavior": "numerical_match",
+      "invoke_completed": true,
+      "max_abs_error": 1.6087435411593631e-09,
+      "max_relative_error": 0.00013011880137802525,
+      "status": "PASS",
+      "files": {
+        "actual.npy": "7845d1ed507a907b08a403b08f8c3442122b75a4db56ebbd2cd7fc0f001ac34b",
+        "expected.npy": "4ea7d88d11bce247cb301189315aa22598fc3f56d5d0c211e9f1fa1ffca8c80c",
+        "fixture.json": "a147c5e501bf32568c2fc4b9fc0866979455cff297be7e09ca68b83b604e4421",
+        "input-0.bin": "f4fad9724009a561a52528db1b1485e6b88a151869cd2df112ecca8e5975da2c",
+        "input-1.bin": "9ebfeb4936c5e577581b1cc72301b4d7c62ae63cd322861515d014ca153a7d6f",
+        "input-2.bin": "1066d714b87c7e4579867e8ea219fa264cd2b30c7b0bc897fd071f16354d4865",
+        "inputs-and-weights.npz": "67c6ac5b129728bd6b669527e62752493ec3491b93b233f3212dabca1e62297c",
+        "model.tflite": "4a7e09125847cd136c5d4b8f80c3ae9137d4ec7526754fd495f4c20db5d2a5e0",
+        "runtime.json": "7397980434e5b417c2e197e4244d54142baec792d515880fd52113dae7ecb06d",
+        "stderr.log": "d5ea2e75852864af7c69f9712380b1b1a9f23a7664b05af86affbd6e53a7947f",
+        "stdout.log": "1ce00f207b888accbe370a0c26ccf9bc546307f5f197a001e15b9c00e55d1641"
+      }
+    }
+  ],
+  "limitations": [
+    "No full language model, router, quality, performance, peak memory, GPU or NPU test.",
+    "Default CPU compilation options; no custom MoE opt-in flag or custom kernel was registered.",
+    "INT4 tests use even input dimensions and two equally sized groups per row.",
+    "The prebuilt binary is not proven to be built from the pinned analysis commit."
+  ],
+  "finished_at_utc": "2026-09-13T04:05:50.068070+00:00",
+  "counts": {
+    "PASS": 23,
+    "EXPECTED_REJECTION": 3,
+    "FAIL": 0
+  }
+}

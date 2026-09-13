@@ -4,6 +4,7 @@
 
 **工作区锚点**（新会话开工前先确认）：
 - LiteRT-LM 源码位于 `/Users/dpthinker/workspace/LiteRT-LM`；全书锁定 release/v0.17.0 对应 tag **v0.17.0**（提交 `e9fd8c53ff968071774206163027dd84bedfe925`，已冻结）。核对代码用独立 worktree `/Users/dpthinker/workspace/LiteRT-LM-v0.17.0`，不扰动 main 工作区
+- 第 10 章下探到同一 release 锁定的 LiteRT 提交 `9fe5be45564c868408e6514c8aabb83e211a0911`，独立 checkout 为 `/Users/dpthinker/workspace/LiteRT-moe-9fe5be4`。该依赖的代码块使用 `LiteRT/` 前缀，并同时提供外部源码脚注；源码检查器必须验证该冻结版本，不能跳过。litert-torch 仅作导出端独立分析，版本和兼容边界在该章明示
 - 术语表 `appendix/glossary.md` 即附录 A 正文，新术语随改动同步维护
 - 书稿仓库为私有；开源与否未决策前，不向任何外部渠道发布内容片段
 

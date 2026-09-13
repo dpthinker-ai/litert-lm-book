@@ -17,7 +17,7 @@ from pathlib import Path
 
 import fitz
 
-from finalize_pdf import UNITS as FINAL_PDF_UNITS, get_font
+from finalize_pdf import UNITS as FINAL_PDF_UNITS
 
 
 EPSILON = 0.75
@@ -159,7 +159,9 @@ def choose_pages(
     while start < total_height - EPSILON:
         nominal = min(total_height, start + usable)
         # 页尾对齐到行边界或不可拆块的顶/底，避免切在行中间或图前残页
-        idx = bisect.bisect_right(cands, nominal + EPSILON) - 1
+        # Snapping may retreat but must not advance: two tolerance-based
+        # snaps can otherwise accumulate beyond one page's height tolerance.
+        idx = bisect.bisect_right(cands, nominal) - 1
         if idx >= 0 and cands[idx] > start + EPSILON:
             nominal = cands[idx]
         end, reason = adjust_boundary(start, nominal, unit_starts, ranges)
@@ -217,7 +219,7 @@ def choose_pages(
         # 对齐后复用 adjust_boundary 的迭代回退（会循环处理嵌套的 keep 冲突，
         # 如「标题块 ⊃ 列表顶」的逐级回退）；仅当对齐位置落入「跨越页首的
         # 不可拆块」（含亚像素重叠）时改推进到块底，且不得越过单元起点。
-        idx = bisect.bisect_right(cands, end + EPSILON) - 1
+        idx = bisect.bisect_right(cands, end) - 1
         if idx >= 0 and cands[idx] > start + EPSILON:
             snapped = cands[idx]
             span_top = None
@@ -435,9 +437,6 @@ def render_pages(
     usable = float(metadata["contentHeight"])
     gap = float(metadata.get("footnoteGap", 0.0))
     notes = {item["key"]: item for item in metadata.get("footnotes", [])}
-    references = metadata.get("footnoteRefs", [])
-    _, fname, fontfile = get_font()
-    seen_notes: set[str] = set()
     output = fitz.open()
 
     for spec in pages:
@@ -460,35 +459,14 @@ def render_pages(
                 width=0.55,
             )
             cursor_y = footnote_top + gap * scale
-            ref_nums = {
-                r["key"]: r["number"]
-                for r in references
-                if float(r["y"]) + EPSILON >= start and
-                float(r["y"]) < end - EPSILON
-            }
             for key in spec["footnotes"]:
                 note = notes[key]
-                if key in seen_notes:
-                    # 跨页重复引用：只给短指针，完整出处见首次引用页
-                    num = ref_nums.get(key)
-                    label = f"{num}. 出处同前注。" if num else "出处同前注。"
-                    page.insert_text(
-                        (side_margin + 2, cursor_y + 7),
-                        label, fontname=fname, fontfile=fontfile,
-                        fontsize=7.5, color=(0.34, 0.36, 0.42),
-                    )
-                else:
-                    seen_notes.add(key)
-                    place_source_range(
-                        page,
-                        source,
-                        offsets,
-                        page_width,
-                        float(note["top"]),
-                        float(note["bottom"]),
-                        cursor_y,
-                        scale,
-                    )
+                # Every referencing page carries the full source; pagination
+                # already reserves the full note height, including repeats.
+                place_source_range(
+                    page, source, offsets, page_width,
+                    float(note["top"]), float(note["bottom"]), cursor_y, scale,
+                )
                 cursor_y += float(note["height"]) * scale
 
     return output

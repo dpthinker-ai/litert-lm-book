@@ -1,0 +1,18 @@
+{
+  "weight_type": "fp32",
+  "tokens": 2,
+  "activation": "gelu",
+  "scenario": "standard",
+  "attrs": {
+    "num_experts": 3,
+    "num_active_experts": 2,
+    "model_dim": 4,
+    "hidden_dim": 6,
+    "weight_type": "fp32",
+    "activation": "gelu"
+  },
+  "expected_behavior": "numerical_match",
+  "oracle": "float64 direct per-token/per-route GEMM, erf GELU or tanh GELU; signed quant values expanded independently",
+  "rtol": 2e-05,
+  "atol": 2e-06
+}

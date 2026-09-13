@@ -86,19 +86,27 @@
 
 ## 第 10 章
 
-1. `target_px` 为 \\(256 \times 16 \times 16 = 65536\\)；`factor` 为 \\(\sqrt{65536 \div (768 \times 512)} \approx 0.408\\)。理想尺寸约为 313.5 × 209.0，按 `side_mult`（\\(1 \times 16 = 16\\)）向下对齐后得到 304 × 208；patch 数为 19 × 13 = 247。无输出 mask 且 `patch_num_shrink_factor = 4` 时，visual token 数为 \\(\lceil 247 \div 4 \rceil = 62\\)。
-2. 视觉、音频占位符分别为 −1、−2。执行管理器按模态 embedding 行数或有效 token 数插入等量占位符，`EmbeddingLookupMultiModal` 再逐行替换；见第 10 章图像、音频 embedding 替换两节。
-3. 每个 token 的混合 KV 数据量为 \\(2 \times 2 \times (20 \times 256 + 4 \times 512) \times 1\ \text{B} = 28\ \text{KiB}\\)。280 个 visual token 因而对应 \\(280 \times 28\ \text{KiB} = 7.65625\ \text{MiB}\\)，约 7.66 MiB。`model_dimension = 2560` 是主干 embedding 宽度；KV 容量由各层的 KV 头数、头维度和数据类型决定，二者不能互换。
-4. `features[1, 204, 1536]` 表示 batch 为 1、编码器输出有 204 个特征位置、每个位置宽 1536。原始 log-mel 帧此前还经过分块和编码器缩减，不能把 204 解释为原始频谱帧数。
-5. FC 文法保证 `call:函数名` 后接可选参数对象的结构、参数值词法与 EOF，不保证函数在白名单中、参数满足完整 schema、调用者有权限或目标可执行。应用仍须完成这些检查并处理执行错误与结果回填；见第 10 章“Tool Use：结构解析与应用执行”。
-6. 实现时序为：首步 `ProcessLogits(s0) → Sample(y0)`；下一步先 `UpdateState(y0)`，再 `ProcessLogits(s1) → Sample(y1)`；第三步先提交 `y1`，再处理 logits 并采样 `y2`。`y2` 只在下一步开始时提交。首步传入执行器的是 prefill 留下的最后一个输入 token，并非约束采样生成的 token，因此不能用它推进约束状态；见第 10 章“状态推进发生在下一次采样之前”。
-7. 最先返回错误的是 Gemma 4 模型数据处理器调用的共享多模态转换 helper：它消费唯一的图像标记后发现图像队列仍有一项，返回 `Provided more images than expected in the prompt.`。错误发生在消息与模板标记配对阶段，视觉执行器尚未运行；见第 10 章“按数据边界定位多模态输入失败”。
-8. 宿主先规范化目标路径，只允许写入授权根目录，并拒绝越界、符号链接跳转和超限内容；再按当前用户、资源和操作重新授权。幂等键必须来自可信请求上下文，写入采用可恢复的原子提交；外部适配器设置超时、取消与重试上限。结果只回填最小结构化状态、receipt 或错误码，并裁剪、转义和脱敏。parser 输出仍是不可信输入，LiteRT-LM 不负责文件系统授权或副作用一致性；见第 10 章“Tool Use：结构解析与应用执行”。
+1. 总参数为 0.4B + 16×8×0.05B = 6.8B，激活参数为 0.4B + 16×2×0.05B = 2.0B。理想 INT4 分别约 3.17 GiB、0.93 GiB；后者只是选中参数的表示大小。量化元数据、源权重实际驻留、后端副本、KV cache 和工作区尚未计入。
+2. 共 8 条分派，专家并集为 4，各专家收到 2 行。全部选择 `{0,1}` 后仍为 8 条分派，并集降为 2，专家 0、1 各收 4 行，专家 2、3 没有输入；矩阵计算总量相同，理想权重读取量和每专家矩阵形状改变。
+3. 期望为 `16×(1−(1−2/16)^8)`，约 10.50。它假定不同 token 独立均匀选择专家，未描述真实内容相关性、缓存容量、淘汰策略及跨 step 访问顺序，因此不能直接预测缓存命中率。
+4. 没有。它减少了当前计算的专家范围，但源权重仍包含全部专家，且另外分配 FP32 临时表示。应记录源文件映射及物理驻留、后端分配、最长 prefill 后的临时区高水位、逐 step 专家集合和缺页/读入事件。
+5. 保存逐 step 时延、路由与缓存命中序列，并将读入、布局转换和同步事件对齐到同一时钟。另记录可取得的设备频率、温度和持续运行条件。集中未命中应与换入等待关联；无未命中而等待同步或频率下降时，再分别追查后端和设备状态，平均吞吐不能区分这几类原因。
 
 ## 第 11 章
 
+1. `target_px` 为 \\(256 \times 16 \times 16 = 65536\\)；`factor` 为 \\(\sqrt{65536 \div (768 \times 512)} \approx 0.408\\)。理想尺寸约为 313.5 × 209.0，按 `side_mult`（\\(1 \times 16 = 16\\)）向下对齐后得到 304 × 208；patch 数为 19 × 13 = 247。无输出 mask 且 `patch_num_shrink_factor = 4` 时，visual token 数为 \\(\lceil 247 \div 4 \rceil = 62\\)。
+2. 视觉、音频占位符分别为 −1、−2。执行管理器按模态 embedding 行数或有效 token 数插入等量占位符，`EmbeddingLookupMultiModal` 再逐行替换；见第 11 章图像、音频 embedding 替换两节。
+3. 每个 token 的混合 KV 数据量为 \\(2 \times 2 \times (20 \times 256 + 4 \times 512) \times 1\ \text{B} = 28\ \text{KiB}\\)。280 个 visual token 因而对应 \\(280 \times 28\ \text{KiB} = 7.65625\ \text{MiB}\\)，约 7.66 MiB。`model_dimension = 2560` 是主干 embedding 宽度；KV 容量由各层的 KV 头数、头维度和数据类型决定，二者不能互换。
+4. `features[1, 204, 1536]` 表示 batch 为 1、编码器输出有 204 个特征位置、每个位置宽 1536。原始 log-mel 帧此前还经过分块和编码器缩减，不能把 204 解释为原始频谱帧数。
+5. FC 文法保证 `call:函数名` 后接可选参数对象的结构、参数值词法与 EOF，不保证函数在白名单中、参数满足完整 schema、调用者有权限或目标可执行。应用仍须完成这些检查并处理执行错误与结果回填；见第 11 章“Tool Use：结构解析与应用执行”。
+6. 实现时序为：首步 `ProcessLogits(s0) → Sample(y0)`；下一步先 `UpdateState(y0)`，再 `ProcessLogits(s1) → Sample(y1)`；第三步先提交 `y1`，再处理 logits 并采样 `y2`。`y2` 只在下一步开始时提交。首步传入执行器的是 prefill 留下的最后一个输入 token，并非约束采样生成的 token，因此不能用它推进约束状态；见第 11 章“状态推进发生在下一次采样之前”。
+7. 最先返回错误的是 Gemma 4 模型数据处理器调用的共享多模态转换 helper：它消费唯一的图像标记后发现图像队列仍有一项，返回 `Provided more images than expected in the prompt.`。错误发生在消息与模板标记配对阶段，视觉执行器尚未运行；见第 11 章“按数据边界定位多模态输入失败”。
+8. 宿主先规范化目标路径，只允许写入授权根目录，并拒绝越界、符号链接跳转和超限内容；再按当前用户、资源和操作重新授权。幂等键必须来自可信请求上下文，写入采用可恢复的原子提交；外部适配器设置超时、取消与重试上限。结果只回填最小结构化状态、receipt 或错误码，并裁剪、转义和脱敏。parser 输出仍是不可信输入，LiteRT-LM 不负责文件系统授权或副作用一致性；见第 11 章“Tool Use：结构解析与应用执行”。
+
+## 第 12 章
+
 1. 好处是 C++ 对象布局不进入 ABI；只要 C 函数签名、所有权与行为契约保持兼容，内部类布局可以调整。代价是调用方只能通过句柄和 C 函数操作对象，不能直接访问成员，也需要为创建、错误与生命周期设计显式接口。
-2. 两个案例的外部来源、版本条件和完整分析见 11.8 节。题目前一个案例讨论 Swift `Conversation` 的确定释放，后一个案例讨论 Swift actor `Engine` 的销毁线程。两者涉及不同对象与故障表现：前一个案例不能证明 v0.17.0 核心 Engine 普遍只支持一个 Session，后一个案例也不能替代 Conversation 的生命周期证据。
+2. 两个案例的外部来源、版本条件和完整分析见 12.8 节。题目前一个案例讨论 Swift `Conversation` 的确定释放，后一个案例讨论 Swift actor `Engine` 的销毁线程。两者涉及不同对象与故障表现：前一个案例不能证明 v0.17.0 核心 Engine 普遍只支持一个 Session，后一个案例也不能替代 Conversation 的生命周期证据。
 3. 本章两个 `const char*` 示例都由所属句柄持有，调用方不得单独 `free`。response 文本在 `LiteRtLmResponses` 删除前有效；渲染结果还会在下一次渲染时被覆盖。绑定层若需更长生命周期，必须在相应失效点之前复制；继续访问失效指针会形成悬空引用。
 4. 停止词、暂存和采样编排都以 token id 序列为输入，与 id 的产生方式无关；脚本化的假执行器给出确定的 id 流即可覆盖这些逻辑。此类测试不能覆盖量化误差、后端数值差异或真实性能。
 5. 创建：`litert_lm_engine_settings_create`、必要的 settings setter、`litert_lm_engine_create`，再用 `litert_lm_engine_create_session(engine, NULL)` 采用默认会话配置。使用：调用 `litert_lm_input_data_create` 创建输入句柄，把句柄指针数组交给 `litert_lm_session_run_prefill`，再调用 `litert_lm_session_run_decode`，通过 responses getter 复制所需文本。销毁：输入提交后对每个输入句柄调用 `litert_lm_input_data_delete`；每个返回的 responses 调 `litert_lm_responses_delete`，随后依次调用 `litert_lm_session_delete`、`litert_lm_engine_delete` 与 `litert_lm_engine_settings_delete`。若绑定层另建 session config，也要包装对应的 create/delete。

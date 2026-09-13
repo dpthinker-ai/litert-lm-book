@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="400" viewBox="0 0 840 400" role="img" aria-label="图 10-3 专家缓存命中、按需读入与成功预取的等待位置">
+<defs><style>
+.bg{fill:var(--fig-bg,#ffffff)} .box{fill:var(--fig-surface,#f3f6fb);stroke:var(--fig-border,#cdd7e5);stroke-width:1.4} .hi{fill:var(--fig-surface-2,#e7f0ff);stroke:var(--fig-accent,#0b57d0);stroke-width:1.6} .wait{fill:var(--fig-surface-2,#fff0db);stroke:var(--fig-accent-2,#b56a00);stroke-width:1.4} text{font-family:'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:16px;fill:var(--fig-text,#1f2328)} .small{font-size:14px;fill:var(--fig-text-soft,#526174)} .title{font-size:20px;font-weight:600} .line{fill:none;stroke:var(--fig-accent,#0b57d0);stroke-width:1.6;marker-end:url(#arrow)}
+</style><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#0b57d0"/></marker></defs><rect class="bg" width="840" height="400"/>
+<text x="24" y="33" class="title">时间向右：预取要提前完成，才能覆盖路由后的换入等待</text>
+<text x="24" y="87" class="">缓存命中</text>
+<text x="24" y="173" class="">按需读入</text>
+<text x="24" y="259" class="">成功预取</text>
+<rect x="200" y="61" width="210" height="45" rx="8" class="box"/>
+<text x="214" y="88" class="">当前层路由</text>
+<rect x="425" y="61" width="245" height="45" rx="8" class="hi"/>
+<text x="439" y="88" class="">专家计算</text>
+<path class="line" d="M410,83 L421,83"/>
+<rect x="200" y="147" width="210" height="45" rx="8" class="box"/>
+<text x="214" y="174" class="">当前层路由</text>
+<rect x="425" y="147" width="170" height="45" rx="8" class="wait"/>
+<text x="439" y="174" class="">读入 / 转换</text>
+<rect x="610" y="147" width="205" height="45" rx="8" class="hi"/>
+<text x="624" y="174" class="">专家计算</text>
+<path class="line" d="M410,169 L421,169"/>
+<path class="line" d="M595,169 L606,169"/>
+<rect x="200" y="233" width="210" height="45" rx="8" class="box"/>
+<text x="214" y="260" class="">当前层路由</text>
+<rect x="425" y="233" width="245" height="45" rx="8" class="hi"/>
+<text x="439" y="260" class="">专家计算</text>
+<path class="line" d="M410,255 L421,255"/>
+<rect x="130" y="293" width="270" height="42" rx="8" class="wait"/>
+<text x="144" y="320" class="">提前读入 / 转换</text>
+<path class="line" d="M400,313 L425,281"/>
+<text x="24" y="370" class="small">示意图不表示实测时长；错误预取会占用带宽和容量，且仍可能需要等待。</text>
+</svg>

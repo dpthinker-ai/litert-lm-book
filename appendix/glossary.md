@@ -61,12 +61,21 @@
 | drafter / verify | 草稿模型 / 验证 | 9 | drafter 草拟候选 token，base 模型的 verify signature 一次验一串 |
 | 聚合接受比例 | aggregate acceptance ratio | 9 | 日志中的 verified/drafted；等于每轮接受前缀长度的期望除以草拟步数 G，不等同于逐位独立命中概率 |
 | bonus token | — | 9 | 首个不匹配处或草稿全部匹配时，base 模型给出的一个额外 token；它使每轮至少返回 1 个 token，不保证性能收益 |
-| patchify | — | 10 | 把图像划分为正方形 patch，供视觉执行器编码为 embedding |
-| 约束解码 | constrained decoding | 10 | 每步采样前把当前语法状态下不合法的 token logit 设为 `-inf`；只保证符合给定语法，不保证参数语义或函数可执行 |
-| Tool Use | 工具调用 | 10 | 模型输出结构化函数调用，运行时可解析为调用对象；权限检查、实际执行与结果回填由应用层负责 |
-| 信任边界 | trust boundary | 10 | 数据跨越该边界后才获得执行权限；模型文本与 parser 输出仍须由宿主完成 allowlist、schema 和授权检查 |
-| llguidance | — | 10 | 约束解码的语法引擎（Rust 库，经 C bridge 即 llguidance.h 的纯 C 接口接入），逐步给出合法 token 位图 |
-| ANTLR | — | 10 | 文法解析器生成器；tool_use 用它的 .g4 文法把函数调用文本解析回结构 |
-| C ABI | — | 11 | 用不透明句柄与 C 函数提供稳定原生边界；Python 与 Swift 使用该层，Kotlin 和 Web 另有 JNI/Embind 路径 |
-| 不透明句柄 | opaque handle | 11 | 跨语言边界传递指针而不暴露 C++ 类型；create/delete 成对管理生命周期 |
-| FFI | — | 11 | 外部函数接口；本书涉及 ctypes、Swift C 互操作、JNI 与 Embind 等不同原生边界机制 |
+| 专家 | expert | 10 | MoE 中可独立选择的前馈参数分组；不保证对应可命名的知识领域 |
+| 总参数量 / 激活参数量 | total / active parameters | 10 | 模型包含的全部参数与某次前向选中的参数范围；均不等于实际驻留内存 |
+| 路由器 | router | 10 | 根据当前隐藏向量产生专家分数，供模型选择专家及混合系数 |
+| Top-k 路由 | top-k routing | 10 | 每个 token 选择 K 个专家；选择对象与词表 top-k 采样不同 |
+| token 分派 | token dispatch | 10 | 按专家聚合输入行，并保留 token 与 route 位置供输出合并 |
+| 负载不均衡 | load imbalance | 10 | 不同专家收到的输入行数不同，影响矩阵形状和并行完成时间 |
+| 专家缓存 | expert cache | 10 | 按专家访问保留已准备的权重，与编译 weight cache 区别；本章作为设计选择讨论 |
+| 预取 | prefetch | 10 | 在数据实际需要之前发起传输；收益依赖预测准确度及可重叠时间 |
+| 自定义算子 | custom op | 10 | 以自定义名称和输入契约表示的图节点；能解析不等于目标后端可执行 |
+| patchify | — | 11 | 把图像划分为正方形 patch，供视觉执行器编码为 embedding |
+| 约束解码 | constrained decoding | 11 | 每步采样前把当前语法状态下不合法的 token logit 设为 `-inf`；只保证符合给定语法，不保证参数语义或函数可执行 |
+| Tool Use | 工具调用 | 11 | 模型输出结构化函数调用，运行时可解析为调用对象；权限检查、实际执行与结果回填由应用层负责 |
+| 信任边界 | trust boundary | 11 | 数据跨越该边界后才获得执行权限；模型文本与 parser 输出仍须由宿主完成 allowlist、schema 和授权检查 |
+| llguidance | — | 11 | 约束解码的语法引擎（Rust 库，经 C bridge 即 llguidance.h 的纯 C 接口接入），逐步给出合法 token 位图 |
+| ANTLR | — | 11 | 文法解析器生成器；tool_use 用它的 .g4 文法把函数调用文本解析回结构 |
+| C ABI | — | 12 | 用不透明句柄与 C 函数提供稳定原生边界；Python 与 Swift 使用该层，Kotlin 和 Web 另有 JNI/Embind 路径 |
+| 不透明句柄 | opaque handle | 12 | 跨语言边界传递指针而不暴露 C++ 类型；create/delete 成对管理生命周期 |
+| FFI | — | 12 | 外部函数接口；本书涉及 ctypes、Swift C 互操作、JNI 与 Embind 等不同原生边界机制 |

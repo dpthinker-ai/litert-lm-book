@@ -21,13 +21,13 @@
     <rect class="layer l3" x="120" y="260" width="440" height="46" rx="5"/>
   </g>
   <text class="t"  x="140" y="66"  style="font-size:13px;font-weight:700">① 对外接口层</text>
-  <text class="ts" x="140" y="83"  style="font-size:11px">Engine / Session · CLI · C API · 语言绑定（边界各异）　〔第 3、11 章〕</text>
+  <text class="ts" x="140" y="83"  style="font-size:11px">Engine / Session · CLI · C API · 语言绑定（边界各异）　〔第 3、12 章〕</text>
   <text class="t"  x="140" y="120" style="font-size:13px;font-weight:700">② 对话与编排层</text>
   <text class="ts" x="140" y="137" style="font-size:11px">对话/模板 · prefill→decode 编排　〔第 3、4、5 章〕</text>
   <text class="t"  x="140" y="174" style="font-size:13px;font-weight:700">③ 推理执行层</text>
   <text class="ts" x="140" y="191" style="font-size:11px">LiteRT 模型执行 · KV 状态 · 后端适配　〔第 6、8、9 章〕</text>
   <text class="t"  x="140" y="228" style="font-size:13px;font-weight:700">④ 组件层</text>
-  <text class="ts" x="140" y="245" style="font-size:11px">tokenizer · 采样 · 约束解码　〔第 5、10 章〕</text>
+  <text class="ts" x="140" y="245" style="font-size:11px">tokenizer · 采样 · 约束解码　〔第 5、11 章〕</text>
   <text class="t"  x="140" y="282" style="font-size:13px;font-weight:700">⑤ 格式与基础设施层</text>
   <text class="ts" x="140" y="299" style="font-size:11px">.litertlm 格式 · 模型资源 · 运行设施　〔第 7 章〕</text>
   <!-- 应用入口 -->

@@ -18,6 +18,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 DEFAULT_SOURCE = REPO.parent / "LiteRT-LM-v0.17.0"
+DEFAULT_LITERT_SOURCE = REPO.parent / "LiteRT-moe-9fe5be4"
+EXPECTED_LITERT_COMMIT = "9fe5be45564c868408e6514c8aabb83e211a0911"
 EXPECTED_SOURCE_COMMIT = "e9fd8c53ff968071774206163027dd84bedfe925"
 CODE_SPAN = re.compile(r"`([^`\n]+)`")
 SOURCE_REF = re.compile(
@@ -35,7 +37,17 @@ ANNOTATION = re.compile(r"\s+(?://|#)\s*\(\d+\)\s*$")
 OMISSION = re.compile(r"\s*(?://|#)\s*\.\.\.")
 
 
-def check_source_excerpts(text: str, source: Path) -> tuple[int, list[str]]:
+def source_target(path: str, source: Path, litert_source: Path | None = None) -> Path:
+    if path.startswith("LiteRT/"):
+        if litert_source is None:
+            raise ValueError("LiteRT source required for dependency quotation")
+        return litert_source / path.removeprefix("LiteRT/")
+    return source / path
+
+
+def check_source_excerpts(
+    text: str, source: Path, litert_source: Path | None = None
+) -> tuple[int, list[str]]:
     """Check local source quotations, preserving indentation and source order."""
     errors: list[str] = []
     checked = 0
@@ -53,7 +65,7 @@ def check_source_excerpts(text: str, source: Path) -> tuple[int, list[str]]:
         if len(paths) != 1:
             errors.append(f"{first_line}: split quotations from different files")
             continue
-        target = source / refs[0].group("path")
+        target = source_target(refs[0].group("path"), source, litert_source)
         if not target.is_file():
             continue  # The anchor check reports the missing file.
         source_lines = target.read_text(encoding="utf-8").splitlines()
@@ -72,7 +84,7 @@ def check_source_excerpts(text: str, source: Path) -> tuple[int, list[str]]:
             except ValueError:
                 errors.append(
                     f"{first_line + offset}: quoted line absent or out of order "
-                    f"in {target.relative_to(source)}: {original!r}"
+                    f"in {refs[0].group('path')}: {original!r}"
                 )
     return checked, errors
 
@@ -92,7 +104,23 @@ def main() -> None:
         default=Path(os.environ.get("LITERT_LM_SOURCE", DEFAULT_SOURCE)),
         help="LiteRT-LM v0.17.0 source worktree",
     )
+    parser.add_argument(
+        "--litert-source", type=Path,
+        default=Path(os.environ.get("LITERT_SOURCE", DEFAULT_LITERT_SOURCE)),
+        help="LiteRT checkout pinned by LiteRT-LM v0.17.0",
+    )
     args = parser.parse_args()
+    litert_source = args.litert_source.resolve()
+    try:
+        litert_commit = subprocess.run(
+            ["git", "-C", str(litert_source), "rev-parse", "HEAD"],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise SystemExit(f"cannot read frozen LiteRT checkout: {litert_source}") from error
+    if litert_commit != EXPECTED_LITERT_COMMIT:
+        raise SystemExit(f"LiteRT commit mismatch: expected {EXPECTED_LITERT_COMMIT}, got {litert_commit}")
+
     source = args.source.resolve()
     if not source.is_dir():
         raise SystemExit(f"source worktree not found: {source}")
@@ -122,7 +150,7 @@ def main() -> None:
     for manuscript in manuscript_files():
         relative = manuscript.relative_to(REPO)
         count, excerpt_errors = check_source_excerpts(
-            manuscript.read_text(encoding="utf-8"), source
+            manuscript.read_text(encoding="utf-8"), source, litert_source
         )
         excerpt_count += count
         errors.extend(f"{relative}:{error}" for error in excerpt_errors)
@@ -144,7 +172,7 @@ def main() -> None:
                         end = int(ref.group("end") or start)
                         key = (ref_path, start, end)
                         checked.add(key)
-                        target = source / ref_path
+                        target = source_target(ref_path, source, litert_source)
                         if not target.is_file():
                             errors.append(
                                 f"{relative}:{number}: missing source file {ref_path}"
@@ -176,7 +204,7 @@ def main() -> None:
                     end = int(ref.group("end") or start)
                     key = (ref_path, start, end)
                     checked.add(key)
-                    target = source / ref_path
+                    target = source_target(ref_path, source, litert_source)
                     if not target.is_file():
                         candidates = sorted(source.rglob(ref_path))
                         suggestion = ""
@@ -207,13 +235,28 @@ def main() -> None:
                             f"(file has {line_counts[target]} lines)"
                         )
 
+    dependency_paths = sorted({
+        path.removeprefix("LiteRT/")
+        for path, _, _ in checked if path.startswith("LiteRT/")
+    })
+    for path in dependency_paths:
+        original = subprocess.run(
+            ["git", "-C", str(litert_source), "show", f"{EXPECTED_LITERT_COMMIT}:{path}"],
+            capture_output=True,
+        )
+        target = litert_source / path
+        if original.returncode != 0 or not target.is_file():
+            errors.append(f"LiteRT source file missing from checkout or commit: {path}")
+            continue
+        if target.read_bytes() != original.stdout:
+            errors.append(f"LiteRT quoted source differs from frozen commit: {path}")
     if errors:
         raise SystemExit("\n".join(errors))
     commit_note = f" @ {source_commit[:12]}" if source_commit else ""
     print(
         f"source anchor check passed: {len(checked)} unique anchors, "
         f"{excerpt_count} verbatim quotations "
-        f"against {source}{commit_note}"
+        f"against {source}{commit_note}; LiteRT @ {litert_commit[:12]}"
     )
 
 

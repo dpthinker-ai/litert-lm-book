@@ -124,7 +124,7 @@ Engine 与 Session 管的是资源和状态，还没有对象负责“对话”�
   bool prefill_preface_on_init() const { return prefill_preface_on_init_; }  // (4)
 ```
 
-代码行 `(1)` `Preface` 包含对话开始时的消息、工具与额外上下文。`(2)` 调用方可以覆盖 `PromptTemplate`；未覆盖时，创建逻辑从模型元数据读取 Jinja 模板。`(3)` 该布尔值控制约束解码配置，具体应用见第 10 章。
+代码行 `(1)` `Preface` 包含对话开始时的消息、工具与额外上下文。`(2)` 调用方可以覆盖 `PromptTemplate`；未覆盖时，创建逻辑从模型元数据读取 Jinja 模板。`(3)` 该布尔值控制约束解码配置，具体应用见第 11 章。
 
 代码行 `(4)` `prefill_preface_on_init` 为 true 且 Preface 非空时，`Conversation::Create` 生成输入并调用 `RunPrefill`。头文件说明，这会增加初始化时间并缩短首次响应时间。具体差值仍需在目标设备上测量。
 
@@ -270,7 +270,7 @@ Session 已经保留先前 prefill 和 decode 形成的上下文。下一轮只�
 
 ## 3.5　prefill 输入：token id 与 embedding
 
-token id 变成向量有两种方式：由主模型在内部查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再交给模型。执行器检查模型 signature 是否包含 token 输入，并将结果保存在局部变量 `use_token_as_lookup` 中。有 token 输入时直接写入 id，否则先查 embedding，再写入 embedding 输入缓冲。主机侧查表不是所有模型的必经步骤，它主要用于多模态输入：图像与音频的 embedding 来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 10 章展开）。
+token id 变成向量有两种方式：由主模型在内部查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再交给模型。执行器检查模型 signature 是否包含 token 输入，并将结果保存在局部变量 `use_token_as_lookup` 中。有 token 输入时直接写入 id，否则先查 embedding，再写入 embedding 输入缓冲。主机侧查表不是所有模型的必经步骤，它主要用于多模态输入：图像与音频的 embedding 来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 11 章展开）。
 
 `EmbeddingLookup` 的批量 prefill 接口如下：
 
@@ -311,7 +311,7 @@ token id 变成向量有两种方式：由主模型在内部查表，或者运�
                                               input_buffers_, output_buffers_));
 ```
 
-代码行 `(1)` 负数 token 在文本路径中得到 `default_embedding_vector_`。`(2)` 非负 token 先写入输入缓冲，再调用 `compiled_model_->Run`。调用结束后，代码把输出缓冲读到指定位置。若模型配置了完整的多模态 lookup，管理器会在相同偏移调用相应实现。多模态 embedding 的接入见第 10 章。
+代码行 `(1)` 负数 token 在文本路径中得到 `default_embedding_vector_`。`(2)` 非负 token 先写入输入缓冲，再调用 `compiled_model_->Run`。调用结束后，代码把输出缓冲读到指定位置。若模型配置了完整的多模态 lookup，管理器会在相同偏移调用相应实现。多模态 embedding 的接入见第 11 章。
 
 批量重载先检查输出张量的 rank、维度与写入范围。写入循环从 `byte_offset` 指定的位置开始：
 

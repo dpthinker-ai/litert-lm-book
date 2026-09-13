@@ -1,0 +1,29 @@
+{
+  "source_commit": "9fe5be45564c868408e6514c8aabb83e211a0911",
+  "source_headers_sha256": {
+    "litert/c/litert_common.h": "d5c4a54c62f4018ce6a536e4ff600fec931aa729824d28e58c39de30fd221856",
+    "litert/c/litert_layout.h": "c16011a88f7487fa6d3e386905317cf9491d1666d5c7a7ed33e07a9f8b4cf514",
+    "litert/c/litert_model_types.h": "01cf6ea792a7f6f55690fe7acfd8d41f5a707c8ea7cb7418f71e44c84d45757a",
+    "litert/c/litert_model.h": "c409c985fc79b9f967890e475e28ab77c1fe7776874197a598438a7b2d916d8b",
+    "litert/c/litert_compiled_model.h": "e613c98b5299b0c3c130c883963d29f98a6f0b2dccc66c73b8a10bdccdcac13b",
+    "litert/c/litert_tensor_buffer.h": "2e45153e2d8510e2570f7965b2c46403445786b535c542f077ac9afda78b1274"
+  },
+  "package_metadata": {
+    "tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm-0.17.0.dist-info/METADATA": "07fd925b9ee47c4a620b553d483ac1d221aabac44901e7e4bd9f4a7101fbf00e",
+    "tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm-0.17.0.dist-info/WHEEL": "b286f1592c830e4760feb8a752d87e8f18571eaa0daa598d309637693667d94b",
+    "tmp/upgrade-v0.17.0-venv/lib/python3.12/site-packages/litert_lm-0.17.0.dist-info/RECORD": "8e892ae1a78cef6b674474697dd4a2c91d2ba9273e2ca4509c25ac72b94ce7ed"
+  },
+  "package_name": "litert-lm",
+  "package_version": "0.17.0",
+  "report_sha256": "e85b18638f66a34268b0872c85f7b35f6260a9d1939fba89183fcf9a61d179e2",
+  "all_recorded_case_hashes_verified": true,
+  "pilot": "pilot/ contains the first successful one-case bring-up and is excluded from the 26-case statistics",
+  "limitations": "The headers identify the ABI reference. Their commit is not proof that the PyPI binary was built from that commit.",
+  "supplemental_files_sha256": {
+    "package-METADATA": "07fd925b9ee47c4a620b553d483ac1d221aabac44901e7e4bd9f4a7101fbf00e",
+    "README.md": "b0762d7d90eb4366a26bba51b3bfa8430e2264228358a8be9d5dfba665e5e245",
+    "package-WHEEL": "b286f1592c830e4760feb8a752d87e8f18571eaa0daa598d309637693667d94b",
+    "package-RECORD": "8e892ae1a78cef6b674474697dd4a2c91d2ba9273e2ca4509c25ac72b94ce7ed",
+    "fixture-readback.json": "7bf443f74c13084df32130aa071139ee99b5c0cd2b6c59ad9d0c76499d3f0ad5"
+  }
+}

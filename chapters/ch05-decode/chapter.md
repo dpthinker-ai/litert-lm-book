@@ -35,7 +35,7 @@ decode 阶段的单步操作在代码里叫 `DecodeOneStep`。`Decode` 在循环
 一次 decode step 依次执行以下操作：
 
 1. 把上一个 token 送入模型并执行一次前向，得到 logits。它是词表中每个 token 的未归一化分数，维度等于词表规模。
-2. 可选地处理 logits：降低近期已出现 token 的分数（重复惩罚），或屏蔽不符合语法约束的 token（约束解码，第 10 章）。
+2. 可选地处理 logits：降低近期已出现 token 的分数（重复惩罚），或屏蔽不符合语法约束的 token（约束解码，第 11 章）。
 3. 从 logits 中采样一个 token id。
 4. 把该 id 解码成文本片段，累积到结果或传递给流式回调。
 5. 判断是否满足停止条件；若不满足，则把新 token 作为下一步的输入。
@@ -46,6 +46,8 @@ decode 阶段的单步操作在代码里叫 `DecodeOneStep`。`Decode` 在循环
 {{#include figs/fig-5-1.svg}}
 <figcaption>图 5-1　取消在迭代开始时检查；内部与外部采样汇合后，代码先处理文本与流式回调，再执行 ShouldStop。</figcaption>
 </figure>
+
+MoE 的生成循环仍然按 step 推进，但相邻 step 可能选择不同专家。因此，单步激活参数量不能代表长时间生成的累计专家工作集；相关访问与驻留分析见 10.4、10.5 节。
 
 ## 5.2　两条路径：内部采样与外部采样
 
