@@ -231,7 +231,7 @@ def span_size_counts(page, counts):
 
 
 def heading_blocks(page, body_size):
-    """返回该页字号明显大于正文（≥ 1.15 倍）的文本块，文字已压缩，按阅读顺序。
+    """返回该页字号明显大于正文（≥ 1.15 倍）的文本块及文本行，文字已压缩。
     正文字号须在全部章节页面上统一估计：单页按众数估计会在代码块占比高的页面
     把正文误判为标题。"""
     blocks = []
@@ -242,12 +242,18 @@ def heading_blocks(page, body_size):
                  if s["text"].strip()]
         if spans and max(s["size"] for s in spans) >= body_size * 1.15:
             blocks.append(squash_text("".join(s["text"] for s in spans)))
+            # WebKit 可把局部字形行与完整标题放进同一个块；块前缀此时可能
+            # 是缺标点的“11 5”，仍须识别后面的完整“11.5 …”文本行。
+            for line in b.get("lines", []):
+                line_spans = [s for s in line.get("spans", []) if s["text"].strip()]
+                if line_spans and max(s["size"] for s in line_spans) >= body_size * 1.15:
+                    blocks.append(squash_text("".join(s["text"] for s in line_spans)))
     return blocks
 
 
 def find_section_pages(doc, chapter_ranges, chapter_unit_indices, raw_starts):
     """按节号在各章页面范围内定位标题所在页。
-    只认字号大于正文、且以节号开头的文本块，不逐字比对标题：WebKit 的 PDF 字体
+    只认字号大于正文、且以节号开头的文本块或文本行，不逐字比对标题：WebKit 的 PDF 字体
     会把部分汉字编码成 NFKC 无法还原的部首兼容字（如“⻚”“⻬”），标题里的代码字
     还会被重复提取。打印用的标题文字取自 SUMMARY.md（去掉反引号），其与章内标题
     的一致性由 check_book_consistency.py 在构建时保证。
@@ -284,7 +290,7 @@ def find_section_pages(doc, chapter_ranges, chapter_unit_indices, raw_starts):
                     scan_from = p
                     break
             else:
-                print(f"warning: 目录定位失败，已跳过：{sec_title}", file=sys.stderr)
+                raise RuntimeError(f"目录定位失败：{sec_title}；拒绝生成缺少节级书签的 PDF")
     return results
 
 

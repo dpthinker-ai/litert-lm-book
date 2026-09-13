@@ -280,3 +280,19 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_full_model_check.py \
 输出与缓存目录必须不存在。脚本请求 GPU，关闭思考与投机解码，固定贪心采样，并记录引擎创建、会话创建和生成阶段。模型声明可能改变实际选择的后端，须结合原生日志判断；请求 GPU 不等于已经执行 GPU。
 
 脚本适用于 macOS，每隔约 0.25 秒采样进程 RSS 和系统内存压力。在超过设定时间、RSS 上限、系统进入 critical 内存压力或监控失败时停止子进程。停止检查有采样延迟，终止后另有 3 秒退出宽限；这些设置不是严格的资源隔离，也不是峰值内存测量。`GENERATION_COMPLETED` 仅表示一次生成和清理完成，`RUNTIME_ERROR` 表示运行时异常，`STOPPED_BY_GUARD` 表示采集器主动终止，其他未完整结束的调用记为 `INCOMPLETE`。只有第一种状态返回退出码 0；质量和性能需要另测。
+
+## 十一、INT8 MoE 元数据诊断
+
+复用第七、八节的环境和附录 D 第十八节的两份原始 INT8 导出产物。采集器先核对来源与动态库哈希，再生成诊断副本；各例使用新进程执行，不覆盖既有模型或报告。
+
+```bash
+tmp/moe-export-recheck-venv/bin/python experiments/moe_int8_gpu_check.py \
+  --exports experiments/data/2026-09-13/moe-export \
+  --worker-python tmp/moe-venv/bin/python \
+  --library /path/to/litert_lm/liblitert-lm.dylib \
+  --output tmp/moe-int8-gpu-recheck
+```
+
+输出目录必须不存在。16 项覆盖元数据补齐、字段扰动、CPU 对照与量化权重还原为 FP32 的 GPU 对照。CPU 比较精确 GELU，GPU 比较 tanh-GELU；报告另存与原始 PyTorch 输出的差异，不能把改过独立 scale 的诊断输出直接当作原模型正确性测试。
+
+`invoke_completed` 仅记录运行 API 成功返回。采集器另检查 WebGPU 的 `Validation error:` 日志，将其归为 `BACKEND_VALIDATION_ERROR`，优先于数值比较结果。即使覆盖接口为 true，也必须排除后端验证错误后才能计为有效执行证据。脚本退出 0 只表示记录完整；应读取逐例状态，不能解释为 INT8 GPU 兼容性通过。完整结果与边界见附录 D 第二十一节。

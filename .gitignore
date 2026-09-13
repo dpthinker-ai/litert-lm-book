@@ -18,3 +18,4 @@ __pycache__/
 !experiments/data/2026-09-13/moe-layer/**/model.tflite
 !experiments/data/2026-09-13/moe-export/**/model.tflite
 !experiments/data/2026-09-13/moe-gpu/**/model.tflite
+!experiments/data/2026-09-13/moe-int8-gpu/**/model.tflite

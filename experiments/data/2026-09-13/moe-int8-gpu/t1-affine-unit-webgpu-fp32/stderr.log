@@ -1,0 +1,55 @@
+INFO: [environment.cc:36] Creating LiteRT environment with options
+WARNING: [npu_registry.cc:34] NPU accelerator could not be loaded and registered: kLiteRtStatusErrorInvalidArgument.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0x100db9f40, name=GPU WebGPU
+INFO: [gpu_registry.cc:109] Statically linked GPU accelerator registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0x100db9fa0, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+INFO: [compiled_model.cc:835] Flatbuffer model initialized directly from incoming litert model.
+INFO: [delegate_webgpu.cc:322] Create WebGPU environment (use_low_power=0, enable_host_mapped_pointer=1)
+I0000 00:00:1789291323.416514 6482577 environment.cc:526] Selected adapter: Apple M5 Pro, arch=metal-3, vendor=apple, backend=Metal, adapterType=Integrated GPU
+INFO: [delegate_webgpu.cc:343] Created a WebGPU environment.
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+INFO: [gpu_environment.cc:367] Failed to create OpenCL context.
+INFO: [gpu_environment.cc:384] Created default Metal device.
+INFO: [gpu_environment.h:155] Created LiteRT GpuEnvironment.
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+I0000 00:00:1789291323.432263 6482577 delegate_webgpu.cc:731] # of threads to upload weights = 0
+I0000 00:00:1789291323.432271 6482577 delegate_webgpu.cc:739] # of threads to compile kernels = 0
+I0000 00:00:1789291323.432352 6482577 delegate_kernel.cc:912] Initializing WebGPU-based API from graph.
+E0000 00:00:1789291323.434178 6482577 environment.cc:105] Validation error: Binding entry buffer not set.
+ - While validating entries[2] against { binding: 2, visibility: ShaderStage::Compute, buffer: {type: BufferBindingType::ReadOnlyStorage, minBindingSize: 0, hasDynamicOffset: 0} }.
+ - While validating [BindGroupDescriptor] against [BindGroupLayout (unlabeled)]
+ - While calling [Device].CreateBindGroup([BindGroupDescriptor]).
+E0000 00:00:1789291323.434194 6482577 environment.cc:105] Validation error: Binding entry buffer not set.
+ - While validating entries[2] against { binding: 2, visibility: ShaderStage::Compute, buffer: {type: BufferBindingType::ReadOnlyStorage, minBindingSize: 0, hasDynamicOffset: 0} }.
+ - While validating [BindGroupDescriptor] against [BindGroupLayout (unlabeled)]
+ - While calling [Device].CreateBindGroup([BindGroupDescriptor]).
+E0000 00:00:1789291323.434206 6482577 environment.cc:105] Validation error: Binding entry buffer not set.
+ - While validating entries[2] against { binding: 2, visibility: ShaderStage::Compute, buffer: {type: BufferBindingType::ReadOnlyStorage, minBindingSize: 0, hasDynamicOffset: 0} }.
+ - While validating [BindGroupDescriptor] against [BindGroupLayout (unlabeled)]
+ - While calling [Device].CreateBindGroup([BindGroupDescriptor]).
+E0000 00:00:1789291323.438808 6482577 environment.cc:105] Validation error: Error while parsing WGSL: :51:48 error: unresolved value 'scale'
+  var w_scale : vec4<f32>= vec4<f32>(vec4<f32>(scale, scale, scale, scale));
+                                               ^^^^^
+
+
+ - While calling [Device].CreateShaderModule([ShaderModuleDescriptor]).
+E0000 00:00:1789291323.438823 6482577 environment.cc:105] Validation error: [Invalid ShaderModule (unlabeled)] is invalid due to a previous error.
+ - While validating compute stage ([Invalid ShaderModule (unlabeled)], entryPoint: "main").
+ - While calling [Device].CreateComputePipeline([ComputePipelineDescriptor]).
+E0000 00:00:1789291323.439185 6482577 environment.cc:105] Validation error: Error while parsing WGSL: :51:48 error: unresolved value 'scale'
+  var w_scale : vec4<f32>= vec4<f32>(vec4<f32>(scale, scale, scale, scale));
+                                               ^^^^^
+
+
+ - While calling [Device].CreateShaderModule([ShaderModuleDescriptor]).
+E0000 00:00:1789291323.439189 6482577 environment.cc:105] Validation error: [Invalid ShaderModule (unlabeled)] is invalid due to a previous error.
+ - While validating compute stage ([Invalid ShaderModule (unlabeled)], entryPoint: "main").
+ - While calling [Device].CreateComputePipeline([ComputePipelineDescriptor]).
+E0000 00:00:1789291323.446577 6482577 environment.cc:105] Validation error: [Invalid BindGroup (unlabeled)] is invalid due to a previous error.
+ - While encoding [ComputePassEncoder (unlabeled)].SetBindGroup(0, [Invalid BindGroup (unlabeled)], 0, ...).
+ - While finishing [CommandEncoder (unlabeled)].
+E0000 00:00:1789291323.446592 6482577 environment.cc:105] Validation error: [Invalid CommandBuffer] is invalid due to a previous error.
+ - While calling [Queue].Submit([[Invalid CommandBuffer]])
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0x100db9fa0, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0x100db9f40, name=GPU WebGPU

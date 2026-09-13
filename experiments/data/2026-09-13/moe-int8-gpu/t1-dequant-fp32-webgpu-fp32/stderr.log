@@ -1,0 +1,20 @@
+INFO: [environment.cc:36] Creating LiteRT environment with options
+WARNING: [npu_registry.cc:34] NPU accelerator could not be loaded and registered: kLiteRtStatusErrorInvalidArgument.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0x1013ac2e0, name=GPU WebGPU
+INFO: [gpu_registry.cc:109] Statically linked GPU accelerator registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0x796904000, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+INFO: [compiled_model.cc:835] Flatbuffer model initialized directly from incoming litert model.
+INFO: [delegate_webgpu.cc:322] Create WebGPU environment (use_low_power=0, enable_host_mapped_pointer=1)
+I0000 00:00:1789291324.116501 6482617 environment.cc:526] Selected adapter: Apple M5 Pro, arch=metal-3, vendor=apple, backend=Metal, adapterType=Integrated GPU
+INFO: [delegate_webgpu.cc:343] Created a WebGPU environment.
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+INFO: [gpu_environment.cc:367] Failed to create OpenCL context.
+INFO: [gpu_environment.cc:384] Created default Metal device.
+INFO: [gpu_environment.h:155] Created LiteRT GpuEnvironment.
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+I0000 00:00:1789291324.132850 6482617 delegate_webgpu.cc:731] # of threads to upload weights = 0
+I0000 00:00:1789291324.132858 6482617 delegate_webgpu.cc:739] # of threads to compile kernels = 0
+I0000 00:00:1789291324.132936 6482617 delegate_kernel.cc:912] Initializing WebGPU-based API from graph.
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0x796904000, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0x1013ac2e0, name=GPU WebGPU
