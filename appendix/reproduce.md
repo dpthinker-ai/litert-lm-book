@@ -51,6 +51,8 @@ bazel-bin/runtime/engine/litert_lm_main --backend=cpu --model_path=<你的模型
 experiments/bench_baseline.sh          # backend×context 矩阵，每条件 3 次，输出存 experiments/data/
 ```
 
+Android 数据尚未用 v0.17.0 重跑。下表 Android 项目的“已做”指 v0.13.1 的历史采集；本轮新版性能重测仅覆盖 Mac。
+
 各章实验、状态与证据如下。“未做”表示当前没有可报告的测量结果：
 
 | 章 | 实验 | 状态 | 命令或证据 |
