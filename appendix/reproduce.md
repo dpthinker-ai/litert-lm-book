@@ -357,3 +357,19 @@ tmp/moe-venv/bin/python experiments/moe_web_check.py \
 每次使用新的输出目录。测试 26B 时替换模型路径、SHA-256 和输出目录，文件哈希取第十节记录。采集器只启动并关闭自己的浏览器配置，调用原始演示的本地文件加载入口，再请求一次短响应。它不调整用户正在运行的其他应用。`GENERATION_COMPLETED` 要求生成完成回调、引擎关闭、进程正常退出，且没有页面或 console error；不是只检查加载完成。
 
 保护条件和实际结果见附录 D 第二十四节。触发压力阈值的运行按 `STOPPED_BY_GUARD` 归档，不能计入吞吐或质量统计，也不应为取得一次成功记录而自动放宽保护条件。浏览器版本、适配器信息、资源哈希和原始响应均随本次运行保存；若更换浏览器或演示资源，应作为新的环境记录。原始执行脚本另存为数据目录中的 `worker-at-run.mjs`；当前 worker 仅将检查点保存改为原子替换，以免强制终止留下半份 JSON，采集后的差异记在 `collection-notes.json`。
+
+## 十五、完整 MoE 的低上下文补测
+
+复用第十节的环境、采集器与完整 GPU 文件。沿用 RSS 与内存压力保护，将时限设为 120 秒，先验证一次短生成：
+
+```bash
+tmp/moe-full-recheck-venv/bin/python experiments/moe_full_model_check.py \
+  --model /path/to/gemma-4-26B-A4B-it-gpu.litertlm \
+  --sha256 94bbde2453dd9b67c61c16017af331e5841cbbd9edf83bd2f84bc73e2a7cbdb1 \
+  --output tmp/moe-low-context-recheck --cache tmp/moe-low-context-cache \
+  --context 128 --output-tokens 1 --timeout 120
+```
+
+输出目录与缓存目录须为新目录。默认提示词要求仅返回 OK。第二项把提示词改为 `In one short sentence, explain what RAM stores.`，并将 `--output-tokens` 改为 32，另用新的输出和缓存目录。本次两项分别成功和被压力保护停止，详见附录 D 第二十五节；它们不是只改变一个变量的性能对照。
+
+只有 `GENERATION_COMPLETED`、返回文本、正常清理与退出码共同满足，才计为短生成完成。读取日志核对实际 Artisan／Metal 路径和上下文设置；不要把创建成功或无 Python 异常当作完整输出证据。持续性能测量还需另行记录首 token 和逐 step 事件。
