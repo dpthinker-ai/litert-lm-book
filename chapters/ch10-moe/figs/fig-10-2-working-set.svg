@@ -1,61 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="840" height="366" viewBox="0 0 840 366" role="img" aria-label="图 10-2 相同激活专家数下的单 token 与多 token 专家工作集">
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="366" viewBox="0 0 840 366" role="img" aria-label="图 10-2 Gemma 4 的 128 选 8 路由在单 token、集中分派和分散分派下的专家工作集核算">
 <defs><style>
-.bg{fill:var(--fig-bg,#ffffff)} .box{fill:var(--fig-surface,#f3f6fb);stroke:var(--fig-border,#cdd7e5);stroke-width:1.4} .hi{fill:var(--fig-surface-2,#e7f0ff);stroke:var(--fig-accent,#0b57d0);stroke-width:1.6} .wait{fill:var(--fig-surface-2,#fff0db);stroke:var(--fig-accent-2,#b56a00);stroke-width:1.4} text{font-family:'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:16px;fill:var(--fig-text,#1f2328)} .small{font-size:14px;fill:var(--fig-text-soft,#526174)} .title{font-size:20px;font-weight:600} .line{fill:none;stroke:var(--fig-accent,#0b57d0);stroke-width:1.6;marker-end:url(#arrow)}
-</style><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#0b57d0"/></marker></defs><rect class="bg" width="840" height="366"/>
-<text x="24" y="33" class="title">E = 8、K = 2：并行位置增加，不等于每个专家都获得大批量</text>
-<text x="24" y="76" class="">单 token：2 条分派，U = 2</text>
-<text x="433" y="76" class="">8 个 token：16 条分派，示例 U = 8</text>
-<rect x="24" y="96" width="82" height="62" rx="8" class="hi"/>
-<text x="38" y="123" class="">e0</text>
-<text x="38" y="146" class="">1 行</text>
-<rect x="119" y="96" width="82" height="62" rx="8" class="hi"/>
-<text x="133" y="123" class="">e1</text>
-<text x="133" y="146" class="">1 行</text>
-<rect x="214" y="96" width="82" height="62" rx="8" class="box"/>
-<text x="228" y="123" class="">e2</text>
-<text x="228" y="146" class="">0 行</text>
-<rect x="309" y="96" width="82" height="62" rx="8" class="box"/>
-<text x="323" y="123" class="">e3</text>
-<text x="323" y="146" class="">0 行</text>
-<rect x="24" y="172" width="82" height="62" rx="8" class="box"/>
-<text x="38" y="199" class="">e4</text>
-<text x="38" y="222" class="">0 行</text>
-<rect x="119" y="172" width="82" height="62" rx="8" class="box"/>
-<text x="133" y="199" class="">e5</text>
-<text x="133" y="222" class="">0 行</text>
-<rect x="214" y="172" width="82" height="62" rx="8" class="box"/>
-<text x="228" y="199" class="">e6</text>
-<text x="228" y="222" class="">0 行</text>
-<rect x="309" y="172" width="82" height="62" rx="8" class="box"/>
-<text x="323" y="199" class="">e7</text>
-<text x="323" y="222" class="">0 行</text>
-<rect x="433" y="96" width="82" height="62" rx="8" class="hi"/>
-<text x="447" y="123" class="">e0</text>
-<text x="447" y="146" class="">2 行</text>
-<rect x="528" y="96" width="82" height="62" rx="8" class="hi"/>
-<text x="542" y="123" class="">e1</text>
-<text x="542" y="146" class="">2 行</text>
-<rect x="623" y="96" width="82" height="62" rx="8" class="hi"/>
-<text x="637" y="123" class="">e2</text>
-<text x="637" y="146" class="">2 行</text>
-<rect x="718" y="96" width="82" height="62" rx="8" class="hi"/>
-<text x="732" y="123" class="">e3</text>
-<text x="732" y="146" class="">2 行</text>
-<rect x="433" y="172" width="82" height="62" rx="8" class="hi"/>
-<text x="447" y="199" class="">e4</text>
-<text x="447" y="222" class="">2 行</text>
-<rect x="528" y="172" width="82" height="62" rx="8" class="hi"/>
-<text x="542" y="199" class="">e5</text>
-<text x="542" y="222" class="">2 行</text>
-<rect x="623" y="172" width="82" height="62" rx="8" class="hi"/>
-<text x="637" y="199" class="">e6</text>
-<text x="637" y="222" class="">2 行</text>
-<rect x="718" y="172" width="82" height="62" rx="8" class="hi"/>
-<text x="732" y="199" class="">e7</text>
-<text x="732" y="222" class="">2 行</text>
-<rect x="24" y="265" width="382" height="59" rx="8" class="box"/>
-<text x="38" y="292" class="">理想 INT4 权重项：4 FLOPs/byte</text>
-<rect x="433" y="265" width="382" height="59" rx="8" class="box"/>
-<text x="447" y="292" class="">此例的权重项：8 FLOPs/byte</text>
-<text x="24" y="350" class="small">右侧为人工均匀分派示例；真实 nₑ 需要记录，不能从 prompt 长度直接推定。</text>
+.bg{fill:var(--fig-bg,#ffffff)} .box{fill:var(--fig-surface,#f3f6fb);stroke:var(--fig-border,#cdd7e5);stroke-width:1.4} .hi{fill:var(--fig-surface-2,#e7f0ff);stroke:var(--fig-accent,#0b57d0);stroke-width:1.6} text{font-family:'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:16px;fill:var(--fig-text,#1f2328)} .small{font-size:14px;fill:var(--fig-text-soft,#526174)} .title{font-size:20px;font-weight:600} .value{font-size:19px;font-weight:600;fill:var(--fig-accent,#0b57d0)}
+</style></defs>
+<rect class="bg" width="840" height="366"/>
+<text x="24" y="33" class="title">Gemma 4：128 个路由专家，每个 token 选 8 个</text>
+<rect x="24" y="58" width="252" height="248" rx="8" class="box"/>
+<text x="38" y="87">单 token</text>
+<text x="38" y="121">8 条分派，U = 8</text>
+<text x="38" y="151">8 个专家各收到 1 行</text>
+<text x="38" y="177" class="small">其余 120 个专家没有输入</text>
+<text x="38" y="217">唯一权重：0.02216 GiB</text>
+<text x="38" y="261" class="value">4 FLOPs/byte</text>
+<text x="38" y="287" class="small">路由专家权重项</text>
+<rect x="294" y="58" width="252" height="248" rx="8" class="hi"/>
+<text x="308" y="87">16 个 token：集中分派</text>
+<text x="308" y="121">128 条分派，U = 8</text>
+<text x="308" y="151">同 8 个专家各收到 16 行</text>
+<text x="308" y="177" class="small">其余 120 个专家没有输入</text>
+<text x="308" y="217">唯一权重：0.02216 GiB</text>
+<text x="308" y="261" class="value">64 FLOPs/byte</text>
+<text x="308" y="287" class="small">路由专家权重项</text>
+<rect x="564" y="58" width="252" height="248" rx="8" class="box"/>
+<text x="578" y="87">16 个 token：分散分派</text>
+<text x="578" y="121">128 条分派，U = 128</text>
+<text x="578" y="151">128 个专家各收到 1 行</text>
+<text x="578" y="177" class="small">各 token 的专家集合不重叠</text>
+<text x="578" y="217">唯一权重：0.35449 GiB</text>
+<text x="578" y="261" class="value">4 FLOPs/byte</text>
+<text x="578" y="287" class="small">路由专家权重项</text>
+<text x="24" y="333" class="small">按理想 INT4、路由专家权重各读一次核算；不含共享分支、注意力和其他读写。</text>
+<text x="24" y="356" class="small">集中与分散均为人工指定的分布，不是 Gemma 4 的实测路由序列。</text>
 </svg>
