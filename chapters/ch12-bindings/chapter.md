@@ -539,7 +539,9 @@ absl::Status FakeLlmExecutor::Prefill(const ExecutorInputs& inputs) {
   last_op_ = LastOp::kDecode;  // (8)
 ```
 
-代码行 `(7)` 是无约束分支，直接返回预定 token。约束分支在 `(4)` 构造 logits，在 `(5)` 调用 `ProcessLogits`，再由 `(6)` 转回 token；`(2)`、`(3)` 在连续 decode 时先用上一轮 token 更新约束状态，`(8)` 记录上一项操作的类型。`FakeLlmExecutor` 因而能确定性地测试状态更新与 logits mask 的接口交互，但不能替代真实模型 logits 上的集成测试。
+代码行 `(7)` 是无约束分支，直接返回预定 token。约束分支在 `(4)` 构造 logits，在 `(5)` 调用 `ProcessLogits`，再由 `(6)` 转回 token。`(8)` 记录上一项操作的类型，供下一次调用判断是否需要更新约束状态。
+
+连续 decode 时，`(2)`、`(3)` 用上一轮预设 token 更新约束状态。如果 logits mask 改变了实际输出，这个预设值就可能与返回的 token 不同。`FakeLlmExecutor` 可以确定性地测试这些接口调用，但不能据此确认实际输出驱动的连续状态一致性。这种情况需要另设测试，也仍需真实模型 logits 上的集成验证。
 
 ## 12.11　跨平台构建
 

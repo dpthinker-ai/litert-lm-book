@@ -23,7 +23,7 @@ litert-lm run gemma-4-e4b \
 shasum -a 256 ~/.litert-lm/models/gemma-4-e4b/model.litertlm
 ```
 
-`run` 与 `benchmark` 还接受 `--cache`，它决定后端编译产物的缓存方式（`python/litert_lm_cli/common.py:95-116`）：`disk`（默认）把编译产物持久化到模型旁的缓存文件；`memory` 请求内存缓存，实际可用性取决于后端与构建是否启用；`no` 关闭缓存，每次运行重新编译。本书用这两条命令采集的归档运行都使用 `disk`，因此同一设备上首次运行包含冷启动，初始化时间高于后续复用缓存的运行（记录见附录 D 第二节）。切换取值会改变初始化路径，比较 Init 时间时须固定该取值。
+`run` 与 `benchmark` 还接受 `--cache`，它决定后端编译产物的缓存方式（`python/litert_lm_cli/common.py:95-116`）：`disk`（默认）把编译产物持久化到模型旁的缓存文件；`memory` 请求内存缓存，实际可用性取决于后端与构建是否启用；`no` 关闭缓存，每次运行重新编译。本书用这两条命令采集的归档运行都使用 `disk`，其中 gpu/256 条件的首次 Init 聚合值高于后续调用（记录见附录 D 第二节）。归档没有独立核对运行前的缓存内容与后续命中情况，不能把时间差全部归因于缓存复用。切换取值会改变初始化路径，比较 Init 时间时须固定该取值。
 
 ## 二、从源码编译
 
@@ -71,10 +71,14 @@ Android 数据尚未用 v0.17.0 重跑。下表 Android 项目的“已做”指
 | 8 | NPU 端到端推理 | 未完成 | 加载与失败阶段见 `experiments/data/npu_enablement.md` |
 | 9 | MTP 主基准、Android 开关、自然文本与聚合比例 | 已做；Mac 主基准只有 `false`/`auto`，均为关闭 | `mtp.csv`、`android_mtp.csv`、`mtp_natural_phone.md`、`mtp_acceptance.md` |
 | 9 | Mac / 手机自然代码长生成补测 | 单次摘要，缺完整输入与原始计时日志 | `experiments/data/mtp_ceiling.md`；证据范围见附录 D |
-| 10 | 约束解码开/关 | 已做，小样本 | `experiments/data/constraint_test.md` |
-| 10 | 图片输入、视觉预算与输入错误 | 已做，单图小样本 | 本附录第五节；`experiments/data/2026-09-05/M4_RUNS.json` |
-| 10 | 音频端到端 | 未做 | 无结果数据 |
-| 11 | Python/C++ 一致性 | 未做 | 无结果数据 |
+| 10 | 专家算子数值、导出与 GPU 精度对照 | 已做，限所列小型产物 | 本附录第七至九节；附录 D 第十七至十九节 |
+| 10 | 单层规模与固定路由 | 已做，合成层 | 本附录第十节；附录 D 第二十节 |
+| 10 | 完整模型生成、上下文、长输出与多轮 | 已做，Artisan／Metal | 本附录第十一至十四节；附录 D 第二十一至二十四节 |
+| 10 | 分阶段进程内存 | 已做，未分解 GPU 分配与权重驻留 | 本附录第十五节；附录 D 第二十五节 |
+| 11 | 约束解码开/关 | 已做，小样本 | `experiments/data/constraint_test.md` |
+| 11 | 图片输入、视觉预算与输入错误 | 已做，单图小样本 | 本附录第五节；`experiments/data/2026-09-05/M4_RUNS.json` |
+| 11 | 音频端到端 | 未做 | 无结果数据 |
+| 12 | Python/C++ 一致性 | 未做 | 无结果数据 |
 
 > Android 扩展基准首次采集未保存 build fingerprint、RAM、温度与功耗模式，现有结果只能按附录 D 所列条件解释。已保存的元信息见 `experiments/data/_meta_android.txt`。
 
@@ -299,7 +303,33 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_generation_check.py \
 
 保护条件为 critical 内存压力立即停止、进程 RSS 上限 18 GiB、总时限 180 秒。采集器保存初始化前的内存状态，以及生成期间的逐次流事件；事件时间戳位于消费队列之前。只有无错误的 final 事件、非空文本、至少两个 runtime decode 计数、会话及引擎关闭、进程正常退出共同满足，才计为完整多 token 生成。后端验证错误另行归类，不能只看运行 API 返回值。
 
-读 `summary.json` 时，将每个引擎的首次请求与后两个会话分别统计。`first_text_callback_seconds` 是客户端可见文本到达时间，benchmark 中的 TTFT 与初始化字段有不同定义，详见附录 D 第二十一节。每次回调不保证对应一个 token，也不能从完整模型文件大小或进程 RSS 推算 GPU 独占内存。
+采集完成后，用只读汇总器从 `report.json`、`worker.json`、流事件和日志复算，不以已有 `summary.json` 为输入。它只依赖 Python 标准库；传入三个单次运行目录即可合并同条件结果：
+
+```bash
+python3 experiments/moe_generation_report.py \
+  tmp/moe-stream-english-r1 tmp/moe-stream-english-r2 \
+  tmp/moe-stream-english-r3 --output tmp/moe-stream-summary.json
+```
+
+输出文件必须尚不存在，且位于输入目录之外。复算本书归档时，将上述输入换为下列七个实验目录：
+
+```bash
+python3 experiments/moe_generation_report.py \
+  experiments/data/2026-09-13/moe-full-model-retry \
+  experiments/data/2026-09-13/moe-context \
+  experiments/data/2026-09-13/moe-context-2048 \
+  experiments/data/2026-09-13/moe-context-4096 \
+  experiments/data/2026-09-13/moe-long-output \
+  experiments/data/2026-09-13/moe-multiturn \
+  experiments/data/2026-09-13/moe-memory \
+  --output tmp/moe-archive-recomputed.json
+```
+
+汇总按模型与库哈希、设备、运行配置、提示词以及首次／后续请求分组。进程数与请求数分别列出，同一进程的多次请求不充当独立进程重复。内存采集单列为 `memory_groups`，不混入性能统计。吞吐沿用运行时 benchmark 记录，不从文本回调数推算。
+
+归档清单存在时，先核验其中的文件哈希。新采集目录没有清单时标为 `not_present`，仍须通过运行记录中的文件哈希检查。缺失、损坏或未完成的运行列入 `errors` 并排除，命令以状态码 2 退出；核验哈希不证明产物来源或源码与二进制等价。
+
+查看结果时，将每个引擎的首次请求与后两个会话分别统计。`first_text_callback_seconds` 是客户端可见文本到达时间。benchmark 中的 TTFT 与初始化字段有不同定义，详见附录 D 第二十一节。每次回调不保证对应一个 token，也不能从完整模型文件大小或进程 RSS 推算 GPU 独占内存。
 
 ## 十二、完整 MoE 的上下文容量与实际输入
 
@@ -368,3 +398,11 @@ tmp/moe-full-recheck-venv/bin/python experiments/moe_memory_check.py \
 使用新目录串行执行三次，容量与输入不变。核对 `memory_stages` 的九个阶段、实际计数、完整响应和清理状态；四份 vmmap 记录各须返回 0。采集错误单独归类。
 
 RSS 与 footprint 分别取三个进程同阶段的中位数。libproc 先于 vmmap，二者异时且口径重叠。采集会扰动执行，生成阶段包含 prefill 与 decode，时延不纳入性能对照。结果及版本见附录 D 第二十五节。
+
+三次新采集结果也可交给第十一节的汇总器：
+
+```bash
+python3 experiments/moe_generation_report.py \
+  tmp/moe-memory-r1 tmp/moe-memory-r2 tmp/moe-memory-r3 \
+  --output tmp/moe-memory-recomputed.json
+```

@@ -35,7 +35,8 @@
 | sampler | 采样器 | 5 | 根据 logits 选择下一个 token 的策略：greedy / temperature / top-k / top-p |
 | 内部/外部采样 | — | 5 | 执行器内部直接返回 token id，或把 logits 交给上层处理后再采样；前者可接设备侧采样实现，后者便于组合重复惩罚与约束解码 |
 | 重复惩罚 | repetition penalty | 5 | 降低近期已出现 token 的 logits 以减少重复输出；该操作需要修改 logits，可与其他约束组合，由外部采样路径或支持约束的执行器内部路径处理 |
-| KV cache | 键值缓存 | 1 | 缓存历史 token 的注意力 Key/Value，以额外内存避免重复计算；理论大小为 2×L×n_kv×d_head×S×b，实际分配另含预留与多缓冲 |
+| KV cache | 键值缓存 | 1 | 保存历史 token 的注意力 Key/Value，避免重复计算；各层独立缓存且形状一致时，单份大小为 2×L×n_kv×d_head×S×b，跨层共享或混合窗口须按独立缓存组求和，实际分配另计预留与多缓冲 |
+| 跨层 KV 共享 | cross-layer KV sharing | 6 | 多个注意力层复用同一组 K/V；容量按独立缓存组计算，不能由缓存组数推定模型总层数，层间复用也不保证只从主存读取一次 |
 | 预留宽度 | — | 1 | KV cache 预先分配的 token 槽位数（由 `--max-num-tokens` 等参数决定）；固定形状路径下决定张量静态宽度，与已缓存 token 数 S 是两个量 |
 | GQA | 分组查询注意力 | 1 | grouped-query attention，多个查询头共享较少的 KV 头；相对每个查询头各有一组 K/V，可按头数比例减少 KV cache |
 | 双缓冲 | — | 1 | 维护两套 KV 缓冲，在调用间交替选择读写 bank，适配不允许就地更新的后端 |

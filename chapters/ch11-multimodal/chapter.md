@@ -304,9 +304,9 @@ Gemma 4 默认 \\(K=3\\)，因此系数为 9；没有提供预算时，才使用
 
 ### 11.2.4　视觉 token 折算成的 prefill 与 KV cache 开销
 
-视觉编码器输出的 visual token 数决定占位符数量，也决定 prefill 序列增加多少位置。visual token 写入 embedding 序列后，与文本 token 一样通过主干前向，各层都会为这些位置产生 K/V。
+视觉编码器输出的 visual token 数决定占位符数量，也决定 prefill 序列增加多少位置。visual token 写入 embedding 序列后，与文本 token 一样通过主干前向，主干为这些位置产生并缓存 K/V。
 
-一幅图像产生 \\(T_{vis}\\) 个 visual token 时，prefill 序列会增加 \\(T_{vis}\\) 个位置。对应的 KV 数据量不能用 `model_dimension` 计算。对各层 KV 形状可能不同的模型，增量为
+一幅图像产生 \\(T_{vis}\\) 个 visual token 时，prefill 序列会增加 \\(T_{vis}\\) 个位置。对应的 KV 数据量不能用 `model_dimension` 计算。若各层独立保存 K/V，且新增位置均保留在缓存中，增量为
 
 $$
 \Delta B_{KV}=2T_{vis}\sum_{l=1}^{L}\left(n_{kv,l}\,d_{head,l}\,b_l\right),
@@ -314,7 +314,7 @@ $$
 
 其中，2 表示 K 和 V，\\(n_{kv,l}\\) 是第 \\(l\\) 层的 KV 头数，\\(d_{head,l}\\) 是该层每个 KV 头的维度，\\(b_l\\) 是每个元素的字节数。若所有层形状和类型相同，公式简化为 \\(2L\,n_{kv}\,d_{head}\,T_{vis}\,b\\)，即 6.1 节公式在 \\(S=T_{vis}\\) 时的形式。`model_dimension` 是主干 embedding 宽度，不一定等于 \\(n_{kv}\times d_{head}\\)。
 
-附录 D 记录的 Gemma 4 E4B 有 24 层 INT8 KV：20 层为 \\(n_{kv}=2,d_{head}=256\\)，其余 4 层为 \\(n_{kv}=2,d_{head}=512\\)。若一次图像输入增加 256 个 visual token，活动 KV 数据量增加
+跨层共享 K/V 时，应按独立缓存组求和，共享关系见 6.1 节。附录 D 记录的 Gemma 4 E4B 有 24 组独立 INT8 KV 缓存：20 组为 \\(n_{kv}=2,d_{head}=256\\)，其余 4 组为 \\(n_{kv}=2,d_{head}=512\\)。若一次图像输入增加 256 个 visual token，活动 KV 数据量增加
 
 $$
 2\times256\times2\times(20\times256+4\times512)\times1\ \text{B}
@@ -704,7 +704,37 @@ absl::StatusOr<ordered_json> ExecuteToolCall(
 
 外部调用失败时，也应回填结构化错误，而不是伪造成功结果。例如 `{"tool_name":"set_device_mode","error":{"code":"DEVICE_OFFLINE"}}` 足以让模型解释当前状态。是否允许模型重试由宿主决定；对有副作用的操作，未确认上次请求是否生效前，不能仅凭模型再次生成同一调用就重放。
 
-工具循环还需要两个上限：每个用户请求允许的工具轮数，以及单次工具结果进入上下文的最大尺寸。LiteRT-LM 负责维护对话和解析工具块，但源码中的 parser 不提供业务级循环上限。应用必须在调用 Conversation 的外层维护计数，并在达到上限时终止或转人工处理。
+工具循环还需要两个上限：每个用户请求允许的工具轮数，以及单次工具结果进入上下文的最大尺寸。本节的 C++/C 手动调用流程需要应用维护计数，达到业务上限后终止或转人工处理。parser 只负责解析工具块，不负责这项业务策略。
+
+Kotlin 绑定还提供自动工具调用，并已内置循环限制。它的同步、异步路径分别在何处计数，可以从下面的代码看出：
+
+```kotlin
+// kotlin/java/com/google/ai/edge/litertlm/Conversation.kt:137-761
+    for (i in 0..<RECURRING_TOOL_CALL_LIMIT) {  // (1)
+// ...
+      if (responseJsonObject.has("tool_calls")) {
+        if (!automaticToolCalling) {
+          return jsonToMessage(responseJsonObject)
+        }
+        currentMessageJson = handleToolCalls(responseJsonObject)
+// ...
+    throw IllegalStateException("Exceeded recurring tool call limit of $RECURRING_TOOL_CALL_LIMIT")
+// ...
+    for (toolCallElement in toolCallsJSONArray) {  // (2)
+// ...
+      val result = toolManager.execute(functionName, arguments)
+// ...
+        if (toolCallCount >= RECURRING_TOOL_CALL_LIMIT) {  // (3)
+// ...
+          return
+        }
+        toolCallCount++
+        pendingToolResponseJSONMessage = handleToolCalls(messageJsonObject)
+// ...
+    private const val RECURRING_TOOL_CALL_LIMIT = 25
+```
+
+代码行 `(1)` 限制同步调用中的原生请求轮数，包含最初的用户请求。启用自动工具调用后，工具结果由后续轮次回填。异步路径的 `(3)` 则按含工具调用的消息计数。已处理 25 条此类消息后，再收到同类消息就报告错误，不执行其中的工具。`(2)` 会遍历一条消息中的多个工具调用，所以这两个限制都不能直接解释为“最多执行 25 个工具函数”。应用仍需核对计数范围是否符合业务策略，并在工具入口限制结果大小、执行次数和权限。
 
 <figure>
 {{#include figs/fig-11-4.svg}}

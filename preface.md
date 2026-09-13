@@ -2,13 +2,13 @@
 
 与大语言模型对话，如今已是常事。多数人的体验来自云端聊天产品：提问、贴代码、传文档，回答逐字出现在屏幕上，还可以来回追问几轮。这些回答由数据中心里的加速器算出。
 
-但同样的能力正在进入手机、手表和浏览器。这些设备只有几 GiB 内存、一颗功耗受限的芯片和电池供电。要让一个数十亿参数的模型在这样的设备上持续生成文字，必须先回答几个工程问题：内存是否放得下，带宽是否够用，功耗和发热是否允许持续推理。这些问题的答案决定了端侧部署是否可行；系统地回答它们，是本书的任务。
+本地模型也开始用于手机、手表和浏览器。设备的可用内存、芯片性能与供电条件各不相同。部署数十亿参数的模型，先要核对内存容量与带宽。持续生成还受功耗和发热限制。系统地回答这些工程问题，是本书的任务。
 
 本书的分析对象是生产级端侧运行时 LiteRT‑LM。它是什么、与 LiteRT 在软件栈中如何分工，见第 1 章 1.1 节。在进入实现之前，先交代两件事：端侧模型目前的能力水平，以及 Google 为端侧部署提供了哪些配套。
 
 ## 云侧与端侧模型
 
-云端模型的能力仍然最强。OpenAI、Google、Anthropic 的闭源旗舰，DeepSeek、Kimi、GLM 等国产开放模型，以及 Gemma 4 这样的 Google 开放模型，都在上下文长度、多模态理解与原生工具调用上持续改进。以 Gemma 4 旗舰 31B 稠密模型为例，它在 256K 上下文窗口下支持多模态与原生函数调用；发布文章引用 Arena AI 文本榜单的口径，该模型在开放模型中排第 3 位，26B MoE（Mixture of Experts，混合专家）排第 6 位。[^preface-gemma4-launch] 排在开放模型前面的，仍是闭源服务。
+Gemma 4 的 31B 稠密模型支持 256K 上下文、多模态输入与原生函数调用。2026 年 4 月 2 日的发布文章引用 Arena AI 文本榜单：31B 在开放模型中排第 3 位，26B MoE（Mixture of Experts，混合专家）排第 6 位。[^preface-gemma4-launch] 这些名次描述发布时点的一项评测，不能据此概括所有任务的能力，也不决定模型应部署在云侧还是端侧。
 
 模型规模还在增长，但本书关注的是资源受限的设备上能提供哪些功能。端侧部署的价值、边界与代价见第 1 章 1.2 节。下面对照两个时间点的模型功能与部署条件：
 
@@ -18,10 +18,6 @@
 这些部署资料说明，端侧开放模型已能提供多模态输入与长上下文支持。[^preface-gemma4-edge] 上下文长度、输入模态和吞吐分别描述功能范围与运行性能，不能据此判定不同模型的任务能力相当。比较任务能力，还需要在相同评测集上检验输出质量。
 
 华为的 Mate XT 2 官方资料将 30B MoE 列为端侧模型配置。[^preface-huawei-moe] 稀疏激活让总参数量与每个 token 使用的参数量分开，容量与带宽也需要分别计算。第 10 章以本书实测的 Gemma 4 为例，核算专家工作集，并与生成及内存数据对照。
-
-端侧能力的提升不只来自硬件和推理技术，也来自模型本身的变化。Andrej Karpathy 在 2024 年两次公开谈到这个方向。7 月他在 X 上写道，模型规模竞赛的方向反了：模型之所以大，是因为训练需要记住互联网文本、常见数字的散列值和冷门事实，而思考本身并不需要这么多参数；他预计会出现参数量非常小、却能够可靠思考的模型，甚至可能回到 GPT‑2 的参数规模。[^preface-karpathy-x] 到了 9 月的 No Priors 播客，他说得更具体：蒸馏极其有效，可以用大模型的大量计算教出一个小模型，而小模型能保留大模型的能力；思考核心也许 1B 参数就够，其余知识通过工具获取。他还设想未来的模型体系如同一家公司，强大的云侧模型担任 CEO，大量廉价的小模型分工执行；他自己运行在本地设备的个人知识助理（exo‑cortex）参数量不到 1B。[^preface-karpathy-nopriors]
-
-如果这一方向成立，数百亿乃至万亿级模型的能力将被蒸馏进 1B 级的小模型，而这类模型适合部署在端侧。结合前文的能力现状，我们推测，未来一两年会有更多产品在设备上运行推理。
 
 ## Google 的端侧方案
 
@@ -33,7 +29,7 @@
 
 ## 这本书讲什么
 
-截至 2026 年 7 月，据我们检索，还没有一本中文专著系统分析过生产级端侧运行时。本书尝试做这项分析。它并非 Google 官方出版物，书中的所有观点及可能存在的错漏，均由作者负责。
+本书分析生产级端侧运行时的实现与工程权衡。它并非 Google 官方出版物，书中的所有观点及可能存在的错漏，均由作者负责。
 
 本书以 LiteRT‑LM v0.17.0 为主要分析对象，回答一个核心问题：大语言模型如何在手机、手表和浏览器等受限设备上运行。主基准模型 Gemma 4 E4B 在 4B 有效参数规模下提供多模态理解与函数调用能力，模型产物以单文件 `.litertlm` 形式分发。[^preface-gemma-e4b]
 
@@ -74,8 +70,6 @@
 [^preface-tinyllama]: TinyLlama 项目，[TinyLlama/TinyLlama-1.1B-Chat-v1.0 模型卡](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)，项目训练启动日期：2023-09-01（非 Chat-v1.0 发布日期）；访问日期：2026-09-05。
 [^preface-gemma4-launch]: Google DeepMind，Clement Farabet、Olivier Lacombe，[*Gemma 4: Byte for byte, the most capable open models*](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/)，2026-04-02；访问日期：2026-08-04。
 [^preface-llama2]: Meta AI，[*Meta and Microsoft Introduce the Next Generation of Llama*](https://ai.meta.com/blog/llama-2/)，2023-07-18；访问日期：2026-08-04。
-[^preface-karpathy-x]: Andrej Karpathy（@karpathy），X 帖文 [*LLM model size competition is intensifying... backwards!*](https://x.com/karpathy/status/1814038096218083497)，2024-07-19；访问日期：2026-08-04。
-[^preface-karpathy-nopriors]: No Priors 播客，[*The Road to Autonomous Intelligence with Andrej Karpathy*](https://podtail.com/pt-PT/podcast/no-priors/the-road-to-autonomous-intelligence-with-andrej-ka/)（Ep. 80，Sarah Guo、Elad Gil 主持），2024-09-05；视频版见 https://www.youtube.com/watch?v=6P2ItWQY_uw；访问日期：2026-08-04。
 [^preface-gemma4-edge]: Google Developers Blog，[*Bring state-of-the-art agentic skills to the edge with Gemma 4*](https://developers.googleblog.com/bring-state-of-the-art-agentic-skills-to-the-edge-with-gemma-4/)，2026-04-02；访问日期：2026-09-05。
 [^preface-gemma4-aicore]: Android Developers Blog，[*Announcing Gemma 4 in the AICore Developer Preview*](https://android-developers.googleblog.com/2026/04/AI-Core-Developer-Preview.html)，2026-04；访问日期：2026-08-04。
 [^preface-gemma4-hackathon]: GDG China，[Gemma 4 开发者大赛｜2026](https://hackathon.googdg.cn/)，报名 2026-04-18 至 2026-05-18，决赛在 2026 Google I/O Connect 中国站（2026-08）举行；访问日期：2026-08-04。

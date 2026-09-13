@@ -14,7 +14,7 @@
 ## 第 2 章
 
 1. 1024 ÷ 999.1 + 1 ÷ 50.6 ≈ 1.025 + 0.020 = 1.045 s，按表中精度显示为约 1.04 s。它由同一轮的 prefill、decode 指标计算得到，不是另一只计时器记录的独立 TTFT。
-2. 在两档 \\(B_{\mathrm{eff}}\\) 相同、全部耗时都可折算为字节、256-token 档上下文成本忽略不计的假设下，\\(d_{\mathrm{eq}} = 2.26\ \text{GB} \div 4096 \times (50.6 \div 45.6 - 1) \approx 59\ \text{KiB/token}\\)。它高于 28 KiB 的 KV cache 理论大小，因为这项等效估算还吸收了注意力计算、缓存行为、带宽利用率变化和其他随上下文增长的成本。它不是 DRAM 流量测量值。
+2. 在两档 \\(B_{\mathrm{eff}}\\) 相同、全部耗时都可折算为字节、256-token 档上下文成本忽略不计的假设下，\\(d_{\mathrm{eq}} = 2.26\ \text{GB} \div 4096 \times (50.6 \div 45.6 - 1) \approx 59\ \text{KiB/token}\\)。这是由已测吞吐反推的等效值，不是 DRAM 流量测量值。它高于独立 KV 缓存的 28 KiB/token 容量口径，只说明上述假设下“一步完整读取一份 KV”的估算不足以吻合数据。重复读取、注意力计算和有效带宽变化都可能影响结果，不能据此排除 KV 访存或判定各项占比。
 3. 仅凭这四个数字不能判断异常。模型条件至少要补全模型产物与哈希、量化和运行时版本。输入条件要有 prompt token 数、prefill/decode 长度、batch 与 `max_num_tokens`。后端条件要有 CPU/GPU/NPU、delegate、线程数、缓存、局部注意力环形缓冲与 MTP/采样配置。测量条件要说明冷启动或热启动、是否预热、重复次数与统计量、Init 字段定义、外部墙钟、温度和功耗模式。缺少这些条件时，不应把结果与本书某一档数据直接比较。
 4. 否则计时终点位于异步提交返回处，测得的是提交耗时而非硬件完成耗时。实现是 `params.SetWaitForCompletion(wait_for_completion | benchmark_info.has_value())`（`runtime/core/tasks.cc:563`）。
 5. `ProcessLogits` 在第 4 层（组件层）实现、被第 2 层（编排层）的 `DecodeAndSample` 外部路径调用；它修改的 logits 来自第 3 层执行器的 `DecodeLogits`。
@@ -41,14 +41,14 @@
 2. 不停。`ShouldStop` 第一分支要求 `hit_stop_tokens && benchmark_decode_token_count == 0`，benchmark 模式下该条件为假，循环继续执行至 128 步。此时测量语义优先于生成语义。
 3. 产出 A：过滤器暂存 A，未放行 id，用户未收到文本；产出 B：继续暂存 A、B，仍无文本。产出 X：停止匹配失败，过滤器一起放行 A、B、X。detokenizer 第一次有效解码得到 ABX，但先暂存而不发送。随后输出长度上限结束生成，`Flush()` 释放 ABX，用户此时才收到这段文本。
 4. 新增 token 可能改变之前的解码文本，所以第一次有效解码先暂存；后续只发送相邻两次解码结果的最长公共前缀中尚未发送的部分。比较前去掉新结果末尾的 U+FFFD，防止把不完整字节序列过早发出。这是实现采用的稳定性与完整性判据，不假定每个 token 对应一个完整字符。正常结束时 `Flush()` 释放尚未发送的后缀，但不再次检查 U+FFFD。
-5. 种类数应按实际 5 次输出去重，不能预先指定。本书 v0.13.1 的已有记录只覆盖部分 seed：seed 1 与 2 得到同一序列，seed 7 得到另一序列。温度 1.0 使随机采样生效，但高概率 token 仍可能被不同随机序列同时选中；因此“已启用采样”不蕴含“每次输出必不同”。
+5. 种类数应按实际 5 次输出去重，不能预先指定。实验应固定 top-k、top-p、模型与其余条件，只改变 seed。本书 v0.13.1 记录中，seed 1 与 2 在默认 top-k 40 下得到同一序列；seed 7 得到另一序列，但那次 top-k 也改为 64，不能作为 seed 的单变量对照。随机采样仍可能重复选中同一序列，“已启用采样”不保证“每次输出必不同”。
 
 ## 第 6 章
 
-1. 28 KiB × 8192 = 224 MiB。32768 不小于占位值 32003，`GetTargetNumber` 改用占位值以下最大的 256 的倍数 32000 并打印警告；28672 B × 32000 = 917,504,000 B = 875 MiB。
+1. 28 KiB × 8192 = 224 MiB。28 KiB/token 按基准产物的 24 组独立 K/V 计算；模型的 42 层中有 18 层共享 K/V，不能把输入张量对数当作总层数（见 6.1 节）。32768 不小于占位值 32003，`GetTargetNumber` 改用占位值以下最大的 256 的倍数 32000 并打印警告；28672 B × 32000 = 917,504,000 B = 875 MiB。这些是统一缓存宽度下的单份容量，不是每步实际主存流量。
 2. `Session::Clone` 本身不复制 LLM KV，复制量为 0。新旧 handler 共享同一个 `SharedProcessedContext`，各自持有按值复制的 `RuntimeConfig` 与 `RuntimeState`；其中 `RuntimeState::rand_gen` 是 `shared_ptr`，复制状态时不会复制底层随机数生成器。较短分支后续需要截断或改写共享历史时才触发写时分离。若每套状态含一份宽度为 4096 的基准模型 K/V，单缓冲路径复制量约为 \\(4096 \times 28\ \text{KiB} = 112\ \text{MiB}\\)；双缓冲路径还复制另一套，总计约 224 MiB。`CopyTensorBuffer` 按 `PackedSize()` 复制完整容量，不按有效前缀裁剪。
 3. `LitertState::GetStateBuffers` 按 `bank_1_is_input_` 选择本次输入、输出 bank，并翻转该标志，使本次输出成为下次输入；返回的 `Duplicate()` 句柄共享底层数据，因此角色轮换不复制张量字节（`runtime/executor/litert/state.cc:352-363`）。prefill 与 decode 获取状态缓冲的位置分别为 `runtime/executor/llm_litert_compiled_model_executor.cc:696` 与 `runtime/executor/llm_litert_compiled_model_executor.cc:970`。
-4. 按 28 KiB/token 估算，预留容量从约 112 MiB 增至约 224 MiB。本书 v0.13.1 的同 prompt 实验中，decode 从 26.4 降至 21.5 tokens/s，约下降 19%。实验没有用性能计数器分离注意力、KV 访存和其他执行成本，不能把全部降幅归到单一原因。
+4. 按 28 KiB/token 估算，预留容量从约 112 MiB 增至约 224 MiB。本书 v0.13.1 的同 prompt 实验中，decode 从 26.4 降至 21.5 tokens/s，约下降 19%。两档均输入 256 token，按旧版源码推演均使用一次 1024 signature；现存 CSV 未保存逐工作组日志。实验没有用性能计数器分离注意力、KV 访存和其他执行成本，不能把全部降幅归到单一原因。
 5. compiled executor 的 `CloneContext` 经 `CloneState` 选择普通状态或多输出 decode 状态，再调用 `LitertState::DeepCopy`，复制 bank 1 及可选 bank 2 的所有缓冲，每块按 `PackedSize()` 完整复制。恢复时移动保存的状态对象，不再次复制字节；逻辑位置为 0 时复用现有状态。NPU executor 从 prefill 输入中选择名称以 K、V 或 C cache 前缀开头的缓冲，按完整容量显式复制后包装为 `LegacyMapState`；恢复时检查大小并 `memcpy` 回固定输入。`LegacyMapState::DeepCopy` 本身只调用 `Duplicate()` 共享底层缓冲，NPU 的独立副本来自 executor 的显式复制，不能由方法名推定。
 6. assistant 完成含 channel 字段的消息时只设置待过滤标记，KV 尚未改变。下一条非追加式 user 消息到达后，默认 `enable_rewinding` 路径回到上次 channel 检查点；关闭该选项时改回起始检查点，并从历史开头重建。随后 prefill 不含 channel 的历史，保存新检查点，再 prefill 当前 user 消息并进入 decode。回退本身不恢复被覆盖的旧 K/V；refill 会重算并覆盖相应内容。
 
