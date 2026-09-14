@@ -270,7 +270,7 @@ Session 已经保留先前 prefill 和 decode 形成的上下文。下一轮只�
 
 ## 3.5　prefill 输入：token id 与 embedding
 
-token id 变成向量有两种方式：由主模型在内部查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再交给模型。执行器检查模型 signature 是否包含 token 输入，并将结果保存在局部变量 `use_token_as_lookup` 中。有 token 输入时直接写入 id，否则先查 embedding，再写入 embedding 输入缓冲。主机侧查表不是所有模型的必经步骤，它主要用于多模态输入：图像与音频的 embedding 来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 11 章展开）。
+token id 变成向量有两种方式：由主模型在内部查表，或者运行时先在主机侧把 id 换成 embedding（嵌入）再交给模型。执行器检查模型 signature 是否包含 token 输入，并将结果保存在局部变量 `use_token_as_lookup` 中。有 token 输入时直接写入 id，否则先查 embedding，再写入 embedding 输入缓冲。是否需要主机侧查表由模型 signature 决定：本书基准模型的主干入口接收 embedding，token 查表由文件中独立的 embedder 段完成（附录 D 第六节），文本输入同样走这条路径；图像与音频的 embedding 则来自各自的编码器，与文本共用同一个 embedding 输入缓冲（第 11 章展开）。
 
 `EmbeddingLookup` 的批量 prefill 接口如下：
 
