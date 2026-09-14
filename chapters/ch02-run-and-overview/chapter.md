@@ -16,8 +16,6 @@ litert-lm run \
   --prompt="What is the capital of France?"
 ```
 
-> **版本注记**：v0.13.1 的 CLI 经 huggingface_hub 下载模型，[^ch02-hf-v0131] 该库自 1.0 起用 httpx 发起请求，[^ch02-hf-httpx] 而 httpx 的 SOCKS 代理支持需要额外安装 socksio。[^ch02-httpx-socks] 经 SOCKS 代理下载时会因缺少该包报错，临时改走 HTTP 代理端口或补装 `httpx[socks]` 都能绕过。v0.14.0 起 CLI 去掉了对 huggingface_hub 的依赖，改用标准库 `urllib` 下载；[^ch02-hf-removed] 本书没有在 SOCKS 代理下重测 v0.17.0 的这条路径。
-
 指定 `--from-huggingface-repo` 时，`run` 调用下载模块。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，回答逐段出现在终端里。上面的 README 示例用默认采样，输出不保证每次相同；要展示一条可逐字核对的输出，需换用温度 0 的 v0.13.1 归档运行（采样确定性实验，实录见附录 D 第八节）。下面的 `gemma-4-e4b` 是本地注册名称，须先按附录 C 第一节导入模型。前面的直接下载运行不会建立这个名称。命令与输出如下：
 
 ```bash
@@ -333,10 +331,6 @@ TFLite section 的读取路径先用 `end_offset - begin_offset` 算出模型大
 
 5. **架构归位**：约束解码中的 `ProcessLogits` 调用属于五层视图中的哪一层？它接收的 logits 来自哪一层？
 
-[^ch02-hf-v0131]: Google AI Edge，LiteRT-LM，[`python/litert_lm_cli/common.py`](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.13.1/python/litert_lm_cli/common.py#L142-L143)，142–143 行，版本 v0.13.1；访问日期：2026-09-14。
-[^ch02-hf-httpx]: Hugging Face，[huggingface_hub v1.0.0 发布说明](https://github.com/huggingface/huggingface_hub/releases/tag/v1.0.0)，版本 v1.0.0；访问日期：2026-09-14。
-[^ch02-httpx-socks]: HTTPX，[*Proxies*](https://www.python-httpx.org/advanced/proxies/)，SOCKS 一节；访问日期：2026-09-14。
-[^ch02-hf-removed]: Google AI Edge，LiteRT-LM，提交 [*Remove huggingface_hub dependency from CLI*](https://github.com/google-ai-edge/LiteRT-LM/commit/3e953a0e64b6d610295bc26828548f45df60be40)，2026-06-01，首个包含该提交的发布版本为 v0.14.0；访问日期：2026-09-14。
 [^ch02-litertlm-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.17.0/README.md#L88-L98)，版本 v0.17.0；访问日期：2026-09-13。
 [^ch02-m5pro-bandwidth]: Apple，[*Apple debuts M5 Pro and M5 Max to supercharge the most demanding pro workflows*](https://www.apple.com/au/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/)，2026-03-04；访问日期：2026-08-30。
 [^ch02-issue-2568]: Yegorsh，[*\[Bug\] `--max-num-tokens` unreasonably affects decoding speed*](https://github.com/google-ai-edge/LiteRT-LM/issues/2568)，LiteRT-LM issue #2568，2026-06-13；访问日期：2026-07-18。
