@@ -555,7 +555,7 @@ absl::Status LitertState::BroadcastAndCopyFrom(StateInterface& other) {
 
 ## 6.8　按配置过滤 channel 内容
 
-channel 是模型输出里与可见回复并列的字段，源码注释举的例子是 reasoning 内容；部分模型会在其中放不需要保留到后续上下文的内容。`ConversationConfig::filter_channel_content_from_kv_cache` 控制是否把这部分内容从 KV cache 中过滤掉，默认值为 `false`。关闭时，不执行下面的 channel 过滤与 refill 流程。
+channel 是模型输出里与可见回复并列的字段，源码注释举的例子是 reasoning 内容；部分模型会在其中放不需要保留到后续上下文的内容。`ConversationConfig::filter_channel_content_from_kv_cache` 控制是否把这部分内容从 KV cache 中过滤掉，配置构造器的默认值为 `true`。设为 `false` 时，不执行下面的 channel 过滤与 refill 流程。
 
 assistant 消息生成结束时不会立即清除 KV。收到非追加式 user 消息后，`Conversation::SendMessage` 才检查配置和待过滤标记：
 
@@ -599,7 +599,7 @@ refill 输入不为空时，`Conversation` 先 prefill 清理后的历史，再�
 
 ## 小结
 
-KV cache 以容量和带宽换取较少的重复计算。历史基准模型产物按统一序列宽度计算为 28 KiB/token；局部缓存和混合注意力模型则应逐层求和。固定形状路径中，`--max-num-tokens` 经 magic number 机制成为张量宽度。本章旧版同 prompt 实验的预留宽度从 4096 增至 8192，decode 从 26.4 降至 21.5 tokens/s，降幅约 19%；
+KV cache 以容量和带宽换取较少的重复计算。历史基准模型产物按统一序列宽度计算为 28 KiB/token；局部缓存和混合注意力模型则应逐层求和。固定形状路径中，`--max-num-tokens` 经 magic number 机制成为张量宽度。本章旧版同 prompt 实验的预留宽度从 4096 增至 8192，decode 从 26.4 降至 21.5 tokens/s，降幅约 19%。
 
 新版重测使用同一模型和 M5 Pro。配置为 CPU 8 线程、MTP 关闭，prefill 256、decode 128 token。4096、8192 两档的 decode 中位数分别为 30.6、26.7 tokens/s。1024 容量的 1 次预热与 3 次正式测量均完成指定 token 计数〔基准 D，第十六节〕。新旧采集条件未完全对齐，旧版失败边界不能直接套用。
 
@@ -618,6 +618,6 @@ KV cache 以容量和带宽换取较少的重复计算。历史基准模型产�
 5. 接口辨析。比较 compiled executor 与 NPU executor 的 `CloneContext`。两者选择哪些缓冲，复制粒度如何，恢复方式有何不同？再说明 compiled executor 如何调用 `LitertState::DeepCopy`，以及 NPU 为什么不能只依赖 `LegacyMapState::DeepCopy` 的名字判断复制行为。
 6. 时序复述。启用 channel 过滤后，依次说明相关操作。起点是 assistant 输出含 channel 字段。终点是下一条 user 消息开始 decode。
 
-[^ch06-issue-2568]: Yegorsh，[*`--max-num-tokens` unreasonably affects decoding speed*](https://github.com/google-ai-edge/LiteRT-LM/issues/2568)，LiteRT-LM issue #2568，2026-06-13；访问日期：2026-07-18。
+[^ch06-issue-2568]: Yegorsh，[*\[Bug\] `--max-num-tokens` unreasonably affects decoding speed*](https://github.com/google-ai-edge/LiteRT-LM/issues/2568)，LiteRT-LM issue #2568，2026-06-13；访问日期：2026-07-18。
 [^ch06-llamacpp-kvtype]: ggml-org，[*llama.cpp 源码 common/arg.cpp:2174*](https://github.com/ggml-org/llama.cpp/blob/b9873/common/arg.cpp#L2174)，版本 b9873；访问日期：2026-08-31。
 [^ch06-e4b-config]: Google，[*Gemma 4 E4B IT 模型配置*](https://huggingface.co/google/gemma-4-E4B-it/blob/ee0ef6023621cff504d758262d4e04895a5af4a2/config.json)，版本 ee0ef6023621cff504d758262d4e04895a5af4a2，`text_config` 中的层数、KV 共享层数与局部窗口；访问日期：2026-09-13。
