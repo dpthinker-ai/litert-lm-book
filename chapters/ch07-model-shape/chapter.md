@@ -264,7 +264,7 @@ LiteRT-LM 仓库里能追踪到的 LoRA 组件都属于运行时适配路径，�
 
 运行时适配由三个类分工。`LoraData` 是 CPU 侧的只读数据视图：适配器文件本身也是 TFLite FlatBuffer，它从名为 `lora_rank` 的 metadata 读取 rank，按 tensor 名找到相应 buffer；来源可以是路径、文件句柄或已有缓冲，路径分支用 mmap 提供视图。`LoRA` 对象持有为一份适配器创建的后端 buffer。`LoraManager` 用两张表管理它们：`lora_data_` 保存已登记但尚未创建后端对象的 ID，`loras_` 保存已创建的对象，`current_lora_id_` 记录当前选用哪一份。`LoadLoRA` 只建立 `LoraData` 并加入待用表；第一次 `UseLoRA(id)` 才把数据移入 `LoRA::Create`，把对象写入 `loras_`，删除待用表中的同一项，再更新当前 ID。
 
-`LoRA::Init` 遍历基座 signature 的输入，为每个 LoRA 输入创建 `TensorBuffer`：适配器里有同名 tensor 时检查字节数并复制，没有时把整个 buffer 置零。buffer 的实际存放位置由编译模型和后端决定，不能统一称为 GPU 显存。名称和尺寸共同构成兼容边界：`IsLoRAInputName` 只接受两组固定命名模式，并要求名称以层号结尾；基座需要的输入在适配器里缺失时填零，同名但字节数不一致时初始化失败，适配器多出的 tensor 不会被基座 signature 请求。所以只比较 rank 不足以判断兼容性，还要比较命名、覆盖层和每个输入的形状。
+`LoRA::Init` 遍历基座 signature 的输入，为每个 LoRA 输入创建 `TensorBuffer`：适配器里有同名 tensor 时检查字节数并复制，没有时把整个 buffer 置零。buffer 的实际存放位置由编译模型和后端决定，不能统一称为 GPU 显存。名称和尺寸共同构成兼容边界：`IsLoRAInputName` 只接受正则表列出的固定命名模式，一组以层号结尾（如 `query_w_prime_left_<N>`），另一组把层号放在 `transformer.layer_<N>.attn.` 段内；基座需要的输入在适配器里缺失时填零，同名但字节数不一致时初始化失败，适配器多出的 tensor 不会被基座 signature 请求。所以只比较 rank 不足以判断兼容性，还要比较命名、覆盖层和每个输入的形状。
 
 | 兼容情况 | `LoRA::Init` 的行为 | 结果 |
 |---|---|---|
@@ -272,7 +272,7 @@ LiteRT-LM 仓库里能追踪到的 LoRA 组件都属于运行时适配路径，�
 | 基座有输入，适配器缺少同名 tensor | 对整个输入 buffer 填零 | 该处不施加增量 |
 | 基座有输入，适配器同名但尺寸不同 | `RET_CHECK_EQ` 失败 | 适配器不能启用 |
 | 适配器有额外 tensor，基座没有对应输入 | 初始化循环不会请求 | 额外 tensor 不参与执行 |
-| 输入名不匹配两组正则模式 | 不视为 LoRA 输入 | 不会由 `LoRA::Init` 管理 |
+| 输入名不匹配正则表中的命名模式 | 不视为 LoRA 输入 | 不会由 `LoRA::Init` 管理 |
 
 > 表 7-4　运行时适配的兼容性由基座 signature 驱动，rank 只是其中一个条件。
 
