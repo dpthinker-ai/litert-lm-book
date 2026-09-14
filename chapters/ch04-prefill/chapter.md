@@ -6,7 +6,7 @@
 
 ## 4.1　prefill 的资源约束
 
-prefill 比 decode 快一个量级，原因在于一次前向同时处理整段提示词：读一遍权重，服务所有位置的计算，算术强度因此通常高于一次只处理一个 token 的 decode step（Roofline 分析见 1.4 节与 2.4 节）。不过“通常”不是“必然”：序列长度、模型结构和后端都可能使瓶颈变为内存访问或 host 侧开销，确认是否受算力约束，要靠目标设备的性能计数器或受控实验。
+prefill 通常比 decode 快一个量级，原因在于一次前向同时处理整段提示词：读一遍权重，服务所有位置的计算，算术强度因此高于一次只处理一个 token 的 decode step（Roofline 分析见 1.4 节与 2.4 节）。不过“通常”不是“必然”：序列长度、模型结构和后端都可能使瓶颈变为内存访问或 host 侧开销，确认是否受算力约束，要靠目标设备的性能计数器或受控实验。
 
 差距有多大，主矩阵（条件见 2.2 节）给了对照：上下文为 1024 时，gpu 后端 prefill 999.1 tokens/s、decode 50.6 tokens/s，相差约 20 倍；cpu 后端分别为 259.2 与 24.7 tokens/s，相差约 10 倍〔基准 D〕。不过这组数据是端到端吞吐，不能单独证明两段分别受算力和带宽约束：测量路径从任务层入口进入 executor，包含模型执行、固定形状填充和 host 侧开销。
 
@@ -35,7 +35,7 @@ prefill 比 decode 快一个量级，原因在于一次前向同时处理整段�
 
 代码行 `(1)` 越界判断用 `>=` 而非 `>`：上下文窗口要留一个位置给 pending token（每次 prefill 都会留下最后一个 token 待下一步处理，机制见 4.2 节末），所以 token 数必须严格小于 `max_num_tokens`。`(2)` `wait_for_completion` 与 benchmark 开关做按位或。启用基准模式后强制同步等待，避免在异步执行完成前结束计时。`(3)` 的 `TimePrefillTurnStart` 与后面的 `TimePrefillTurnEnd` 包围 `(4)` 的 `executor.Prefill` 调用。任务层负责校验、计时和编排；executor 负责形状选择、模型执行与 KV cache 更新。
 
-这两个探针只记录起止时间。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键保存 `absl::Now()`。`TimePrefillTurnEnd` 再取一次时间并求差，把结果和 token 数存入 `prefill_turns_`。测量范围覆盖整个 `executor.Prefill`，包括工作组循环、掩码填充、embedding 装配与 KV 缓冲交换。附录 D 的 prefill 吞吐由这对探针产生。
+这两个探针只记录起止时间。`TimePrefillTurnStart` 以 `prefill:<turn_index>` 为键保存单调时钟 `steady_clock` 的当前时刻。`TimePrefillTurnEnd` 再取一次时间并求差，把结果和 token 数存入 `prefill_turns_`。测量范围覆盖整个 `executor.Prefill`，包括工作组循环、掩码填充、embedding 装配与 KV 缓冲交换。附录 D 的 prefill 吞吐由这对探针产生。
 
 ### 4.1.1　固定 signature 如何影响吞吐曲线
 
@@ -90,7 +90,7 @@ executor 需要把长度可变的提示词映射到模型可执行的输入形�
 
 <div class="aside-compare">
 
-llama.cpp 把提示词分成不超过 `n_ubatch` 的物理微批，并按实际批长构建计算图。[^ch04-llamacpp-ubatch] 它不需要在固定 signature 末尾填充，也不保存多个预编译序列长度入口。相应地，形状直到运行时才确定。两种方案对性能和产物体积的影响取决于编译器与后端，需要实测比较。
+llama.cpp 把提示词分成不超过 `n_ubatch` 的物理微批，[^ch04-llamacpp-ubatch] 不保存多个预编译序列长度入口；输入形状到运行时才确定，也就没有向固定 signature 长度补齐的填充。两种方案对性能和产物体积的影响取决于编译器与后端，需要实测比较。
 
 </div>
 
@@ -241,7 +241,7 @@ decode 在每次迭代开始前检查同一个标志：
 
 prefill 不在调用方线程上运行：会话把 prefill、decode 与克隆包装成任务，交给 `ThreadedExecutionManager` 调度。本节回答三个问题：任务在哪个线程执行，按什么顺序执行，回调会不会阻塞后续任务。任务之间的排队与依赖属于 inter-op 顺序；算子内部的线程数和核心绑定属于 intra-op 并行度，见第 8 章。
 
-framework 里还有一个名字相近的独立原语 `ExecutionQueue`——单工作线程的顺序队列，会话路径并不经过它。它的移除语义需要说明一下以免混淆：`Remove` 只删除尚未执行的任务体，工作线程取到已删除的 id 时跳过；这是对排队中任务的撤销，与 4.3 节的运行中取消无关。它同样把任务体放在互斥锁外执行，防止任务内再次入队或移除时死锁。
+framework 里还有一个名字相近的独立原语 `ExecutionQueue`——单工作线程的顺序队列，会话路径并不经过它。为免与取消混淆，先说明它的移除语义：`Remove` 只删除尚未执行的任务体，工作线程取到已删除的 id 时跳过；这是对排队中任务的撤销，与 4.3 节的运行中取消无关。它同样把任务体放在互斥锁外执行，防止任务内再次入队或移除时死锁。
 
 ### 4.4.1　按需扩容的 ThreadPool
 
