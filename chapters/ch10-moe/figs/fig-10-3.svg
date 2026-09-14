@@ -1,0 +1,66 @@
+<svg viewBox="0 0 860 424" width="860" height="424" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="专家权重缓存命中、按需读入、预测正确的预取与预测错误的预取四种情况下，换入时间落在 decode step 的哪个位置">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 15px; font-weight: 700; }
+      .lane { fill: var(--fig-text, #1f2328); font-size: 12px; font-weight: 700; }
+      .t { fill: var(--fig-text, #1f2328); font-size: 11px; }
+      .soft { fill: var(--fig-text-soft, #57606a); font-size: 10.5px; }
+      .dim { fill: var(--fig-text-dim, #8b949e); font-size: 10px; }
+      .blue { fill: var(--fig-accent, #0b57d0); font-size: 11px; font-weight: 700; }
+      .a2 { fill: var(--fig-accent-2, #6639ba); font-size: 10.5px; font-weight: 700; }
+      .box { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.3; }
+      .compute { fill: var(--fig-bg, #ffffff); stroke: var(--fig-accent, #0b57d0); stroke-width: 1.6; }
+      .xfer { fill: var(--fig-bg, #ffffff); stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.6; }
+      .waste { fill: var(--fig-surface-2, #eef1f5); stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.3; stroke-dasharray: 4 3; }
+      .guide { stroke: var(--fig-text-dim, #8b949e); stroke-width: 1.2; stroke-dasharray: 5 4; fill: none; }
+      .axis { stroke: var(--fig-text, #1f2328); stroke-width: 1.4; fill: none; }
+      .brace { stroke: var(--fig-accent-2, #6639ba); stroke-width: 1.2; fill: none; }
+      .end { stroke: var(--fig-accent, #0b57d0); stroke-width: 1.6; }
+    </style>
+    <marker id="f103-ax" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4"><path d="M0,0 L8,4 L0,8 z" fill="var(--fig-text, #1f2328)"/></marker>
+  </defs>
+  <text class="title" x="430" y="26" text-anchor="middle">专家权重换入落在 step 的哪个位置：命中、按需读入与两种预取</text>
+  <path class="guide" d="M350,56 V352"/>
+  <text class="dim" x="350" y="50" text-anchor="middle">本层路由确定</text>
+  <text class="lane" x="28" y="90">缓存命中</text>
+  <rect class="box" x="180" y="68" width="110" height="26" rx="4"/><text class="t" x="235" y="85" text-anchor="middle">上一层计算</text>
+  <rect class="box" x="290" y="68" width="60" height="26" rx="4"/><text class="t" x="320" y="85" text-anchor="middle">路由</text>
+  <rect class="compute" x="350" y="68" width="140" height="26" rx="4"/><text class="blue" x="420" y="85" text-anchor="middle">专家计算</text>
+  <path class="end" d="M490,62 V100"/>
+  <text class="blue" x="498" y="85">t_step ≈ t_c</text>
+  <text class="soft" x="180" y="114">所需专家已在可用位置，无换入</text>
+  <text class="lane" x="28" y="162">按需读入</text>
+  <rect class="box" x="180" y="140" width="110" height="26" rx="4"/><text class="t" x="235" y="157" text-anchor="middle">上一层计算</text>
+  <rect class="box" x="290" y="140" width="60" height="26" rx="4"/><text class="t" x="320" y="157" text-anchor="middle">路由</text>
+  <rect class="xfer" x="350" y="140" width="150" height="26" rx="4"/><text class="a2" x="425" y="157" text-anchor="middle">读入 + 布局转换</text>
+  <rect class="compute" x="500" y="140" width="140" height="26" rx="4"/><text class="blue" x="570" y="157" text-anchor="middle">专家计算</text>
+  <path class="end" d="M640,134 V172"/>
+  <text class="blue" x="648" y="157">t_c + B_miss/β</text>
+  <path class="brace" d="M350,176 V181 H500 V176"/>
+  <text class="a2" x="425" y="193" text-anchor="middle">B_miss/β 全部计入等待</text>
+  <text class="lane" x="28" y="234">预取，预测正确</text>
+  <rect class="box" x="180" y="212" width="110" height="26" rx="4"/><text class="t" x="235" y="229" text-anchor="middle">上一层计算</text>
+  <rect class="box" x="290" y="212" width="60" height="26" rx="4"/><text class="t" x="320" y="229" text-anchor="middle">路由</text>
+  <rect class="xfer" x="350" y="212" width="40" height="26" rx="4"/><text class="a2" x="370" y="229" text-anchor="middle">剩余</text>
+  <rect class="compute" x="390" y="212" width="140" height="26" rx="4"/><text class="blue" x="460" y="229" text-anchor="middle">专家计算</text>
+  <path class="end" d="M530,206 V244"/>
+  <text class="blue" x="538" y="229">t_c + max(0, B_miss/β − t_o)</text>
+  <rect class="xfer" x="240" y="244" width="150" height="18" rx="4"/><text class="a2" x="315" y="257" text-anchor="middle">提前读入，与计算重叠</text>
+  <path class="brace" d="M240,266 V271 H350 V266"/>
+  <text class="a2" x="295" y="283" text-anchor="middle">t_o（可重叠部分）</text>
+  <path class="brace" d="M352,266 V271 H390 V266"/>
+  <text class="a2" x="392" y="283">t_wait</text>
+  <text class="lane" x="28" y="318">预取，预测错误</text>
+  <rect class="box" x="180" y="296" width="110" height="26" rx="4"/><text class="t" x="235" y="313" text-anchor="middle">上一层计算</text>
+  <rect class="box" x="290" y="296" width="60" height="26" rx="4"/><text class="t" x="320" y="313" text-anchor="middle">路由</text>
+  <rect class="xfer" x="350" y="296" width="150" height="26" rx="4"/><text class="a2" x="425" y="313" text-anchor="middle">读入所需专家</text>
+  <rect class="compute" x="500" y="296" width="140" height="26" rx="4"/><text class="blue" x="570" y="313" text-anchor="middle">专家计算</text>
+  <path class="end" d="M640,290 V328"/>
+  <text class="blue" x="648" y="313">t_c + B_miss/β，另耗带宽与容量</text>
+  <rect class="waste" x="240" y="328" width="150" height="18" rx="4"/><text class="dim" x="315" y="341" text-anchor="middle">读入了未被选中的专家</text>
+  <path class="axis" d="M180,372 H840" marker-end="url(#f103-ax)"/>
+  <text class="dim" x="180" y="390" text-anchor="middle">step 开始</text>
+  <text class="dim" x="836" y="390" text-anchor="end">时间（示意，不按实测比例）</text>
+  <text class="dim" x="430" y="414" text-anchor="middle">t_c：本 step 的计算与固定分派耗时；B_miss：本步仍需换入的字节数；β：有效传输带宽；t_o：能与前面的计算重叠的传输时间。</text>
+</svg>

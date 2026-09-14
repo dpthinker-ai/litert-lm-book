@@ -1,0 +1,446 @@
+<svg viewBox="0 0 860 432" width="860" height="432" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gemma 4 单层 128 个路由专家在单 token、16 token 集中分派与分散分派下的专家并集、每专家行数、唯一权重与权重项算术强度">
+  <defs>
+    <style>
+      text { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+      .title { fill: var(--fig-text, #1f2328); font-size: 15px; font-weight: 700; }
+      .head { fill: var(--fig-accent, #0b57d0); font-size: 12px; font-weight: 700; }
+      .t { fill: var(--fig-text, #1f2328); font-size: 11px; }
+      .soft { fill: var(--fig-text-soft, #57606a); font-size: 10.5px; }
+      .dim { fill: var(--fig-text-dim, #8b949e); font-size: 10px; }
+      .big { fill: var(--fig-accent, #0b57d0); font-size: 13px; font-weight: 700; }
+      .panel { fill: var(--fig-surface, #f6f8fa); stroke: var(--fig-border, #d0d7de); stroke-width: 1.4; }
+      .cell { fill: var(--fig-bg, #ffffff); stroke: var(--fig-border, #d0d7de); stroke-width: 0.8; }
+      .sel { fill: var(--fig-accent, #0b57d0); stroke: var(--fig-accent, #0b57d0); stroke-width: 0.8; }
+      .rule { stroke: var(--fig-border, #d0d7de); stroke-width: 1; }
+    </style>
+  </defs>
+  <text class="title" x="430" y="26" text-anchor="middle">Gemma 4 单层 128 个路由专家：专家矩阵计算量只随 T·K 变化，唯一权重随路由分布变化</text>
+  <rect class="panel" x="28" y="44" width="250" height="342" rx="8"/>
+  <text class="head" x="40" y="66">单 token</text>
+  <text class="soft" x="40" y="83">T = 1，8 条分派</text>
+  <rect class="cell" x="42" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="56" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="70" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="84" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="98" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="112" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="126" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="140" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="154" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="168" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="182" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="196" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="210" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="224" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="238" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="252" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="42" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="56" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="70" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="84" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="98" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="112" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="126" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="140" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="154" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="168" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="182" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="196" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="210" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="224" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="238" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="252" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="42" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="56" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="70" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="84" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="98" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="112" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="126" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="140" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="154" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="168" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="182" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="196" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="210" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="224" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="238" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="252" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="42" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="56" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="70" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="84" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="98" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="112" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="126" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="140" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="154" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="168" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="182" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="196" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="210" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="224" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="238" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="252" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="42" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="56" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="70" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="84" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="98" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="112" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="126" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="140" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="154" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="168" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="182" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="196" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="210" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="224" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="238" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="252" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="42" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="56" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="70" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="84" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="98" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="112" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="126" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="140" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="154" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="168" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="182" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="196" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="210" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="224" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="238" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="252" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="42" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="56" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="70" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="84" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="98" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="112" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="126" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="140" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="154" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="168" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="182" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="196" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="210" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="224" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="238" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="252" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="42" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="56" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="70" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="84" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="98" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="112" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="126" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="140" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="154" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="168" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="182" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="196" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="210" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="224" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="238" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="252" y="194" width="12" height="12" rx="1.5"/>
+  <line class="rule" x1="40" y1="216" x2="266" y2="216"/>
+  <text class="t" x="40" y="236">专家并集 U = 8</text>
+  <text class="t" x="40" y="254">每个有输入的专家：1 行</text>
+  <text class="t" x="40" y="272">唯一权重（INT4 理想值）：0.02216 GiB</text>
+  <text class="big" x="40" y="298">权重项算术强度 4 FLOPs/byte</text>
+  <line class="rule" x1="40" y1="312" x2="266" y2="312"/>
+  <rect class="sel" x="40" y="325" width="10" height="10" rx="1.5"/>
+  <text class="dim" x="55" y="334">有输入的专家</text>
+  <rect class="cell" x="140" y="325" width="10" height="10" rx="1.5"/>
+  <text class="dim" x="155" y="334">无输入</text>
+  <text class="dim" x="40" y="358">其余 120 个专家无输入</text>
+  <rect class="panel" x="306" y="44" width="250" height="342" rx="8"/>
+  <text class="head" x="318" y="66">16 个 token，集中分派</text>
+  <text class="soft" x="318" y="83">T = 16，128 条分派</text>
+  <rect class="cell" x="320" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="334" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="348" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="362" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="376" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="390" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="404" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="418" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="432" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="446" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="460" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="474" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="488" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="502" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="516" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="530" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="320" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="334" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="348" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="362" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="376" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="390" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="404" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="418" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="432" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="446" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="460" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="474" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="488" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="502" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="516" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="530" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="320" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="334" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="348" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="362" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="376" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="390" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="404" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="418" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="432" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="446" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="460" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="474" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="488" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="502" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="516" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="530" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="320" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="334" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="348" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="362" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="376" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="390" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="404" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="418" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="432" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="446" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="460" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="474" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="488" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="502" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="516" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="530" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="320" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="334" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="348" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="362" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="376" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="390" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="404" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="418" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="432" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="446" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="460" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="474" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="488" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="502" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="516" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="530" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="320" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="334" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="348" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="362" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="376" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="390" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="404" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="418" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="432" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="446" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="460" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="474" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="488" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="502" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="516" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="530" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="320" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="334" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="348" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="362" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="376" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="390" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="404" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="418" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="432" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="446" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="460" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="474" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="488" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="502" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="516" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="530" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="320" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="334" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="348" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="362" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="376" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="390" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="404" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="418" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="432" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="446" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="460" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="474" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="488" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="502" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="516" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="cell" x="530" y="194" width="12" height="12" rx="1.5"/>
+  <line class="rule" x1="318" y1="216" x2="544" y2="216"/>
+  <text class="t" x="318" y="236">专家并集 U = 8</text>
+  <text class="t" x="318" y="254">每个有输入的专家：16 行</text>
+  <text class="t" x="318" y="272">唯一权重（INT4 理想值）：0.02216 GiB</text>
+  <text class="big" x="318" y="298">权重项算术强度 64 FLOPs/byte</text>
+  <line class="rule" x1="318" y1="312" x2="544" y2="312"/>
+  <rect class="sel" x="318" y="325" width="10" height="10" rx="1.5"/>
+  <text class="dim" x="333" y="334">有输入的专家</text>
+  <rect class="cell" x="418" y="325" width="10" height="10" rx="1.5"/>
+  <text class="dim" x="433" y="334">无输入</text>
+  <text class="dim" x="318" y="358">同 8 个专家各收 16 行，其余 120 个无输入</text>
+  <rect class="panel" x="584" y="44" width="250" height="342" rx="8"/>
+  <text class="head" x="596" y="66">16 个 token，分散分派</text>
+  <text class="soft" x="596" y="83">T = 16，128 条分派</text>
+  <rect class="sel" x="598" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="612" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="626" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="640" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="654" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="668" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="682" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="696" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="710" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="724" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="738" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="752" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="766" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="780" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="794" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="808" y="96" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="598" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="612" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="626" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="640" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="654" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="668" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="682" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="696" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="710" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="724" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="738" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="752" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="766" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="780" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="794" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="808" y="110" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="598" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="612" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="626" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="640" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="654" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="668" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="682" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="696" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="710" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="724" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="738" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="752" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="766" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="780" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="794" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="808" y="124" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="598" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="612" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="626" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="640" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="654" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="668" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="682" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="696" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="710" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="724" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="738" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="752" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="766" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="780" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="794" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="808" y="138" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="598" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="612" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="626" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="640" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="654" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="668" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="682" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="696" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="710" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="724" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="738" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="752" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="766" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="780" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="794" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="808" y="152" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="598" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="612" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="626" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="640" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="654" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="668" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="682" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="696" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="710" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="724" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="738" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="752" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="766" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="780" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="794" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="808" y="166" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="598" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="612" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="626" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="640" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="654" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="668" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="682" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="696" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="710" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="724" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="738" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="752" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="766" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="780" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="794" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="808" y="180" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="598" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="612" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="626" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="640" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="654" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="668" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="682" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="696" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="710" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="724" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="738" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="752" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="766" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="780" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="794" y="194" width="12" height="12" rx="1.5"/>
+  <rect class="sel" x="808" y="194" width="12" height="12" rx="1.5"/>
+  <line class="rule" x1="596" y1="216" x2="822" y2="216"/>
+  <text class="t" x="596" y="236">专家并集 U = 128</text>
+  <text class="t" x="596" y="254">每个有输入的专家：1 行</text>
+  <text class="t" x="596" y="272">唯一权重（INT4 理想值）：0.35449 GiB</text>
+  <text class="big" x="596" y="298">权重项算术强度 4 FLOPs/byte</text>
+  <line class="rule" x1="596" y1="312" x2="822" y2="312"/>
+  <rect class="sel" x="596" y="325" width="10" height="10" rx="1.5"/>
+  <text class="dim" x="611" y="334">有输入的专家</text>
+  <rect class="cell" x="696" y="325" width="10" height="10" rx="1.5"/>
+  <text class="dim" x="711" y="334">无输入</text>
+  <text class="dim" x="596" y="358">各 token 的 8 个专家互不重叠</text>
+  <text class="dim" x="430" y="406" text-anchor="middle">按 D = 2816、H = 704、理想 INT4、每个选中专家权重只读一次核算；三种分布的路由专家矩阵计算量分别为 95.16 MFLOPs、1.523 GFLOPs、1.523 GFLOPs。</text>
+  <text class="dim" x="430" y="424" text-anchor="middle">集中与分散均为人为设定的分布，不是实测路由；均匀独立假设下 T = 16 的期望并集约为 82，介于两者之间。</text>
+</svg>
