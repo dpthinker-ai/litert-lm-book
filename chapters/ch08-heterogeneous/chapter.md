@@ -246,7 +246,7 @@ const TensorCoreAffinity kTensorAffinities[] = {
 
 CPU 算子通过线程池并行执行，构造参数 `max_num_threads` 给出线程数上限。增加线程数可能提高矩阵运算吞吐，也会增加调度开销，并逐步受到内存带宽限制。线程数对功耗、温度和持续性能的影响需要在目标设备上同时测量，本章的扫描只记录吞吐。
 
-`CpuConfig::number_of_threads` 的默认值为 4，注释直接写 "The default value is 4"。C++ 命令行入口用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`[^ch08-issue-2505]；本书采集用的 Python CLI 未暴露该 flag）。覆盖路径位于 CPU 后端专属的配置分支：
+`CpuConfig::number_of_threads` 的默认值为 4，注释直接写 "The default value is 4"。C++ 命令行入口用 `--num_cpu_threads` 覆盖（对应上游需求 `LiteRT-LM#2505`[^ch08-issue-2505]）；本书 Mac 主矩阵所用的 v0.13.1 Python CLI 没有线程数参数，v0.17.0 的 CLI 已提供 `--cpu-thread-count`。覆盖路径位于 CPU 后端专属的配置分支：
 
 ```cpp
 // runtime/engine/litert_lm_lib.cc:571-582
