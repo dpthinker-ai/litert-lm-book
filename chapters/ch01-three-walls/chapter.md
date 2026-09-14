@@ -6,7 +6,7 @@
 
 LiteRT-LM 是一个在手机、手表和浏览器等受限设备上运行 LLM 的推理运行时。进入约束分析之前，先回答一个问题：它与 LiteRT 是什么关系。1.2 节说明端侧部署的动机，1.3 至 1.5 节量化三类物理约束，1.6 节对照同类运行时。后续章节讨论实现时，会反复引用这一节建立的软件栈分层。
 
-Google 官方将 LiteRT-LM 定义为“使用 LiteRT 运行 LLM 的编排层”。[^ch01-litertlm-overview] LiteRT-LM 处理 LLM 特有的模型容器、tokenizer、提示模板和会话状态。它还组织 prefill/decode 循环与采样，处理约束解码、工具调用和多模态输入。LiteRT 则负责通用模型的加载、编译、张量缓冲和执行，把计算分派给 CPU、GPU 或 NPU 对应的实现。本书把每一条这样的执行路径称为后端（backend），它包括处理器本身，也包括驱动它的 kernel、后端委托与厂商运行时。一部手机是一台设备，上面通常同时有 CPU、GPU、NPU 几个可选后端；选后端选的是执行路径，不是换设备。LiteRT 的 `CompiledModel` API 通过编译选项选择后端，然后提供同步或异步的模型调用。[^ch01-litert-overview]
+LiteRT-LM 仓库的 README 将它定义为“使用 LiteRT 运行 LLM 的编排层”。[^ch01-litertlm] LiteRT-LM 处理 LLM 特有的模型容器、tokenizer、提示模板和会话状态。它还组织 prefill/decode 循环与采样，处理约束解码、工具调用和多模态输入。LiteRT 则负责通用模型的加载、编译、张量缓冲和执行，把计算分派给 CPU、GPU 或 NPU 对应的实现。本书把每一条这样的执行路径称为后端（backend），它包括处理器本身，也包括驱动它的 kernel、后端委托与厂商运行时。一部手机是一台设备，上面通常同时有 CPU、GPU、NPU 几个可选后端；选后端选的是执行路径，不是换设备。LiteRT 的 `CompiledModel` API 通过编译选项选择后端，然后提供同步或异步的模型调用。[^ch01-litert-overview]
 
 二者不是并列关系。LiteRT-LM 调用 LiteRT，使用者通常不直接操作 `CompiledModel`；反过来，只使用 LiteRT 也不会自动获得对话历史、停止条件或工具调用——这些属于 LLM 的上层语义。
 
@@ -152,11 +152,11 @@ MoE 的单步专家工作集随路由选择变化。总参数仍影响权重保�
 
 $$ E_{\mathrm{mem/token}} \approx D \times e_{\mathrm{byte}} $$
 
-\\(e_{\mathrm{byte}}\\) 随制造工艺、内存类型、访问局部性、功耗状态和测量口径变化，没有跨设备通用的常数，下面只演示代入方法。这里先分清口径：能耗资料常按每比特给出 DRAM 访问能耗，Horowitz 给出的 640 pJ / 32 位访问即 20 pJ/bit，折合每字节 160 pJ。[^ch01-horowitz] 本节按每字节代入，取 \\(e_{\mathrm{byte}}=20\\) pJ/byte（1 pJ = \\(10^{-12}\\) J）；这个取值与上一句的 20 pJ/bit 数字相同、量纲不同，两者不可互引，换用其他来源时须先确认它按比特还是按字节给出。每 token 的 DRAM 流量仍取 1.4 节的 \\(2\times10^9\\) 字节，则
+\\(e_{\mathrm{byte}}\\) 随制造工艺、内存类型、访问局部性、功耗状态和测量口径变化，没有跨设备通用的常数，下面只演示代入方法。这里先分清口径：能耗资料常按每比特给出 DRAM 访问能耗，Horowitz 在 2014 年给出的 640 pJ / 32 位访问即 20 pJ/bit，折合每字节 160 pJ。[^ch01-horowitz] 该数值基于当时的工艺与内存类型，不能直接代表现在的手机。本节假定 \\(e_{\mathrm{byte}}=40\\) pJ/byte（1 pJ = \\(10^{-12}\\) J），即上述数值的四分之一；这是便于验算的题设，不对应任何设备的实测值。换用其他来源时，须先确认它按比特还是按字节给出。每 token 的 DRAM 流量仍取 1.4 节的 \\(2\times10^9\\) 字节，则
 
-$$ 2 \times 10^{9}\ \text{字节} \times 20 \times 10^{-12}\ \text{J/字节} = 0.04\ \text{J/token} $$
+$$ 2 \times 10^{9}\ \text{字节} \times 40 \times 10^{-12}\ \text{J/字节} = 0.08\ \text{J/token} $$
 
-20 pJ/byte 是按每字节计的示意取值，不是本书设备的实测值，也不存在跨设备通用的常数；若改用上一段的每比特口径（160 pJ/byte），这里的结果将是现在的 8 倍。算出的 0.04 J/token 也只覆盖 DRAM 访问一项，不含算术运算、量化解包、显示、操作系统、无线电和电源转换，不能据此推算手机续航或可生成的 token 总数。整机能耗要在目标设备上实测。
+若直接代入 Horowitz 的 160 pJ/byte，结果为 0.32 J/token。两个结果都只覆盖 DRAM 访问一项，不含算术运算、量化解包、显示、操作系统、无线电和电源转换，不能据此推算手机续航或可生成的 token 总数。整机能耗要在目标设备上实测。
 
 减少 DRAM 流量能同时降低带宽占用与访问能耗，但只有当这两项在总成本中占主要部分时，收益才接近线性。软件侧另有一组影响功耗的可调参数：线程数、核心绑定和异步调度都会改变吞吐、功率与温度，取值应依据持续负载实验确定。
 
@@ -191,7 +191,7 @@ $$ 2 \times 10^{9}\ \text{字节} \times 20 \times 10^{-12}\ \text{J/字节} = 0
 
 在 batch=1、稠密模型、权重远大于片上缓存且 kernel 有效的条件下，decode 通常主要受内存带宽约束。本章以 4B 理想 INT4 权重和 50 GB/s 有效带宽为题设，算得的 25 tokens/s 是带宽侧上限；完整的 Roofline 上限还要与算力侧比较，真实上下文还要把 KV cache 与其他流量加进分母。
 
-功耗与后端决定峰值能否持续。20 pJ/byte 只是示意假设，不能推导整机续航；CPU、GPU 与 NPU 的性能和能效也必须针对模型与设备测量。
+功耗与后端决定峰值能否持续。40 pJ/byte 只是示意假设，不能推导整机续航；CPU、GPU 与 NPU 的性能和能效也必须针对模型与设备测量。
 
 ---
 
@@ -199,7 +199,7 @@ $$ 2 \times 10^{9}\ \text{字节} \times 20 \times 10^{-12}\ \text{J/字节} = 0
 
 1. 内存预算复算。一台 12 GiB 手机，题设假定操作系统与其他应用合计占用 5 GiB。按 KV cache 每 token 128 KiB 计算。求 7B 模型的理想 INT4 权重与 8K 上下文 KV cache 的字节数。仅凭这两项能否判定可运行？上下文增至 32K 时呢？
 2. 带宽侧上限复算。一款 SoC 使用 LPDDR5X-9600 与 64 bit 总线。先由数据率与总线宽度推导理论峰值带宽，再估算 INT8 4B 稠密模型的带宽侧 decode 上限。说明为什么它不是持续性能承诺。
-3. 能耗假设变体。题设明确假定 \\(e_{\mathrm{byte}}=20\\) pJ/byte，按每字节计，不与 20 pJ/bit 混用。若 INT4 2B 模型每 token 产生约 1 GB DRAM 流量，计算 DRAM 访问能耗。再计算把 15 Wh 全部用于这一项时的算术上界，并说明它为什么不代表设备续航。
+3. 能耗假设变体。题设明确假定 \\(e_{\mathrm{byte}}=40\\) pJ/byte，按每字节计，不与每比特口径混用。若 INT4 2B 模型每 token 产生约 1 GB DRAM 流量，计算 DRAM 访问能耗。再计算把 15 Wh 全部用于这一项时的算术上界，并说明它为什么不代表设备续航。
 4. Roofline 判断。解释为什么 batch=1 的稠密模型通常表现为 prefill 算术强度较高、decode 算术强度较低。再列出一个会破坏该简化判断的条件。
 5. 条件判断。某 decode 工作点已确认受带宽约束。若芯片计算吞吐翻倍而有效内存带宽不变，带宽侧上限是否变化？若尚未确认瓶颈，为什么不能直接作答？
 6. 层级判断。某次部署中，模型加载与编译成功，首次调用 `Run` 时返回硬件驱动错误。这个错误位于软件栈的哪一层？排查时应从哪个运行时开始看？
@@ -211,5 +211,4 @@ $$ 2 \times 10^{9}\ \text{字节} \times 20 \times 10^{-12}\ \text{J/字节} = 0
 [^ch01-mlc]: MLC LLM，[*Welcome to MLC LLM*](https://llm.mlc.ai/docs/)，文档版本 0.1.0；访问日期：2026-07-18。
 [^ch01-executorch]: PyTorch，[ExecuTorch](https://github.com/pytorch/executorch)，GitHub 仓库；访问日期：2026-07-18。
 [^ch01-litertlm]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/tree/v0.17.0)，版本 v0.17.0；访问日期：2026-09-13。
-[^ch01-litertlm-overview]: Google AI Edge，[*LiteRT-LM Overview*](https://developers.google.com/edge/litert-lm/overview)，文档对应 LiteRT-LM v0.14.0；访问日期：2026-08-15。该页对 LiteRT-LM 与 LiteRT 的层级定义也与本书冻结的 v0.17.0 代码调用关系一致。
 [^ch01-litert-overview]: Google AI Edge，[*LiteRT overview*](https://developers.google.com/edge/litert/overview)，LiteRT 2.x `CompiledModel` API；访问日期：2026-08-15。

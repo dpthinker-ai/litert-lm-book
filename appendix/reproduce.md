@@ -15,7 +15,7 @@ litert-lm run gemma-4-e4b \
   --prompt="What is the capital of France?"
 ```
 
-`import` 命令把模型导入本地注册表并命名为 `gemma-4-e4b`，后续脚本和校验路径都使用这个名称。本书基准使用 litert-community 发布的 LiteRT-LM 模型包。对应的 Google Gemma 基础模型页面要求先接受许可；[^appc-google-model] 下载受限仓库前，还要按 Hugging Face CLI 文档运行 `hf auth login`。[^appc-hf-auth] 模型文件为数 GiB，下载前需确认磁盘空间充足。
+`import` 命令把模型导入本地注册表并命名为 `gemma-4-e4b`，后续脚本和校验路径都使用这个名称。本书基准使用 litert-community 发布的 LiteRT-LM 模型包。对应的 Google Gemma 基础模型页面（前言引用的 Google 模型卡）要求先接受许可；下载受限仓库前，还要按 Hugging Face CLI 文档运行 `hf auth login`。[^appc-hf-auth] 模型文件为数 GiB，下载前需确认磁盘空间充足。
 
 本书实际使用的 `model.litertlm` SHA-256 为 `0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0`。下载后先校验文件；仓库 revision 未在首次采集时保存，因此以文件哈希作为模型产物的最终标识：
 
@@ -192,7 +192,6 @@ python3 experiments/bench_release_report.py experiments/data/<本轮日期>/benc
 
 复算器校验原始日志哈希、token 计数与 CSV 中位数，并列出后端回退及未生效的配置。本次 GPU 日志显示，环形缓冲参数请求被忽略，主干实际使用 WebGPU/Metal。切换该参数的记录因此标为 `unsupported_control`，不能作为环形缓冲开关对照。
 
-[^appc-google-model]: Google，[*gemma-4-E4B-it* 模型卡](https://huggingface.co/google/gemma-4-E4B-it)；访问日期：2026-07-18。
 
 [^appc-hf-auth]: Hugging Face，[*Command Line Interface (CLI)*](https://huggingface.co/docs/huggingface_hub/en/guides/cli)，`hf auth login`；访问日期：2026-07-18。
 

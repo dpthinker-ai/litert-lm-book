@@ -13,7 +13,7 @@ Gemma 4 的 31B 稠密模型支持 256K 上下文、多模态输入与原生函�
 本书关注的是资源受限的设备上能提供哪些功能。端侧部署的价值、边界与代价见第 1 章 1.2 节。下面对照两个时间点的模型功能与部署条件：
 
 - 2023 年 7 月发布的 Llama 2（7B、13B、70B 三档参数）是纯文本模型，上下文长度为 4096 个 token。[^preface-llama2] 同年 9 月 1 日开始训练的 TinyLlama 选择了 1.1B 参数规模，面向计算和内存受限的应用。[^preface-tinyllama]
-- 2026 年 4 月 2 日发布的 Gemma 4，让支持文本、图像、视频与音频输入和 128K 上下文的模型能在手机和笔记本的内存限制内运行。官方公布的部署数据称，其中 E2B（2B 有效参数）使用 2-bit/4-bit 权重与按层内存映射的 embedding，可在部分设备上以不足 1.5 GB 的内存运行；decode 吞吐在 CPU 上（树莓派 5）约 7.6 tokens/s，在 NPU 上（Qualcomm Dragonwing IQ8）约 31 tokens/s。[^preface-gemma4-edge]
+- 2026 年 4 月 2 日发布的 Gemma 4，其中 E2B 与 E4B 接受文本、图像与音频输入，输出文本，模型上下文窗口为 128K；12B、26B MoE 与 31B 的窗口为 256K。[^preface-gemma-e4b-google] Google AI Edge 团队的博客称，借助 LiteRT 对 2-bit/4-bit 权重和按层内存映射 embedding 的支持，E2B（2B 有效参数）在部分设备上可以在不足 1.5 GB 的内存内运行；较小的 Gemma 4 模型在树莓派 5 的 CPU 上达到 133 prefill、7.6 decode tokens/s，在 Qualcomm Dragonwing IQ8 的 NPU 上达到 3,700 prefill、31 decode tokens/s。该博客没有注明这些吞吐对应的模型规格、量化与上下文长度。[^preface-gemma4-edge]
 
 这些部署资料说明，端侧开放模型已能提供多模态输入与长上下文支持。[^preface-gemma4-edge] 上下文长度、输入模态和吞吐分别描述功能范围与运行性能，不能据此判定不同模型的任务能力相当。比较任务能力，还需要在相同评测集上检验输出质量。
 
@@ -21,7 +21,7 @@ Gemma 4 的 31B 稠密模型支持 256K 上下文、多模态输入与原生函�
 
 ## Google 的端侧方案
 
-只有模型还不够，还需要把模型部署到设备上的运行时与工具链。Google 同时提供模型、运行时与部署平台。Gemma 4 是 Google DeepMind 在 2026 年推出的开放模型家族，官方将其定位为“可在云端、笔记本电脑和手机上部署的开放模型”，其中 E 系列专门面向边缘设备。[^preface-gemma-family] 发布当日，Google Developers Blog 同步公布了端侧配套方案：AI Edge Gallery 示例应用、Agent Skills 技能库以及 LiteRT-LM 部署路径。[^preface-gemma4-edge] 在 Android 侧，AICore 预览版已将 Gemma 4 定位为下一代 Gemini Nano 的基础模型。[^preface-gemma4-aicore] 同一时期，GDG China 的 Gemma 4 开发者大赛要求用 E2B/E4B 在真实硬件上演示完全离线的端侧部署。[^preface-gemma4-hackathon]
+只有模型还不够，还需要把模型部署到设备上的运行时与工具链。Google 同时提供模型、运行时与部署平台。Gemma 4 是 Google DeepMind 在 2026 年推出的开放模型家族，官方将其定位为“可在云端、笔记本电脑和手机上部署的开放模型”；[^preface-gemma-family] 模型卡称其中较小的 E2B 与 E4B 面向笔记本与手机上的本地执行。[^preface-gemma-e4b-google] 发布当日，Google Developers Blog 同步公布了端侧配套方案：AI Edge Gallery 示例应用、Agent Skills 技能库以及 LiteRT-LM 部署路径。[^preface-gemma4-edge] 在 Android 侧，AICore 预览版已将 Gemma 4 定位为下一代 Gemini Nano 的基础模型。[^preface-gemma4-aicore] 同一时期，GDG China 的 Gemma 4 开发者大赛要求用 E2B/E4B 在真实硬件上演示完全离线的端侧部署。[^preface-gemma4-hackathon]
 
 模型、运行时与部署平台出自同一家厂商，使 LiteRT-LM 值得作为本书的分析对象。它需要解决的问题——内存容量与带宽约束、异构后端调度、投机解码的接受率、多模态 embedding 路径、约束解码的信任边界——并非 LiteRT-LM 独有，其他端侧推理系统在实现同类功能时同样要处理。
 
@@ -31,7 +31,7 @@ Gemma 4 的 31B 稠密模型支持 256K 上下文、多模态输入与原生函�
 
 本书分析生产级端侧运行时的实现与工程权衡。它并非 Google 官方出版物，书中的所有观点及可能存在的错漏，均由作者负责。
 
-本书以 LiteRT-LM v0.17.0 为主要分析对象，回答一个核心问题：大语言模型如何在手机、手表和浏览器等受限设备上运行。主基准模型 Gemma 4 E4B 在 4B 有效参数规模下提供多模态理解与函数调用能力，模型产物以单文件 `.litertlm` 形式分发。[^preface-gemma-e4b]
+本书以 LiteRT-LM v0.17.0 为主要分析对象，回答一个核心问题：大语言模型如何在手机、手表和浏览器等受限设备上运行。主基准模型 Gemma 4 E4B 在 4B 有效参数规模下提供多模态理解与函数调用能力，模型产物以单文件 `.litertlm` 形式分发；litert-community 的模型卡称该产物最长支持 32K 上下文，低于模型本身的 128K 窗口。[^preface-gemma-e4b]
 
 本书不是使用手册，也不是逐行代码注释，而是关注**实现与权衡**：代码采用了什么设计，每种设计依赖哪些条件，又在哪些场景下受到限制。不同运行时的具体实现会变化，但都可以从内存预算、数据流、后端约束和测量口径这几个方面逐项分析。
 
@@ -76,6 +76,7 @@ Gemma 4 的 31B 稠密模型支持 256K 上下文、多模态输入与原生函�
 [^preface-litertlm-deploy]: Google Developers Blog，Yu-hui Chen、Ram Iyengar，[*On-device GenAI in Chrome, Chromebook Plus, and Pixel Watch with LiteRT-LM*](https://developers.googleblog.com/on-device-genai-in-chrome-chromebook-plus-and-pixel-watch-with-litert-lm/)，2025-09-24；访问日期：2026-07-18。
 [^preface-edge-gallery]: Google AI Edge，[Google AI Edge Gallery](https://github.com/google-ai-edge/gallery)，GitHub 仓库；访问日期：2026-07-18。
 [^preface-gemma-family]: Google DeepMind，[Gemma](https://deepmind.google/models/gemma/)；访问日期：2026-07-18。
-[^preface-gemma-e4b]: Google AI Edge Community，[Gemma 4 E4B LiteRT-LM 模型卡](https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm)；访问日期：2026-07-18。
+[^preface-gemma-e4b]: Google AI Edge Community，[Gemma 4 E4B LiteRT-LM 模型卡](https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm)；访问日期：2026-09-14。
+[^preface-gemma-e4b-google]: Google，[Gemma 4 E4B-it 模型卡](https://huggingface.co/google/gemma-4-E4B-it)，Hugging Face；访问日期：2026-09-14。
 [^preface-litertlm-docs]: Google AI Edge，[LiteRT-LM 官方文档](https://developers.google.com/edge/litert-lm)，更新日期：2026-07-09；访问日期：2026-07-18。
 [^preface-huawei-moe]: 华为，[*HUAWEI Mate XT 2 | ULTIMATE DESIGN 卖点*](https://consumer.huawei.com/cn/support/content/zh-cn16114946/)，适用版本 HarmonyOS 7.0，“大屏 AI 再进化”；访问日期：2026-09-13。
