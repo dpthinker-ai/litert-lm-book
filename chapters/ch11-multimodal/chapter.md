@@ -401,7 +401,7 @@ $$
 
 这个细节会影响离线复算。若只知道整段频谱长度和缩减因子，却不知道 `sequence_length_`，便不能在所有情况下还原输出 token 数。若编码器提供输出 mask，则有效长度直接由 mask 中的有效项计数，不再使用上述取整公式。
 
-执行器在编码前检查频谱与 mask 的序列长度是否相等，并检查频谱特征宽度是否符合模型期望，这两项检查发生在模型运行前。收到“sequence length must match”时，应先核对预处理张量和 mask；收到“feature dimension must match”时，应核对 mel 配置或是否把其他模型的预处理结果传入当前执行器。
+执行器在编码前检查频谱与 mask 的序列长度是否相等，并检查频谱特征宽度是否符合模型期望，这两项检查发生在模型运行前。收到“must match mask sequence length”时，应先核对预处理张量和 mask；收到“must match model expectation”时，应核对 mel 配置或是否把其他模型的预处理结果传入当前执行器。
 
 图像和音频各阶段的 shape 归纳如下。表中符号只表达各层关系，不替代模型元数据或运行时张量检查。
 
@@ -499,7 +499,7 @@ FC 约束生成器逐个读取工具的 `name`，只为声明过的函数名生�
 
 这不是完整的 JSON Schema 验证器。FC 文法生成代码没有读取 `minimum`、`maximum`、字符串长度、正则 pattern 或跨字段关系；数组与对象映射到通用递归规则，没有继续展开 `items` 或嵌套 `properties`。这些结论来自 FC 文法生成路径实际访问的 schema 字段，没有被读取的字段不能形成采样约束。
 
-`constraint_mode` 还决定输出范围。`kFunctionCallsOnly` 只接受一个或多个函数调用；`kTextAndOr` 允许普通文本、函数调用或二者组合。若后者没有工具声明，生成器退化为禁止出现函数调用 fence 的文本规则。因此，“开启约束解码”并不总意味着“必须调用工具”。
+`constraint_mode` 还决定输出范围。`kFunctionCallOnly` 只接受一个或多个函数调用；`kTextAndOr` 允许普通文本、函数调用或二者组合；两者分别映射到文法生成器的 `kFunctionCallsOnly` 与 `kTextAndOrFunctionCalls`。若后者没有工具声明，生成器退化为禁止出现函数调用 fence 的文本规则。因此，“开启约束解码”并不总意味着“必须调用工具”。
 
 | 条件 | 由工具声明派生的 FC 约束可保证 | 仍需宿主验证 |
 |---|---|---|

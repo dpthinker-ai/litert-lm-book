@@ -563,7 +563,7 @@ LiteRT-LM 的多语言 API 采用三类原生边界：Python 与 Swift 经 C ABI
 4. 测试设计。`FakeLlmExecutor` 不含神经网络，为什么仍能单测停止序列和采样编排？哪些内容不在其测试范围内？
 5. 设计题。为 Go 语言编写一个最小绑定，至少需要包装哪些 C 函数？按“创建、使用、销毁”三个阶段列出。
 
-[^ch11-issue-2589]: google-ai-edge/LiteRT-LM，[*[Swift] Add a public `close()` method to `Conversation` for deterministic session release*](https://github.com/google-ai-edge/LiteRT-LM/issues/2589)，LiteRT-LM issue #2589，2026-06-16；访问日期：2026-07-18。
+[^ch11-issue-2589]: k-ikenomoto，[*[Swift] Add a public `close()` method to `Conversation` for deterministic session release*](https://github.com/google-ai-edge/LiteRT-LM/issues/2589)，LiteRT-LM issue #2589，2026-06-16；访问日期：2026-07-18。
 
-[^ch11-issue-2613]: google-ai-edge/LiteRT-LM，[*[Swift] Engine teardown crashes with `litert_lm_engine_delete` running on an arbitrary thread in `deinit` - adding a public `close()` to solve*](https://github.com/google-ai-edge/LiteRT-LM/issues/2613)，LiteRT-LM issue #2613，2026-06-19；访问日期：2026-07-18。
+[^ch11-issue-2613]: RafaelPena31，[*[Swift] Engine teardown crashes with `litert_lm_engine_delete` running on an arbitrary thread in `deinit` - adding a public `close()` to solve*](https://github.com/google-ai-edge/LiteRT-LM/issues/2613)，LiteRT-LM issue #2613，2026-06-19；访问日期：2026-07-18。
 [^ch11-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.17.0/README.md#L108-L113)，版本 v0.17.0；访问日期：2026-09-13。
