@@ -25,3 +25,4 @@ offset,size_mb,signatures,key_tensor
 # - logits [1,1,262144] → 词表 262,144（=2^18）
 # - param_tensor [1,1,1,7] INT32（单缓冲 KV 路径的位置参数，见 ch06）
 # - mask [1,1,1,32003] BOOL
+# 2026-09-14 复核：decode 段的 `decode` 与 `verify` signature 的 logits 输出 dtype 均为 FLOAT32（tflite 2.18.0 解析 signature 输出张量；形状分别为 [1,1,262144] 与 [1,4,262144]）

@@ -116,9 +116,9 @@ MoE 的生成循环仍然按 step 推进，但相邻 step 可能选择不同专�
           output_logits, decoded_ids.value(), &scores_tensor_));
 ```
 
-`TimeMarkDelta` 成对出现，用同一个标签标记一段耗时。`(1)``(3)` 标记 `executor_decode`，`(4)` 与后续同名调用标记 `sampling`。基准工具据此分别报告执行器与采样器阶段的耗时（见附录 D）。
+`TimeMarkDelta` 成对出现，用同一个标签标记一段耗时。`(1)``(3)` 标记 `executor_decode`，`(4)` 与后续同名调用标记 `sampling`。C++ 入口打印的 `BenchmarkInfo` 会按标签列出这些分段耗时；附录 D 的主矩阵来自 Python CLI，只保留四项指标，没有这一分项。
 
-`DecodeLogits` 返回的 `output_logits` 形状是 `[batch, seq, vocab]`。decode 阶段的常见单步形状中，`seq` 为 1；若 `batch` 也为 1，元素数就等于词表规模。附录 D 的历史基准模型 decode signature 为 `[1, 1, 262144]`，输出类型为 float32（见附录 D），因此该模型一次完整 logits 传输的数据量为
+`DecodeLogits` 返回的 `output_logits` 形状是 `[batch, seq, vocab]`。decode 阶段的常见单步形状中，`seq` 为 1；若 `batch` 也为 1，元素数就等于词表规模。本书基准模型的 decode signature 输出 logits 形状为 `[1, 1, 262144]`、类型为 FLOAT32（附录 D 第六节），因此该模型一次完整 logits 传输的数据量为
 
 $$ 262144 \times 4\ \text{B} = 1048576\ \text{B} = 1\ \text{MiB} $$
 
@@ -169,7 +169,7 @@ $$ 262144 \times 4\ \text{B} = 1048576\ \text{B} = 1\ \text{MiB} $$
 
 代码行 `(1)` 直接返回成功结果或 `kUnavailable` 以外的错误；只有 `kUnavailable` 才经 `(2)` 转入 `CreateCpuSampler`。转入 CPU 后是否发生设备到宿主复制，仍取决于 logits 的内存可访问性，而不是由这个 `switch` 单独决定。
 
-GPU 采样器能否使用，取决于平台、编译选项与 `LiteRtEnvironment`：`CreateGpuSampler` 按平台与环境选项选择 WebGPU、OpenCL 或 Metal 的尝试顺序，动态库按符号名加载，OpenCL 路径在动态加载失败后还会尝试静态链接入口。所以设备侧采样并不一定依赖独立的 `.so`，警告里提到的库名只是其中一种部署形态。
+GPU 采样器能否使用，取决于平台、编译选项与 `LiteRtEnvironment`：`CreateGpuSampler` 按平台与环境选项选择 WebGPU、OpenCL 或 Metal 的尝试顺序，动态库按符号名加载，三条路径在动态加载失败后都会尝试静态链接入口。所以设备侧采样并不一定依赖独立的 `.so`，警告里提到的库名只是其中一种部署形态。
 
 <div class="aside-compare">
 
