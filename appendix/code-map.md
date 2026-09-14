@@ -51,7 +51,7 @@
 | 主题 | 文件与符号 |
 |---|---|
 | 一次生成的完整链路 | `runtime/engine/engine.h` → `runtime/core/session_advanced.cc` → `runtime/core/tasks.cc` → `runtime/executor/llm_litert_compiled_model_executor.cc`；依次查看 Session、prefill、decode 与执行器调用 |
-| KV cache 双缓冲与异步 prefill | `runtime/executor/litert/state.cc`：`PrepareForModelInvocation`、`DeepCopy`；再查 `runtime/executor/llm_litert_compiled_model_executor.cc` 的 `prefill_chunk_size_`、`RunAsync` |
+| KV cache 双缓冲与异步 prefill | `runtime/executor/litert/state.cc`：`GetStateBuffers`、`DeepCopy`；再查 `runtime/executor/llm_litert_compiled_model_executor.cc` 的 `prefill_chunk_size_`、`RunAsync` |
 | 投机解码 | `runtime/executor/llm_litert_mtp_drafter.cc`：`RunDraftingLoop`、`RunVerification`、`num_drafted_tokens_`、`num_verified_tokens_` |
 | 对话文本增量生成 | `runtime/conversation/conversation.cc`：`Conversation::GetSingleTurnText`、`old_string`、`new_string` 及相邻的前缀检查与后缀提取 |
 | 采样策略 | `runtime/components/sampler.h`、`runtime/components/sampling_cpu_util.cc`、`runtime/components/top_p_cpu_sampler.cc`；内外采样分支见 `runtime/core/tasks.cc` 的 `DecodeAndSample` |

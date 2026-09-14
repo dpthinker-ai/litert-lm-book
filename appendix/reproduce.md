@@ -74,7 +74,7 @@ Android 数据尚未用 v0.17.0 重跑。下表 Android 项目的“已做”指
 | 6 | `max_num_tokens` 扫描 | 已做 | `experiments/max_tokens_sweep.sh`；附录 D“预留宽度扫描” |
 | 7 | 编译缓存冷启动 | 部分记录 | `experiments/data/baseline.csv` 记录了 Init API 聚合值的批内变化；缺少 cache 开/关与外部墙钟对照 |
 | 7 | 同一 checkpoint 的量化质量与性能对照 | 未完成，缺少可比产物 | `experiments/M4_PROTOCOL.md`；附录 D 第十五节 |
-| 7 | 分段并行加载 | 未做 | 开关仅 C API 暴露 |
+| 7 | 分段并行加载 | 未做 | 开关仅 C++ 设置与 C API 暴露，Python CLI 无此参数 |
 | 8 | CPU/GPU 与线程扫描 | 已做 | `experiments/android_bench.sh`；`experiments/data/android_threads.csv` |
 | 8 | NPU 端到端推理 | 未完成 | 加载与失败阶段见 `experiments/data/npu_enablement.md` |
 | 9 | MTP 主基准、Android 开关、自然文本与聚合比例 | 已做；Mac 主基准只有 `false`/`auto`，均为关闭 | `mtp.csv`、`android_mtp.csv`、`mtp_natural_phone.md`、`mtp_acceptance.md` |
