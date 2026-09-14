@@ -2,7 +2,7 @@
 
 > 进入实现细节之前，读者需要三项内容：一个可复现的运行起点（2.1 节）、一套按源码口径解读测量数字的方法（2.2 至 2.4 节）、一份说明各问题在哪章解答、代码归哪层、模型文件里有什么的索引（2.5 至 2.7 节）。本章依次给出这三样。
 
-第 1 章在明确的假设下推导了 decode 的带宽侧上限，那还只是估算。本章先运行 LiteRT-LM，再按源码定义逐项解读 benchmark 输出的四个数字，检验第 1 章的判断在实测工作点上是否成立；随后建立的五层职责视图与二十个问题索引，是后续各章共用的索引。
+第 1 章在明确的假设下推导了 decode 的带宽侧上限，那还只是估算。本章先运行 LiteRT-LM，再按源码定义逐项解读 benchmark 输出的四个数字，检验第 1 章的判断在实测工作点上是否成立；随后建立的五层职责视图与二十个问题清单，供后续各章共用。
 
 ## 2.1　运行命令行工具
 
@@ -29,7 +29,7 @@ ALL_PROXY=http://127.0.0.1:7890 litert-lm run \
 uv tool install --force --with 'httpx[socks]' 'litert-lm==0.17.0'
 ```
 
-指定 `--from-huggingface-repo` 时，`run` 调用下载模块。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，回答逐段出现在终端里。上面的 README 示例用默认采样，输出不保证每次相同；要展示一条可逐字核对的输出，得换用温度 0 的 v0.13.1 归档运行（采样确定性实验，实录见附录 D 第八节）。下面的 `gemma-4-e4b` 是本地注册名称，须先按附录 C 第一节导入模型。前面的直接下载运行不会建立这个名称。命令与输出如下：
+指定 `--from-huggingface-repo` 时，`run` 调用下载模块。本书基准模型文件为 3.66 GB，下载前应检查磁盘空间；耗时取决于网络与缓存状态。模型就绪后，回答逐段出现在终端里。上面的 README 示例用默认采样，输出不保证每次相同；要展示一条可逐字核对的输出，需换用温度 0 的 v0.13.1 归档运行（采样确定性实验，实录见附录 D 第八节）。下面的 `gemma-4-e4b` 是本地注册名称，须先按附录 C 第一节导入模型。前面的直接下载运行不会建立这个名称。命令与输出如下：
 
 ```bash
 litert-lm run gemma-4-e4b --backend cpu \
@@ -83,7 +83,7 @@ teeming with diverse life and holding immense power.
 litert_lm_main --backend=cpu --model_path=<你的模型>.litertlm
 ```
 
-对本书而言，这个入口程序有两点需要说明。第一，它默认开启 benchmark 记录，2.2 节解读的四项指标就产自这条路径。第二，它的主流程很短：读入模型资产，解析后端选择，生成引擎设置，交给工厂创建 Engine，最后异步提交消息、等待生成结束；工厂怎样按后端选择创建具体的执行器，是第 8 章的主题。
+对本书而言，这个入口程序有两点需要说明。第一，它默认开启 benchmark 记录；2.2 节解读的四项指标由同一个 `BenchmarkInfo` 计算，Python 的 `benchmark` 子命令读取的也是它。第二，它的主流程很短：读入模型资产，解析后端选择，生成引擎设置，交给工厂创建 Engine，最后异步提交消息、等待生成结束；工厂怎样按后端选择创建具体的执行器，是第 8 章的主题。
 
 至此 Python 与 C++ 两个入口都能运行。输入进入对话与 Session，经过 prefill、decode，由回调返回结果。第 3 至 5 章沿这条链分别展开状态管理、两阶段执行和输出处理。
 
@@ -167,7 +167,7 @@ v0.17.0 的 CLI 默认先执行一次不计入结果的 warmup，再运行 `--ru
 
 ## 2.4　Roofline 分析框架
 
-清单的最后两条问的是同一件事：限制一个吞吐数字的是算力还是带宽。要回答这个问题，可以借助第 1 章介绍的 Roofline 模型：token 生成速率由算力上限和带宽上限中更低的那条决定（公式见 1.4 节）。如果带宽上限更低，就称为受带宽约束（memory-bound）；如果算力上限更低，则称为受算力约束（compute-bound）。问题在于，端到端测量只能得到一个 tokens/s 的点值，单凭这一个数字无法判断哪条上限在起作用。
+2.3 节清单的最后两条问的是同一件事：限制一个吞吐数字的是算力还是带宽。要回答这个问题，可以借助第 1 章介绍的 Roofline 模型：token 生成速率由算力上限和带宽上限中更低的那条决定（公式见 1.4 节）。如果带宽上限更低，就称为受带宽约束（memory-bound）；如果算力上限更低，则称为受算力约束（compute-bound）。问题在于，端到端测量只能得到一个 tokens/s 的点值，单凭这一个数字无法判断哪条上限在起作用。
 
 第 1 章根据算术强度给出了一个分阶段判断：prefill 通常受算力约束，batch=1 的稠密 decode 通常受带宽约束。第 1 章计算出的 25 tokens/s 是基于假想手机的设定，不能直接套用，但分析方法本身可以检验。下面用两组数据检验这个判断在本书所用的这台 Mac 上是否成立。
 
@@ -223,7 +223,7 @@ $$ d_{\mathrm{eq}}=\frac{D_w}{S}\left(\frac{R_s}{R_l}-1\right) $$
 
 > 表 2-2　二十个推理与运行时问题；许多问题由多个章节共同解答，表中同时列出了各部分的对应位置。
 
-MoE 的参数规模、专家工作集与内存管理在第 10 章单独讨论。表中没有列出与语言绑定相关的问题；关于各语言绑定如何复用核心 runtime、以及原生边界如何划分，请参见第 12 章。
+MoE 的参数规模、专家工作集与内存管理在第 10 章单独讨论。表中没有列出与语言绑定相关的问题；关于各语言绑定如何复用核心 runtime、以及原生边界如何划分，见第 12 章。
 
 ## 2.6　五层职责视图
 
@@ -301,14 +301,17 @@ LiteRT-LM Version: 1.5.0
 |     Sections (3)     |
 +----------------------+
 Section 0:
+  ...
   Begin Offset: 8192
   End Offset:   3579204608
   Data Type:    AnySectionDataType_TFLiteModel     # (1)
 Section 1:
+  ...
   Begin Offset: 3579204608
   End Offset:   3583074304
   Data Type:    AnySectionDataType_SP_Tokenizer    # (2)
 Section 2:
+  ...
   Begin Offset: 3583074304
   End Offset:   3583078400
   Data Type:    AnySectionDataType_LlmMetadataProto
@@ -319,7 +322,7 @@ Section 2:
     >>>>>>>> end of LlmMetadata
 ```
 
-`(1)` 是存放权重和计算图的 TFLite 模型段，`(2)` 是 SentencePiece 分词器；这个示例把它们和 LLM 元数据分别放在三个 section 中，其他模型可以采用不同布局。在元数据段内，`(3)` 的 `start_token` 是 BOS，`(4)` 的 `stop_tokens` 对应停止序列配置（第 12 问），`(5)` 的 `prompt_templates` 是聊天模板（第 7 问）。构建 Session 配置时，源码会依次读取这三项；它们如何影响输入构造和停止判断，见第 3、5 章。
+`(1)` 是存放权重和计算图的 TFLite 模型段，`(2)` 是 SentencePiece 分词器；这个示例把它们和 LLM 元数据分别放在三个 section 中，其他模型可以采用不同布局。在元数据段内，`(3)` 的 `start_token` 是 BOS，`(4)` 的 `stop_tokens` 对应停止序列配置（第 12 问），`(5)` 的 `prompt_templates` 是聊天模板（第 7 问）。构建 Session 配置时，源码会读取这三项；它们如何影响输入构造和停止判断，见第 3、5 章。
 
 section 的定位规则很简单：`begin_offset` 和 `end_offset` 定义半开区间 `[begin, end)`，schema 注释直接给出了这一约定，读取函数也使用 `end_offset - begin_offset` 计算大小；`data_type` 用于区分 section 的内容，常见取值包括 `TFLiteModel`、`SP_Tokenizer`、`HF_Tokenizer_Zlib`、`LlmMetadataProto` 和 `GenericBinaryData`。
 
@@ -343,6 +346,6 @@ TFLite section 的读取路径先用 `end_offset - begin_offset` 算出模型大
 
 [^ch02-litertlm-readme]: Google AI Edge，[LiteRT-LM README](https://github.com/google-ai-edge/LiteRT-LM/blob/v0.17.0/README.md#L88-L98)，版本 v0.17.0；访问日期：2026-09-13。
 [^ch02-m5pro-bandwidth]: Apple，[*Apple debuts M5 Pro and M5 Max to supercharge the most demanding pro workflows*](https://www.apple.com/au/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/)，2026-03-04；访问日期：2026-08-30。
-[^ch02-issue-2568]: Yegorsh，[*`--max-num-tokens` unreasonably affects decoding speed*](https://github.com/google-ai-edge/LiteRT-LM/issues/2568)，LiteRT-LM issue #2568，2026-06-13；访问日期：2026-07-18。
+[^ch02-issue-2568]: Yegorsh，[*\[Bug\] `--max-num-tokens` unreasonably affects decoding speed*](https://github.com/google-ai-edge/LiteRT-LM/issues/2568)，LiteRT-LM issue #2568，2026-06-13；访问日期：2026-07-18。
 [^ch02-issue-2281]: 4ntoine，[*Different inference result depending on backend*](https://github.com/google-ai-edge/LiteRT-LM/issues/2281)，LiteRT-LM issue #2281，2026-05-15；访问日期：2026-07-18。
 [^ch02-issue-2227]: Shoolife，[*MTP / speculative decoding regresses decode tok/s on PowerVR GPU (Tensor G6) — even with GPU sampler fully loaded*](https://github.com/google-ai-edge/LiteRT-LM/issues/2227)，LiteRT-LM issue #2227，2026-05-11；访问日期：2026-07-18。
