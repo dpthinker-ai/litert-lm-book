@@ -708,3 +708,16 @@ GPU 条件只选择 GPU accelerator，通常显式设置 WebGPU；另有一例�
 父进程按约 0.25 秒加采集开销的间隔监测 RSS、footprint 与系统压力。380 次有效采样中，364 次 normal、16 次 warning；没有触发 critical、18 GiB RSS 或 180 秒时限保护，也未见 GPU 后端验证错误。周期采样会遗漏短时峰值，因此阶段表与周期采样最大值不能互相替代。vmmap 和阶段写盘会扰动运行，本组的时延字段不纳入第二十一至二十四节性能统计。
 
 数据位于 `experiments/data/2026-09-13/moe-memory/`，包含请求、阶段记录、vmmap、原生日志与压力采样。`summary.json` 汇总字节数，`manifest.json` 校验文件。第一进程与后两进程的脚本分别冻结为 `collector-at-run.py`、`collector-revised.py`；差异只涉及错误归档与引擎计时，内存接口和阶段位置相同。本组不汇总引擎时间，复现见附录 C 第十五节。
+
+## 二十六、Hugging Face 下载路径的代理环境探测（2026-09-14）
+
+本组只验证下载功能，不产生性能指标。探针脚本为 `experiments/hf_download_proxy_probe.py`：对四种代理环境各启动一个子进程，调用 CLI 自带的下载模块列出 `litert-community/gemma-4-E4B-it-litert-lm` 的文件并下载其 README.md（13 KiB），每种环境前清除 CLI 缓存；每个子进程另禁用代理直连 huggingface.co 一次，四次均返回 200。两个隔离 venv 分别安装 litert-lm 0.17.0（Python 3.12）与 0.13.1（Python 3.11，随装 huggingface_hub 1.31.0 与 httpx 0.28.1，无 socksio）。代理客户端监听 127.0.0.1:10808，HTTP 与 SOCKS 共用该端口。
+
+| 代理环境 | 0.17.0（`urllib`） | 0.13.1（huggingface_hub 与 httpx） |
+|---|---|---|
+| `HTTP_PROXY`/`HTTPS_PROXY` 指向 HTTP 代理 | 成功 | 成功 |
+| 不设代理变量，走系统代理 | 成功 | 成功 |
+| 仅 `ALL_PROXY=socks5://…` | 成功 | 失败 |
+| `HTTPS_PROXY=socks5://…` | 成功 | 失败 |
+
+0.13.1 两次失败的消息均为 `Using SOCKS proxy, but the 'socksio' package is not installed`。0.17.0 在仅设 `ALL_PROXY` 时成功，是因为 `urllib` 把该变量记在 `all` 键下、处理 http/https 请求时不使用它，请求实为直连；据此推断，在直连不通的网络上该组会以连接错误而非 socksio 报错失败，`HTTPS_PROXY` 指向 socks5 地址的一组也依赖该端口同时接受 HTTP CONNECT，换纯 SOCKS 端口不会成功。原始日志与两个环境的包清单位于 `experiments/data/2026-09-14/proxy-probe/`。

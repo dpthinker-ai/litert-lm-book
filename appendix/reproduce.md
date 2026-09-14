@@ -25,6 +25,14 @@ shasum -a 256 ~/.litert-lm/models/gemma-4-e4b/model.litertlm
 
 `run` 与 `benchmark` 还接受 `--cache`，它决定后端编译产物的缓存方式（`python/litert_lm_cli/common.py:95-116`）：`disk`（默认）把编译产物持久化到模型旁的缓存文件；`memory` 请求内存缓存，实际可用性取决于后端与构建是否启用；`no` 关闭缓存，每次运行重新编译。本书用这两条命令采集的归档运行都使用 `disk`，其中 gpu/256 条件的首次 Init 聚合值高于后续调用（记录见附录 D 第二节）。归档没有独立核对运行前的缓存内容与后续命中情况，不能把时间差全部归因于缓存复用。切换取值会改变初始化路径，比较 Init 时间时须固定该取值。
 
+附录 D 第二十六节的下载路径代理探测用隔离 venv 复现，端口改为本机代理端口；HTTP 与 SOCKS 端口不同时加 `--socks-port`。对照组把版本换成 0.13.1（Python 3.11）后运行同一条探针命令：
+
+```bash
+uv venv --python 3.12 tmp/proxy-probe-v0.17.0-venv
+uv pip install --python tmp/proxy-probe-v0.17.0-venv/bin/python 'litert-lm==0.17.0'
+tmp/proxy-probe-v0.17.0-venv/bin/python experiments/hf_download_proxy_probe.py --port 10808
+```
+
 ## 二、从源码编译
 
 需要 Bazel（经 Bazelisk 自动取 7.6.1）。冻结版的官方构建指南列出了对应平台的前置条件与命令。[^appc-build-guide] 编译 CLI 演示程序：
