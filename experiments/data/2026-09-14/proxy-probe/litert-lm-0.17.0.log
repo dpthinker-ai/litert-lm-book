@@ -1,0 +1,130 @@
+[A-http-proxy-env] {"module": "litert_lm_cli.huggingface_download (urllib)", "direct_no_proxy": {"ok": true, "status": 200, "seconds": 0.37}, "list_files": {"ok": true, "result": "['gemma-4-E4B-it-gpu.litertlm', 'gemma-4-E4B-it-web.litertlm', 'gemma-4-E4B-it.litertlm']", "seconds": 1.0}, "download_readme": {"ok": true, "result": "/Users/dpthinker/.litert-lm/cache/huggingface/litert-community/gemma-4-E4B-it-litert-lm/README.md", "seconds": 1.89, "printed": "Downloading 'README.md' from 'litert-community/gemma-4-E4B-it-litert-lm' (13.0KiB)..."}}
+[B-no-proxy-env] {"module": "litert_lm_cli.huggingface_download (urllib)", "direct_no_proxy": {"ok": true, "status": 200, "seconds": 0.35}, "list_files": {"ok": true, "result": "['gemma-4-E4B-it-gpu.litertlm', 'gemma-4-E4B-it-web.litertlm', 'gemma-4-E4B-it.litertlm']", "seconds": 0.97}, "download_readme": {"ok": true, "result": "/Users/dpthinker/.litert-lm/cache/huggingface/litert-community/gemma-4-E4B-it-litert-lm/README.md", "seconds": 2.52, "printed": "Downloading 'README.md' from 'litert-community/gemma-4-E4B-it-litert-lm' (13.0KiB)..."}}
+[C-socks-only-ALL_PROXY] {"module": "litert_lm_cli.huggingface_download (urllib)", "direct_no_proxy": {"ok": true, "status": 200, "seconds": 0.4}, "list_files": {"ok": true, "result": "['gemma-4-E4B-it-gpu.litertlm', 'gemma-4-E4B-it-web.litertlm', 'gemma-4-E4B-it.litertlm']", "seconds": 0.35}, "download_readme": {"ok": true, "result": "/Users/dpthinker/.litert-lm/cache/huggingface/litert-community/gemma-4-E4B-it-litert-lm/README.md", "seconds": 0.54, "printed": "Downloading 'README.md' from 'litert-community/gemma-4-E4B-it-litert-lm' (13.0KiB)..."}}
+[D-https_proxy-socks-url] {"module": "litert_lm_cli.huggingface_download (urllib)", "direct_no_proxy": {"ok": true, "status": 200, "seconds": 0.53}, "list_files": {"ok": true, "result": "['gemma-4-E4B-it-gpu.litertlm', 'gemma-4-E4B-it-web.litertlm', 'gemma-4-E4B-it.litertlm']", "seconds": 0.9}, "download_readme": {"ok": true, "result": "/Users/dpthinker/.litert-lm/cache/huggingface/litert-community/gemma-4-E4B-it-litert-lm/README.md", "seconds": 2.15, "printed": "Downloading 'README.md' from 'litert-community/gemma-4-E4B-it-litert-lm' (13.0KiB)..."}}
+{
+ "python": "/Users/dpthinker/workspace/litert-lm-book/tmp/proxy-probe-v0.17.0-venv/bin/python",
+ "http_proxy": "http://127.0.0.1:10808",
+ "socks_proxy": "socks5://127.0.0.1:10808",
+ "repo": "litert-community/gemma-4-E4B-it-litert-lm",
+ "cases": {
+  "A-http-proxy-env": {
+   "proxy_env": {
+    "HTTP_PROXY": "http://127.0.0.1:10808",
+    "HTTPS_PROXY": "http://127.0.0.1:10808",
+    "http_proxy": "http://127.0.0.1:10808",
+    "https_proxy": "http://127.0.0.1:10808"
+   },
+   "urllib_getproxies": {
+    "http": "http://127.0.0.1:10808",
+    "https": "http://127.0.0.1:10808"
+   },
+   "direct_no_proxy": {
+    "ok": true,
+    "status": 200,
+    "seconds": 0.37
+   },
+   "has_httpx": false,
+   "has_socksio": false,
+   "has_huggingface_hub": false,
+   "module": "litert_lm_cli.huggingface_download (urllib)",
+   "list_files": {
+    "ok": true,
+    "result": "['gemma-4-E4B-it-gpu.litertlm', 'gemma-4-E4B-it-web.litertlm', 'gemma-4-E4B-it.litertlm']",
+    "seconds": 1.0
+   },
+   "download_readme": {
+    "ok": true,
+    "result": "/Users/dpthinker/.litert-lm/cache/huggingface/litert-community/gemma-4-E4B-it-litert-lm/README.md",
+    "seconds": 1.89,
+    "printed": "Downloading 'README.md' from 'litert-community/gemma-4-E4B-it-litert-lm' (13.0KiB)..."
+   }
+  },
+  "B-no-proxy-env": {
+   "proxy_env": {},
+   "urllib_getproxies": {
+    "http": "http://127.0.0.1:10808",
+    "https": "http://127.0.0.1:10808",
+    "socks": "http://127.0.0.1:10808"
+   },
+   "direct_no_proxy": {
+    "ok": true,
+    "status": 200,
+    "seconds": 0.35
+   },
+   "has_httpx": false,
+   "has_socksio": false,
+   "has_huggingface_hub": false,
+   "module": "litert_lm_cli.huggingface_download (urllib)",
+   "list_files": {
+    "ok": true,
+    "result": "['gemma-4-E4B-it-gpu.litertlm', 'gemma-4-E4B-it-web.litertlm', 'gemma-4-E4B-it.litertlm']",
+    "seconds": 0.97
+   },
+   "download_readme": {
+    "ok": true,
+    "result": "/Users/dpthinker/.litert-lm/cache/huggingface/litert-community/gemma-4-E4B-it-litert-lm/README.md",
+    "seconds": 2.52,
+    "printed": "Downloading 'README.md' from 'litert-community/gemma-4-E4B-it-litert-lm' (13.0KiB)..."
+   }
+  },
+  "C-socks-only-ALL_PROXY": {
+   "proxy_env": {
+    "ALL_PROXY": "socks5://127.0.0.1:10808",
+    "all_proxy": "socks5://127.0.0.1:10808"
+   },
+   "urllib_getproxies": {
+    "all": "socks5://127.0.0.1:10808"
+   },
+   "direct_no_proxy": {
+    "ok": true,
+    "status": 200,
+    "seconds": 0.4
+   },
+   "has_httpx": false,
+   "has_socksio": false,
+   "has_huggingface_hub": false,
+   "module": "litert_lm_cli.huggingface_download (urllib)",
+   "list_files": {
+    "ok": true,
+    "result": "['gemma-4-E4B-it-gpu.litertlm', 'gemma-4-E4B-it-web.litertlm', 'gemma-4-E4B-it.litertlm']",
+    "seconds": 0.35
+   },
+   "download_readme": {
+    "ok": true,
+    "result": "/Users/dpthinker/.litert-lm/cache/huggingface/litert-community/gemma-4-E4B-it-litert-lm/README.md",
+    "seconds": 0.54,
+    "printed": "Downloading 'README.md' from 'litert-community/gemma-4-E4B-it-litert-lm' (13.0KiB)..."
+   }
+  },
+  "D-https_proxy-socks-url": {
+   "proxy_env": {
+    "HTTPS_PROXY": "socks5://127.0.0.1:10808",
+    "https_proxy": "socks5://127.0.0.1:10808"
+   },
+   "urllib_getproxies": {
+    "https": "socks5://127.0.0.1:10808"
+   },
+   "direct_no_proxy": {
+    "ok": true,
+    "status": 200,
+    "seconds": 0.53
+   },
+   "has_httpx": false,
+   "has_socksio": false,
+   "has_huggingface_hub": false,
+   "module": "litert_lm_cli.huggingface_download (urllib)",
+   "list_files": {
+    "ok": true,
+    "result": "['gemma-4-E4B-it-gpu.litertlm', 'gemma-4-E4B-it-web.litertlm', 'gemma-4-E4B-it.litertlm']",
+    "seconds": 0.9
+   },
+   "download_readme": {
+    "ok": true,
+    "result": "/Users/dpthinker/.litert-lm/cache/huggingface/litert-community/gemma-4-E4B-it-litert-lm/README.md",
+    "seconds": 2.15,
+    "printed": "Downloading 'README.md' from 'litert-community/gemma-4-E4B-it-litert-lm' (13.0KiB)..."
+   }
+  }
+ }
+}

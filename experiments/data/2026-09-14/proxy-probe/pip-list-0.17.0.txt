@@ -1,0 +1,14 @@
+Package           Version
+----------------- --------
+absl-py           2.5.0
+click             8.5.0
+flatbuffers       25.12.19
+litert-lm         0.17.0
+litert-lm-api     0.17.0
+litert-lm-builder 0.17.0
+prompt-toolkit    3.0.53
+protobuf          7.36.1
+questionary       2.1.1
+tomli             2.4.1
+typing-extensions 4.16.0
+wcwidth           0.8.3
