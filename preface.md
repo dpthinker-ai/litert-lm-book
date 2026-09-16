@@ -16,7 +16,7 @@ Gemma 4 的 31B 稠密模型支持 256K 上下文、多模态输入与原生函�
 - 2026 年 4 月发布的 Gemma 4，其中 E2B 与 E4B 接受文本、图像与音频输入，输出文本，模型上下文窗口为 128K。[^preface-gemma-e4b-google] Google AI Edge 团队的博客称，借助 LiteRT 对 2-bit/4-bit 权重和按层内存映射 embedding 的支持，E2B（2B 有效参数）在部分设备上可以在不足 1.5 GB 的内存内运行；较小的 Gemma 4 模型在树莓派 5 的 CPU 上达到 133 prefill、7.6 decode tokens/s，在 Qualcomm Dragonwing IQ8 的 NPU 上达到 3,700 prefill、31 decode tokens/s。该博客没有注明这些吞吐对应的模型规格、量化与上下文长度。[^preface-gemma4-edge]
 - 2026 年 9 月发布的华为 Mate XT 2，[^preface-huawei-launch] 在端侧部署了 30B MoE 模型。[^preface-huawei-moe] 稀疏激活让总参数量与每个 token 使用的参数量分开：每一步只计算其中一部分专家，设备仍要保存全部参数。
 
-这些资料说明，端侧开放模型已能提供多模态输入与长上下文支持。[^preface-gemma4-edge] 稀疏激活的模型还要把容量与带宽分开计算，第 10 章以本书实测的 Gemma 4 26B-A4B 为例，核算专家工作集，并与生成及内存数据对照。端侧部署的价值、边界与代价见第 1 章 1.2 节。
+把三组例子放在一起，变化集中在三处：输入从纯文本扩展到图像与音频，上下文从 4096 扩展到 128K，面向受限设备的参数规模从 1B 上下到 30B 的稀疏模型。稀疏激活的模型还要把容量与带宽分开计算，第 10 章以本书实测的 Gemma 4 26B-A4B 为例，核算专家工作集，并与生成及内存数据对照。端侧部署的价值、边界与代价见第 1 章 1.2 节。
 
 ## Google 的端侧方案
 
