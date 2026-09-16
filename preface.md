@@ -8,34 +8,34 @@
 
 ## 云侧与端侧模型
 
-Gemma 4 的 31B 稠密模型支持 256K 上下文、多模态输入与原生函数调用。2026 年 4 月 2 日的发布文章引用 Arena AI 文本榜单：31B 在开放模型中排第 3 位，26B MoE（Mixture of Experts，混合专家）排第 6 位。[^preface-gemma4-launch] 这些名次描述发布时点的一项评测，不能据此概括所有任务的能力，也不决定模型应部署在云侧还是端侧。
+Gemma 4 的 31B 稠密模型支持 256K 上下文、多模态输入与原生函数调用。发布文章引用 Arena AI 文本榜单：31B 在开放模型中排第 3 位，26B MoE（Mixture of Experts，混合专家）排第 6 位。[^preface-gemma4-launch]
 
 本书关注的是资源受限的设备上能提供哪些功能。端侧部署的价值、边界与代价见第 1 章 1.2 节。下面对照两个时间点的模型功能与部署条件：
 
 - 2023 年 7 月发布的 Llama 2（7B、13B、70B 三档参数）是纯文本模型，上下文长度为 4096 个 token。[^preface-llama2] 同年 9 月 1 日开始训练的 TinyLlama 选择了 1.1B 参数规模，面向计算和内存受限的应用。[^preface-tinyllama]
-- 2026 年 4 月 2 日发布的 Gemma 4，其中 E2B 与 E4B 接受文本、图像与音频输入，输出文本，模型上下文窗口为 128K；12B、26B MoE 与 31B 的窗口为 256K。[^preface-gemma-e4b-google] Google AI Edge 团队的博客称，借助 LiteRT 对 2-bit/4-bit 权重和按层内存映射 embedding 的支持，E2B（2B 有效参数）在部分设备上可以在不足 1.5 GB 的内存内运行；较小的 Gemma 4 模型在树莓派 5 的 CPU 上达到 133 prefill、7.6 decode tokens/s，在 Qualcomm Dragonwing IQ8 的 NPU 上达到 3,700 prefill、31 decode tokens/s。该博客没有注明这些吞吐对应的模型规格、量化与上下文长度。[^preface-gemma4-edge]
+- 2026 年 4 月发布的 Gemma 4，其中 E2B 与 E4B 接受文本、图像与音频输入，输出文本，模型上下文窗口为 128K。[^preface-gemma-e4b-google] Google AI Edge 团队的博客称，借助 LiteRT 对 2-bit/4-bit 权重和按层内存映射 embedding 的支持，E2B（2B 有效参数）在部分设备上可以在不足 1.5 GB 的内存内运行；较小的 Gemma 4 模型在树莓派 5 的 CPU 上达到 133 prefill、7.6 decode tokens/s，在 Qualcomm Dragonwing IQ8 的 NPU 上达到 3,700 prefill、31 decode tokens/s。该博客没有注明这些吞吐对应的模型规格、量化与上下文长度。[^preface-gemma4-edge]
 
-这些部署资料说明，端侧开放模型已能提供多模态输入与长上下文支持。[^preface-gemma4-edge] 上下文长度、输入模态和吞吐分别描述功能范围与运行性能，不能据此判定不同模型的任务能力相当。比较任务能力，还需要在相同评测集上检验输出质量。
+这些部署资料说明，端侧开放模型已能提供多模态输入与长上下文支持。[^preface-gemma4-edge]
 
 华为的 Mate XT 2 官方资料将 30B MoE 列为端侧模型配置。[^preface-huawei-moe] 稀疏激活让总参数量与每个 token 使用的参数量分开，容量与带宽也需要分别计算。第 10 章以本书实测的 Gemma 4 为例，核算专家工作集，并与生成及内存数据对照。
 
 ## Google 的端侧方案
 
-只有模型还不够，还需要把模型部署到设备上的运行时与工具链。Google 同时提供模型、运行时与部署平台。Gemma 4 是 Google DeepMind 在 2026 年推出的开放模型家族，官方将其定位为“可在云端、笔记本电脑和手机上部署的开放模型”；[^preface-gemma-family] 模型卡称其中较小的 E2B 与 E4B 面向笔记本与手机上的本地执行。[^preface-gemma-e4b-google] 发布当日，Google Developers Blog 同步公布了端侧配套方案：AI Edge Gallery 示例应用、Agent Skills 技能库以及 LiteRT-LM 部署路径。[^preface-gemma4-edge] 在 Android 侧，AICore 预览版已将 Gemma 4 定位为下一代 Gemini Nano 的基础模型。[^preface-gemma4-aicore] 同一时期，GDG China 的 Gemma 4 开发者大赛要求用 E2B/E4B 在真实硬件上演示完全离线的端侧部署。[^preface-gemma4-hackathon]
+只有模型还不够，还需要把模型部署到设备上的运行时与工具链。Google 同时提供模型、运行时与部署平台。Gemma 4 是 Google DeepMind 推出的开放模型家族，官方将其定位为“可在云端、笔记本电脑和手机上部署的开放模型”。[^preface-gemma-family] 发布当日，Google Developers Blog 同步公布了端侧配套方案：AI Edge Gallery 示例应用、Agent Skills 技能库以及 LiteRT-LM 部署路径。[^preface-gemma4-edge] 在 Android 侧，AICore 预览版已将 Gemma 4 定位为下一代 Gemini Nano 的基础模型。[^preface-gemma4-aicore] 同一时期，GDG China 的 Gemma 4 开发者大赛要求用 E2B/E4B 在真实硬件上演示完全离线的端侧部署。[^preface-gemma4-hackathon]
 
-模型、运行时与部署平台出自同一家厂商，使 LiteRT-LM 值得作为本书的分析对象。它需要解决的问题——内存容量与带宽约束、异构后端调度、投机解码的接受率、多模态 embedding 路径、约束解码的信任边界——并非 LiteRT-LM 独有，其他端侧推理系统在实现同类功能时同样要处理。
+本书选择 LiteRT-LM 作为分析对象，首先因为它处理的问题足够通用。内存容量与带宽约束、异构后端调度、投机解码的接受率、多模态 embedding 路径、约束解码的信任边界，其他端侧推理系统在实现同类功能时同样要处理。
 
-除了问题本身足够通用，选择它还有两个原因。其一，它有公开的产品部署记录：Google Developers Blog 记载了它在 Chrome、Chromebook Plus 和 Pixel Watch 中的实际应用，[^preface-litertlm-deploy] Google AI Edge Gallery 则通过示例应用展示了端侧模型部署的完整链路。[^preface-edge-gallery] 这些场景要求运行时能适配不同设备，而不只是在单一 benchmark 指标上占优。其二，它的源码覆盖了端侧推理的关键技术：KV cache 管理与双缓冲、GPU 设备侧采样、量化权重的加载与后端分派、投机解码、多模态输入、约束解码、工具调用和 LoRA。每一项实现都能在固定版本的源码中定位到具体位置，书中贴出的代码片段都带出处（体例见“关于代码引用与数字”一节）。
+除此之外还有两个原因。其一，Google 已将它部署在自己的产品中：Google Developers Blog 记载了它在 Chrome、Chromebook Plus 和 Pixel Watch 中的实际应用，[^preface-litertlm-deploy] Google AI Edge Gallery 则通过示例应用展示了端侧模型部署的完整链路。[^preface-edge-gallery] 其二，它的源码覆盖了端侧推理的关键技术：KV cache 管理与双缓冲、GPU 设备侧采样、量化权重的加载与后端分派、投机解码、多模态输入、约束解码、工具调用和 LoRA，每一项实现都能在固定版本的源码中定位到具体位置。
 
 ## 这本书讲什么
-
-本书分析生产级端侧运行时的实现与工程权衡。它并非 Google 官方出版物，书中的所有观点及可能存在的错漏，均由作者负责。
 
 本书以 LiteRT-LM v0.17.0 为主要分析对象，回答一个核心问题：大语言模型如何在手机、手表和浏览器等受限设备上运行。主基准模型 Gemma 4 E4B 在 4B 有效参数规模下提供多模态理解与函数调用能力，模型产物以单文件 `.litertlm` 形式分发；litert-community 的模型卡称该产物最长支持 32K 上下文，低于模型本身的 128K 窗口。[^preface-gemma-e4b]
 
 本书不是使用手册，也不是逐行代码注释，而是关注**实现与权衡**：代码采用了什么设计，每种设计依赖哪些条件，又在哪些场景下受到限制。不同运行时的具体实现会变化，但都可以从内存预算、数据流、后端约束和测量口径这几个方面逐项分析。
 
 模型定义了计算与能力，运行时则负责在具体设备上加载、调度和执行。本书同时分析模型产物与运行时代码：既用 `litertlm_print` 检查 `.litertlm` 的 section 布局，也跟踪 Engine 如何读取这些 section 并创建后端资源。只有同时核对文件格式、执行路径和设备约束，读者才能独立判断一次部署失败出在哪一层。
+
+本书并非 Google 官方出版物，书中的所有观点及可能存在的错漏，均由作者负责。
 
 ## 推理流水线
 
@@ -53,19 +53,19 @@ Gemma 4 的 31B 稠密模型支持 256K 上下文、多模态输入与原生函�
 
 ## 阅读路径
 
-- 顺序阅读时，可按四个部分依次推进，各部分覆盖的内容见“推理流水线”一节；尾声单独列出实践入口与待验证问题。
+- 顺序阅读时按四个部分依次推进；尾声单独列出实践入口与待验证问题。
 - 第 2 章列出二十个问题，每个问题均指向后续章节中的对应分析，可作为阅读索引。
-- 阅读前无需先完成源码编译。第 2 章会先用一条命令运行模型；涉及实现细节时，关键机制附有源码片段，出处标在片段首行（引用体例见下一节），读者可直接对照冻结版本。
+- 阅读前无需先完成源码编译。第 2 章会先用一条命令运行模型；涉及实现细节时，关键机制附有源码片段，引用体例见下一节。
 
 ## 关于代码引用与数字
 
-全书对 LiteRT-LM 的代码引用统一锁定在 `release/v0.17.0` 对应的 `v0.17.0` tag，冻结提交为 `e9fd8c53ff968071774206163027dd84bedfe925`。附录 D 的既有实验保留原采集版本与条件，其中 v0.13.1 数据不代表新版性能。为不打断行文，正文中不出现文件路径与行号；引用的代码以代码块呈现，出处标注在代码块首行注释里，不逐处重复版本号。对其他项目的引用在脚注中显式标注版本（如 llama.cpp 的 b9873）。代码之外的来源，在相关断言后以页下注给出。锁定冻结版本，可以保证文件、行号与实现描述保持一致；上游后续变化只收入“版本注记”侧栏。
+全书对 LiteRT-LM 的代码引用统一锁定在 `release/v0.17.0` 对应的 `v0.17.0` tag，冻结提交为 `e9fd8c53ff968071774206163027dd84bedfe925`。为不打断行文，正文中不出现文件路径与行号；引用的代码以代码块呈现，出处标注在代码块首行注释里，不逐处重复版本号。对其他项目的引用在脚注中显式标注版本（如 llama.cpp 的 b9873）。代码之外的来源，在相关断言后以页下注给出。上游后续变化只收入“版本注记”侧栏。
 
-第 10 章进一步分析 v0.17.0 所锁定的 LiteRT 依赖。LiteRT 代码块使用 `LiteRT/` 前缀，构建时同时核查其冻结提交和引文；具体版本与导出端分析范围见 10.6 节。
+第 10 章进一步分析 v0.17.0 所锁定的 LiteRT 依赖，其代码块以 `LiteRT/` 前缀标出，同样锁定冻结提交；具体提交号与导出端分析范围见 10.6 节。
 
-书中的理论上限，例如 decode 上限公式，均在正文中逐步推导，读者可据此验算。实测数据按设备与采集批次分别列示：Mac 主基准运行 Gemma 4 E4B，decode 实测每秒可生成数十个 token。2026 年 7 月的 Android 扩展基准使用 P0210 手机和自编译二进制。同年 9 月另在 HONOR MEP-AN00 上补充进程内存、持续吞吐、客户端文本时延与图片输入案例。这两台手机的结果分别记录，不混算。
+书中的理论上限，例如 decode 上限公式，均在正文中逐步推导，读者可据此验算。实测数据按设备与采集批次分别列示，既有实验保留原采集版本与条件，其中 v0.13.1 的数据不代表 v0.17.0 的性能：Mac 主基准运行 Gemma 4 E4B；2026 年 7 月的 Android 扩展基准使用 P0210 手机和自编译二进制；同年 9 月另在 HONOR MEP-AN00 上补充进程内存、持续吞吐、客户端文本时延与图片输入案例。
 
-方法与全部数据见附录 D，所有标注“〔基准 D〕”之处均指向该附录，理论估算与真机实测明确区分。进程内存读数与文本回调时延各有计量范围，不能代替完整的 GPU 内存或屏幕显示时刻。同一基础 checkpoint 的量化质量与性能对照尚未完成。NPU 执行行为等仅有代码分析的部分，书中也就地标明。
+方法与全部数据见附录 D，所有标注“〔基准 D〕”之处均指向该附录。进程内存读数不等于完整的 GPU 内存占用，文本回调时刻也早于屏幕显示时刻。同一基础 checkpoint 的量化质量与性能对照尚未完成。NPU 执行行为等仅有代码分析的部分，书中也就地标明。
 
 [^preface-tinyllama]: TinyLlama 项目，[TinyLlama/TinyLlama-1.1B-Chat-v1.0 模型卡](https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0)，项目训练启动日期：2023-09-01（非 Chat-v1.0 发布日期）；访问日期：2026-09-05。
 [^preface-gemma4-launch]: Google DeepMind，Clement Farabet、Olivier Lacombe，[*Gemma 4: Byte for byte, the most capable open models*](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/)，2026-04-02；访问日期：2026-08-04。
